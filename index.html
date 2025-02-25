@@ -4,23 +4,53 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Whisper Transcription</title>
+  <!-- Import Google Font 'Roboto' -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
+    /* Minimalist & Smooth Style Option 1 */
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
+      font-family: 'Roboto', sans-serif;
+      background-color: #f4f7f9;
+      color: #333;
       margin: 40px;
+      text-align: center;
+    }
+    h2 {
+      font-weight: 300;
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 16px;
+    }
+    input[type="text"] {
+      width: 300px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    input[type="text"]:focus {
+      border-color: #66afe9;
+      box-shadow: 0 0 8px rgba(102,175,233,0.6);
+      outline: none;
     }
     button {
+      background-color: #5a9;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
       font-size: 16px;
-      padding: 10px 20px;
-      margin: 10px;
       cursor: pointer;
+      transition: background-color 0.3s, transform 0.1s;
     }
-    input {
-      font-size: 16px;
-      padding: 10px;
-      width: 300px;
-      margin: 10px;
+    button:hover {
+      background-color: #489;
+    }
+    button:active {
+      transform: scale(0.98);
     }
     #apiKeyGuideOverlay {
       display: none;
@@ -50,10 +80,10 @@
     }
     #closeGuideBtn {
       background: red;
-      color: white;
+      color: #fff;
       padding: 10px 20px;
       border: none;
-      border-radius: 5px;
+      border-radius: 10px;
       cursor: pointer;
       margin-top: 20px;
     }

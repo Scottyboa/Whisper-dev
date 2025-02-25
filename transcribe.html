@@ -4,25 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Transcription Tool</title>
-  <!-- Import Google Font 'Roboto' -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <!-- Import Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
   <style>
-    /* Minimalist & Smooth Style Option 1 */
+    /* Prologue-Inspired Styling */
     body {
       font-family: 'Roboto', sans-serif;
-      background-color: #f4f7f9;
+      background-color: #f8f8f8;
       color: #333;
-      margin: 40px;
+      margin: 0;
+      padding: 0;
       text-align: center;
     }
     h2 {
+      font-family: 'Merriweather', serif;
       font-weight: 300;
+      font-size: 40px;
+      margin-top: 20px;
       margin-bottom: 20px;
     }
     p {
       font-size: 16px;
     }
-    input[type="text"], textarea {
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    /* Buttons and Inputs */
+    input[type="text"], textarea, select {
       width: 80%;
       max-width: 600px;
       padding: 12px;
@@ -31,8 +41,9 @@
       font-size: 16px;
       box-sizing: border-box;
       transition: border-color 0.3s, box-shadow 0.3s;
+      margin-bottom: 20px;
     }
-    input[type="text"]:focus, textarea:focus {
+    input[type="text"]:focus, textarea:focus, select:focus {
       border-color: #66afe9;
       box-shadow: 0 0 8px rgba(102,175,233,0.6);
       outline: none;
@@ -46,6 +57,7 @@
       font-size: 16px;
       cursor: pointer;
       transition: background-color 0.3s, transform 0.1s;
+      margin: 10px;
     }
     button:hover {
       background-color: #489;
@@ -53,10 +65,13 @@
     button:active {
       transform: scale(0.98);
     }
+    /* Timers */
     #recordTimer, #transcribeTimer, #uploadTimer, #noteTimer {
       font-size: 18px;
       margin-top: 10px;
+      color: #333;
     }
+    /* Record Indicator */
     #recordIndicator {
       width: 20px;
       height: 20px;
@@ -65,27 +80,21 @@
       display: inline-block;
       margin-top: 10px;
     }
+    /* Status Message */
     #statusMessage {
       font-size: 16px;
       margin-top: 15px;
       font-weight: bold;
     }
-    /* Transcription textarea */
+    /* Editable Transcription */
     #transcription {
-      margin-top: 20px;
       height: 150px;
     }
     /* Custom Prompt Section */
     #promptSection {
       margin-top: 40px;
     }
-    /* Custom prompt textarea with auto-resize */
     #customPrompt {
-      width: 80%;
-      max-width: 600px;
-      padding: 12px;
-      font-size: 16px;
-      margin-top: 10px;
       resize: none;
       overflow: hidden;
     }
@@ -93,75 +102,67 @@
     #noteSection {
       margin-top: 20px;
     }
-    /* Generated note textarea with min-height to allow expansion */
+    /* Generated Note: use min-height so it can expand */
     #generatedNote {
-      margin-top: 20px;
-      padding: 12px;
       min-height: 150px;
-      max-width: 600px;
-      width: 80%;
       text-align: left;
       border: 1px solid #ddd;
       border-radius: 10px;
       box-sizing: border-box;
-      transition: border-color 0.3s, box-shadow 0.3s;
-    }
-    select {
-      font-size: 16px;
-      padding: 8px;
-      margin: 10px;
     }
   </style>
 </head>
 <body>
-  <h2>Transcription Tool</h2>
-  <div id="recordIndicator"></div>
-  <div id="recordTimer">Recording Timer: 0 sec</div>
-  <div id="uploadTimer">Upload Timer: 0 sec</div>
-  <div id="transcribeTimer">Transcription Timer: 0 sec</div>
-  <br>
-  <button id="startButton">Start Recording</button>
-  <button id="stopButton" disabled>Stop Recording</button>
-  <button id="pauseResumeButton" disabled>Pause Recording</button>
-  <br>
-  <button id="transcribeButton" disabled>Transcribe</button>
-  <br>
-  <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
-  <br>
-  <h3>Transcription Result:</h3>
-  <textarea id="transcription"></textarea>
-  
-  <!-- Custom Prompt Section -->
-  <div id="promptSection">
-    <h3>Custom Note Prompt:</h3>
-    <label for="promptSlot">Prompt Slot:</label>
-    <select id="promptSlot">
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4">4</option>
-      <option value="5">5</option>
-      <option value="6">6</option>
-      <option value="7">7</option>
-      <option value="8">8</option>
-      <option value="9">9</option>
-      <option value="10">10</option>
-    </select>
+  <div class="container">
+    <h2>Transcription Tool</h2>
+    <div id="recordIndicator"></div>
+    <div id="recordTimer">Recording Timer: 0 sec</div>
+    <div id="uploadTimer">Upload Timer: 0 sec</div>
+    <div id="transcribeTimer">Transcription Timer: 0 sec</div>
     <br>
-    <textarea id="customPrompt" placeholder="Enter custom prompt here" rows="1"></textarea>
-  </div>
-  
-  <!-- Note Generation Section -->
-  <div id="noteSection">
-    <h3>Generate Note:</h3>
-    <button id="generateNoteButton">Generate Note</button>
-    <!-- Note Generation Timer/Indicator -->
-    <div id="noteTimer">Note Generation Timer: 0 sec</div>
-    <textarea id="generatedNote" readonly></textarea>
+    <button id="startButton">Start Recording</button>
+    <button id="stopButton" disabled>Stop Recording</button>
+    <button id="pauseResumeButton" disabled>Pause Recording</button>
+    <br>
+    <button id="transcribeButton" disabled>Transcribe</button>
+    <br>
+    <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
+    <br>
+    <h3>Transcription Result:</h3>
+    <textarea id="transcription"></textarea>
+    
+    <!-- Custom Prompt Section -->
+    <div id="promptSection">
+      <h3>Custom Note Prompt:</h3>
+      <label for="promptSlot">Prompt Slot:</label>
+      <select id="promptSlot">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+      </select>
+      <br>
+      <textarea id="customPrompt" placeholder="Enter custom prompt here" rows="1"></textarea>
+    </div>
+    
+    <!-- Note Generation Section -->
+    <div id="noteSection">
+      <h3>Generate Note:</h3>
+      <button id="generateNoteButton">Generate Note</button>
+      <!-- Note Generation Timer/Indicator -->
+      <div id="noteTimer">Note Generation Timer: 0 sec</div>
+      <textarea id="generatedNote" readonly></textarea>
+    </div>
   </div>
   
   <script>
-    // Utility function: format time as "0 sec", "1 sec", … "59 sec", "1 min", "1 min 1 sec", etc.
+    // Utility: Format time as "0 sec", "1 sec", … "59 sec", "1 min", "1 min 1 sec", etc.
     function formatTime(ms) {
       const totalSec = Math.floor(ms / 1000);
       if (totalSec < 60) {
@@ -180,7 +181,7 @@
       window.location.href = "index.html";
     }
     
-    // Hash the API key for use in localStorage keys.
+    // Hash API key for localStorage keys
     function hashString(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -192,7 +193,7 @@
     }
     const hashedApiKey = hashString(apiKey);
     
-    // Unique key for storing a prompt for a given slot and API key.
+    // Unique key for custom prompt storage
     function getPromptStorageKey(slot) {
       return "customPrompt_" + hashedApiKey + "_" + slot;
     }
@@ -219,6 +220,7 @@
       loadPromptForSlot(promptSlotSelect.value);
     });
     
+    // Auto-resize textareas based on content
     function autoResize(textarea) {
       textarea.style.height = "auto";
       textarea.style.height = textarea.scrollHeight + "px";
@@ -397,7 +399,7 @@
       }
     });
     
-    // Note Generation Functionality with Streaming and Timer
+    // Note Generation with Streaming and Timer
     document.getElementById("generateNoteButton").addEventListener("click", async () => {
       const transcriptionText = document.getElementById("transcription").value.trim();
       if (!transcriptionText) {

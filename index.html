@@ -4,16 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Whisper Transcription</title>
-  <!-- Import Google Fonts (Prologue often uses elegant serif/sans-serif combos) -->
+  <!-- Import Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
   <style>
-    /* Prologue-Inspired Styling */
+    /* Prologue-inspired Style */
     body {
       font-family: 'Roboto', sans-serif;
       background-color: #f8f8f8;
       color: #333;
       margin: 0;
       padding: 0;
+      text-align: center;
     }
     header {
       background: linear-gradient(135deg, #5a9 0%, #489 100%);
@@ -35,7 +36,6 @@
       max-width: 800px;
       margin: 40px auto;
       padding: 20px;
-      text-align: center;
     }
     input[type="text"] {
       width: 300px;
@@ -69,42 +69,6 @@
     button:active {
       transform: scale(0.98);
     }
-    /* Guide Popup styling */
-    #apiKeyGuideOverlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-    #apiKeyGuideModal {
-      background: #fff;
-      width: 80%;
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 20px;
-      border-radius: 8px;
-      text-align: left;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-    #apiKeyGuideModal h2 {
-      margin-top: 0;
-    }
-    #closeGuideBtn {
-      background: red;
-      color: #fff;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      margin-top: 20px;
-    }
   </style>
 </head>
 <body>
@@ -112,25 +76,22 @@
     <h1>Whisper Transcription</h1>
     <p>Convert speech to text for professional consultations</p>
   </header>
-  
   <div class="container">
-    <p>To start transcribing, you need an OpenAI API key.</p>
+    <p>To get started, please enter your OpenAI API key:</p>
     <!-- API Key Input with autocomplete off -->
     <input type="text" id="apiKeyInput" placeholder="Enter API Key here" autocomplete="off">
     <br>
-    <!-- Button to Save API Key & Enter Transcription Tool -->
     <button id="enterTranscriptionBtn">Enter Transcription Tool</button>
     <br>
-    <!-- Guide for API Key Setup -->
     <button id="openGuideButton">Guide for setting up API key</button>
   </div>
   
-  <!-- Popup Overlay for API Guide -->
-  <div id="apiKeyGuideOverlay">
-    <div id="apiKeyGuideModal">
+  <!-- Popup Overlay for API Guide (same as before) -->
+  <div id="apiKeyGuideOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:9999;">
+    <div id="apiKeyGuideModal" style="background:#fff; width:80%; max-width:600px; margin:40px auto; padding:20px; border-radius:8px; text-align:left; max-height:80vh; overflow-y:auto;">
       <h2>How to Sign Up for an OpenAI API Account and Use It for Transcription</h2>
-      <!-- (Your existing guide content goes here) -->
-      <button id="closeGuideBtn">Close</button>
+      <!-- (Your guide content goes here.) -->
+      <button id="closeGuideBtn" style="background:red; color:#fff; padding:10px 20px; border:none; border-radius:10px; cursor:pointer; margin-top:20px;">Close</button>
     </div>
   </div>
   
@@ -140,7 +101,7 @@
     const openGuideButton = document.getElementById("openGuideButton");
     const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");
     const apiKeyInput = document.getElementById("apiKeyInput");
-
+    
     openGuideButton.addEventListener("click", () => {
       overlay.style.display = "flex";
       overlay.style.flexDirection = "column";

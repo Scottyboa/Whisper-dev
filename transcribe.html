@@ -75,7 +75,7 @@
       font-weight: bold;
       margin-top: 10px;
     }
-    /* Grid Layout for entire page */
+    /* Grid Layout */
     .grid-container {
       display: grid;
       grid-template-columns: 250px 1fr;
@@ -94,7 +94,7 @@
       font-size: 18px;
       padding: 15px;
     }
-    /* Main content container */
+    /* Main Content Styles */
     .main-content {
       padding: 20px;
       overflow-y: auto;
@@ -102,19 +102,19 @@
       flex-direction: column;
       gap: 20px;
     }
-    /* Views for functions and guide */
+    /* Views */
     .view {
       display: none;
     }
     .view.active {
       display: block;
     }
-    /* Recording area (top half) */
+    /* Recording Area (Top Half) */
     .recording-area {
       border-bottom: 1px solid #ddd;
       padding-bottom: 20px;
     }
-    /* Bottom half: split into two columns */
+    /* Bottom Half: Two Columns */
     .bottom-half {
       display: flex;
       gap: 20px;
@@ -126,7 +126,7 @@
       flex-direction: column;
       gap: 10px;
     }
-    /* Ensure textareas can expand */
+    /* Textareas with min-height */
     #transcription, #generatedNote, #customPrompt {
       min-height: 150px;
       resize: none;
@@ -144,7 +144,7 @@
     
     <!-- Main Content Area -->
     <main class="main-content">
-      <!-- Functions View (default) -->
+      <!-- Functions View -->
       <div id="functionsView" class="view active">
         <!-- Top Half: Recording Area -->
         <div class="recording-area">
@@ -193,29 +193,31 @@
         </div>
       </div>
       
-      <!-- Guide View -->
+      <!-- Guide View (Updated: removed mention about toggling data preservation) -->
       <div id="guideView" class="view">
         <h3>Guide & Instructions</h3>
         <p>
-          Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
+          Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, psychologists, and physiotherapists to record and transcribe consultations, and generate professional notes using AI.
         </p>
-        <h4>How to Use the Functions:</h4>
+        <h4>How to Use the Tool:</h4>
         <ul style="text-align:left; max-width:600px; margin:0 auto;">
-          <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
-          <li><strong>Transcription:</strong> Once your audio is uploaded, click "Transcribe" to convert speech to text. The transcription will appear in the top area.</li>
-          <li><strong>Note Generation:</strong> After transcription, use the "Generate Note" button to produce a note based on your transcription and your custom prompt. A timer shows the duration of note generation, and the generated note appears below.</li>
-          <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and is associated with your API key.</li>
-          <li><strong>Guide Toggle:</strong> Use the sidebar buttons ("Functions" and "Guide") to switch between the tool functions and this guide. Your entered data is preserved when toggling views.</li>
+          <li><strong>Recording:</strong> Click "Start Recording" to capture audio. Use "Stop Recording" to end and upload your recording.</li>
+          <li><strong>Transcription:</strong> Once uploaded, click "Transcribe" to convert speech to text. The transcription appears above.</li>
+          <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to create a professional note using your custom prompt. A timer displays the note generation time, and the result appears in the generated note area.</li>
+          <li><strong>Custom Prompt:</strong> Select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically (associated with your API key).</li>
         </ul>
         <p>
-          Please ensure that you have entered your API key on the index page before using the tool.
+          <strong>Security & Confidentiality:</strong> All recordings, transcriptions, and generated notes are automatically deleted after 15 minutes. Nothing is stored permanently—your data remains confidential and secure.
+        </p>
+        <p>
+          Please ensure you have entered your API key on the index page before using the tool.
         </p>
       </div>
     </main>
   </div>
   
   <script>
-    // Utility function: format time
+    // Utility: Format time
     function formatTime(ms) {
       const totalSec = Math.floor(ms / 1000);
       if (totalSec < 60) {
@@ -227,7 +229,7 @@
       }
     }
     
-    // Toggle Views
+    // Toggle between Functions and Guide views
     const btnFunctions = document.getElementById("btnFunctions");
     const btnGuide = document.getElementById("btnGuide");
     const functionsView = document.getElementById("functionsView");
@@ -249,7 +251,7 @@
       window.location.href = "index.html";
     }
     
-    // Hash API key for secure localStorage keys
+    // Hash API key for localStorage keys
     function hashString(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -261,6 +263,7 @@
     }
     const hashedApiKey = hashString(apiKey);
     
+    // Unique key for storing a prompt
     function getPromptStorageKey(slot) {
       return "customPrompt_" + hashedApiKey + "_" + slot;
     }
@@ -389,6 +392,7 @@
         updateStatusMessage("Microphone access error: " + error, "red");
       }
     });
+    
     document.getElementById("stopButton").addEventListener("click", () => {
       if (mediaRecorder && mediaRecorder.state !== "inactive") {
         mediaRecorder.stop();
@@ -397,6 +401,7 @@
         document.getElementById("pauseResumeButton").disabled = true;
       }
     });
+    
     document.getElementById("pauseResumeButton").addEventListener("click", () => {
       if (!mediaRecorder) return;
       if (mediaRecorder.state === "recording") {
@@ -413,6 +418,7 @@
         updateStatusMessage("Recording resumed", "green");
       }
     });
+    
     document.getElementById("transcribeButton").addEventListener("click", async () => {
       const storedApiKey = sessionStorage.getItem("openai_api_key");
       if (!storedApiKey || !sessionId) {
@@ -442,6 +448,7 @@
         updateStatusMessage("Transcription error: " + error, "red");
       }
     });
+    
     // Note Generation with Streaming and Timer
     document.getElementById("generateNoteButton").addEventListener("click", async () => {
       const transcriptionText = document.getElementById("transcription").value.trim();

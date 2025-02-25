@@ -32,7 +32,7 @@
     p {
       font-size: 16px;
     }
-    /* Buttons and Inputs */
+    /* Buttons, Inputs, and Textareas */
     input[type="text"], textarea, select {
       width: 100%;
       padding: 12px;
@@ -65,150 +65,157 @@
     button:active {
       transform: scale(0.98);
     }
-    /* Timer styling */
     .timer {
       font-size: 18px;
       margin-bottom: 10px;
       color: #333;
     }
-    /* Record Indicator styling */
-    #recordIndicator {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background-color: grey;
-      margin: 0 auto 10px;
-    }
-    /* Status message styling */
     #statusMessage {
       font-size: 16px;
       font-weight: bold;
       margin-top: 10px;
     }
-    /* Layout using CSS Grid */
+    /* Grid Layout for entire page */
     .grid-container {
       display: grid;
       grid-template-columns: 250px 1fr;
       height: 100vh;
     }
+    /* Sidebar Styles */
     .sidebar {
       background-color: #e0e0e0;
       padding: 20px;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      overflow-y: auto;
-    }
-    .sidebar h3 {
-      margin-bottom: 10px;
-    }
-    .sidebar ul {
-      list-style: none;
-      padding: 0;
-    }
-    .sidebar li {
-      margin: 10px 0;
-    }
-    .sidebar a {
-      text-decoration: none;
-      color: #333;
-      font-weight: 500;
-    }
-    .main-content {
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
-      padding: 20px;
+      gap: 20px;
+      align-items: stretch;
     }
-    .top-half {
-      flex: 1;
+    .sidebar button {
+      font-size: 18px;
+      padding: 15px;
+    }
+    /* Main content container */
+    .main-content {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    /* Views for functions and guide */
+    .view {
+      display: none;
+    }
+    .view.active {
+      display: block;
+    }
+    /* Recording area (top half) */
+    .recording-area {
       border-bottom: 1px solid #ddd;
       padding-bottom: 20px;
     }
+    /* Bottom half: split into two columns */
     .bottom-half {
-      flex: 1;
       display: flex;
-      padding-top: 20px;
       gap: 20px;
+      flex: 1;
     }
-    .left-column, .right-column {
+    .column {
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
+      gap: 10px;
     }
-    /* Ensure textareas have an initial min-height but can grow */
+    /* Ensure textareas can expand */
     #transcription, #generatedNote, #customPrompt {
       min-height: 150px;
+      resize: none;
+      overflow: hidden;
     }
   </style>
 </head>
 <body>
   <div class="grid-container">
-    <!-- Sidebar -->
+    <!-- Sidebar with Toggle Buttons -->
     <aside class="sidebar">
-      <h3>Menu</h3>
-      <ul>
-        <li><a href="#">Project Logs</a></li>
-        <li><a href="#">Recent Transcriptions</a></li>
-        <li><a href="#">Settings</a></li>
-      </ul>
+      <button id="btnFunctions">Functions</button>
+      <button id="btnGuide">Guide</button>
     </aside>
     
-    <!-- Main Content -->
+    <!-- Main Content Area -->
     <main class="main-content">
-      <!-- Top Half: Recording Area -->
-      <div class="top-half">
-        <h3>Recording Area</h3>
-        <!-- Record Indicator -->
-        <div id="recordIndicator"></div>
-        <!-- Timers -->
-        <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
-        <div id="uploadTimer" class="timer">Upload Timer: 0 sec</div>
-        <div id="transcribeTimer" class="timer">Transcription Timer: 0 sec</div>
-        <!-- Transcription Result -->
-        <textarea id="transcription" placeholder="Transcription result will appear here..."></textarea>
-        <!-- Recording Buttons -->
-        <div class="recording-buttons">
-          <button id="startButton">Start Recording</button>
-          <button id="stopButton" disabled>Stop Recording</button>
-          <button id="pauseResumeButton" disabled>Pause Recording</button>
-          <button id="transcribeButton" disabled>Transcribe</button>
+      <!-- Functions View (default) -->
+      <div id="functionsView" class="view active">
+        <!-- Top Half: Recording Area -->
+        <div class="recording-area">
+          <h3>Recording Area</h3>
+          <div id="recordIndicator" style="width:20px; height:20px; border-radius:50%; background-color:grey; margin:0 auto 10px;"></div>
+          <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
+          <div id="uploadTimer" class="timer">Upload Timer: 0 sec</div>
+          <div id="transcribeTimer" class="timer">Transcription Timer: 0 sec</div>
+          <textarea id="transcription" placeholder="Transcription result will appear here..."></textarea>
+          <div>
+            <button id="startButton">Start Recording</button>
+            <button id="stopButton" disabled>Stop Recording</button>
+            <button id="pauseResumeButton" disabled>Pause Recording</button>
+            <button id="transcribeButton" disabled>Transcribe</button>
+          </div>
+          <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
         </div>
-        <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
+        
+        <!-- Bottom Half: Note Generation & Custom Prompt -->
+        <div class="bottom-half">
+          <!-- Left Column: Note Generation -->
+          <div class="column">
+            <h3>Note Generation</h3>
+            <button id="generateNoteButton">Generate Note</button>
+            <div id="noteTimer" class="timer">Note Generation Timer: 0 sec</div>
+            <textarea id="generatedNote" readonly placeholder="Generated note will appear here..."></textarea>
+          </div>
+          <!-- Right Column: Custom Prompt -->
+          <div class="column">
+            <h3>Custom Prompt</h3>
+            <label for="promptSlot">Prompt Slot:</label>
+            <select id="promptSlot">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+            <textarea id="customPrompt" placeholder="Enter custom prompt here" rows="1"></textarea>
+          </div>
+        </div>
       </div>
       
-      <!-- Bottom Half: Note Generation & Custom Prompt -->
-      <div class="bottom-half">
-        <!-- Left Column: Note Generation -->
-        <div class="left-column">
-          <h3>Note Generation</h3>
-          <button id="generateNoteButton">Generate Note</button>
-          <div id="noteTimer" class="timer">Note Generation Timer: 0 sec</div>
-          <textarea id="generatedNote" readonly placeholder="Generated note will appear here..."></textarea>
-        </div>
-        <!-- Right Column: Custom Prompt -->
-        <div class="right-column">
-          <h3>Custom Prompt</h3>
-          <label for="promptSlot">Prompt Slot:</label>
-          <select id="promptSlot">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
-            <option value="9">9</option>
-            <option value="10">10</option>
-          </select>
-          <textarea id="customPrompt" placeholder="Enter custom prompt here" rows="1"></textarea>
-        </div>
+      <!-- Guide View -->
+      <div id="guideView" class="view">
+        <h3>Guide & Instructions</h3>
+        <p>
+          Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
+        </p>
+        <h4>How to Use the Functions:</h4>
+        <ul style="text-align:left; max-width:600px; margin:0 auto;">
+          <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
+          <li><strong>Transcription:</strong> Once your audio is uploaded, click "Transcribe" to convert speech to text. The transcription will appear in the top area.</li>
+          <li><strong>Note Generation:</strong> After transcription, use the "Generate Note" button to produce a note based on your transcription and your custom prompt. A timer shows the duration of note generation, and the generated note appears below.</li>
+          <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and is associated with your API key.</li>
+          <li><strong>Guide Toggle:</strong> Use the sidebar buttons ("Functions" and "Guide") to switch between the tool functions and this guide. Your entered data is preserved when toggling views.</li>
+        </ul>
+        <p>
+          Please ensure that you have entered your API key on the index page before using the tool.
+        </p>
       </div>
     </main>
   </div>
   
   <script>
-    // Utility function: format time as "0 sec", "1 sec", … "59 sec", "1 min", "1 min 1 sec", etc.
+    // Utility function: format time
     function formatTime(ms) {
       const totalSec = Math.floor(ms / 1000);
       if (totalSec < 60) {
@@ -220,6 +227,21 @@
       }
     }
     
+    // Toggle Views
+    const btnFunctions = document.getElementById("btnFunctions");
+    const btnGuide = document.getElementById("btnGuide");
+    const functionsView = document.getElementById("functionsView");
+    const guideView = document.getElementById("guideView");
+    
+    btnFunctions.addEventListener("click", () => {
+      functionsView.classList.add("active");
+      guideView.classList.remove("active");
+    });
+    btnGuide.addEventListener("click", () => {
+      guideView.classList.add("active");
+      functionsView.classList.remove("active");
+    });
+    
     // Retrieve API key from sessionStorage
     const apiKey = sessionStorage.getItem("openai_api_key");
     if (!apiKey) {
@@ -227,7 +249,7 @@
       window.location.href = "index.html";
     }
     
-    // Hash the API key for secure storage key generation
+    // Hash API key for secure localStorage keys
     function hashString(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -239,12 +261,11 @@
     }
     const hashedApiKey = hashString(apiKey);
     
-    // Function to generate a unique localStorage key for a given prompt slot and API key
     function getPromptStorageKey(slot) {
       return "customPrompt_" + hashedApiKey + "_" + slot;
     }
     
-    // Custom Prompt Section: load and save functionality
+    // Custom Prompt Section
     const promptSlotSelect = document.getElementById("promptSlot");
     const customPromptTextarea = document.getElementById("customPrompt");
     
@@ -254,26 +275,22 @@
       customPromptTextarea.value = storedPrompt ? storedPrompt : "";
       autoResize(customPromptTextarea);
     }
-    
     customPromptTextarea.addEventListener("input", () => {
       const currentSlot = promptSlotSelect.value;
       const key = getPromptStorageKey(currentSlot);
       localStorage.setItem(key, customPromptTextarea.value);
       autoResize(customPromptTextarea);
     });
-    
     promptSlotSelect.addEventListener("change", () => {
       loadPromptForSlot(promptSlotSelect.value);
     });
-    
     function autoResize(textarea) {
       textarea.style.height = "auto";
       textarea.style.height = textarea.scrollHeight + "px";
     }
-    
     loadPromptForSlot(promptSlotSelect.value);
     
-    // Backend URL and recording variables
+    // Backend URL and Recording Variables
     const backendUrl = "https://whisper-online.fly.dev";
     let mediaRecorder;
     let audioChunks = [];
@@ -294,12 +311,10 @@
       statusMessage.innerText = message;
       statusMessage.style.color = color;
     }
-    
     function updateRecordingTimer() {
       let elapsed = Date.now() - recordingStartTime - pausedTimeAccumulated;
       document.getElementById("recordTimer").innerText = "Recording Timer: " + formatTime(elapsed);
     }
-    
     function updateUploadTimer() {
       let elapsed = Date.now() - uploadStartTime;
       document.getElementById("uploadTimer").innerText = "Upload Timer: " + formatTime(elapsed);
@@ -308,15 +323,12 @@
     async function handleStop() {
       clearInterval(recordingTimerInterval);
       updateStatusMessage("Uploading audio... Please wait.", "blue");
-    
       const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
       const formData = new FormData();
       formData.append("file", audioBlob, "recorded.mp3");
-    
       uploadStartTime = Date.now();
       document.getElementById("uploadTimer").innerText = "Upload Timer: 0 sec";
       uploadTimerInterval = setInterval(updateUploadTimer, 1000);
-    
       try {
         const response = await fetch(`${backendUrl}/upload`, {
           method: "POST",
@@ -324,13 +336,11 @@
         });
         const result = await response.json();
         clearInterval(uploadTimerInterval);
-    
         if (result.session_id) {
           sessionId = result.session_id;
           document.getElementById("recordIndicator").style.backgroundColor = "green";
           updateStatusMessage("Audio uploaded! Ready for transcription.", "green");
           document.getElementById("transcribeButton").disabled = false;
-    
           clearTimeout(autoDeleteTimeout);
           autoDeleteTimeout = setTimeout(() => {
             sessionId = "";
@@ -342,10 +352,8 @@
       } catch (error) {
         updateStatusMessage("Error uploading file: " + error, "red");
       }
-    
       stopMicrophone();
     }
-    
     function stopMicrophone() {
       if (mediaStream) {
         mediaStream.getTracks().forEach(track => track.stop());
@@ -355,7 +363,6 @@
     
     document.getElementById("startButton").addEventListener("click", async () => {
       clearTimeout(autoDeleteTimeout);
-      
       try {
         mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new MediaRecorder(mediaStream);
@@ -365,7 +372,6 @@
         recordingStartTime = Date.now();
         updateRecordingTimer();
         recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-    
         mediaRecorder.ondataavailable = event => {
           if (event.data.size > 0) {
             audioChunks.push(event.data);
@@ -373,7 +379,6 @@
         };
         mediaRecorder.onstop = handleStop;
         mediaRecorder.start();
-    
         document.getElementById("startButton").disabled = true;
         document.getElementById("stopButton").disabled = false;
         document.getElementById("pauseResumeButton").disabled = false;
@@ -384,7 +389,6 @@
         updateStatusMessage("Microphone access error: " + error, "red");
       }
     });
-    
     document.getElementById("stopButton").addEventListener("click", () => {
       if (mediaRecorder && mediaRecorder.state !== "inactive") {
         mediaRecorder.stop();
@@ -393,7 +397,6 @@
         document.getElementById("pauseResumeButton").disabled = true;
       }
     });
-    
     document.getElementById("pauseResumeButton").addEventListener("click", () => {
       if (!mediaRecorder) return;
       if (mediaRecorder.state === "recording") {
@@ -410,20 +413,17 @@
         updateStatusMessage("Recording resumed", "green");
       }
     });
-    
     document.getElementById("transcribeButton").addEventListener("click", async () => {
       const storedApiKey = sessionStorage.getItem("openai_api_key");
       if (!storedApiKey || !sessionId) {
         updateStatusMessage("API key or recording missing.", "red");
         return;
       }
-    
       updateStatusMessage("Transcription in progress...", "blue");
       const transcriptionStart = Date.now();
       transcriptionTimerInterval = setInterval(() => {
         document.getElementById("transcribeTimer").innerText = "Transcription Timer: " + Math.floor((Date.now() - transcriptionStart) / 1000) + " s";
       }, 1000);
-    
       try {
         const response = await fetch(`${backendUrl}/transcribe`, {
           method: "POST",
@@ -432,7 +432,6 @@
         });
         const result = await response.json();
         clearInterval(transcriptionTimerInterval);
-    
         if (result.transcription) {
           updateStatusMessage("Transcription complete!", "green");
           document.getElementById("transcription").value = result.transcription;
@@ -443,27 +442,22 @@
         updateStatusMessage("Transcription error: " + error, "red");
       }
     });
-    
-    // Note Generation Functionality with Streaming and Timer
+    // Note Generation with Streaming and Timer
     document.getElementById("generateNoteButton").addEventListener("click", async () => {
       const transcriptionText = document.getElementById("transcription").value.trim();
       if (!transcriptionText) {
         alert("No transcription text available.");
         return;
       }
-      
       const promptText = customPromptTextarea.value;
       const generatedNoteField = document.getElementById("generatedNote");
       generatedNoteField.value = "";
-      
-      // Start note generation timer
       const noteStartTime = Date.now();
       const noteTimerElement = document.getElementById("noteTimer");
       noteTimerElement.innerText = "Note Generation Timer: 0 sec";
       const noteTimerInterval = setInterval(() => {
         noteTimerElement.innerText = "Note Generation Timer: " + formatTime(Date.now() - noteStartTime);
       }, 1000);
-      
       try {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
@@ -481,11 +475,9 @@
             stream: true
           })
         });
-        
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let done = false;
-        
         while (!done) {
           const { value, done: doneReading } = await reader.read();
           done = doneReading;

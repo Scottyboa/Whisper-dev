@@ -7,7 +7,7 @@
   <!-- Import Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
   <style>
-    /* Global Styles (Minimalist & Smooth, Prologue-inspired) */
+    /* Prologue-Inspired Global Styles */
     body {
       font-family: 'Roboto', sans-serif;
       background-color: #f8f8f8;
@@ -29,6 +29,25 @@
       font-size: 20px;
       margin-bottom: 10px;
     }
+    p {
+      font-size: 16px;
+    }
+    /* Buttons and Inputs */
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      margin-bottom: 20px;
+    }
+    input[type="text"]:focus, textarea:focus, select:focus {
+      border-color: #66afe9;
+      box-shadow: 0 0 8px rgba(102,175,233,0.6);
+      outline: none;
+    }
     button {
       background-color: #5a9;
       color: #fff;
@@ -46,31 +65,19 @@
     button:active {
       transform: scale(0.98);
     }
-    input[type="text"], textarea, select {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      font-size: 16px;
-      box-sizing: border-box;
-      transition: border-color 0.3s, box-shadow 0.3s;
-      margin-bottom: 20px;
-    }
-    input[type="text"]:focus, textarea:focus, select:focus {
-      border-color: #66afe9;
-      box-shadow: 0 0 8px rgba(102,175,233,0.6);
-      outline: none;
-    }
-    /* Auto-resize styling for textareas */
-    textarea {
-      resize: none;
-      overflow: hidden;
-    }
     /* Timer styling */
     .timer {
       font-size: 18px;
       margin-bottom: 10px;
       color: #333;
+    }
+    /* Record Indicator styling */
+    #recordIndicator {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: grey;
+      margin: 0 auto 10px;
     }
     /* Status message styling */
     #statusMessage {
@@ -78,12 +85,11 @@
       font-weight: bold;
       margin-top: 10px;
     }
-    
-    /* Layout with CSS Grid */
+    /* Layout using CSS Grid */
     .grid-container {
       display: grid;
       grid-template-columns: 250px 1fr;
-      grid-template-rows: 100vh;
+      height: 100vh;
     }
     .sidebar {
       background-color: #e0e0e0;
@@ -129,7 +135,7 @@
       flex-direction: column;
       justify-content: flex-start;
     }
-    /* Ensure textareas have an initial height but can grow */
+    /* Ensure textareas have an initial min-height but can grow */
     #transcription, #generatedNote, #customPrompt {
       min-height: 150px;
     }
@@ -137,26 +143,30 @@
 </head>
 <body>
   <div class="grid-container">
-    <!-- Sidebar (Left Vertical Rectangle) -->
+    <!-- Sidebar -->
     <aside class="sidebar">
       <h3>Menu</h3>
       <ul>
         <li><a href="#">Project Logs</a></li>
         <li><a href="#">Recent Transcriptions</a></li>
         <li><a href="#">Settings</a></li>
-        <!-- Add more menu items as desired -->
       </ul>
     </aside>
     
-    <!-- Main Content (Right Side) -->
+    <!-- Main Content -->
     <main class="main-content">
       <!-- Top Half: Recording Area -->
       <div class="top-half">
         <h3>Recording Area</h3>
+        <!-- Record Indicator -->
+        <div id="recordIndicator"></div>
+        <!-- Timers -->
         <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
         <div id="uploadTimer" class="timer">Upload Timer: 0 sec</div>
         <div id="transcribeTimer" class="timer">Transcription Timer: 0 sec</div>
+        <!-- Transcription Result -->
         <textarea id="transcription" placeholder="Transcription result will appear here..."></textarea>
+        <!-- Recording Buttons -->
         <div class="recording-buttons">
           <button id="startButton">Start Recording</button>
           <button id="stopButton" disabled>Stop Recording</button>
@@ -166,7 +176,7 @@
         <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
       </div>
       
-      <!-- Bottom Half: Split into Two Columns -->
+      <!-- Bottom Half: Note Generation & Custom Prompt -->
       <div class="bottom-half">
         <!-- Left Column: Note Generation -->
         <div class="left-column">
@@ -198,7 +208,7 @@
   </div>
   
   <script>
-    // Utility function: Format time as "0 sec", "1 sec", … "59 sec", "1 min", "1 min 1 sec", etc.
+    // Utility function: format time as "0 sec", "1 sec", … "59 sec", "1 min", "1 min 1 sec", etc.
     function formatTime(ms) {
       const totalSec = Math.floor(ms / 1000);
       if (totalSec < 60) {
@@ -217,7 +227,7 @@
       window.location.href = "index.html";
     }
     
-    // For enhanced security: hash the API key for use in localStorage keys.
+    // Hash the API key for secure storage key generation
     function hashString(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -229,12 +239,12 @@
     }
     const hashedApiKey = hashString(apiKey);
     
-    // Unique key for storing a prompt for a given slot and API key.
+    // Function to generate a unique localStorage key for a given prompt slot and API key
     function getPromptStorageKey(slot) {
       return "customPrompt_" + hashedApiKey + "_" + slot;
     }
     
-    // Custom Prompt Section: load and save
+    // Custom Prompt Section: load and save functionality
     const promptSlotSelect = document.getElementById("promptSlot");
     const customPromptTextarea = document.getElementById("customPrompt");
     
@@ -256,7 +266,6 @@
       loadPromptForSlot(promptSlotSelect.value);
     });
     
-    // Auto-resize function for textareas
     function autoResize(textarea) {
       textarea.style.height = "auto";
       textarea.style.height = textarea.scrollHeight + "px";
@@ -435,7 +444,7 @@
       }
     });
     
-    // Note Generation with Streaming and Timer
+    // Note Generation Functionality with Streaming and Timer
     document.getElementById("generateNoteButton").addEventListener("click", async () => {
       const transcriptionText = document.getElementById("transcription").value.trim();
       if (!transcriptionText) {

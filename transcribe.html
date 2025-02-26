@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Transcription Tool</title>
   <!-- Import Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet" />
   <style>
     /* Prologue-Inspired Global Styles */
     body {
@@ -75,7 +75,17 @@
       font-weight: bold;
       margin-top: 10px;
     }
-    /* Grid Layout */
+    /* Language Selector (top-right) */
+    #langSelect {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 6px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    /* Grid Layout for entire page */
     .grid-container {
       display: grid;
       grid-template-columns: 250px 1fr;
@@ -126,7 +136,7 @@
       flex-direction: column;
       gap: 10px;
     }
-    /* Textareas with min-height */
+    /* Ensure textareas have an initial min-height */
     #transcription, #generatedNote, #customPrompt {
       min-height: 150px;
       resize: none;
@@ -135,6 +145,10 @@
   </style>
 </head>
 <body>
+  <select id="langSelect">
+    <option value="en">English</option>
+    <option value="no">Norsk</option>
+  </select>
   <div class="grid-container">
     <!-- Sidebar with Toggle Buttons -->
     <aside class="sidebar">
@@ -193,7 +207,7 @@
         </div>
       </div>
       
-      <!-- Guide View (Updated: removed mention about toggling data preservation) -->
+      <!-- Guide View -->
       <div id="guideView" class="view">
         <h3>Guide & Instructions</h3>
         <p>
@@ -217,31 +231,65 @@
   </div>
   
   <script>
-    // Utility: Format time
-    function formatTime(ms) {
-      const totalSec = Math.floor(ms / 1000);
-      if (totalSec < 60) {
-        return totalSec + " sec";
-      } else {
-        const minutes = Math.floor(totalSec / 60);
-        const seconds = totalSec % 60;
-        return minutes + " min" + (seconds > 0 ? " " + seconds + " sec" : "");
+    // Translation strings for transcribe page (for static texts)
+    const translations = {
+      en: {
+        functionsTitle: "Recording Area",
+        noteGenTitle: "Note Generation",
+        customPromptTitle: "Custom Prompt",
+        guideTitle: "Guide & Instructions",
+        guideInstructions: `<ul style="text-align:left; max-width:600px; margin:0 auto;">
+          <li><strong>Recording:</strong> Click "Start Recording" to capture audio. Use "Stop Recording" to end and upload your recording.</li>
+          <li><strong>Transcription:</strong> Once uploaded, click "Transcribe" to convert speech to text. The transcription appears above.</li>
+          <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to create a professional note using your custom prompt. A timer displays the note generation time, and the result appears in the generated note area.</li>
+          <li><strong>Custom Prompt:</strong> Select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically (associated with your API key).</li>
+        </ul>
+        <p><strong>Security & Confidentiality:</strong> All recordings, transcriptions, and generated notes are automatically deleted after 15 minutes. Nothing is stored permanently—your data remains confidential and secure.</p>
+        <p>Please ensure you have entered your API key on the index page before using the tool.</p>`
+      },
+      no: {
+        functionsTitle: "Opptaksområde",
+        noteGenTitle: "Notegenerering",
+        customPromptTitle: "Egendefinert prompt",
+        guideTitle: "Veiledning & Instruksjoner",
+        guideInstructions: `<ul style="text-align:left; max-width:600px; margin:0 auto;">
+          <li><strong>Opptak:</strong> Klikk "Start Recording" for å ta opp lyd. Bruk "Stop Recording" for å avslutte og laste opp opptaket.</li>
+          <li><strong>Transkripsjon:</strong> Når opptaket er lastet opp, klikker du "Transcribe" for å konvertere tale til tekst. Transkripsjonen vises ovenfor.</li>
+          <li><strong>Notegenerering:</strong> Etter transkripsjon, klikk "Generate Note" for å lage et profesjonelt notat ved hjelp av din egendefinerte prompt. En timer viser genereringstiden, og resultatet vises i notatområdet.</li>
+          <li><strong>Egendefinert prompt:</strong> Velg en prompt-slot (1–10) og skriv inn din egendefinerte prompt. Din prompt lagres automatisk (assosiert med din API-nøkkel).</li>
+        </ul>
+        <p><strong>Sikkerhet & Konfidensialitet:</strong> Alle opptak, transkripsjoner og genererte notater slettes automatisk etter 15 minutter. Ingenting lagres permanent—dine data forblir konfidensielle og sikre.</p>
+        <p>Vennligst sørg for at du har skrevet inn din API-nøkkel på index-siden før du bruker verktøyet.</p>`
       }
+    };
+
+    // Set language based on saved selection (default to English)
+    let currentLang = localStorage.getItem("siteLanguage") || "en";
+    
+    // Function to update language on transcribe page (static texts)
+    function updateTranscribeLanguage(lang) {
+      // Update sidebar toggle button texts if needed
+      // (In this example, the sidebar buttons remain language-neutral.)
+      // Update guide view content
+      document.querySelector("#guideView h3").innerText = translations[lang].guideTitle;
+      document.querySelector("#guideView").innerHTML = 
+        `<h3>${translations[lang].guideTitle}</h3>` +
+        translations[lang].guideInstructions;
+      // Update headings in functions view
+      document.querySelector(".recording-area h3").innerText = (lang === "en") ? "Recording Area" : "Opptaksområde";
+      document.querySelector(".left-column h3").innerText = (lang === "en") ? translations[lang].noteGenTitle : translations[lang].noteGenTitle;
+      document.querySelector(".right-column h3").innerText = (lang === "en") ? translations[lang].customPromptTitle : translations[lang].customPromptTitle;
     }
     
-    // Toggle between Functions and Guide views
-    const btnFunctions = document.getElementById("btnFunctions");
-    const btnGuide = document.getElementById("btnGuide");
-    const functionsView = document.getElementById("functionsView");
-    const guideView = document.getElementById("guideView");
+    updateTranscribeLanguage(currentLang);
     
-    btnFunctions.addEventListener("click", () => {
-      functionsView.classList.add("active");
-      guideView.classList.remove("active");
-    });
-    btnGuide.addEventListener("click", () => {
-      guideView.classList.add("active");
-      functionsView.classList.remove("active");
+    // Language selector (same as in index.html)
+    const langSelect = document.getElementById("langSelect");
+    langSelect.value = currentLang;
+    langSelect.addEventListener("change", (e) => {
+      currentLang = e.target.value;
+      localStorage.setItem("siteLanguage", currentLang);
+      updateTranscribeLanguage(currentLang);
     });
     
     // Retrieve API key from sessionStorage
@@ -263,12 +311,11 @@
     }
     const hashedApiKey = hashString(apiKey);
     
-    // Unique key for storing a prompt
     function getPromptStorageKey(slot) {
       return "customPrompt_" + hashedApiKey + "_" + slot;
     }
     
-    // Custom Prompt Section
+    // Custom Prompt Section: load and save
     const promptSlotSelect = document.getElementById("promptSlot");
     const customPromptTextarea = document.getElementById("customPrompt");
     

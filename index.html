@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Whisper Transcription</title>
+  <title id="pageTitle">Whisper Transcription</title>
   <!-- Import Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
   <style>
@@ -15,6 +15,7 @@
       margin: 0;
       padding: 0;
       text-align: center;
+      position: relative;
     }
     header {
       background: linear-gradient(135deg, #5a9 0%, #489 100%);
@@ -84,7 +85,7 @@
       font-size: 24px;
       margin-top: 0;
     }
-    .info-box p {
+    .info-box p, .info-box ul {
       font-size: 16px;
       line-height: 1.5;
     }
@@ -96,64 +97,159 @@
       color: #5a9;
       font-weight: 500;
     }
+    /* Language Selector in top-right */
+    #languageSelector {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+    #languageSelector select {
+      padding: 5px 10px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
+  <!-- Language Selector -->
+  <div id="languageSelector">
+    <select id="langSelect">
+      <option value="en">English</option>
+      <option value="no">Norsk</option>
+    </select>
+  </div>
+  
   <header>
-    <h1>Whisper Transcription</h1>
-    <p>Convert speech to text for professional consultations</p>
+    <h1 id="headerTitle">Whisper Transcription</h1>
+    <p id="headerSubtitle">Convert speech to text for professional consultations</p>
   </header>
 
   <div class="container">
-    <p>Please enter your OpenAI API key:</p>
-    <!-- API Key Input -->
+    <p id="apiKeyPrompt">Please enter your OpenAI API key:</p>
     <input type="text" id="apiKeyInput" placeholder="Enter API Key here" autocomplete="off">
     <br>
     <button id="enterTranscriptionBtn">Enter Transcription Tool</button>
     
-    <!-- New Info Box with usage/cost instructions -->
+    <!-- Info Box with instructions -->
     <div class="info-box">
-      <h3>How to Use Whisper Transcription</h3>
-      <p>
+      <h3 id="infoTitle">How to Use Whisper Transcription</h3>
+      <p id="infoText1">
         1. <strong>Obtain an OpenAI API Key</strong>: Sign up at 
-        <a href="https://platform.openai.com/" target="_blank" class="highlight">OpenAI Platform</a> 
-        to get your API key. You can add billing details and purchase credits (tokens) as needed.
+        <a href="https://platform.openai.com/" target="_blank" class="highlight">OpenAI Platform</a> to get your API key. Add billing details and purchase tokens as needed.
       </p>
-      <p>
-        2. <strong>Cost &amp; Tokens</strong>: 
+      <p id="infoText2">
+        2. <strong>Cost &amp; Usage:</strong>
         <ul>
           <li>Speech-to-text (Whisper): <span class="highlight">0.006 USD per minute</span> (~0.062 NOK/min).</li>
-          <li>Note generation (Chat Completion): also very affordable, often <span class="highlight">only fractions of a cent per note</span>.</li>
-          <li>You pay only for what you use—if you take a vacation, you pay nothing during the period of no usage.</li>
+          <li>Note generation: very low cost per note.</li>
+          <li>You pay only for what you use. If you go on vacation, you pay nothing during periods of inactivity.</li>
         </ul>
       </p>
-      <p>
-        For example, if you have 20 consultations per day, each 15 minutes long, for 4 days a week over 4 weeks, that's a total of <span class="highlight">320 consultations</span>. 
-        Each consultation is 15 minutes → <span class="highlight">15 x 320 = 4,800 minutes</span> per month.
+      <p id="infoText3">
+        For example, if you have 20 consultations per day, each 15 minutes long, over 4 days a week for 4 weeks (320 consultations total, 4,800 minutes per month), the total cost for speech-to-text is about <span class="highlight">28.80 USD</span> (~308 NOK). Note generation adds only a small extra cost.
       </p>
-      <p>
-        The total cost at <span class="highlight">0.006 USD</span> per minute is:
-        <ul>
-          <li><strong>Speech-to-text only:</strong> 4,800 min x 0.006 USD/min = <span class="highlight">28.80 USD</span> (~308 NOK).</li>
-          <li><strong>Speech-to-text + note generation:</strong> also quite low, typically only a few extra dollars/month depending on note length.</li>
-        </ul>
+      <p id="infoText4">
+        3. <strong>Security &amp; Confidentiality:</strong> All recordings, transcriptions, and generated notes are automatically deleted after 15 minutes. Nothing is stored permanently—your data remains confidential and secure.
       </p>
-      <p>
-        3. <strong>Security &amp; Confidentiality</strong>: 
-        All recordings, transcriptions, and generated notes are automatically deleted after 15 minutes. Nothing is stored permanently—your data remains confidential.
-      </p>
-      <p>
-        Once you've entered your API key above, click <strong>Enter Transcription Tool</strong> to begin.
+      <p id="infoText5">
+        Once you've entered your API key above, click "Enter Transcription Tool" to begin.
       </p>
     </div>
   </div>
   
   <script>
+    // Language translations
+    const translations = {
+      en: {
+        pageTitle: "Whisper Transcription",
+        headerTitle: "Whisper Transcription",
+        headerSubtitle: "Convert speech to text for professional consultations",
+        apiKeyPrompt: "Please enter your OpenAI API key:",
+        placeholderApiKey: "Enter API Key here",
+        btnEnter: "Enter Transcription Tool",
+        infoTitle: "How to Use Whisper Transcription",
+        infoText1: "1. Obtain an OpenAI API Key: Sign up at OpenAI Platform to get your API key. Add billing details and purchase tokens as needed.",
+        infoText2: "2. Cost & Usage:",
+        infoText2List: [
+          "Speech-to-text (Whisper): 0.006 USD per minute (~0.062 NOK/min).",
+          "Note generation: very low cost per note.",
+          "You pay only for what you use. If you go on vacation, you pay nothing during periods of inactivity."
+        ],
+        infoText3: "For example, if you have 20 consultations per day, each 15 minutes long, over 4 days a week for 4 weeks (320 consultations total, 4,800 minutes per month), the total cost for speech-to-text is about 28.80 USD (~308 NOK). Note generation adds only a small extra cost.",
+        infoText4: "3. Security & Confidentiality: All recordings, transcriptions, and generated notes are automatically deleted after 15 minutes. Nothing is stored permanently—your data remains confidential and secure.",
+        infoText5: "Once you've entered your API key above, click \"Enter Transcription Tool\" to begin."
+      },
+      no: {
+        pageTitle: "Whisper Transkripsjon",
+        headerTitle: "Whisper Transkripsjon",
+        headerSubtitle: "Konverter tale til tekst for profesjonelle konsultasjoner",
+        apiKeyPrompt: "Vennligst skriv inn din OpenAI API-nøkkel:",
+        placeholderApiKey: "Skriv inn API-nøkkel her",
+        btnEnter: "Gå til Transkripsjonsverktøy",
+        infoTitle: "Slik bruker du Whisper Transkripsjon",
+        infoText1: "1. Skaff deg en OpenAI API-nøkkel: Registrer deg på OpenAI Platform for å få din API-nøkkel. Legg til betalingsdetaljer og kjøp tokens etter behov.",
+        infoText2: "2. Kostnad & Bruk:",
+        infoText2List: [
+          "Tale-til-tekst (Whisper): 0,006 USD per minutt (~0,062 NOK/min).",
+          "Notegenerering: svært lav kostnad per notat.",
+          "Du betaler kun for det du bruker. Hvis du for eksempel er på ferie, betaler du ingenting i perioden uten bruk."
+        ],
+        infoText3: "For eksempel, hvis du har 20 konsultasjoner per dag, hver 15 minutter lange, over 4 dager i uken i 4 uker (320 konsultasjoner totalt, 4 800 minutter per måned), blir den totale kostnaden for tale-til-tekst omtrent 28,80 USD (~308 NOK). Notegenerering koster kun litt ekstra.",
+        infoText4: "3. Sikkerhet & Konfidensialitet: Alle opptak, transkripsjoner og genererte notater slettes automatisk etter 15 minutter. Ingenting lagres permanent—dine data forblir konfidensielle og sikre.",
+        infoText5: "Når du har skrevet inn API-nøkkelen over, klikker du \"Gå til Transkripsjonsverktøy\" for å begynne."
+      }
+    };
+
+    // Set default language if not set
+    if (!localStorage.getItem("language")) {
+      localStorage.setItem("language", "en");
+    }
+    let currentLang = localStorage.getItem("language");
+
+    // Update language selection dropdown based on saved value
+    const langSelect = document.getElementById("langSelect");
+    if(langSelect) {
+      langSelect.value = currentLang;
+      langSelect.addEventListener("change", () => {
+        currentLang = langSelect.value;
+        localStorage.setItem("language", currentLang);
+        updateTexts();
+      });
+    }
+
+    // Function to update text content based on current language
+    function updateTexts() {
+      const t = translations[currentLang];
+      document.getElementById("pageTitle").innerText = t.pageTitle;
+      document.title = t.pageTitle;
+      document.getElementById("headerTitle").innerText = t.headerTitle;
+      document.getElementById("headerSubtitle").innerText = t.headerSubtitle;
+      document.getElementById("apiKeyPrompt").innerText = t.apiKeyPrompt;
+      document.getElementById("apiKeyInput").placeholder = t.placeholderApiKey;
+      document.getElementById("enterTranscriptionBtn").innerText = t.btnEnter;
+      document.getElementById("infoTitle").innerText = t.infoTitle;
+      document.getElementById("infoText1").innerText = t.infoText1;
+      // Build the list for infoText2
+      let infoText2Content = t.infoText2 + "\n";
+      t.infoText2List.forEach(item => {
+        infoText2Content += "• " + item + "\n";
+      });
+      document.getElementById("infoText2").innerText = infoText2Content;
+      document.getElementById("infoText3").innerText = t.infoText3;
+      document.getElementById("infoText4").innerText = t.infoText4;
+      document.getElementById("infoText5").innerText = t.infoText5;
+    }
+
+    // If on index.html, update texts now
+    if(document.getElementById("headerTitle")) {
+      updateTexts();
+    }
+
+    // The rest of index.html script remains the same...
     const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");
-    const apiKeyInput = document.getElementById("apiKeyInput");
-    
     enterTranscriptionBtn.addEventListener("click", () => {
-      const apiKey = apiKeyInput.value.trim();
+      const apiKey = document.getElementById("apiKeyInput").value.trim();
       if (apiKey) {
         sessionStorage.setItem("openai_api_key", apiKey);
         window.location.href = "transcribe.html";

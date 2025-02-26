@@ -94,7 +94,7 @@
       font-size: 18px;
       padding: 15px;
     }
-    /* Language Selector in Sidebar (placed at bottom) */
+    /* Language Selector in Sidebar at bottom */
     .lang-container {
       margin-top: auto;
       text-align: center;
@@ -218,25 +218,26 @@
           Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, psychologists, and physiotherapists to record and transcribe consultations, and generate professional notes using AI.
         </p>
         <h4>How to Use the Tool:</h4>
-        <ul style="text-align:left; max-width:600px; margin:0 auto;">
-          <li><strong>Recording:</strong> Click "Start Recording" to capture audio. Use "Stop Recording" to end and upload your recording.</li>
-          <li><strong>Transcription:</strong> Once uploaded, click "Transcribe" to convert speech to text. The transcription appears above.</li>
-          <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to create a professional note using your custom prompt. A timer displays the note generation time, and the result appears in the generated note area.</li>
-          <li><strong>Custom Prompt:</strong> Select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically (associated with your API key).</li>
-        </ul>
-        <p>
-          <strong>Security & Confidentiality:</strong> All recordings, transcriptions, and generated notes are automatically deleted after 15 minutes. Nothing is stored permanently—your data remains confidential and secure.
-        </p>
-        <p>
-          Please ensure you have entered your API key on the index page before using the tool.
-        </p>
+        <div id="guideContent">
+          <ul style="text-align:left; max-width:600px; margin:0 auto;">
+            <li><strong>Recording:</strong> Click "Start Recording" to capture audio. Use "Stop Recording" to end and upload your recording.</li>
+            <li><strong>Transcription:</strong> Once uploaded, click "Transcribe" to convert speech to text. The transcription appears above.</li>
+            <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to create a professional note using your custom prompt. A timer displays the note generation time, and the result appears in the generated note area.</li>
+            <li><strong>Custom Prompt:</strong> Select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically (associated with your API key).</li>
+          </ul>
+          <p>
+            <strong>Security & Confidentiality:</strong> All recordings, transcriptions, and generated notes are automatically deleted after 15 minutes. Nothing is stored permanently—your data remains confidential and secure.
+          </p>
+          <p>
+            Please ensure you have entered your API key on the index page before using the tool.
+          </p>
+        </div>
       </div>
     </main>
   </div>
   
   <script>
-    // --- Language Functionality ---
-    // Translation strings for static texts on transcribe.html
+    // Extended translation strings for transcribe.html
     const translations = {
       en: {
         functionsTitle: "Recording Area",
@@ -250,38 +251,63 @@
           <li><strong>Custom Prompt:</strong> Select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically (associated with your API key).</li>
         </ul>
         <p><strong>Security & Confidentiality:</strong> All recordings, transcriptions, and generated notes are automatically deleted after 15 minutes. Nothing is stored permanently—your data remains confidential and secure.</p>
-        <p>Please ensure you have entered your API key on the index page before using the tool.</p>`
+        <p>Please ensure you have entered your API key on the index page before using the tool.</p>`,
+        startButton: "Start Recording",
+        stopButton: "Stop Recording",
+        pauseResumeButton: "Pause Recording",
+        transcribeButton: "Transcribe",
+        generateNoteButton: "Generate Note",
+        transcriptionPlaceholder: "Transcription result will appear here...",
+        generatedNotePlaceholder: "Generated note will appear here...",
+        customPromptPlaceholder: "Enter custom prompt here"
       },
       no: {
         functionsTitle: "Opptaksområde",
-        noteGenTitle: "Notegenerering",
+        noteGenTitle: "Notatgenerering",
         customPromptTitle: "Egendefinert prompt",
         guideTitle: "Veiledning & Instruksjoner",
         guideContent: `<ul style="text-align:left; max-width:600px; margin:0 auto;">
-          <li><strong>Opptak:</strong> Klikk "Start Recording" for å ta opp lyd. Bruk "Stop Recording" for å avslutte og laste opp opptaket.</li>
-          <li><strong>Transkripsjon:</strong> Når opptaket er lastet opp, klikker du "Transcribe" for å konvertere tale til tekst. Transkripsjonen vises ovenfor.</li>
-          <li><strong>Notegenerering:</strong> Etter transkripsjon, klikk "Generate Note" for å lage et profesjonelt notat med din egendefinerte prompt. En timer viser genereringstiden, og resultatet vises i notatområdet.</li>
+          <li><strong>Opptak:</strong> Klikk "Start Opptak" for å ta opp lyd. Bruk "Stopp Opptak" for å avslutte og laste opp opptaket.</li>
+          <li><strong>Transkripsjon:</strong> Når opptaket er lastet opp, klikk "Transkriber" for å konvertere tale til tekst. Transkripsjonen vises ovenfor.</li>
+          <li><strong>Notatgenerering:</strong> Etter transkripsjon, klikk "Generer Notat" for å lage et profesjonelt notat med din egendefinerte prompt. En timer viser genereringstiden, og resultatet vises i notatområdet.</li>
           <li><strong>Egendefinert prompt:</strong> Velg en prompt-slot (1–10) og skriv inn din egendefinerte prompt. Din prompt lagres automatisk (assosiert med din API-nøkkel).</li>
         </ul>
         <p><strong>Sikkerhet & Konfidensialitet:</strong> Alle opptak, transkripsjoner og genererte notater slettes automatisk etter 15 minutter. Ingenting lagres permanent—dine data forblir konfidensielle og sikre.</p>
-        <p>Vennligst sørg for at du har skrevet inn din API-nøkkel på index-siden før du bruker verktøyet.</p>`
+        <p>Vennligst sørg for at du har skrevet inn din API-nøkkel på index-siden før du bruker verktøyet.</p>`,
+        startButton: "Start Opptak",
+        stopButton: "Stopp Opptak",
+        pauseResumeButton: "Pause Opptak",
+        transcribeButton: "Transkriber",
+        generateNoteButton: "Generer Notat",
+        transcriptionPlaceholder: "Transkripsjonsresultat vises her...",
+        generatedNotePlaceholder: "Generert notat vises her...",
+        customPromptPlaceholder: "Skriv inn egendefinert prompt her"
       }
     };
     
     // Get language from localStorage (default to English)
     let currentLang = localStorage.getItem("siteLanguage") || "en";
     
-    // Function to update static texts in transcribe page
     function updateTranscribeLanguage(lang) {
       document.getElementById("functionsTitle").innerText = translations[lang].functionsTitle;
       document.getElementById("noteGenTitle").innerText = translations[lang].noteGenTitle;
       document.getElementById("customPromptTitle").innerText = translations[lang].customPromptTitle;
-      // Update Guide View
-      document.getElementById("guideView").innerHTML = 
-        `<h3>${translations[lang].guideTitle}</h3>` + translations[lang].guideContent;
+      document.getElementById("guideTitle").innerText = translations[lang].guideTitle;
+      document.getElementById("guideView").innerHTML = `<h3>${translations[lang].guideTitle}</h3>` + translations[lang].guideContent;
+      
+      // Update button texts
+      document.getElementById("startButton").innerText = translations[lang].startButton;
+      document.getElementById("stopButton").innerText = translations[lang].stopButton;
+      document.getElementById("pauseResumeButton").innerText = translations[lang].pauseResumeButton;
+      document.getElementById("transcribeButton").innerText = translations[lang].transcribeButton;
+      document.getElementById("generateNoteButton").innerText = translations[lang].generateNoteButton;
+      
+      // Update placeholders for textareas
+      document.getElementById("transcription").placeholder = translations[lang].transcriptionPlaceholder;
+      document.getElementById("generatedNote").placeholder = translations[lang].generatedNotePlaceholder;
+      document.getElementById("customPrompt").placeholder = translations[lang].customPromptPlaceholder;
     }
     
-    // Update language on page load
     updateTranscribeLanguage(currentLang);
     
     // Set language selector value in sidebar
@@ -293,14 +319,14 @@
       updateTranscribeLanguage(currentLang);
     });
     
-    // --- API Key Handling ---
+    // Retrieve API key from sessionStorage
     const apiKey = sessionStorage.getItem("openai_api_key");
     if (!apiKey) {
       alert("API key is missing. Please re-enter it.");
       window.location.href = "index.html";
     }
     
-    // --- Hash Function for API Key ---
+    // Hash API key for secure localStorage keys
     function hashString(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -339,7 +365,7 @@
     }
     loadPromptForSlot(promptSlotSelect.value);
     
-    // --- Backend & Recording Variables ---
+    // Backend URL and Recording Variables
     const backendUrl = "https://whisper-online.fly.dev";
     let mediaRecorder;
     let audioChunks = [];
@@ -432,7 +458,7 @@
         document.getElementById("startButton").disabled = true;
         document.getElementById("stopButton").disabled = false;
         document.getElementById("pauseResumeButton").disabled = false;
-        document.getElementById("pauseResumeButton").innerText = "Pause Recording";
+        document.getElementById("pauseResumeButton").innerText = translations[currentLang].pauseResumeButton;
         document.getElementById("recordIndicator").style.backgroundColor = "red";
         updateStatusMessage("Recording in progress...");
       } catch (error) {
@@ -455,27 +481,27 @@
         mediaRecorder.pause();
         pauseStartTime = Date.now();
         clearInterval(recordingTimerInterval);
-        document.getElementById("pauseResumeButton").innerText = "Resume Recording";
-        updateStatusMessage("Recording paused", "orange");
+        document.getElementById("pauseResumeButton").innerText = (currentLang === "en") ? "Resume Recording" : "Gjenoppta Opptak";
+        updateStatusMessage((currentLang === "en") ? "Recording paused" : "Opptak pausert", "orange");
       } else if (mediaRecorder.state === "paused") {
         mediaRecorder.resume();
         pausedTimeAccumulated += Date.now() - pauseStartTime;
         recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-        document.getElementById("pauseResumeButton").innerText = "Pause Recording";
-        updateStatusMessage("Recording resumed", "green");
+        document.getElementById("pauseResumeButton").innerText = translations[currentLang].pauseResumeButton;
+        updateStatusMessage((currentLang === "en") ? "Recording resumed" : "Opptak gjenopptatt", "green");
       }
     });
     
     document.getElementById("transcribeButton").addEventListener("click", async () => {
       const storedApiKey = sessionStorage.getItem("openai_api_key");
       if (!storedApiKey || !sessionId) {
-        updateStatusMessage("API key or recording missing.", "red");
+        updateStatusMessage((currentLang === "en") ? "API key or recording missing." : "API-nøkkel eller opptak mangler.", "red");
         return;
       }
-      updateStatusMessage("Transcription in progress...", "blue");
+      updateStatusMessage((currentLang === "en") ? "Transcription in progress..." : "Transkripsjon pågår...", "blue");
       const transcriptionStart = Date.now();
       transcriptionTimerInterval = setInterval(() => {
-        document.getElementById("transcribeTimer").innerText = "Transcription Timer: " + Math.floor((Date.now() - transcriptionStart) / 1000) + " s";
+        document.getElementById("transcribeTimer").innerText = (currentLang === "en" ? "Transcription Timer: " : "Transkripsjonstimer: ") + Math.floor((Date.now() - transcriptionStart) / 1000) + " s";
       }, 1000);
       try {
         const response = await fetch(`${backendUrl}/transcribe`, {
@@ -486,13 +512,13 @@
         const result = await response.json();
         clearInterval(transcriptionTimerInterval);
         if (result.transcription) {
-          updateStatusMessage("Transcription complete!", "green");
+          updateStatusMessage((currentLang === "en") ? "Transcription complete!" : "Transkripsjon fullført!", "green");
           document.getElementById("transcription").value = result.transcription;
         } else {
-          updateStatusMessage("No transcription available.", "red");
+          updateStatusMessage((currentLang === "en") ? "No transcription available." : "Ingen transkripsjon tilgjengelig.", "red");
         }
       } catch (error) {
-        updateStatusMessage("Transcription error: " + error, "red");
+        updateStatusMessage((currentLang === "en") ? "Transcription error: " : "Transkripsjonsfeil: " + error, "red");
       }
     });
     
@@ -500,7 +526,7 @@
     document.getElementById("generateNoteButton").addEventListener("click", async () => {
       const transcriptionText = document.getElementById("transcription").value.trim();
       if (!transcriptionText) {
-        alert("No transcription text available.");
+        alert((currentLang === "en") ? "No transcription text available." : "Ingen transkripsjonstekst tilgjengelig.");
         return;
       }
       const promptText = customPromptTextarea.value;
@@ -508,9 +534,9 @@
       generatedNoteField.value = "";
       const noteStartTime = Date.now();
       const noteTimerElement = document.getElementById("noteTimer");
-      noteTimerElement.innerText = "Note Generation Timer: 0 sec";
+      noteTimerElement.innerText = (currentLang === "en") ? "Note Generation Timer: 0 sec" : "Notatgenereringstimer: 0 sec";
       const noteTimerInterval = setInterval(() => {
-        noteTimerElement.innerText = "Note Generation Timer: " + formatTime(Date.now() - noteStartTime);
+        noteTimerElement.innerText = (currentLang === "en" ? "Note Generation Timer: " : "Notatgenereringstimer: ") + formatTime(Date.now() - noteStartTime);
       }, 1000);
       try {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -556,10 +582,10 @@
           }
         }
         clearInterval(noteTimerInterval);
-        noteTimerElement.innerText = "Text generation completed!";
+        noteTimerElement.innerText = (currentLang === "en") ? "Text generation completed!" : "Notatgenerering fullført!";
       } catch (error) {
         clearInterval(noteTimerInterval);
-        generatedNoteField.value = "Error generating note: " + error;
+        generatedNoteField.value = (currentLang === "en") ? "Error generating note: " + error : "Feil under generering av notat: " + error;
         noteTimerElement.innerText = "";
       }
     });

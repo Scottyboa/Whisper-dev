@@ -76,6 +76,19 @@
       font-weight: bold;
       margin-top: 10px;
     }
+    /* Fixed Cost Indicator in top-right corner of Functions view */
+    #costIndicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 16px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
     /* Grid Layout */
     .grid-container {
       display: grid;
@@ -95,7 +108,7 @@
       font-size: 18px;
       padding: 15px;
     }
-    /* Place the language selector at the bottom of the sidebar */
+    /* Language Selector in Sidebar at bottom */
     .lang-container {
       margin-top: auto;
       text-align: center;
@@ -156,6 +169,8 @@
   </style>
 </head>
 <body>
+  <!-- Fixed cost indicator for the Functions view -->
+  <div id="costIndicator">Total cost: $0.0000 USD = 0.0000 NOK</div>
   <div class="grid-container">
     <!-- Sidebar with Toggle Buttons and Language Selector -->
     <aside class="sidebar">
@@ -289,7 +304,6 @@
       showView(guideView);
     });
     btnCost.addEventListener("click", () => {
-      // Before showing cost view, update the cost values
       updateCostView();
       showView(costView);
     });
@@ -361,7 +375,7 @@
     }
     updateTranscribeLanguage(currentLang);
     
-    // Set language selector value
+    // Set language selector value in sidebar
     const langSelect = document.getElementById("langSelect");
     langSelect.value = currentLang;
     langSelect.addEventListener("change", (e) => {
@@ -377,7 +391,7 @@
       window.location.href = "index.html";
     }
     
-    // --- Hash API key for localStorage keys ---
+    // --- Hash API key for secure localStorage keys ---
     function hashString(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -417,9 +431,9 @@
     loadPromptForSlot(promptSlotSelect.value);
     
     // --- Cost Variables (reset each session) ---
-    let transcriptionCost = 0;   // in USD
-    let noteGenerationCost = 0;  // in USD
-    let totalCost = 0;           // in USD
+    let transcriptionCost = 0;   // USD cost for transcription (calculated when transcription is performed)
+    let noteGenerationCost = 0;  // USD cost for note generation (calculated after note generation)
+    let totalCost = 0;           // Total USD cost
     const USD_TO_NOK = 10.7;     // Conversion factor
     
     function updateCostView() {
@@ -430,6 +444,9 @@
         "Transcription cost: $" + transcriptionCost.toFixed(4) + " USD = " + (transcriptionCost * USD_TO_NOK).toFixed(2) + " NOK";
       document.getElementById("noteCost").innerText =
         "Note Generation cost: $" + noteGenerationCost.toFixed(4) + " USD = " + (noteGenerationCost * USD_TO_NOK).toFixed(2) + " NOK";
+      // Also update the fixed cost indicator in the top-right corner
+      document.getElementById("costIndicator").innerText =
+        "Total cost: $" + totalCost.toFixed(4) + " USD = " + (totalCost * USD_TO_NOK).toFixed(2) + " NOK";
     }
     
     // --- Global Variables for Recording ---
@@ -447,6 +464,7 @@
     let autoDeleteTimeout;
     let uploadStartTime = 0;
     let mediaStream = null;
+    let finalRecordingTimeSec = 0;  // Will hold the recording duration in seconds after recording stops
     
     function updateStatusMessage(message, color = "#333") {
       const statusMessage = document.getElementById("statusMessage");
@@ -483,9 +501,8 @@
           document.getElementById("recordIndicator").style.backgroundColor = "green";
           updateStatusMessage("Audio uploaded! Ready for transcription.", "green");
           document.getElementById("transcribeButton").disabled = false;
-          // Calculate transcription cost based on recording duration in seconds
-          let finalRecordingTimeSec = (Date.now() - recordingStartTime - pausedTimeAccumulated) / 1000;
-          transcriptionCost = finalRecordingTimeSec * 0.0001; // 0.006 USD per minute = 0.0001 USD per second
+          // Save the final recording duration (in seconds) for cost calculation during transcription
+          finalRecordingTimeSec = (Date.now() - recordingStartTime - pausedTimeAccumulated) / 1000;
           updateCostView();
           clearTimeout(autoDeleteTimeout);
           autoDeleteTimeout = setTimeout(() => {
@@ -585,6 +602,9 @@
         if (result.transcription) {
           updateStatusMessage((currentLang === "en") ? "Transcription complete!" : "Transkripsjon fullført!", "green");
           document.getElementById("transcription").value = result.transcription;
+          // Calculate transcription cost based on the previously recorded duration (in seconds)
+          transcriptionCost = finalRecordingTimeSec * 0.0001; // 0.006 USD per minute
+          updateCostView();
         } else {
           updateStatusMessage((currentLang === "en") ? "No transcription available." : "Ingen transkripsjon tilgjengelig.", "red");
         }
@@ -654,8 +674,12 @@
         }
         clearInterval(noteTimerInterval);
         noteTimerElement.innerText = (currentLang === "en") ? "Text generation completed!" : "Notatgenerering fullført!";
-        // Calculate note generation cost based on generated note length
-        noteGenerationCost = generatedNoteField.value.length * 0.000013;
+        // Estimate Note Generation Cost:
+        // We'll assume cost is based on the combined character count (transcription + prompt + generated note),
+        // assume an average of 4 characters per token and cost of 0.00005 USD per token.
+        let totalCharacters = transcriptionText.length + promptText.length + generatedNoteField.value.length;
+        let estimatedTokens = totalCharacters / 4;
+        noteGenerationCost = estimatedTokens * 0.00005;
         updateCostView();
       } catch (error) {
         clearInterval(noteTimerInterval);
@@ -663,23 +687,6 @@
         noteTimerElement.innerText = "";
       }
     });
-    
-    // --- Cost Calculation ---
-    // transcriptionCost is computed in handleStop() based on recording duration.
-    // Note generation cost is computed in generateNoteButton event.
-    function updateCostView() {
-      totalCost = transcriptionCost + noteGenerationCost;
-      document.getElementById("totalCost").innerText =
-        "Total cost for session: $" + totalCost.toFixed(4) + " USD = " + (totalCost * 10.7).toFixed(2) + " NOK";
-      document.getElementById("transCost").innerText =
-        "Transcription cost: $" + transcriptionCost.toFixed(4) + " USD = " + (transcriptionCost * 10.7).toFixed(2) + " NOK";
-      document.getElementById("noteCost").innerText =
-        "Note Generation cost: $" + noteGenerationCost.toFixed(4) + " USD = " + (noteGenerationCost * 10.7).toFixed(2) + " NOK";
-    }
-    
-    // --- Add Cost View to Main Content ---
-    // (This view is already defined in the HTML below.)
-    
   </script>
   
   <!-- Cost View -->
@@ -689,6 +696,5 @@
     <p id="transCost">Transcription cost: $0.0000 USD = 0.0000 NOK</p>
     <p id="noteCost">Note Generation cost: $0.0000 USD = 0.0000 NOK</p>
   </div>
-  
 </body>
 </html>

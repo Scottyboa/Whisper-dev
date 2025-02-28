@@ -21,13 +21,16 @@
       color: #fff;
       padding: 40px 20px;
       text-align: center;
-      position: relative;
     }
     header h1 {
       font-family: 'Merriweather', serif;
       font-weight: 300;
       font-size: 48px;
       margin: 0;
+    }
+    header p {
+      font-size: 20px;
+      margin-top: 10px;
     }
     .container {
       max-width: 800px;
@@ -40,7 +43,14 @@
       border: 1px solid #ddd;
       border-radius: 10px;
       font-size: 16px;
+      box-sizing: border-box;
+      transition: border-color 0.3s, box-shadow 0.3s;
       margin-bottom: 20px;
+    }
+    input[type="text"]:focus {
+      border-color: #66afe9;
+      box-shadow: 0 0 8px rgba(102,175,233,0.6);
+      outline: none;
     }
     button {
       background-color: #5a9;
@@ -50,81 +60,63 @@
       padding: 12px 20px;
       font-size: 16px;
       cursor: pointer;
+      transition: background-color 0.3s, transform 0.1s;
       margin: 10px;
     }
-    /* Language Selector in header */
-    #languageSelect {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      font-size: 14px;
-      padding: 5px;
+    button:hover {
+      background-color: #489;
+    }
+    button:active {
+      transform: scale(0.98);
     }
   </style>
 </head>
 <body>
   <header>
-    <h1 id="title">Whisper Transcription</h1>
-    <p id="subtitle">Convert speech to text for professional consultations</p>
-    <!-- Language Selector -->
-    <select id="languageSelect">
-      <option value="en">English</option>
-      <option value="no">Norsk</option>
-    </select>
+    <h1>Whisper Transcription</h1>
+    <p>Convert speech to text for professional consultations</p>
   </header>
   <div class="container">
-    <p id="instruction">To get started, please enter your OpenAI API key:</p>
+    <p>To get started, please enter your OpenAI API key:</p>
+    <!-- API Key Input with autocomplete off -->
     <input type="text" id="apiKeyInput" placeholder="Enter API Key here" autocomplete="off">
     <br>
     <button id="enterTranscriptionBtn">Enter Transcription Tool</button>
+    <br>
+    <button id="openGuideButton">Guide for setting up API key</button>
+  </div>
+  
+  <!-- Popup Overlay for API Guide (same as before) -->
+  <div id="apiKeyGuideOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:9999;">
+    <div id="apiKeyGuideModal" style="background:#fff; width:80%; max-width:600px; margin:40px auto; padding:20px; border-radius:8px; text-align:left; max-height:80vh; overflow-y:auto;">
+      <h2>How to Sign Up for an OpenAI API Account and Use It for Transcription</h2>
+      <!-- (Your guide content goes here.) -->
+      <button id="closeGuideBtn" style="background:red; color:#fff; padding:10px 20px; border:none; border-radius:10px; cursor:pointer; margin-top:20px;">Close</button>
+    </div>
   </div>
   
   <script>
-    const translations = {
-      en: {
-        title: "Whisper Transcription",
-        subtitle: "Convert speech to text for professional consultations",
-        instruction: "To get started, please enter your OpenAI API key:",
-        enterTranscriptionBtn: "Enter Transcription Tool",
-        apiKeyPlaceholder: "Enter API Key here"
-      },
-      no: {
-        title: "Whisper Transkripsjon",
-        subtitle: "Konverter tale til tekst for profesjonelle konsultasjoner",
-        instruction: "For å starte, skriv inn din OpenAI API-nøkkel:",
-        enterTranscriptionBtn: "Gå til transkripsjonsverktøyet",
-        apiKeyPlaceholder: "Skriv inn API-nøkkel her"
-      }
-    };
-
-    const languageSelect = document.getElementById("languageSelect");
-
-    function updateLanguage(lang) {
-      localStorage.setItem("selectedLanguage", lang);
-      document.getElementById("title").innerText = translations[lang].title;
-      document.getElementById("subtitle").innerText = translations[lang].subtitle;
-      document.getElementById("instruction").innerText = translations[lang].instruction;
-      document.getElementById("enterTranscriptionBtn").innerText = translations[lang].enterTranscriptionBtn;
-      document.getElementById("apiKeyInput").placeholder = translations[lang].apiKeyPlaceholder;
-    }
-
-    languageSelect.addEventListener("change", function () {
-      updateLanguage(this.value);
+    const overlay = document.getElementById("apiKeyGuideOverlay");
+    const closeBtn = document.getElementById("closeGuideBtn");
+    const openGuideButton = document.getElementById("openGuideButton");
+    const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");
+    const apiKeyInput = document.getElementById("apiKeyInput");
+    
+    openGuideButton.addEventListener("click", () => {
+      overlay.style.display = "flex";
+      overlay.style.flexDirection = "column";
+      overlay.style.alignItems = "center";
     });
-
-    const savedLanguage = localStorage.getItem("selectedLanguage") || "en";
-    languageSelect.value = savedLanguage;
-    updateLanguage(savedLanguage);
-
-    document.getElementById("enterTranscriptionBtn").addEventListener("click", () => {
-      const apiKey = document.getElementById("apiKeyInput").value.trim();
+    closeBtn.addEventListener("click", () => {
+      overlay.style.display = "none";
+    });
+    enterTranscriptionBtn.addEventListener("click", () => {
+      const apiKey = apiKeyInput.value.trim();
       if (apiKey) {
         sessionStorage.setItem("openai_api_key", apiKey);
-        // Save selected language for the next page as well
-        sessionStorage.setItem("selectedLanguage", languageSelect.value);
         window.location.href = "transcribe.html";
       } else {
-        alert(savedLanguage === "no" ? "Vennligst skriv inn en gyldig API-nøkkel." : "Please enter a valid API key.");
+        alert("Please enter a valid API key.");
       }
     });
   </script>

@@ -32,7 +32,7 @@
     p {
       font-size: 16px;
     }
-    /* Buttons, Inputs, and Textareas (force Roboto) */
+    /* Buttons, Inputs, and Textareas – force Roboto */
     input[type="text"], textarea, select {
       font-family: 'Roboto', sans-serif;
       width: 100%;
@@ -95,7 +95,7 @@
       font-size: 18px;
       padding: 15px;
     }
-    /* Language Selector in Sidebar at bottom */
+    /* Place the language selector at the bottom of the sidebar */
     .lang-container {
       margin-top: auto;
       text-align: center;
@@ -139,6 +139,14 @@
       flex-direction: column;
       gap: 10px;
     }
+    /* Cost View Styles */
+    #costView {
+      text-align: center;
+    }
+    #costView p {
+      font-size: 18px;
+      margin: 10px 0;
+    }
     /* Ensure textareas have an initial min-height */
     #transcription, #generatedNote, #customPrompt {
       min-height: 150px;
@@ -153,6 +161,7 @@
     <aside class="sidebar">
       <button id="btnFunctions">Functions</button>
       <button id="btnGuide">Guide</button>
+      <button id="btnCost">Cost (Session)</button>
       <div class="lang-container">
         <select id="langSelect">
           <option value="en">English</option>
@@ -223,7 +232,7 @@
           <ul style="text-align:left; max-width:600px; margin:0 auto;">
             <li><strong>Recording:</strong> Click "Start Recording" to capture audio. Use "Stop Recording" to end and upload your recording.</li>
             <li><strong>Transcription:</strong> Once uploaded, click "Transcribe" to convert speech to text. The transcription appears above.</li>
-            <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to create a professional note using your custom prompt. A timer displays the note generation time, and the result appears in the generated note area.</li>
+            <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to create a professional note using your custom prompt. A timer displays the note generation time, and the result appears below.</li>
             <li><strong>Custom Prompt:</strong> Select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically (associated with your API key).</li>
           </ul>
           <p>
@@ -234,11 +243,19 @@
           </p>
         </div>
       </div>
+      
+      <!-- Cost View -->
+      <div id="costView" class="view">
+        <h3>Session Cost Analysis</h3>
+        <p id="totalCost">Total cost for session: $0.0000 USD = 0.0000 NOK</p>
+        <p id="transCost">Transcription cost: $0.0000 USD = 0.0000 NOK</p>
+        <p id="noteCost">Note Generation cost: $0.0000 USD = 0.0000 NOK</p>
+      </div>
     </main>
   </div>
   
   <script>
-    // Utility function: format time (e.g., "1 min 5 sec")
+    // --- Utility: Format Time ---
     function formatTime(ms) {
       const totalSec = Math.floor(ms / 1000);
       if (totalSec < 60) {
@@ -250,22 +267,34 @@
       }
     }
     
-    // Toggle between Functions and Guide views
+    // --- View Toggling ---
     const btnFunctions = document.getElementById("btnFunctions");
     const btnGuide = document.getElementById("btnGuide");
+    const btnCost = document.getElementById("btnCost");
     const functionsView = document.getElementById("functionsView");
     const guideView = document.getElementById("guideView");
+    const costView = document.getElementById("costView");
+    
+    function showView(view) {
+      functionsView.classList.remove("active");
+      guideView.classList.remove("active");
+      costView.classList.remove("active");
+      view.classList.add("active");
+    }
     
     btnFunctions.addEventListener("click", () => {
-      functionsView.classList.add("active");
-      guideView.classList.remove("active");
+      showView(functionsView);
     });
     btnGuide.addEventListener("click", () => {
-      guideView.classList.add("active");
-      functionsView.classList.remove("active");
+      showView(guideView);
+    });
+    btnCost.addEventListener("click", () => {
+      // Before showing cost view, update the cost values
+      updateCostView();
+      showView(costView);
     });
     
-    // Extended translation strings for transcribe.html
+    // --- Language Translations for Static Texts ---
     const translations = {
       en: {
         functionsTitle: "Recording Area",
@@ -313,7 +342,7 @@
       }
     };
     
-    // Get language from localStorage (default to English)
+    // Get saved language (default to English)
     let currentLang = localStorage.getItem("siteLanguage") || "en";
     function updateTranscribeLanguage(lang) {
       document.getElementById("functionsTitle").innerText = translations[lang].functionsTitle;
@@ -332,7 +361,7 @@
     }
     updateTranscribeLanguage(currentLang);
     
-    // Set language selector value in sidebar
+    // Set language selector value
     const langSelect = document.getElementById("langSelect");
     langSelect.value = currentLang;
     langSelect.addEventListener("change", (e) => {
@@ -348,7 +377,7 @@
       window.location.href = "index.html";
     }
     
-    // Hash API key for secure localStorage keys
+    // --- Hash API key for localStorage keys ---
     function hashString(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -363,7 +392,7 @@
       return "customPrompt_" + hashedApiKey + "_" + slot;
     }
     
-    // Custom Prompt Section: load and save
+    // --- Custom Prompt Section: Load and Save ---
     const promptSlotSelect = document.getElementById("promptSlot");
     const customPromptTextarea = document.getElementById("customPrompt");
     function loadPromptForSlot(slot) {
@@ -387,7 +416,23 @@
     }
     loadPromptForSlot(promptSlotSelect.value);
     
-    // Backend URL and Recording Variables
+    // --- Cost Variables (reset each session) ---
+    let transcriptionCost = 0;   // in USD
+    let noteGenerationCost = 0;  // in USD
+    let totalCost = 0;           // in USD
+    const USD_TO_NOK = 10.7;     // Conversion factor
+    
+    function updateCostView() {
+      totalCost = transcriptionCost + noteGenerationCost;
+      document.getElementById("totalCost").innerText =
+        "Total cost for session: $" + totalCost.toFixed(4) + " USD = " + (totalCost * USD_TO_NOK).toFixed(2) + " NOK";
+      document.getElementById("transCost").innerText =
+        "Transcription cost: $" + transcriptionCost.toFixed(4) + " USD = " + (transcriptionCost * USD_TO_NOK).toFixed(2) + " NOK";
+      document.getElementById("noteCost").innerText =
+        "Note Generation cost: $" + noteGenerationCost.toFixed(4) + " USD = " + (noteGenerationCost * USD_TO_NOK).toFixed(2) + " NOK";
+    }
+    
+    // --- Global Variables for Recording ---
     const backendUrl = "https://whisper-online.fly.dev";
     let mediaRecorder;
     let audioChunks = [];
@@ -438,6 +483,10 @@
           document.getElementById("recordIndicator").style.backgroundColor = "green";
           updateStatusMessage("Audio uploaded! Ready for transcription.", "green");
           document.getElementById("transcribeButton").disabled = false;
+          // Calculate transcription cost based on recording duration in seconds
+          let finalRecordingTimeSec = (Date.now() - recordingStartTime - pausedTimeAccumulated) / 1000;
+          transcriptionCost = finalRecordingTimeSec * 0.0001; // 0.006 USD per minute = 0.0001 USD per second
+          updateCostView();
           clearTimeout(autoDeleteTimeout);
           autoDeleteTimeout = setTimeout(() => {
             sessionId = "";
@@ -605,12 +654,41 @@
         }
         clearInterval(noteTimerInterval);
         noteTimerElement.innerText = (currentLang === "en") ? "Text generation completed!" : "Notatgenerering fullført!";
+        // Calculate note generation cost based on generated note length
+        noteGenerationCost = generatedNoteField.value.length * 0.000013;
+        updateCostView();
       } catch (error) {
         clearInterval(noteTimerInterval);
         generatedNoteField.value = (currentLang === "en") ? "Error generating note: " + error : "Feil under generering av notat: " + error;
         noteTimerElement.innerText = "";
       }
     });
+    
+    // --- Cost Calculation ---
+    // transcriptionCost is computed in handleStop() based on recording duration.
+    // Note generation cost is computed in generateNoteButton event.
+    function updateCostView() {
+      totalCost = transcriptionCost + noteGenerationCost;
+      document.getElementById("totalCost").innerText =
+        "Total cost for session: $" + totalCost.toFixed(4) + " USD = " + (totalCost * 10.7).toFixed(2) + " NOK";
+      document.getElementById("transCost").innerText =
+        "Transcription cost: $" + transcriptionCost.toFixed(4) + " USD = " + (transcriptionCost * 10.7).toFixed(2) + " NOK";
+      document.getElementById("noteCost").innerText =
+        "Note Generation cost: $" + noteGenerationCost.toFixed(4) + " USD = " + (noteGenerationCost * 10.7).toFixed(2) + " NOK";
+    }
+    
+    // --- Add Cost View to Main Content ---
+    // (This view is already defined in the HTML below.)
+    
   </script>
+  
+  <!-- Cost View -->
+  <div id="costView" class="view">
+    <h3>Session Cost Analysis</h3>
+    <p id="totalCost">Total cost for session: $0.0000 USD = 0.0000 NOK</p>
+    <p id="transCost">Transcription cost: $0.0000 USD = 0.0000 NOK</p>
+    <p id="noteCost">Note Generation cost: $0.0000 USD = 0.0000 NOK</p>
+  </div>
+  
 </body>
 </html>

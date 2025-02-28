@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Transcription Tool</title>
   <!-- Import Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
   <style>
-    /* Global Styles */
+    /* Prologue-Inspired Global Styles */
     body {
       font-family: 'Roboto', sans-serif;
       background-color: #f8f8f8;
@@ -15,7 +15,7 @@
       margin: 0;
       padding: 0;
     }
-    h2, h3, p {
+    h2, h3 {
       margin: 0;
       padding: 0;
     }
@@ -32,16 +32,21 @@
     p {
       font-size: 16px;
     }
-    /* Buttons, Inputs, Textareas */
+    /* Buttons, Inputs, and Textareas */
     input[type="text"], textarea, select {
-      font-family: 'Roboto', sans-serif;
       width: 100%;
       padding: 12px;
       border: 1px solid #ddd;
       border-radius: 10px;
       font-size: 16px;
       box-sizing: border-box;
+      transition: border-color 0.3s, box-shadow 0.3s;
       margin-bottom: 20px;
+    }
+    input[type="text"]:focus, textarea:focus, select:focus {
+      border-color: #66afe9;
+      box-shadow: 0 0 8px rgba(102,175,233,0.6);
+      outline: none;
     }
     button {
       background-color: #5a9;
@@ -51,12 +56,15 @@
       padding: 12px 20px;
       font-size: 16px;
       cursor: pointer;
+      transition: background-color 0.3s, transform 0.1s;
       margin: 10px 0;
     }
     button:hover {
       background-color: #489;
     }
-    /* Timer and Status */
+    button:active {
+      transform: scale(0.98);
+    }
     .timer {
       font-size: 18px;
       margin-bottom: 10px;
@@ -67,26 +75,13 @@
       font-weight: bold;
       margin-top: 10px;
     }
-    /* Fixed Cost Indicator in top-right */
-    #costIndicator {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #fff;
-      border: 1px solid #ddd;
-      padding: 10px;
-      border-radius: 10px;
-      font-size: 16px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      z-index: 1000;
-    }
-    /* Grid Layout */
+    /* Grid Layout for entire page */
     .grid-container {
       display: grid;
       grid-template-columns: 250px 1fr;
       height: 100vh;
     }
-    /* Sidebar */
+    /* Sidebar Styles */
     .sidebar {
       background-color: #e0e0e0;
       padding: 20px;
@@ -99,19 +94,7 @@
       font-size: 18px;
       padding: 15px;
     }
-    /* Language Selector in Sidebar */
-    .lang-container {
-      margin-top: auto;
-      text-align: center;
-    }
-    .lang-container select {
-      width: auto;
-      padding: 6px;
-      font-size: 14px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
-    /* Main Content */
+    /* Main content container */
     .main-content {
       padding: 20px;
       overflow-y: auto;
@@ -119,19 +102,19 @@
       flex-direction: column;
       gap: 20px;
     }
-    /* Views */
+    /* Views for functions and guide */
     .view {
       display: none;
     }
     .view.active {
       display: block;
     }
-    /* Recording Area */
+    /* Recording area (top half) */
     .recording-area {
       border-bottom: 1px solid #ddd;
       padding-bottom: 20px;
     }
-    /* Bottom Half Columns */
+    /* Bottom half: split into two columns */
     .bottom-half {
       display: flex;
       gap: 20px;
@@ -143,15 +126,7 @@
       flex-direction: column;
       gap: 10px;
     }
-    /* Cost View Styles */
-    #costView {
-      text-align: center;
-    }
-    #costView p {
-      font-size: 18px;
-      margin: 10px 0;
-    }
-    /* Ensure textareas auto-resize */
+    /* Ensure textareas can expand */
     #transcription, #generatedNote, #customPrompt {
       min-height: 150px;
       resize: none;
@@ -160,29 +135,20 @@
   </style>
 </head>
 <body>
-  <!-- Fixed Cost Indicator -->
-  <div id="costIndicator">Total cost: $0.0000 USD = 0.0000 NOK</div>
   <div class="grid-container">
-    <!-- Sidebar with Toggle Buttons and Language Selector -->
+    <!-- Sidebar with Toggle Buttons -->
     <aside class="sidebar">
       <button id="btnFunctions">Functions</button>
       <button id="btnGuide">Guide</button>
-      <button id="btnCost">Cost (Session)</button>
-      <div class="lang-container">
-        <select id="langSelect">
-          <option value="en">English</option>
-          <option value="no">Norsk</option>
-        </select>
-      </div>
     </aside>
     
     <!-- Main Content Area -->
     <main class="main-content">
-      <!-- Functions View -->
+      <!-- Functions View (default) -->
       <div id="functionsView" class="view active">
         <!-- Top Half: Recording Area -->
         <div class="recording-area">
-          <h3 id="functionsTitle">Recording Area</h3>
+          <h3>Recording Area</h3>
           <div id="recordIndicator" style="width:20px; height:20px; border-radius:50%; background-color:grey; margin:0 auto 10px;"></div>
           <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
           <div id="uploadTimer" class="timer">Upload Timer: 0 sec</div>
@@ -201,14 +167,14 @@
         <div class="bottom-half">
           <!-- Left Column: Note Generation -->
           <div class="column">
-            <h3 id="noteGenTitle">Note Generation</h3>
+            <h3>Note Generation</h3>
             <button id="generateNoteButton">Generate Note</button>
             <div id="noteTimer" class="timer">Note Generation Timer: 0 sec</div>
             <textarea id="generatedNote" readonly placeholder="Generated note will appear here..."></textarea>
           </div>
           <!-- Right Column: Custom Prompt -->
           <div class="column">
-            <h3 id="customPromptTitle">Custom Prompt</h3>
+            <h3>Custom Prompt</h3>
             <label for="promptSlot">Prompt Slot:</label>
             <select id="promptSlot">
               <option value="1">1</option>
@@ -229,39 +195,27 @@
       
       <!-- Guide View -->
       <div id="guideView" class="view">
-        <h3 id="guideTitle">Guide & Instructions</h3>
+        <h3>Guide & Instructions</h3>
         <p>
-          Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, psychologists, and physiotherapists to record and transcribe consultations, and generate professional notes using AI.
+          Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
         </p>
-        <h4>How to Use the Tool:</h4>
-        <div id="guideContent">
-          <ul style="text-align:left; max-width:600px; margin:0 auto;">
-            <li><strong>Recording:</strong> Click "Start Recording" to capture audio. Use "Stop Recording" to end and upload your recording.</li>
-            <li><strong>Transcription:</strong> Once uploaded, click "Transcribe" to convert speech to text. The transcription appears above.</li>
-            <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to create a professional note using your custom prompt. A timer displays the note generation time, and the result appears below.</li>
-            <li><strong>Custom Prompt:</strong> Select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically (associated with your API key).</li>
-          </ul>
-          <p>
-            <strong>Security & Confidentiality:</strong> All recordings, transcriptions, and generated notes are automatically deleted after 15 minutes. Nothing is stored permanently—your data remains confidential and secure.
-          </p>
-          <p>
-            Please ensure you have entered your API key on the index page before using the tool.
-          </p>
-        </div>
-      </div>
-      
-      <!-- Cost View -->
-      <div id="costView" class="view">
-        <h3>Session Cost Analysis</h3>
-        <p id="totalCost">Total cost for session: $0.0000 USD = 0.0000 NOK</p>
-        <p id="transCost">Transcription cost: $0.0000 USD = 0.0000 NOK</p>
-        <p id="noteCost">Note Generation cost: $0.0000 USD = 0.0000 NOK</p>
+        <h4>How to Use the Functions:</h4>
+        <ul style="text-align:left; max-width:600px; margin:0 auto;">
+          <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
+          <li><strong>Transcription:</strong> Once your audio is uploaded, click "Transcribe" to convert speech to text. The transcription will appear in the top area.</li>
+          <li><strong>Note Generation:</strong> After transcription, use the "Generate Note" button to produce a note based on your transcription and your custom prompt. A timer shows the duration of note generation, and the generated note appears below.</li>
+          <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and is associated with your API key.</li>
+          <li><strong>Guide Toggle:</strong> Use the sidebar buttons ("Functions" and "Guide") to switch between the tool functions and this guide. Your entered data is preserved when toggling views.</li>
+        </ul>
+        <p>
+          Please ensure that you have entered your API key on the index page before using the tool.
+        </p>
       </div>
     </main>
   </div>
   
   <script>
-    // --- Utility: Format Time ---
+    // Utility function: format time
     function formatTime(ms) {
       const totalSec = Math.floor(ms / 1000);
       if (totalSec < 60) {
@@ -273,126 +227,29 @@
       }
     }
     
-    // --- View Toggling ---
+    // Toggle Views
     const btnFunctions = document.getElementById("btnFunctions");
     const btnGuide = document.getElementById("btnGuide");
-    const btnCost = document.getElementById("btnCost");
     const functionsView = document.getElementById("functionsView");
     const guideView = document.getElementById("guideView");
-    const costView = document.getElementById("costView");
     
-    function showView(view) {
-      functionsView.classList.remove("active");
+    btnFunctions.addEventListener("click", () => {
+      functionsView.classList.add("active");
       guideView.classList.remove("active");
-      costView.classList.remove("active");
-      view.classList.add("active");
-    }
-    
-    btnFunctions.addEventListener("click", () => { showView(functionsView); });
-    btnGuide.addEventListener("click", () => { showView(guideView); });
-    btnCost.addEventListener("click", () => {
-      updateCostView();
-      showView(costView);
     });
-    
-    // --- Language Translations for transcribe.html ---
-    const translations = {
-      en: {
-        startButton: "Start Recording",
-        stopButton: "Stop Recording",
-        pauseResumeButton: "Pause Recording",
-        transcribeButton: "Transcribe",
-        generateNoteButton: "Generate Note",
-        transcriptionPlaceholder: "Transcription result will appear here...",
-        generatedNotePlaceholder: "Generated note will appear here...",
-        customPromptPlaceholder: "Enter custom prompt here",
-        functionsTitle: "Recording Area",
-        noteGenTitle: "Note Generation",
-        customPromptTitle: "Custom Prompt",
-        guideTitle: "Guide & Instructions",
-        guideContent: `<ul style="text-align:left; max-width:600px; margin:0 auto;">
-          <li><strong>Recording:</strong> Click "Start Recording" to capture audio. Use "Stop Recording" to end and upload your recording.</li>
-          <li><strong>Transcription:</strong> Once uploaded, click "Transcribe" to convert speech to text. The transcription appears above.</li>
-          <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to create a professional note using your custom prompt. A timer displays the note generation time, and the result appears below.</li>
-          <li><strong>Custom Prompt:</strong> Select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically (associated with your API key).</li>
-        </ul>
-        <p><strong>Security & Confidentiality:</strong> All recordings, transcriptions, and generated notes are automatically deleted after 15 minutes. Nothing is stored permanently—your data remains confidential and secure.</p>
-        <p>Please ensure you have entered your API key on the index page before using the tool.</p>`,
-        recordTimer: "Recording Timer",
-        uploadTimer: "Upload Timer",
-        transcribeTimer: "Transcription Timer",
-        noteTimer: "Note Generation Timer",
-        functions: "Functions",
-        cost: "Cost (Session)",
-        pauseResumeAlt: "Resume Recording"
-      },
-      no: {
-        startButton: "Start opptak",
-        stopButton: "Stopp opptak",
-        pauseResumeButton: "Pause/Fortsett opptak",
-        transcribeButton: "Transkriber",
-        generateNoteButton: "Generer notat",
-        transcriptionPlaceholder: "Transkripsjonsresultat vises her...",
-        generatedNotePlaceholder: "Generert notat vises her...",
-        customPromptPlaceholder: "Skriv inn tilpasset prompt her",
-        functionsTitle: "Opptaksområde",
-        noteGenTitle: "Notatgenerering",
-        customPromptTitle: "Egendefinert prompt",
-        guideTitle: "Veiledning & Instruksjoner",
-        guideContent: `<ul style="text-align:left; max-width:600px; margin:0 auto;">
-          <li><strong>Opptak:</strong> Klikk "Start Opptak" for å ta opp lyd. Bruk "Stopp Opptak" for å avslutte og laste opp opptaket.</li>
-          <li><strong>Transkripsjon:</strong> Når opptaket er lastet opp, klikk "Transkriber" for å konvertere tale til tekst. Transkripsjonen vises ovenfor.</li>
-          <li><strong>Notatgenerering:</strong> Etter transkripsjon, klikk "Generer notat" for å lage et profesjonelt notat med din egendefinerte prompt. En timer viser genereringstiden, og resultatet vises under.</li>
-          <li><strong>Egendefinert prompt:</strong> Velg en prompt-slot (1–10) og skriv inn din egendefinerte prompt. Din prompt lagres automatisk (assosiert med din API-nøkkel).</li>
-        </ul>
-        <p><strong>Sikkerhet & Konfidensialitet:</strong> Alle opptak, transkripsjoner og genererte notater slettes automatisk etter 15 minutter. Ingenting lagres permanent—dine data forblir konfidensielle og sikre.</p>
-        <p>Vennligst sørg for at du har skrevet inn din API-nøkkel på index-siden før du bruker verktøyet.</p>`,
-        recordTimer: "Opptakstid",
-        uploadTimer: "Opplastningstid",
-        transcribeTimer: "Transkriberingstid",
-        noteTimer: "Notatgenereringstid",
-        functions: "Funksjoner",
-        cost: "Kostnad (økt)",
-        pauseResumeAlt: "Gjenoppta opptak"
-      }
-    };
-    
-    // Get saved language (default to English)
-    let currentLang = localStorage.getItem("selectedLanguage") || "en";
-    function updateTranscribeLanguage(lang) {
-      document.getElementById("functionsTitle").innerText = translations[lang].functionsTitle;
-      document.getElementById("noteGenTitle").innerText = translations[lang].noteGenTitle;
-      document.getElementById("customPromptTitle").innerText = translations[lang].customPromptTitle;
-      document.getElementById("guideTitle").innerText = translations[lang].guideTitle;
-      document.getElementById("guideView").innerHTML = `<h3>${translations[lang].guideTitle}</h3>` + translations[lang].guideContent;
-      document.getElementById("startButton").innerText = translations[lang].startButton;
-      document.getElementById("stopButton").innerText = translations[lang].stopButton;
-      document.getElementById("pauseResumeButton").innerText = translations[lang].pauseResumeButton;
-      document.getElementById("transcribeButton").innerText = translations[lang].transcribeButton;
-      document.getElementById("generateNoteButton").innerText = translations[lang].generateNoteButton;
-      document.getElementById("transcription").placeholder = translations[lang].transcriptionPlaceholder;
-      document.getElementById("generatedNote").placeholder = translations[lang].generatedNotePlaceholder;
-      document.getElementById("customPrompt").placeholder = translations[lang].customPromptPlaceholder;
-    }
-    updateTranscribeLanguage(currentLang);
-    
-    // Set language selector value in sidebar
-    const langSelect = document.getElementById("langSelect");
-    langSelect.value = currentLang;
-    langSelect.addEventListener("change", (e) => {
-      currentLang = e.target.value;
-      localStorage.setItem("selectedLanguage", currentLang);
-      updateTranscribeLanguage(currentLang);
+    btnGuide.addEventListener("click", () => {
+      guideView.classList.add("active");
+      functionsView.classList.remove("active");
     });
     
     // Retrieve API key from sessionStorage
     const apiKey = sessionStorage.getItem("openai_api_key");
     if (!apiKey) {
-      alert(currentLang === "no" ? "API-nøkkel mangler. Vennligst skriv inn den på nytt." : "API key is missing. Please re-enter it.");
+      alert("API key is missing. Please re-enter it.");
       window.location.href = "index.html";
     }
     
-    // --- Hash API key for secure localStorage keys ---
+    // Hash API key for secure localStorage keys
     function hashString(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -403,13 +260,15 @@
       return hash.toString();
     }
     const hashedApiKey = hashString(apiKey);
+    
     function getPromptStorageKey(slot) {
       return "customPrompt_" + hashedApiKey + "_" + slot;
     }
     
-    // --- Custom Prompt Section ---
+    // Custom Prompt Section
     const promptSlotSelect = document.getElementById("promptSlot");
     const customPromptTextarea = document.getElementById("customPrompt");
+    
     function loadPromptForSlot(slot) {
       const key = getPromptStorageKey(slot);
       const storedPrompt = localStorage.getItem(key);
@@ -431,26 +290,7 @@
     }
     loadPromptForSlot(promptSlotSelect.value);
     
-    // --- Cost Variables (reset each session) ---
-    let transcriptionCost = 0;   // Cost for transcription (calculated after transcription)
-    let noteGenerationCost = 0;  // Cost for note generation (calculated after note generation)
-    let totalCost = 0;
-    const USD_TO_NOK = 10.7;  // Conversion rate
-
-    function updateCostView() {
-      totalCost = transcriptionCost + noteGenerationCost;
-      document.getElementById("totalCost").innerText =
-        "Total cost for session: $" + totalCost.toFixed(4) + " USD = " + (totalCost * USD_TO_NOK).toFixed(2) + " NOK";
-      document.getElementById("transCost").innerText =
-        "Transcription cost: $" + transcriptionCost.toFixed(4) + " USD = " + (transcriptionCost * USD_TO_NOK).toFixed(2) + " NOK";
-      document.getElementById("noteCost").innerText =
-        "Note Generation cost: $" + noteGenerationCost.toFixed(4) + " USD = " + (noteGenerationCost * USD_TO_NOK).toFixed(2) + " NOK";
-      // Also update the fixed cost indicator at top-right
-      document.getElementById("costIndicator").innerText =
-        "Total cost: $" + totalCost.toFixed(4) + " USD = " + (totalCost * USD_TO_NOK).toFixed(2) + " NOK";
-    }
-    
-    // --- Global Variables for Recording ---
+    // Backend URL and Recording Variables
     const backendUrl = "https://whisper-online.fly.dev";
     let mediaRecorder;
     let audioChunks = [];
@@ -465,7 +305,6 @@
     let autoDeleteTimeout;
     let uploadStartTime = 0;
     let mediaStream = null;
-    let finalRecordingTimeSec = 0; // in seconds
     
     function updateStatusMessage(message, color = "#333") {
       const statusMessage = document.getElementById("statusMessage");
@@ -502,9 +341,6 @@
           document.getElementById("recordIndicator").style.backgroundColor = "green";
           updateStatusMessage("Audio uploaded! Ready for transcription.", "green");
           document.getElementById("transcribeButton").disabled = false;
-          // Save final recording duration (in seconds)
-          finalRecordingTimeSec = (Date.now() - recordingStartTime - pausedTimeAccumulated) / 1000;
-          updateCostView();
           clearTimeout(autoDeleteTimeout);
           autoDeleteTimeout = setTimeout(() => {
             sessionId = "";
@@ -518,7 +354,6 @@
       }
       stopMicrophone();
     }
-    
     function stopMicrophone() {
       if (mediaStream) {
         mediaStream.getTracks().forEach(track => track.stop());
@@ -547,14 +382,13 @@
         document.getElementById("startButton").disabled = true;
         document.getElementById("stopButton").disabled = false;
         document.getElementById("pauseResumeButton").disabled = false;
-        document.getElementById("pauseResumeButton").innerText = translations[currentLang].pauseResumeButton;
+        document.getElementById("pauseResumeButton").innerText = "Pause Recording";
         document.getElementById("recordIndicator").style.backgroundColor = "red";
         updateStatusMessage("Recording in progress...");
       } catch (error) {
         updateStatusMessage("Microphone access error: " + error, "red");
       }
     });
-    
     document.getElementById("stopButton").addEventListener("click", () => {
       if (mediaRecorder && mediaRecorder.state !== "inactive") {
         mediaRecorder.stop();
@@ -563,34 +397,32 @@
         document.getElementById("pauseResumeButton").disabled = true;
       }
     });
-    
     document.getElementById("pauseResumeButton").addEventListener("click", () => {
       if (!mediaRecorder) return;
       if (mediaRecorder.state === "recording") {
         mediaRecorder.pause();
         pauseStartTime = Date.now();
         clearInterval(recordingTimerInterval);
-        document.getElementById("pauseResumeButton").innerText = (currentLang === "en") ? "Resume Recording" : "Gjenoppta Opptak";
-        updateStatusMessage((currentLang === "en") ? "Recording paused" : "Opptak pausert", "orange");
+        document.getElementById("pauseResumeButton").innerText = "Resume Recording";
+        updateStatusMessage("Recording paused", "orange");
       } else if (mediaRecorder.state === "paused") {
         mediaRecorder.resume();
         pausedTimeAccumulated += Date.now() - pauseStartTime;
         recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-        document.getElementById("pauseResumeButton").innerText = translations[currentLang].pauseResumeButton;
-        updateStatusMessage((currentLang === "en") ? "Recording resumed" : "Opptak gjenopptatt", "green");
+        document.getElementById("pauseResumeButton").innerText = "Pause Recording";
+        updateStatusMessage("Recording resumed", "green");
       }
     });
-    
     document.getElementById("transcribeButton").addEventListener("click", async () => {
       const storedApiKey = sessionStorage.getItem("openai_api_key");
       if (!storedApiKey || !sessionId) {
-        updateStatusMessage((currentLang === "en") ? "API key or recording missing." : "API-nøkkel eller opptak mangler.", "red");
+        updateStatusMessage("API key or recording missing.", "red");
         return;
       }
-      updateStatusMessage((currentLang === "en") ? "Transcription in progress..." : "Transkripsjon pågår...", "blue");
+      updateStatusMessage("Transcription in progress...", "blue");
       const transcriptionStart = Date.now();
       transcriptionTimerInterval = setInterval(() => {
-        document.getElementById("transcribeTimer").innerText = (currentLang === "en" ? "Transcription Timer: " : "Transkripsjonstimer: ") + Math.floor((Date.now() - transcriptionStart) / 1000) + " s";
+        document.getElementById("transcribeTimer").innerText = "Transcription Timer: " + Math.floor((Date.now() - transcriptionStart) / 1000) + " s";
       }, 1000);
       try {
         const response = await fetch(`${backendUrl}/transcribe`, {
@@ -601,24 +433,20 @@
         const result = await response.json();
         clearInterval(transcriptionTimerInterval);
         if (result.transcription) {
-          updateStatusMessage((currentLang === "en") ? "Transcription complete!" : "Transkripsjon fullført!", "green");
+          updateStatusMessage("Transcription complete!", "green");
           document.getElementById("transcription").value = result.transcription;
-          // Calculate transcription cost (0.006 USD per minute = 0.0001 USD per second)
-          transcriptionCost = finalRecordingTimeSec * 0.0001;
-          updateCostView();
         } else {
-          updateStatusMessage((currentLang === "en") ? "No transcription available." : "Ingen transkripsjon tilgjengelig.", "red");
+          updateStatusMessage("No transcription available.", "red");
         }
       } catch (error) {
-        updateStatusMessage((currentLang === "en") ? "Transcription error: " + error : "Transkripsjonsfeil: " + error, "red");
+        updateStatusMessage("Transcription error: " + error, "red");
       }
     });
-    
     // Note Generation with Streaming and Timer
     document.getElementById("generateNoteButton").addEventListener("click", async () => {
       const transcriptionText = document.getElementById("transcription").value.trim();
       if (!transcriptionText) {
-        alert((currentLang === "en") ? "No transcription text available." : "Ingen transkripsjonstekst tilgjengelig.");
+        alert("No transcription text available.");
         return;
       }
       const promptText = customPromptTextarea.value;
@@ -626,9 +454,9 @@
       generatedNoteField.value = "";
       const noteStartTime = Date.now();
       const noteTimerElement = document.getElementById("noteTimer");
-      noteTimerElement.innerText = (currentLang === "en") ? "Note Generation Timer: 0 sec" : "Notatgenereringstimer: 0 sec";
+      noteTimerElement.innerText = "Note Generation Timer: 0 sec";
       const noteTimerInterval = setInterval(() => {
-        noteTimerElement.innerText = (currentLang === "en" ? "Note Generation Timer: " : "Notatgenereringstimer: ") + formatTime(Date.now() - noteStartTime);
+        noteTimerElement.innerText = "Note Generation Timer: " + formatTime(Date.now() - noteStartTime);
       }, 1000);
       try {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -638,7 +466,7 @@
             "Authorization": "Bearer " + apiKey
           },
           body: JSON.stringify({
-            model: "gpt-4-turbo",
+            model: "gpt-4",
             messages: [
               { role: "system", content: promptText },
               { role: "user", content: transcriptionText }
@@ -674,565 +502,13 @@
           }
         }
         clearInterval(noteTimerInterval);
-        noteTimerElement.innerText = (currentLang === "en") ? "Text generation completed!" : "Notatgenerering fullført!";
-        // Estimate Note Generation Cost:
-        // We'll assume cost is based on the total characters from transcription, prompt, and generated note.
-        // Estimate tokens as (total characters / 4) and cost as 0.00005 USD per token.
-        let totalCharacters = transcriptionText.length + promptText.length + generatedNoteField.value.length;
-        let estimatedTokens = totalCharacters / 4;
-        noteGenerationCost = estimatedTokens * 0.00005;
-        updateCostView();
+        noteTimerElement.innerText = "Text generation completed!";
       } catch (error) {
         clearInterval(noteTimerInterval);
-        generatedNoteField.value = (currentLang === "en") ? "Error generating note: " + error : "Feil under generering av notat: " + error;
+        generatedNoteField.value = "Error generating note: " + error;
         noteTimerElement.innerText = "";
       }
     });
-    
-    // --- Cost View Update ---
-    function updateCostView() {
-      totalCost = transcriptionCost + noteGenerationCost;
-      document.getElementById("totalCost").innerText =
-        "Total cost for session: $" + totalCost.toFixed(4) + " USD = " + (totalCost * USD_TO_NOK).toFixed(2) + " NOK";
-      document.getElementById("transCost").innerText =
-        "Transcription cost: $" + transcriptionCost.toFixed(4) + " USD = " + (transcriptionCost * USD_TO_NOK).toFixed(2) + " NOK";
-      document.getElementById("noteCost").innerText =
-        "Note Generation cost: $" + noteGenerationCost.toFixed(4) + " USD = " + (noteGenerationCost * USD_TO_NOK).toFixed(2) + " NOK";
-      document.getElementById("costIndicator").innerText =
-        "Total cost: $" + totalCost.toFixed(4) + " USD = " + (totalCost * USD_TO_NOK).toFixed(2) + " NOK";
-    }
-    
-    // --- Global Recording Variables ---
-    let USD_TO_NOK = 10.7;
-    let mediaRecorder;
-    let audioChunks = [];
-    let sessionId = "";
-    let recordingStartTime = 0;
-    let recordingTimerInterval;
-    let uploadTimerInterval;
-    let transcriptionTimerInterval;
-    let isPaused = false;
-    let pausedTimeAccumulated = 0;
-    let pauseStartTime = 0;
-    let autoDeleteTimeout;
-    let uploadStartTime = 0;
-    let mediaStream = null;
-    
-    // --- Final Recording Duration (in seconds) ---
-    let finalRecordingTimeSec = 0;
-    
-    function updateRecordingTimer() {
-      let elapsed = Date.now() - recordingStartTime - pausedTimeAccumulated;
-      document.getElementById("recordTimer").innerText = "Recording Timer: " + formatTime(elapsed);
-    }
-    function updateUploadTimer() {
-      let elapsed = Date.now() - uploadStartTime;
-      document.getElementById("uploadTimer").innerText = "Upload Timer: " + formatTime(elapsed);
-    }
-    
-    async function handleStop() {
-      clearInterval(recordingTimerInterval);
-      updateStatusMessage("Uploading audio... Please wait.", "blue");
-      const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-      const formData = new FormData();
-      formData.append("file", audioBlob, "recorded.mp3");
-      uploadStartTime = Date.now();
-      document.getElementById("uploadTimer").innerText = "Upload Timer: 0 sec";
-      uploadTimerInterval = setInterval(updateUploadTimer, 1000);
-      try {
-        const response = await fetch(`${backendUrl}/upload`, {
-          method: "POST",
-          body: formData
-        });
-        const result = await response.json();
-        clearInterval(uploadTimerInterval);
-        if (result.session_id) {
-          sessionId = result.session_id;
-          document.getElementById("recordIndicator").style.backgroundColor = "green";
-          updateStatusMessage("Audio uploaded! Ready for transcription.", "green");
-          document.getElementById("transcribeButton").disabled = false;
-          // Save final recording time (in seconds)
-          finalRecordingTimeSec = (Date.now() - recordingStartTime - pausedTimeAccumulated) / 1000;
-          updateCostView();
-          clearTimeout(autoDeleteTimeout);
-          autoDeleteTimeout = setTimeout(() => {
-            sessionId = "";
-            updateStatusMessage("Recording automatically deleted.", "green");
-          }, 900000);
-        } else {
-          updateStatusMessage("Upload error: " + (result.error || "Unknown error"), "red");
-        }
-      } catch (error) {
-        updateStatusMessage("Error uploading file: " + error, "red");
-      }
-      stopMicrophone();
-    }
-    
-    function stopMicrophone() {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-        mediaStream = null;
-      }
-    }
-    
-    document.getElementById("startButton").addEventListener("click", async () => {
-      clearTimeout(autoDeleteTimeout);
-      try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(mediaStream);
-        audioChunks = [];
-        isPaused = false;
-        pausedTimeAccumulated = 0;
-        recordingStartTime = Date.now();
-        updateRecordingTimer();
-        recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-        mediaRecorder.ondataavailable = event => {
-          if (event.data.size > 0) {
-            audioChunks.push(event.data);
-          }
-        };
-        mediaRecorder.onstop = handleStop;
-        mediaRecorder.start();
-        document.getElementById("startButton").disabled = true;
-        document.getElementById("stopButton").disabled = false;
-        document.getElementById("pauseResumeButton").disabled = false;
-        document.getElementById("pauseResumeButton").innerText = translations[currentLang].pauseResumeButton;
-        document.getElementById("recordIndicator").style.backgroundColor = "red";
-        updateStatusMessage("Recording in progress...");
-      } catch (error) {
-        updateStatusMessage("Microphone access error: " + error, "red");
-      }
-    });
-    
-    document.getElementById("stopButton").addEventListener("click", () => {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-        document.getElementById("startButton").disabled = false;
-        document.getElementById("stopButton").disabled = true;
-        document.getElementById("pauseResumeButton").disabled = true;
-      }
-    });
-    
-    document.getElementById("pauseResumeButton").addEventListener("click", () => {
-      if (!mediaRecorder) return;
-      if (mediaRecorder.state === "recording") {
-        mediaRecorder.pause();
-        pauseStartTime = Date.now();
-        clearInterval(recordingTimerInterval);
-        document.getElementById("pauseResumeButton").innerText = (currentLang === "en") ? "Resume Recording" : "Gjenoppta Opptak";
-        updateStatusMessage((currentLang === "en") ? "Recording paused" : "Opptak pausert", "orange");
-      } else if (mediaRecorder.state === "paused") {
-        mediaRecorder.resume();
-        pausedTimeAccumulated += Date.now() - pauseStartTime;
-        recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-        document.getElementById("pauseResumeButton").innerText = translations[currentLang].pauseResumeButton;
-        updateStatusMessage((currentLang === "en") ? "Recording resumed" : "Opptak gjenopptatt", "green");
-      }
-    });
-    
-    document.getElementById("transcribeButton").addEventListener("click", async () => {
-      const storedApiKey = sessionStorage.getItem("openai_api_key");
-      if (!storedApiKey || !sessionId) {
-        updateStatusMessage((currentLang === "en") ? "API key or recording missing." : "API-nøkkel eller opptak mangler.", "red");
-        return;
-      }
-      updateStatusMessage((currentLang === "en") ? "Transcription in progress..." : "Transkripsjon pågår...", "blue");
-      const transcriptionStart = Date.now();
-      transcriptionTimerInterval = setInterval(() => {
-        document.getElementById("transcribeTimer").innerText = (currentLang === "en" ? "Transcription Timer: " : "Transkripsjonstimer: ") + Math.floor((Date.now() - transcriptionStart) / 1000) + " s";
-      }, 1000);
-      try {
-        const response = await fetch(`${backendUrl}/transcribe`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ api_key: storedApiKey, session_id: sessionId })
-        });
-        const result = await response.json();
-        clearInterval(transcriptionTimerInterval);
-        if (result.transcription) {
-          updateStatusMessage((currentLang === "en") ? "Transcription complete!" : "Transkripsjon fullført!", "green");
-          document.getElementById("transcription").value = result.transcription;
-          // Calculate transcription cost (0.006 USD per minute = 0.0001 USD per second)
-          transcriptionCost = finalRecordingTimeSec * 0.0001;
-          updateCostView();
-        } else {
-          updateStatusMessage((currentLang === "en") ? "No transcription available." : "Ingen transkripsjon tilgjengelig.", "red");
-        }
-      } catch (error) {
-        updateStatusMessage((currentLang === "en") ? "Transcription error: " + error : "Transkripsjonsfeil: " + error, "red");
-      }
-    });
-    
-    // Note Generation with Streaming and Timer
-    document.getElementById("generateNoteButton").addEventListener("click", async () => {
-      const transcriptionText = document.getElementById("transcription").value.trim();
-      if (!transcriptionText) {
-        alert((currentLang === "en") ? "No transcription text available." : "Ingen transkripsjonstekst tilgjengelig.");
-        return;
-      }
-      const promptText = customPromptTextarea.value;
-      const generatedNoteField = document.getElementById("generatedNote");
-      generatedNoteField.value = "";
-      const noteStartTime = Date.now();
-      const noteTimerElement = document.getElementById("noteTimer");
-      noteTimerElement.innerText = (currentLang === "en") ? "Note Generation Timer: 0 sec" : "Notatgenereringstimer: 0 sec";
-      const noteTimerInterval = setInterval(() => {
-        noteTimerElement.innerText = (currentLang === "en" ? "Note Generation Timer: " : "Notatgenereringstimer: ") + formatTime(Date.now() - noteStartTime);
-      }, 1000);
-      try {
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + apiKey
-          },
-          body: JSON.stringify({
-            model: "gpt-4-turbo",
-            messages: [
-              { role: "system", content: promptText },
-              { role: "user", content: transcriptionText }
-            ],
-            temperature: 0.7,
-            stream: true
-          })
-        });
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-        let done = false;
-        while (!done) {
-          const { value, done: doneReading } = await reader.read();
-          done = doneReading;
-          const chunkValue = decoder.decode(value);
-          const lines = chunkValue.split("\n").filter(line => line.trim() !== "");
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const jsonStr = line.replace("data: ", "").trim();
-              if (jsonStr === "[DONE]") {
-                done = true;
-                break;
-              }
-              try {
-                const parsed = JSON.parse(jsonStr);
-                const textChunk = parsed.choices[0].delta?.content || "";
-                generatedNoteField.value += textChunk;
-                autoResize(generatedNoteField);
-              } catch (err) {
-                console.error("Stream chunk parsing error:", err);
-              }
-            }
-          }
-        }
-        clearInterval(noteTimerInterval);
-        noteTimerElement.innerText = (currentLang === "en") ? "Text generation completed!" : "Notatgenerering fullført!";
-        // Estimate note generation cost:
-        // We assume cost is based on the total character count of the transcription, prompt, and generated note.
-        // Estimated tokens = total characters / 4, cost per token = 0.00005 USD.
-        let totalCharacters = transcriptionText.length + promptText.length + generatedNoteField.value.length;
-        let estimatedTokens = totalCharacters / 4;
-        noteGenerationCost = estimatedTokens * 0.00005;
-        updateCostView();
-      } catch (error) {
-        clearInterval(noteTimerInterval);
-        generatedNoteField.value = (currentLang === "en") ? "Error generating note: " + error : "Feil under generering av notat: " + error;
-        noteTimerElement.innerText = "";
-      }
-    });
-    
-    // --- Cost Update ---
-    function updateCostView() {
-      totalCost = transcriptionCost + noteGenerationCost;
-      document.getElementById("totalCost").innerText =
-        "Total cost for session: $" + totalCost.toFixed(4) + " USD = " + (totalCost * USD_TO_NOK).toFixed(2) + " NOK";
-      document.getElementById("transCost").innerText =
-        "Transcription cost: $" + transcriptionCost.toFixed(4) + " USD = " + (transcriptionCost * USD_TO_NOK).toFixed(2) + " NOK";
-      document.getElementById("noteCost").innerText =
-        "Note Generation cost: $" + noteGenerationCost.toFixed(4) + " USD = " + (noteGenerationCost * USD_TO_NOK).toFixed(2) + " NOK";
-      document.getElementById("costIndicator").innerText =
-        "Total cost: $" + totalCost.toFixed(4) + " USD = " + (totalCost * USD_TO_NOK).toFixed(2) + " NOK";
-    }
-    
-    // --- Global Recording Variables ---
-    let USD_TO_NOK = 10.7;
-    let mediaRecorder;
-    let audioChunks = [];
-    let sessionId = "";
-    let recordingStartTime = 0;
-    let recordingTimerInterval;
-    let uploadTimerInterval;
-    let transcriptionTimerInterval;
-    let isPaused = false;
-    let pausedTimeAccumulated = 0;
-    let pauseStartTime = 0;
-    let autoDeleteTimeout;
-    let uploadStartTime = 0;
-    let mediaStream = null;
-    let finalRecordingTimeSec = 0;
-    
-    function updateStatusMessage(message, color = "#333") {
-      const statusMessage = document.getElementById("statusMessage");
-      statusMessage.innerText = message;
-      statusMessage.style.color = color;
-    }
-    
-    function updateRecordingTimer() {
-      let elapsed = Date.now() - recordingStartTime - pausedTimeAccumulated;
-      document.getElementById("recordTimer").innerText = "Recording Timer: " + formatTime(elapsed);
-    }
-    function updateUploadTimer() {
-      let elapsed = Date.now() - uploadStartTime;
-      document.getElementById("uploadTimer").innerText = "Upload Timer: " + formatTime(elapsed);
-    }
-    
-    async function handleStop() {
-      clearInterval(recordingTimerInterval);
-      updateStatusMessage("Uploading audio... Please wait.", "blue");
-      const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-      const formData = new FormData();
-      formData.append("file", audioBlob, "recorded.mp3");
-      uploadStartTime = Date.now();
-      document.getElementById("uploadTimer").innerText = "Upload Timer: 0 sec";
-      uploadTimerInterval = setInterval(updateUploadTimer, 1000);
-      try {
-        const response = await fetch(`${backendUrl}/upload`, {
-          method: "POST",
-          body: formData
-        });
-        const result = await response.json();
-        clearInterval(uploadTimerInterval);
-        if (result.session_id) {
-          sessionId = result.session_id;
-          document.getElementById("recordIndicator").style.backgroundColor = "green";
-          updateStatusMessage("Audio uploaded! Ready for transcription.", "green");
-          document.getElementById("transcribeButton").disabled = false;
-          // Save final recording duration (in seconds)
-          finalRecordingTimeSec = (Date.now() - recordingStartTime - pausedTimeAccumulated) / 1000;
-          updateCostView();
-          clearTimeout(autoDeleteTimeout);
-          autoDeleteTimeout = setTimeout(() => {
-            sessionId = "";
-            updateStatusMessage("Recording automatically deleted.", "green");
-          }, 900000);
-        } else {
-          updateStatusMessage("Upload error: " + (result.error || "Unknown error"), "red");
-        }
-      } catch (error) {
-        updateStatusMessage("Error uploading file: " + error, "red");
-      }
-      stopMicrophone();
-    }
-    
-    function stopMicrophone() {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-        mediaStream = null;
-      }
-    }
-    
-    document.getElementById("startButton").addEventListener("click", async () => {
-      clearTimeout(autoDeleteTimeout);
-      try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(mediaStream);
-        audioChunks = [];
-        isPaused = false;
-        pausedTimeAccumulated = 0;
-        recordingStartTime = Date.now();
-        updateRecordingTimer();
-        recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-        mediaRecorder.ondataavailable = event => {
-          if (event.data.size > 0) {
-            audioChunks.push(event.data);
-          }
-        };
-        mediaRecorder.onstop = handleStop;
-        mediaRecorder.start();
-        document.getElementById("startButton").disabled = true;
-        document.getElementById("stopButton").disabled = false;
-        document.getElementById("pauseResumeButton").disabled = false;
-        document.getElementById("pauseResumeButton").innerText = translations[currentLang].pauseResumeButton;
-        document.getElementById("recordIndicator").style.backgroundColor = "red";
-        updateStatusMessage("Recording in progress...");
-      } catch (error) {
-        updateStatusMessage("Microphone access error: " + error, "red");
-      }
-    });
-    
-    document.getElementById("stopButton").addEventListener("click", () => {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-        document.getElementById("startButton").disabled = false;
-        document.getElementById("stopButton").disabled = true;
-        document.getElementById("pauseResumeButton").disabled = true;
-      }
-    });
-    
-    document.getElementById("pauseResumeButton").addEventListener("click", () => {
-      if (!mediaRecorder) return;
-      if (mediaRecorder.state === "recording") {
-        mediaRecorder.pause();
-        pauseStartTime = Date.now();
-        clearInterval(recordingTimerInterval);
-        document.getElementById("pauseResumeButton").innerText = (currentLang === "en") ? "Resume Recording" : "Gjenoppta Opptak";
-        updateStatusMessage((currentLang === "en") ? "Recording paused" : "Opptak pausert", "orange");
-      } else if (mediaRecorder.state === "paused") {
-        mediaRecorder.resume();
-        pausedTimeAccumulated += Date.now() - pauseStartTime;
-        recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-        document.getElementById("pauseResumeButton").innerText = translations[currentLang].pauseResumeButton;
-        updateStatusMessage((currentLang === "en") ? "Recording resumed" : "Opptak gjenopptatt", "green");
-      }
-    });
-    
-    document.getElementById("transcribeButton").addEventListener("click", async () => {
-      const storedApiKey = sessionStorage.getItem("openai_api_key");
-      if (!storedApiKey || !sessionId) {
-        updateStatusMessage((currentLang === "en") ? "API key or recording missing." : "API-nøkkel eller opptak mangler.", "red");
-        return;
-      }
-      updateStatusMessage((currentLang === "en") ? "Transcription in progress..." : "Transkripsjon pågår...", "blue");
-      const transcriptionStart = Date.now();
-      transcriptionTimerInterval = setInterval(() => {
-        document.getElementById("transcribeTimer").innerText = (currentLang === "en" ? "Transcription Timer: " : "Transkripsjonstimer: ") + Math.floor((Date.now() - transcriptionStart) / 1000) + " s";
-      }, 1000);
-      try {
-        const response = await fetch(`${backendUrl}/transcribe`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ api_key: storedApiKey, session_id: sessionId })
-        });
-        const result = await response.json();
-        clearInterval(transcriptionTimerInterval);
-        if (result.transcription) {
-          updateStatusMessage((currentLang === "en") ? "Transcription complete!" : "Transkripsjon fullført!", "green");
-          document.getElementById("transcription").value = result.transcription;
-          // Calculate transcription cost (0.006 USD per minute = 0.0001 USD per second)
-          transcriptionCost = finalRecordingTimeSec * 0.0001;
-          updateCostView();
-        } else {
-          updateStatusMessage((currentLang === "en") ? "No transcription available." : "Ingen transkripsjon tilgjengelig.", "red");
-        }
-      } catch (error) {
-        updateStatusMessage((currentLang === "en") ? "Transcription error: " + error : "Transkripsjonsfeil: " + error, "red");
-      }
-    });
-    
-    document.getElementById("generateNoteButton").addEventListener("click", async () => {
-      const transcriptionText = document.getElementById("transcription").value.trim();
-      if (!transcriptionText) {
-        alert((currentLang === "en") ? "No transcription text available." : "Ingen transkripsjonstekst tilgjengelig.");
-        return;
-      }
-      const promptText = customPromptTextarea.value;
-      const generatedNoteField = document.getElementById("generatedNote");
-      generatedNoteField.value = "";
-      const noteStartTime = Date.now();
-      const noteTimerElement = document.getElementById("noteTimer");
-      noteTimerElement.innerText = (currentLang === "en") ? "Note Generation Timer: 0 sec" : "Notatgenereringstimer: 0 sec";
-      const noteTimerInterval = setInterval(() => {
-        noteTimerElement.innerText = (currentLang === "en" ? "Note Generation Timer: " : "Notatgenereringstimer: ") + formatTime(Date.now() - noteStartTime);
-      }, 1000);
-      try {
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + apiKey
-          },
-          body: JSON.stringify({
-            model: "gpt-4-turbo",
-            messages: [
-              { role: "system", content: promptText },
-              { role: "user", content: transcriptionText }
-            ],
-            temperature: 0.7,
-            stream: true
-          })
-        });
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-        let done = false;
-        while (!done) {
-          const { value, done: doneReading } = await reader.read();
-          done = doneReading;
-          const chunkValue = decoder.decode(value);
-          const lines = chunkValue.split("\n").filter(line => line.trim() !== "");
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const jsonStr = line.replace("data: ", "").trim();
-              if (jsonStr === "[DONE]") {
-                done = true;
-                break;
-              }
-              try {
-                const parsed = JSON.parse(jsonStr);
-                const textChunk = parsed.choices[0].delta?.content || "";
-                generatedNoteField.value += textChunk;
-                autoResize(generatedNoteField);
-              } catch (err) {
-                console.error("Stream chunk parsing error:", err);
-              }
-            }
-          }
-        }
-        clearInterval(noteTimerInterval);
-        noteTimerElement.innerText = (currentLang === "en") ? "Text generation completed!" : "Notatgenerering fullført!";
-        // Estimate Note Generation Cost:
-        // We assume cost is based on total character count of transcription, prompt, and generated note.
-        // Estimated tokens = (total characters / 4) and cost rate = 0.00005 USD per token.
-        let totalCharacters = transcriptionText.length + promptText.length + generatedNoteField.value.length;
-        let estimatedTokens = totalCharacters / 4;
-        noteGenerationCost = estimatedTokens * 0.00005;
-        updateCostView();
-      } catch (error) {
-        clearInterval(noteTimerInterval);
-        generatedNoteField.value = (currentLang === "en") ? "Error generating note: " + error : "Feil under generering av notat: " + error;
-        noteTimerElement.innerText = "";
-      }
-    });
-    
-    // --- Cost Update Function ---
-    function updateCostView() {
-      totalCost = transcriptionCost + noteGenerationCost;
-      document.getElementById("totalCost").innerText =
-        "Total cost for session: $" + totalCost.toFixed(4) + " USD = " + (totalCost * USD_TO_NOK).toFixed(2) + " NOK";
-      document.getElementById("transCost").innerText =
-        "Transcription cost: $" + transcriptionCost.toFixed(4) + " USD = " + (transcriptionCost * USD_TO_NOK).toFixed(2) + " NOK";
-      document.getElementById("noteCost").innerText =
-        "Note Generation cost: $" + noteGenerationCost.toFixed(4) + " USD = " + (noteGenerationCost * USD_TO_NOK).toFixed(2) + " NOK";
-      document.getElementById("costIndicator").innerText =
-        "Total cost: $" + totalCost.toFixed(4) + " USD = " + (totalCost * USD_TO_NOK).toFixed(2) + " NOK";
-    }
-    
-    // --- Global Recording Variables ---
-    let mediaRecorder;
-    let audioChunks = [];
-    let sessionId = "";
-    let recordingStartTime = 0;
-    let recordingTimerInterval;
-    let uploadTimerInterval;
-    let transcriptionTimerInterval;
-    let isPaused = false;
-    let pausedTimeAccumulated = 0;
-    let pauseStartTime = 0;
-    let autoDeleteTimeout;
-    let uploadStartTime = 0;
-    let mediaStream = null;
-    
-    let finalRecordingTimeSec = 0;
-    
-    function updateStatusMessage(message, color = "#333") {
-      const statusMessage = document.getElementById("statusMessage");
-      statusMessage.innerText = message;
-      statusMessage.style.color = color;
-    }
   </script>
-  
-  <!-- Cost View -->
-  <div id="costView" class="view">
-    <h3>Session Cost Analysis</h3>
-    <p id="totalCost">Total cost for session: $0.0000 USD = 0.0000 NOK</p>
-    <p id="transCost">Transcription cost: $0.0000 USD = 0.0000 NOK</p>
-    <p id="noteCost">Note Generation cost: $0.0000 USD = 0.0000 NOK</p>
-  </div>
 </body>
 </html>

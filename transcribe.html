@@ -442,7 +442,9 @@
         clearInterval(transcriptionTimerInterval);
         if (result.transcription) {
           updateStatusMessage("Transcription complete!", "green");
-          document.getElementById("transcription").value = result.transcription;
+          const transcriptionField = document.getElementById("transcription");
+          transcriptionField.value = result.transcription;
+          autoResize(transcriptionField);
         } else {
           updateStatusMessage("No transcription available.", "red");
         }

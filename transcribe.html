@@ -109,7 +109,12 @@
       gap: 10px;
     }
     /* Expandable Textareas */
-    #transcription, #generatedNote, #customPrompt {
+    #transcription {
+      min-height: 150px;
+      overflow-y: auto; /* Allow scrolling within transcription text field */
+      resize: vertical; /* Let user resize vertically if needed */
+    }
+    #generatedNote, #customPrompt {
       min-height: 150px;
       resize: none;
       overflow: hidden;
@@ -118,7 +123,8 @@
     #costIndicator {
       position: fixed;
       top: 10px;
-      right: 10px;
+      /* Moved further left so it doesn't overlap the ad area */
+      right: 270px; 
       background: rgba(255,255,255,0.9);
       border: 1px solid #ccc;
       padding: 10px;
@@ -327,7 +333,6 @@
     // Toggle Views: Functions and Guide
     const btnFunctions = document.getElementById("btnFunctions");
     const btnGuide = document.getElementById("btnGuide");
-    const functionsView = document.querySelector(".main-content");
     const guideView = document.getElementById("guideView");
     
     btnFunctions.addEventListener("click", () => {

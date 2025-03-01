@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Transcription Tool with Ads and Counters</title>
+  <title>Transcription Tool with Ads and Guide Overlay</title>
   <!-- Import Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
   <style>
@@ -62,7 +62,7 @@
     button:active { transform: scale(0.98); }
     .timer { font-size: 18px; margin-bottom: 10px; color: #333; }
     #statusMessage { font-size: 16px; font-weight: bold; margin-top: 10px; }
-    /* Grid Layout: 3 columns (left sidebar, main content, right ad area) */
+    /* Grid Layout: Three columns: left sidebar, main content, right ad sidebar */
     .grid-container {
       display: grid;
       grid-template-columns: 250px 1fr 250px;
@@ -78,7 +78,7 @@
       align-items: stretch;
     }
     .sidebar button { font-size: 18px; padding: 15px; }
-    /* Main Content */
+    /* Main Content Area */
     .main-content {
       padding: 20px;
       overflow-y: auto;
@@ -108,7 +108,7 @@
       flex-direction: column;
       gap: 10px;
     }
-    /* Expandable textareas */
+    /* Expandable Textareas */
     #transcription, #generatedNote, #customPrompt {
       min-height: 150px;
       resize: none;
@@ -139,7 +139,7 @@
     }
     #adUnit {
       width: 100%;
-      height: 200px;
+      height: 200px; /* Example height */
       background-color: #ddd;
       display: flex;
       align-items: center;
@@ -150,6 +150,23 @@
     #impressionCounter {
       font-size: 14px;
       color: #333;
+    }
+    /* Guide Overlay (hidden by default) */
+    #guideView {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      background: white;
+      border: 2px solid #ccc;
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 2000;
+    }
+    #guideView.active {
+      display: block;
     }
   </style>
 </head>
@@ -222,25 +239,23 @@
         <div id="impressionCounter">Impressions: 0</div>
       </div>
     </aside>
-    
-    <!-- Guide View -->
-    <div id="guideView" class="view">
-      <h3>Guide & Instructions</h3>
-      <p>
-        Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
-      </p>
-      <h4>How to Use the Functions:</h4>
-      <ul style="text-align:left; max-width:600px; margin:0 auto;">
-        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
-        <li><strong>Transcription:</strong> Once your audio is uploaded, click "Transcribe" to convert speech to text. The transcription will appear in the top area.</li>
-        <li><strong>Note Generation:</strong> After transcription, use the "Generate Note" button to produce a note based on your transcription and your custom prompt. A timer shows the duration of note generation, and the generated note appears below.</li>
-        <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and is associated with your API key.</li>
-        <li><strong>Guide Toggle:</strong> Use the sidebar buttons ("Functions" and "Guide") to switch between the tool functions and this guide. Your entered data is preserved when toggling views.</li>
-      </ul>
-      <p>
-        Please ensure that you have entered your API key on the index page before using the tool.
-      </p>
-    </div>
+  </div>
+  
+  <!-- Guide Overlay (outside grid-container) -->
+  <div id="guideView">
+    <h3>Guide & Instructions</h3>
+    <p>
+      Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
+    </p>
+    <h4>How to Use the Functions:</h4>
+    <ul>
+      <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
+      <li><strong>Transcription:</strong> Once your audio is uploaded, click "Transcribe" to convert speech to text. The transcription will appear in the top area.</li>
+      <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcription and custom prompt. A timer shows the duration of note generation, and the generated note appears below.</li>
+      <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
+      <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide. The guide appears as an overlay and does not disturb the underlying layout.</li>
+    </ul>
+    <p>Please click "Functions" to return to the main interface.</p>
   </div>
   
   <script>
@@ -309,19 +324,17 @@
       `;
     }
     
-    // Toggle Views
+    // Toggle Views: Functions and Guide
     const btnFunctions = document.getElementById("btnFunctions");
     const btnGuide = document.getElementById("btnGuide");
-    const functionsView = document.getElementById("functionsView");
+    const functionsView = document.querySelector(".main-content");
     const guideView = document.getElementById("guideView");
     
     btnFunctions.addEventListener("click", () => {
-      functionsView.classList.add("active");
       guideView.classList.remove("active");
     });
     btnGuide.addEventListener("click", () => {
       guideView.classList.add("active");
-      functionsView.classList.remove("active");
     });
     
     // Retrieve API key from sessionStorage
@@ -560,13 +573,13 @@
             "Authorization": "Bearer " + apiKey
           },
           body: JSON.stringify({
-            model: "gpt-4-turbo", // using GPT-4 Turbo
+            model: "gpt-4-turbo",
             messages: [
               { role: "system", content: promptText },
               { role: "user", content: transcriptionText }
             ],
             temperature: 0.7,
-            stream: true // STREAMING mode enabled
+            stream: true
           })
         });
         const reader = response.body.getReader();
@@ -599,15 +612,11 @@
         }
         clearInterval(noteTimerInterval);
         noteTimerElement.innerText = "Text generation completed!";
-        // Post-process the generated note to remove unwanted markdown symbols
         generatedNoteField.value = cleanOutput(generatedNoteField.value);
         autoResize(generatedNoteField);
         // --- TOKEN COUNTING & COST CALCULATION ---
-        // Use our token counter to get approximate token counts.
         const promptTokenCount = countTokens(promptText);
         const outputTokenCount = countTokens(completeOutput);
-        // Calculate cost using GPT-4 Turbo pricing:
-        // Input: $10 per 1,000,000 tokens; Output: $30 per 1,000,000 tokens.
         let noteCost = (promptTokenCount / 1000000 * 10.00) + (outputTokenCount / 1000000 * 30.00);
         noteGenCost += noteCost;
         totalCost += noteCost;

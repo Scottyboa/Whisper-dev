@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Transcription Tool</title>
+  <title>Transcription Tool with Ads and Counters</title>
   <!-- Import Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
   <style>
-    /* Prologue-Inspired Global Styles */
+    /* Global Styles */
     body {
       font-family: 'Roboto', sans-serif;
       background-color: #f8f8f8;
@@ -29,10 +29,8 @@
       font-size: 20px;
       margin-bottom: 10px;
     }
-    p {
-      font-size: 16px;
-    }
-    /* Updated rule to force Roboto on form controls */
+    p { font-size: 16px; }
+    /* Form Controls */
     input[type="text"], textarea, select {
       width: 100%;
       padding: 12px;
@@ -60,29 +58,17 @@
       transition: background-color 0.3s, transform 0.1s;
       margin: 10px 0;
     }
-    button:hover {
-      background-color: #489;
-    }
-    button:active {
-      transform: scale(0.98);
-    }
-    .timer {
-      font-size: 18px;
-      margin-bottom: 10px;
-      color: #333;
-    }
-    #statusMessage {
-      font-size: 16px;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-    /* Grid Layout for entire page */
+    button:hover { background-color: #489; }
+    button:active { transform: scale(0.98); }
+    .timer { font-size: 18px; margin-bottom: 10px; color: #333; }
+    #statusMessage { font-size: 16px; font-weight: bold; margin-top: 10px; }
+    /* Grid Layout: 3 columns (left sidebar, main content, right ad area) */
     .grid-container {
       display: grid;
-      grid-template-columns: 250px 1fr;
+      grid-template-columns: 250px 1fr 250px;
       height: 100vh;
     }
-    /* Sidebar Styles */
+    /* Left Sidebar */
     .sidebar {
       background-color: #e0e0e0;
       padding: 20px;
@@ -91,11 +77,8 @@
       gap: 20px;
       align-items: stretch;
     }
-    .sidebar button {
-      font-size: 18px;
-      padding: 15px;
-    }
-    /* Main content container */
+    .sidebar button { font-size: 18px; padding: 15px; }
+    /* Main Content */
     .main-content {
       padding: 20px;
       overflow-y: auto;
@@ -103,19 +86,17 @@
       flex-direction: column;
       gap: 20px;
     }
-    /* Views for functions and guide */
-    .view {
-      display: none;
+    /* Right Ad Sidebar */
+    .ad-sidebar {
+      background-color: #e0e0e0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .view.active {
-      display: block;
-    }
-    /* Recording area (top half) */
-    .recording-area {
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 20px;
-    }
-    /* Bottom half: split into two columns */
+    /* Recording Area */
+    .recording-area { border-bottom: 1px solid #ddd; padding-bottom: 20px; }
+    /* Bottom Half */
     .bottom-half {
       display: flex;
       gap: 20px;
@@ -127,13 +108,13 @@
       flex-direction: column;
       gap: 10px;
     }
-    /* Ensure textareas can expand */
+    /* Expandable textareas */
     #transcription, #generatedNote, #customPrompt {
       min-height: 150px;
       resize: none;
       overflow: hidden;
     }
-    /* Cost indicator styling */
+    /* Cost Indicator */
     #costIndicator {
       position: fixed;
       top: 10px;
@@ -145,6 +126,31 @@
       font-size: 14px;
       z-index: 1000;
     }
+    /* Ad Area Styles */
+    #adArea {
+      width: 100%;
+      height: 100%;
+      border: 1px solid #ccc;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #adUnit {
+      width: 100%;
+      height: 200px;
+      background-color: #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    #impressionCounter {
+      font-size: 14px;
+      color: #333;
+    }
   </style>
 </head>
 <body>
@@ -154,8 +160,9 @@
     Transcription: $0.0000 (~NOK 0.0000)<br>
     Note Generation: $0.0000 (~NOK 0.0000)
   </div>
+  
   <div class="grid-container">
-    <!-- Sidebar with Toggle Buttons -->
+    <!-- Left Sidebar -->
     <aside class="sidebar">
       <button id="btnFunctions">Functions</button>
       <button id="btnGuide">Guide</button>
@@ -163,74 +170,77 @@
     
     <!-- Main Content Area -->
     <main class="main-content">
-      <!-- Functions View (default) -->
-      <div id="functionsView" class="view active">
-        <!-- Top Half: Recording Area -->
-        <div class="recording-area">
-          <h3>Recording Area</h3>
-          <div id="recordIndicator" style="width:20px; height:20px; border-radius:50%; background-color:grey; margin:0 auto 10px;"></div>
-          <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
-          <div id="uploadTimer" class="timer">Upload Timer: 0 sec</div>
-          <div id="transcribeTimer" class="timer">Transcription Timer: 0 sec</div>
-          <textarea id="transcription" placeholder="Transcription result will appear here..."></textarea>
-          <div>
-            <button id="startButton">Start Recording</button>
-            <button id="stopButton" disabled>Stop Recording</button>
-            <button id="pauseResumeButton" disabled>Pause Recording</button>
-            <button id="transcribeButton" disabled>Transcribe</button>
-          </div>
-          <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
+      <!-- Recording Area -->
+      <div class="recording-area">
+        <h3>Recording Area</h3>
+        <div id="recordIndicator" style="width:20px; height:20px; border-radius:50%; background-color:grey; margin:0 auto 10px;"></div>
+        <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
+        <div id="uploadTimer" class="timer">Upload Timer: 0 sec</div>
+        <div id="transcribeTimer" class="timer">Transcription Timer: 0 sec</div>
+        <textarea id="transcription" placeholder="Transcription result will appear here..."></textarea>
+        <div>
+          <button id="startButton">Start Recording</button>
+          <button id="stopButton" disabled>Stop Recording</button>
+          <button id="pauseResumeButton" disabled>Pause Recording</button>
+          <button id="transcribeButton" disabled>Transcribe</button>
         </div>
-        
-        <!-- Bottom Half: Note Generation & Custom Prompt -->
-        <div class="bottom-half">
-          <!-- Left Column: Note Generation -->
-          <div class="column">
-            <h3>Note Generation</h3>
-            <button id="generateNoteButton">Generate Note</button>
-            <div id="noteTimer" class="timer">Note Generation Timer: 0 sec</div>
-            <textarea id="generatedNote" readonly placeholder="Generated note will appear here..."></textarea>
-          </div>
-          <!-- Right Column: Custom Prompt -->
-          <div class="column">
-            <h3>Custom Prompt</h3>
-            <label for="promptSlot">Prompt Slot:</label>
-            <select id="promptSlot">
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-              <option value="9">9</option>
-              <option value="10">10</option>
-            </select>
-            <textarea id="customPrompt" placeholder="Enter custom prompt here" rows="1"></textarea>
-          </div>
-        </div>
+        <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
       </div>
       
-      <!-- Guide View -->
-      <div id="guideView" class="view">
-        <h3>Guide & Instructions</h3>
-        <p>
-          Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
-        </p>
-        <h4>How to Use the Functions:</h4>
-        <ul style="text-align:left; max-width:600px; margin:0 auto;">
-          <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
-          <li><strong>Transcription:</strong> Once your audio is uploaded, click "Transcribe" to convert speech to text. The transcription will appear in the top area.</li>
-          <li><strong>Note Generation:</strong> After transcription, use the "Generate Note" button to produce a note based on your transcription and your custom prompt. A timer shows the duration of note generation, and the generated note appears below.</li>
-          <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and is associated with your API key.</li>
-          <li><strong>Guide Toggle:</strong> Use the sidebar buttons ("Functions" and "Guide") to switch between the tool functions and this guide. Your entered data is preserved when toggling views.</li>
-        </ul>
-        <p>
-          Please ensure that you have entered your API key on the index page before using the tool.
-        </p>
+      <!-- Bottom Half: Note Generation & Custom Prompt -->
+      <div class="bottom-half">
+        <div class="column">
+          <h3>Note Generation</h3>
+          <button id="generateNoteButton">Generate Note</button>
+          <div id="noteTimer" class="timer">Note Generation Timer: 0 sec</div>
+          <textarea id="generatedNote" readonly placeholder="Generated note will appear here..."></textarea>
+        </div>
+        <div class="column">
+          <h3>Custom Prompt</h3>
+          <label for="promptSlot">Prompt Slot:</label>
+          <select id="promptSlot">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+          </select>
+          <textarea id="customPrompt" placeholder="Enter custom prompt here" rows="1"></textarea>
+        </div>
       </div>
     </main>
+    
+    <!-- Right Sidebar (Ad Area) -->
+    <aside class="ad-sidebar">
+      <div id="adArea">
+        <div id="adUnit">Your Ad Here</div>
+        <div id="impressionCounter">Impressions: 0</div>
+      </div>
+    </aside>
+    
+    <!-- Guide View -->
+    <div id="guideView" class="view">
+      <h3>Guide & Instructions</h3>
+      <p>
+        Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
+      </p>
+      <h4>How to Use the Functions:</h4>
+      <ul style="text-align:left; max-width:600px; margin:0 auto;">
+        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
+        <li><strong>Transcription:</strong> Once your audio is uploaded, click "Transcribe" to convert speech to text. The transcription will appear in the top area.</li>
+        <li><strong>Note Generation:</strong> After transcription, use the "Generate Note" button to produce a note based on your transcription and your custom prompt. A timer shows the duration of note generation, and the generated note appears below.</li>
+        <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and is associated with your API key.</li>
+        <li><strong>Guide Toggle:</strong> Use the sidebar buttons ("Functions" and "Guide") to switch between the tool functions and this guide. Your entered data is preserved when toggling views.</li>
+      </ul>
+      <p>
+        Please ensure that you have entered your API key on the index page before using the tool.
+      </p>
+    </div>
   </div>
   
   <script>
@@ -240,7 +250,7 @@
     let transcriptionCost = 0;
     let recordingDuration = 0; // in milliseconds
 
-    // Set a fallback exchange rate, then dynamically fetch updated rate
+    // Dynamically fetch exchange rate (USD to NOK) from exchangerate.host
     let exchangeRate = 10; // fallback value
     async function fetchExchangeRate() {
       try {
@@ -608,6 +618,29 @@
         noteTimerElement.innerText = "";
       }
     });
+    
+    // --- AD IMPRESSION COUNTER ---
+    // Retrieve any previously stored count for this session (keyed by API key)
+    let adImpressions = parseInt(localStorage.getItem("adImpressions_" + apiKey)) || 0;
+    document.getElementById("impressionCounter").innerText = "Impressions: " + adImpressions;
+    
+    const adElement = document.getElementById("adUnit");
+    const adObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          adImpressions++;
+          localStorage.setItem("adImpressions_" + apiKey, adImpressions);
+          document.getElementById("impressionCounter").innerText = "Impressions: " + adImpressions;
+          console.log("Ad impression counted. Total: " + adImpressions);
+        }
+      });
+    }, { threshold: 0.5 });
+    
+    if (adElement) {
+      adObserver.observe(adElement);
+    }
+    // --------------------------------
+    
   </script>
 </body>
 </html>

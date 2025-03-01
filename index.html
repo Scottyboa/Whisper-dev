@@ -37,7 +37,8 @@
       margin: 40px auto;
       padding: 20px;
     }
-    input[type="text"] {
+    /* Updated rule to force Roboto on input fields */
+    input[type="text"], textarea, select {
       width: 300px;
       padding: 12px;
       border: 1px solid #ddd;
@@ -46,8 +47,9 @@
       box-sizing: border-box;
       transition: border-color 0.3s, box-shadow 0.3s;
       margin-bottom: 20px;
+      font-family: 'Roboto', sans-serif;
     }
-    input[type="text"]:focus {
+    input[type="text"]:focus, textarea:focus, select:focus {
       border-color: #66afe9;
       box-shadow: 0 0 8px rgba(102,175,233,0.6);
       outline: none;

@@ -228,6 +228,13 @@
       }
     }
     
+    // Function to clean up output text from markdown symbols
+    function cleanOutput(text) {
+      return text.replace(/\*\*/g, "")
+                 .replace(/###\s*/g, "")
+                 .replace(/---/g, "");
+    }
+    
     // Toggle Views
     const btnFunctions = document.getElementById("btnFunctions");
     const btnGuide = document.getElementById("btnGuide");
@@ -467,7 +474,7 @@
             "Authorization": "Bearer " + apiKey
           },
           body: JSON.stringify({
-            model: "gpt-4-turbo",
+            model: "gpt-4-turbo", // or any other model you wish to use
             messages: [
               { role: "system", content: promptText },
               { role: "user", content: transcriptionText }
@@ -504,6 +511,8 @@
         }
         clearInterval(noteTimerInterval);
         noteTimerElement.innerText = "Text generation completed!";
+        // Post-process the generated note to remove unwanted markdown symbols
+        generatedNoteField.value = cleanOutput(generatedNoteField.value);
       } catch (error) {
         clearInterval(noteTimerInterval);
         generatedNoteField.value = "Error generating note: " + error;

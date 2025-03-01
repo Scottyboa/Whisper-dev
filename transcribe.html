@@ -133,9 +133,27 @@
       resize: none;
       overflow: hidden;
     }
+    /* Cost indicator styling */
+    #costIndicator {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 14px;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
+  <!-- Cost Indicator -->
+  <div id="costIndicator">
+    Total: $0.00<br>
+    Transcription: $0.00<br>
+    Note Generation: $0.00
+  </div>
   <div class="grid-container">
     <!-- Sidebar with Toggle Buttons -->
     <aside class="sidebar">
@@ -216,6 +234,12 @@
   </div>
   
   <script>
+    // Global cost variables (reset per session)
+    let totalCost = 0;
+    let noteGenCost = 0;
+    let transcriptionCost = 0;
+    let recordingDuration = 0; // in milliseconds
+
     // Utility function: format time
     function formatTime(ms) {
       const totalSec = Math.floor(ms / 1000);
@@ -233,6 +257,16 @@
       return text.replace(/\*\*/g, "")
                  .replace(/###\s*/g, "")
                  .replace(/---/g, "");
+    }
+    
+    // Function to update the cost indicator UI
+    function updateCostIndicator() {
+      const indicator = document.getElementById("costIndicator");
+      indicator.innerHTML = `
+        Total: $${totalCost.toFixed(4)}<br>
+        Transcription: $${transcriptionCost.toFixed(4)}<br>
+        Note Generation: $${noteGenCost.toFixed(4)}
+      `;
     }
     
     // Toggle Views
@@ -349,6 +383,8 @@
           document.getElementById("recordIndicator").style.backgroundColor = "green";
           updateStatusMessage("Audio uploaded! Ready for transcription.", "green");
           document.getElementById("transcribeButton").disabled = false;
+          // Capture the recording duration (in milliseconds)
+          recordingDuration = Date.now() - recordingStartTime - pausedTimeAccumulated;
           clearTimeout(autoDeleteTimeout);
           autoDeleteTimeout = setTimeout(() => {
             sessionId = "";
@@ -421,6 +457,7 @@
         updateStatusMessage("Recording resumed", "green");
       }
     });
+    
     document.getElementById("transcribeButton").addEventListener("click", async () => {
       const storedApiKey = sessionStorage.getItem("openai_api_key");
       if (!storedApiKey || !sessionId) {
@@ -445,6 +482,12 @@
           const transcriptionField = document.getElementById("transcription");
           transcriptionField.value = result.transcription;
           autoResize(transcriptionField);
+          // Calculate transcription cost using recording duration (in minutes)
+          let durationMinutes = recordingDuration / (1000 * 60);
+          let cost = durationMinutes * 0.006;
+          transcriptionCost += cost;
+          totalCost += cost;
+          updateCostIndicator();
         } else {
           updateStatusMessage("No transcription available.", "red");
         }
@@ -452,6 +495,7 @@
         updateStatusMessage("Transcription error: " + error, "red");
       }
     });
+    
     // Note Generation with Streaming and Timer
     document.getElementById("generateNoteButton").addEventListener("click", async () => {
       const transcriptionText = document.getElementById("transcription").value.trim();
@@ -515,6 +559,14 @@
         noteTimerElement.innerText = "Text generation completed!";
         // Post-process the generated note to remove unwanted markdown symbols
         generatedNoteField.value = cleanOutput(generatedNoteField.value);
+        // Estimate token usage:
+        // A rough approximation is that 1 token ≈ 4 characters.
+        let estimatedInputTokens = promptText.length / 4;
+        let estimatedOutputTokens = generatedNoteField.value.length / 4;
+        let noteCost = (estimatedInputTokens / 1000000 * 10.00) + (estimatedOutputTokens / 1000000 * 30.00);
+        noteGenCost += noteCost;
+        totalCost += noteCost;
+        updateCostIndicator();
       } catch (error) {
         clearInterval(noteTimerInterval);
         generatedNoteField.value = "Error generating note: " + error;

@@ -150,9 +150,9 @@
 <body>
   <!-- Cost Indicator -->
   <div id="costIndicator">
-    Total: $0.00<br>
-    Transcription: $0.00<br>
-    Note Generation: $0.00
+    Total: $0.0000<br>
+    Transcription: $0.0000<br>
+    Note Generation: $0.0000
   </div>
   <div class="grid-container">
     <!-- Sidebar with Toggle Buttons -->
@@ -259,6 +259,16 @@
                  .replace(/---/g, "");
     }
     
+    // ----- TOKEN COUNTING FUNCTION -----
+    // For a truly exact count, you should integrate a proper tokenizer.
+    // Here, we use a placeholder function that uses whitespace splitting.
+    // Replace this with, e.g., gpt-3-encoder's encode() method.
+    function countTokens(text) {
+      // This is a rough approximation. Replace with an exact tokenizer if available.
+      return text.trim().split(/\s+/).length;
+    }
+    // -------------------------------------
+
     // Function to update the cost indicator UI
     function updateCostIndicator() {
       const indicator = document.getElementById("costIndicator");
@@ -496,7 +506,7 @@
       }
     });
     
-    // Note Generation (non-streaming) with exact usage data
+    // Note Generation using STREAMING mode with token counting for cost
     document.getElementById("generateNoteButton").addEventListener("click", async () => {
       const transcriptionText = document.getElementById("transcription").value.trim();
       if (!transcriptionText) {
@@ -513,7 +523,6 @@
         noteTimerElement.innerText = "Note Generation Timer: " + formatTime(Date.now() - noteStartTime);
       }, 1000);
       try {
-        // Non-streaming call to get usage info
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -527,23 +536,49 @@
               { role: "user", content: transcriptionText }
             ],
             temperature: 0.7,
-            stream: false  // non-streaming for complete response & usage data
+            stream: true // STREAMING mode enabled
           })
         });
-        const result = await response.json();
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let done = false;
+        let completeOutput = "";
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          const chunkValue = decoder.decode(value);
+          const lines = chunkValue.split("\n").filter(line => line.trim() !== "");
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const jsonStr = line.replace("data: ", "").trim();
+              if (jsonStr === "[DONE]") {
+                done = true;
+                break;
+              }
+              try {
+                const parsed = JSON.parse(jsonStr);
+                const textChunk = parsed.choices[0].delta?.content || "";
+                completeOutput += textChunk;
+                generatedNoteField.value += textChunk;
+                autoResize(generatedNoteField);
+              } catch (err) {
+                console.error("Stream chunk parsing error:", err);
+              }
+            }
+          }
+        }
         clearInterval(noteTimerInterval);
         noteTimerElement.innerText = "Text generation completed!";
-        // Set the generated note text (after cleaning)
-        generatedNoteField.value = cleanOutput(result.choices[0].message.content);
+        // Post-process the generated note to remove unwanted markdown symbols
+        generatedNoteField.value = cleanOutput(generatedNoteField.value);
         autoResize(generatedNoteField);
-        // Extract usage info for an exact cost calculation:
-        // result.usage = { prompt_tokens, completion_tokens, total_tokens }
-        const usage = result.usage;
-        let promptTokens = usage.prompt_tokens;
-        let completionTokens = usage.completion_tokens;
+        // --- TOKEN COUNTING & COST CALCULATION ---
+        // Count tokens using our token counter function.
+        const promptTokenCount = countTokens(promptText);
+        const outputTokenCount = countTokens(completeOutput);
         // Calculate cost using GPT-4 Turbo pricing:
-        // Input: $10 per 1M tokens, Output: $30 per 1M tokens
-        let noteCost = (promptTokens / 1000000 * 10.00) + (completionTokens / 1000000 * 30.00);
+        // Input: $10 per 1,000,000 tokens; Output: $30 per 1,000,000 tokens.
+        let noteCost = (promptTokenCount / 1000000 * 10.00) + (outputTokenCount / 1000000 * 30.00);
         noteGenCost += noteCost;
         totalCost += noteCost;
         updateCostIndicator();

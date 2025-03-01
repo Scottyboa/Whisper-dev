@@ -150,9 +150,9 @@
 <body>
   <!-- Cost Indicator -->
   <div id="costIndicator">
-    Total: $0.0000<br>
-    Transcription: $0.0000<br>
-    Note Generation: $0.0000
+    Total: $0.0000 (~NOK 0.0000)<br>
+    Transcription: $0.0000 (~NOK 0.0000)<br>
+    Note Generation: $0.0000 (~NOK 0.0000)
   </div>
   <div class="grid-container">
     <!-- Sidebar with Toggle Buttons -->
@@ -240,6 +240,9 @@
     let transcriptionCost = 0;
     let recordingDuration = 0; // in milliseconds
 
+    // Exchange rate constant (e.g., 1 USD = 10 NOK)
+    const exchangeRate = 10;
+
     // Utility function: format time
     function formatTime(ms) {
       const totalSec = Math.floor(ms / 1000);
@@ -262,20 +265,21 @@
     // ----- TOKEN COUNTING FUNCTION -----
     // For a truly exact count, you should integrate a proper tokenizer.
     // Here, we use a placeholder function that uses whitespace splitting.
-    // Replace this with, e.g., gpt-3-encoder's encode() method.
     function countTokens(text) {
-      // This is a rough approximation. Replace with an exact tokenizer if available.
       return text.trim().split(/\s+/).length;
     }
     // -------------------------------------
 
-    // Function to update the cost indicator UI
+    // Function to update the cost indicator UI (showing USD and NOK)
     function updateCostIndicator() {
+      const totalNOK = totalCost * exchangeRate;
+      const transcriptionNOK = transcriptionCost * exchangeRate;
+      const noteGenNOK = noteGenCost * exchangeRate;
       const indicator = document.getElementById("costIndicator");
       indicator.innerHTML = `
-        Total: $${totalCost.toFixed(4)}<br>
-        Transcription: $${transcriptionCost.toFixed(4)}<br>
-        Note Generation: $${noteGenCost.toFixed(4)}
+        Total: $${totalCost.toFixed(4)} (~NOK ${totalNOK.toFixed(2)})<br>
+        Transcription: $${transcriptionCost.toFixed(4)} (~NOK ${transcriptionNOK.toFixed(2)})<br>
+        Note Generation: $${noteGenCost.toFixed(4)} (~NOK ${noteGenNOK.toFixed(2)})
       `;
     }
     
@@ -573,7 +577,7 @@
         generatedNoteField.value = cleanOutput(generatedNoteField.value);
         autoResize(generatedNoteField);
         // --- TOKEN COUNTING & COST CALCULATION ---
-        // Count tokens using our token counter function.
+        // Use our token counter to get approximate token counts.
         const promptTokenCount = countTokens(promptText);
         const outputTokenCount = countTokens(completeOutput);
         // Calculate cost using GPT-4 Turbo pricing:

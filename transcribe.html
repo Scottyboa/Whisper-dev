@@ -554,7 +554,89 @@
       }
     });
     
-    // Note Generation using STREAMING mode with token counting for cost
+    // --- Enhanced and Optimized AD IMPRESSION COUNTER ---
+    // Session settings
+    const SESSION_IMPRESSION_LIMIT = 10; // max impressions per session
+    const DEBOUNCE_THRESHOLD = 3000; // 3 seconds debounce after page load
+    const ENGAGEMENT_THRESHOLD = 5000; // must be engaged for 5 seconds continuously
+    const IMPRESSION_COOLDOWN = 600000; // 10 minutes cooldown between impressions
+    // Store page load time to help debounce rapid refreshes
+    const pageLoadTime = Date.now();
+    
+    // Initialize impression counter values from localStorage
+    let adImpressions = parseInt(localStorage.getItem("adImpressions_" + apiKey)) || 0;
+    let lastAdViewTime = parseInt(localStorage.getItem("lastAdViewTime_" + apiKey)) || 0;
+    // Track continuous engagement time (in milliseconds)
+    let engagedTime = 0;
+    let engagementInterval;
+    
+    // Flag to check for active engagement
+    let userActive = false;
+    let isTabActive = true;
+    
+    // Update UI with stored values
+    document.getElementById("impressionCounter").innerText = "Impressions: " + adImpressions;
+    
+    // Detect user activity to ensure genuine engagement
+    function setUserActive() { userActive = true; }
+    document.addEventListener("mousemove", setUserActive);
+    document.addEventListener("scroll", setUserActive);
+    document.addEventListener("keydown", setUserActive);
+    document.addEventListener("click", setUserActive);
+    
+    // Track continuous engagement while tab is active
+    engagementInterval = setInterval(() => {
+      if (isTabActive && userActive) {
+        engagedTime += 1000;
+      } else {
+        engagedTime = 0;
+      }
+      // Reset userActive flag to require ongoing activity
+      userActive = false;
+    }, 1000);
+    
+    // Detect if tab is active or hidden
+    document.addEventListener("visibilitychange", () => {
+      isTabActive = document.visibilityState === "visible";
+      if (!isTabActive) {
+        localStorage.setItem("lastAdViewTime_" + apiKey, Date.now());
+      }
+    });
+    
+    // Observer to detect ad visibility with IntersectionObserver
+    const adElement = document.getElementById("adUnit");
+    const adObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (
+          entry.isIntersecting &&
+          isTabActive &&
+          engagedTime >= ENGAGEMENT_THRESHOLD &&
+          (Date.now() - pageLoadTime > DEBOUNCE_THRESHOLD) &&  // debounce rapid page reloads
+          adImpressions < SESSION_IMPRESSION_LIMIT  // session limit
+        ) {
+          let currentTime = Date.now();
+          let lastViewTime = parseInt(localStorage.getItem("lastAdViewTime_" + apiKey)) || 0;
+          // Only count if at least 5 seconds have passed since the last impression
+          if (currentTime - lastViewTime > 5000) {
+            // Ensure a cooldown of 10 minutes between impressions
+            if (currentTime - lastViewTime > IMPRESSION_COOLDOWN) {
+              adImpressions++;
+              localStorage.setItem("adImpressions_" + apiKey, adImpressions);
+              document.getElementById("impressionCounter").innerText = "Impressions: " + adImpressions;
+              console.log("Ad impression counted. Total: " + adImpressions);
+            }
+            localStorage.setItem("lastAdViewTime_" + apiKey, currentTime);
+          }
+        }
+      });
+    }, { threshold: 0.5 });
+    
+    if (adElement) {
+      adObserver.observe(adElement);
+    }
+    // --------------------------------
+    
+    // --- Note Generation using STREAMING mode with token counting for cost ---
     document.getElementById("generateNoteButton").addEventListener("click", async () => {
       const transcriptionText = document.getElementById("transcription").value.trim();
       if (!transcriptionText) {
@@ -632,28 +714,6 @@
         noteTimerElement.innerText = "";
       }
     });
-    
-    // --- AD IMPRESSION COUNTER ---
-    // Retrieve any previously stored count for this session (keyed by API key)
-    let adImpressions = parseInt(localStorage.getItem("adImpressions_" + apiKey)) || 0;
-    document.getElementById("impressionCounter").innerText = "Impressions: " + adImpressions;
-    
-    const adElement = document.getElementById("adUnit");
-    const adObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          adImpressions++;
-          localStorage.setItem("adImpressions_" + apiKey, adImpressions);
-          document.getElementById("impressionCounter").innerText = "Impressions: " + adImpressions;
-          console.log("Ad impression counted. Total: " + adImpressions);
-        }
-      });
-    }, { threshold: 0.5 });
-    
-    if (adElement) {
-      adObserver.observe(adElement);
-    }
-    // --------------------------------
     
   </script>
 </body>

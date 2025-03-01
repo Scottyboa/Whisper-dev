@@ -71,6 +71,30 @@
     button:active {
       transform: scale(0.98);
     }
+    /* Consent Banner Styling */
+    #cmp-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #f8f8f8;
+      border-top: 1px solid #ccc;
+      padding: 12px;
+      text-align: center;
+      font-size: 14px;
+      z-index: 1000;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    }
+    #cmp-banner button {
+      margin-left: 10px;
+      padding: 6px 12px;
+    }
+    /* Ad revenue message styling */
+    .ad-revenue-message {
+      margin-top: 20px;
+      font-size: 16px;
+      color: #555;
+    }
   </style>
 </head>
 <body>
@@ -86,9 +110,13 @@
     <button id="enterTranscriptionBtn">Enter Transcription Tool</button>
     <br>
     <button id="openGuideButton">Guide for setting up API key</button>
+    <!-- Ad Revenue Explanation Text -->
+    <p class="ad-revenue-message">
+      As we do not charge for the use of this website and rely solely on ad revenue, we kindly ask you to consent to personalized ads to help support our service.
+    </p>
   </div>
   
-  <!-- Popup Overlay for API Guide (same as before) -->
+  <!-- Popup Overlay for API Guide -->
   <div id="apiKeyGuideOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:9999;">
     <div id="apiKeyGuideModal" style="background:#fff; width:80%; max-width:600px; margin:40px auto; padding:20px; border-radius:8px; text-align:left; max-height:80vh; overflow-y:auto;">
       <h2>How to Sign Up for an OpenAI API Account and Use It for Transcription</h2>
@@ -97,13 +125,81 @@
     </div>
   </div>
   
+  <!-- Consent Banner -->
+  <div id="cmp-banner">
+    <span>
+      This website is free to use because we rely solely on ad revenue.
+      We use cookies to personalize ads and improve your experience.
+      By clicking "Accept", you consent to the use of cookies.
+    </span>
+    <button id="cmp-accept">Accept</button>
+    <button id="cmp-manage">Manage</button>
+  </div>
+  
+  <!-- Scripts -->
   <script>
+    // Consent Banner & Cookie Management Script
+
+    // Function to set a cookie
+    function setCookie(name, value, days) {
+      var expires = "";
+      if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+      }
+      document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    }
+
+    // Function to get a cookie by name
+    function getCookie(name) {
+      var nameEQ = name + "=";
+      var ca = document.cookie.split(';');
+      for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
+      }
+      return null;
+    }
+
+    // Function to dynamically load the AdSense script after consent
+    function loadAdSense() {
+      var script = document.createElement('script');
+      script.async = true;
+      script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+      document.head.appendChild(script);
+      // Example: Initialize ad slots if any are on this page.
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    }
+
+    // Consent Banner actions
+    document.getElementById('cmp-accept').addEventListener('click', function() {
+      setCookie("user_consent", "accepted", 365); // Set consent for 1 year
+      document.getElementById('cmp-banner').style.display = 'none';
+      loadAdSense(); // Load AdSense after consent is given
+    });
+
+    document.getElementById('cmp-manage').addEventListener('click', function() {
+      alert('Here you can manage your cookie and ad preferences.');
+      // Replace alert with a modal or settings page as needed.
+    });
+
+    // On page load, check for existing consent
+    (function() {
+      if (getCookie("user_consent") === "accepted") {
+        document.getElementById('cmp-banner').style.display = 'none';
+        loadAdSense();
+      }
+    })();
+
+    // API Key and Guide Logic
     const overlay = document.getElementById("apiKeyGuideOverlay");
     const closeBtn = document.getElementById("closeGuideBtn");
     const openGuideButton = document.getElementById("openGuideButton");
     const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");
     const apiKeyInput = document.getElementById("apiKeyInput");
-    
+
     openGuideButton.addEventListener("click", () => {
       overlay.style.display = "flex";
       overlay.style.flexDirection = "column";

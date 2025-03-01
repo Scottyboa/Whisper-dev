@@ -484,7 +484,7 @@
           autoResize(transcriptionField);
           // Calculate transcription cost using recording duration (in minutes)
           let durationMinutes = recordingDuration / (1000 * 60);
-          let cost = durationMinutes * 0.006;
+          let cost = durationMinutes * 0.006; // Whisper: $0.006 per minute
           transcriptionCost += cost;
           totalCost += cost;
           updateCostIndicator();
@@ -496,7 +496,7 @@
       }
     });
     
-    // Note Generation with Streaming and Timer
+    // Note Generation (non-streaming) with exact usage data
     document.getElementById("generateNoteButton").addEventListener("click", async () => {
       const transcriptionText = document.getElementById("transcription").value.trim();
       if (!transcriptionText) {
@@ -513,6 +513,7 @@
         noteTimerElement.innerText = "Note Generation Timer: " + formatTime(Date.now() - noteStartTime);
       }, 1000);
       try {
+        // Non-streaming call to get usage info
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -520,50 +521,29 @@
             "Authorization": "Bearer " + apiKey
           },
           body: JSON.stringify({
-            model: "gpt-4-turbo", // or any other model you wish to use
+            model: "gpt-4-turbo", // using GPT-4 Turbo
             messages: [
               { role: "system", content: promptText },
               { role: "user", content: transcriptionText }
             ],
             temperature: 0.7,
-            stream: true
+            stream: false  // non-streaming for complete response & usage data
           })
         });
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-        let done = false;
-        while (!done) {
-          const { value, done: doneReading } = await reader.read();
-          done = doneReading;
-          const chunkValue = decoder.decode(value);
-          const lines = chunkValue.split("\n").filter(line => line.trim() !== "");
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const jsonStr = line.replace("data: ", "").trim();
-              if (jsonStr === "[DONE]") {
-                done = true;
-                break;
-              }
-              try {
-                const parsed = JSON.parse(jsonStr);
-                const textChunk = parsed.choices[0].delta?.content || "";
-                generatedNoteField.value += textChunk;
-                autoResize(generatedNoteField);
-              } catch (err) {
-                console.error("Stream chunk parsing error:", err);
-              }
-            }
-          }
-        }
+        const result = await response.json();
         clearInterval(noteTimerInterval);
         noteTimerElement.innerText = "Text generation completed!";
-        // Post-process the generated note to remove unwanted markdown symbols
-        generatedNoteField.value = cleanOutput(generatedNoteField.value);
-        // Estimate token usage:
-        // A rough approximation is that 1 token ≈ 4 characters.
-        let estimatedInputTokens = promptText.length / 4;
-        let estimatedOutputTokens = generatedNoteField.value.length / 4;
-        let noteCost = (estimatedInputTokens / 1000000 * 10.00) + (estimatedOutputTokens / 1000000 * 30.00);
+        // Set the generated note text (after cleaning)
+        generatedNoteField.value = cleanOutput(result.choices[0].message.content);
+        autoResize(generatedNoteField);
+        // Extract usage info for an exact cost calculation:
+        // result.usage = { prompt_tokens, completion_tokens, total_tokens }
+        const usage = result.usage;
+        let promptTokens = usage.prompt_tokens;
+        let completionTokens = usage.completion_tokens;
+        // Calculate cost using GPT-4 Turbo pricing:
+        // Input: $10 per 1M tokens, Output: $30 per 1M tokens
+        let noteCost = (promptTokens / 1000000 * 10.00) + (completionTokens / 1000000 * 30.00);
         noteGenCost += noteCost;
         totalCost += noteCost;
         updateCostIndicator();

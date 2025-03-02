@@ -13,18 +13,6 @@
       margin: 0;
       padding: 0;
     }
-    /* Cost Indicator */
-    #costIndicator {
-      position: fixed;
-      top: 10px;
-      right: 270px;
-      background: rgba(255,255,255,0.9);
-      border: 1px solid #ccc;
-      padding: 10px;
-      border-radius: 5px;
-      font-size: 14px;
-      z-index: 1000;
-    }
     /* Grid Layout */
     .grid-container {
       display: grid;
@@ -192,9 +180,7 @@
   </style>
 </head>
 <body>
-  <div id="costIndicator">
-    <span id="costIndicatorText">Total: $0.0000 (~NOK 0.0000)<br>Transcription: $0.0000 (~NOK 0.0000)<br>Note Generation: $0.0000 (~NOK 0.0000)</span>
-  </div>
+  <!-- Removed cost indicator block -->
   <div class="grid-container">
     <!-- Left Sidebar -->
     <aside class="sidebar">
@@ -293,7 +279,6 @@
       const transcribeTranslations = {
         en: {
           pageTitle: "Transcription Tool with Ads and Guide Overlay",
-          costIndicator: "Total: $0.0000 (~NOK 0.0000)<br>Transcription: $0.0000 (~NOK 0.0000)<br>Note Generation: $0.0000 (~NOK 0.0000)",
           btnFunctions: "Functions",
           btnGuide: "Guide",
           recordingAreaTitle: "Recording Area",
@@ -329,7 +314,6 @@ Please click "Functions" to return to the main interface.`
         },
         no: {
           pageTitle: "Transkripsjonsverktøy med annonser og veiledningsoverlegg",
-          costIndicator: "Totalt: $0.0000 (~NOK 0.0000)<br>Transkripsjon: $0.0000 (~NOK 0.0000)<br>Notatgenerering: $0.0000 (~NOK 0.0000)",
           btnFunctions: "Funksjoner",
           btnGuide: "Veiledning",
           recordingAreaTitle: "Opptaksområde",
@@ -365,7 +349,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         },
         sv: {
           pageTitle: "Transkriptionsverktyg med annonser och guideöverlägg",
-          costIndicator: "Totalt: $0.0000 (~NOK 0.0000)<br>Transkription: $0.0000 (~NOK 0.0000)<br>Notatgenerering: $0.0000 (~NOK 0.0000)",
           btnFunctions: "Funktioner",
           btnGuide: "Guide",
           recordingAreaTitle: "Inspelningsområde",
@@ -401,7 +384,6 @@ Klicka på "Funktioner" för att återgå till huvudsidan.`
         },
         zh: {
           pageTitle: "转录工具与广告及指南覆盖",
-          costIndicator: "总计: $0.0000 (~NOK 0.0000)<br>转录: $0.0000 (~NOK 0.0000)<br>笔记生成: $0.0000 (~NOK 0.0000)",
           btnFunctions: "功能",
           btnGuide: "指南",
           recordingAreaTitle: "录音区域",
@@ -437,7 +419,6 @@ Klicka på "Funktioner" för att återgå till huvudsidan.`
         },
         de: {
           pageTitle: "Whisper Transkription",
-          costIndicator: "Total: $0.0000 (~NOK 0.0000)<br>Transkription: $0.0000 (~NOK 0.0000)<br>Notizgenerierung: $0.0000 (~NOK 0.0000)",
           btnFunctions: "Funktionen",
           btnGuide: "Guide",
           recordingAreaTitle: "Aufnahmebereich",
@@ -473,7 +454,6 @@ Klicken Sie auf "Funktionen", um zur Hauptansicht zurückzukehren.`
         },
         fr: {
           pageTitle: "Transcription Whisper",
-          costIndicator: "Total : $0.0000 (~NOK 0.0000)<br>Transcription : $0.0000 (~NOK 0.0000)<br>Génération de notes : $0.0000 (~NOK 0.0000)",
           btnFunctions: "Fonctions",
           btnGuide: "Guide",
           recordingAreaTitle: "Zone d'enregistrement",
@@ -511,7 +491,6 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
       
       function updateLanguageTranscribe(lang) {
         document.getElementById("page-title-transcribe").textContent = transcribeTranslations[lang].pageTitle;
-        document.getElementById("costIndicatorText").innerHTML = transcribeTranslations[lang].costIndicator;
         document.getElementById("btnFunctions").textContent = transcribeTranslations[lang].btnFunctions;
         document.getElementById("btnGuide").textContent = transcribeTranslations[lang].btnGuide;
         document.getElementById("recordingAreaTitle").textContent = transcribeTranslations[lang].recordingAreaTitle;
@@ -532,6 +511,8 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         document.getElementById("promptSlotLabel").textContent = transcribeTranslations[lang].promptSlotLabel;
         document.getElementById("customPrompt").setAttribute("placeholder", transcribeTranslations[lang].customPromptPlaceholder);
         document.getElementById("adUnit").textContent = transcribeTranslations[lang].adUnitText;
+        document.getElementById("guideHeading").textContent = transcribeTranslations[lang].guideHeading;
+        document.getElementById("guideText").innerHTML = transcribeTranslations[lang].guideText;
       }
       let currentLangTranscribe = localStorage.getItem("siteLanguage") || "en";
       document.getElementById("lang-select-transcribe").value = currentLangTranscribe;

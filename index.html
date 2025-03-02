@@ -3,68 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="page-title-transcribe">Transcription Tool with Ads and Guide Overlay</title>
+  <title id="page-title">Whisper Transcription</title>
+  <!-- Import Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
   <style>
+    /* Base Styles */
     body {
       font-family: 'Roboto', sans-serif;
       background-color: #f8f8f8;
       color: #333;
       margin: 0;
       padding: 0;
-    }
-    /* Cost Indicator */
-    #costIndicator {
-      position: fixed;
-      top: 10px;
-      right: 270px;
-      background: rgba(255,255,255,0.9);
-      border: 1px solid #ccc;
-      padding: 10px;
-      border-radius: 5px;
-      font-size: 14px;
-      z-index: 1000;
-    }
-    /* Grid Layout */
-    .grid-container {
-      display: grid;
-      grid-template-columns: 250px 1fr 250px;
-      height: 100vh;
-    }
-    /* Left Sidebar */
-    .sidebar {
-      background-color: #e0e0e0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      text-align: center;
       position: relative;
     }
-    .sidebar button {
-      font-size: 18px;
-      padding: 15px;
+    header {
+      background: linear-gradient(135deg, #5a9 0%, #489 100%);
+      color: #fff;
+      padding: 40px 20px;
+      text-align: center;
+      position: relative;
     }
-    /* Main Content Area */
-    .main-content {
-      padding: 20px;
+    header h1 {
+      font-family: 'Merriweather', serif;
+      font-weight: 300;
+      font-size: 48px;
+      margin: 0;
+    }
+    header p {
+      font-size: 20px;
+      margin-top: 10px;
+    }
+    /* Language Icon & Dropdown */
+    #lang-container {
+      position: absolute;
+      top: 10px;
+      right: 10px;
       display: flex;
-      flex-direction: column;
-      gap: 20px;
-      overflow-y: auto;
+      align-items: center;
     }
-    /* Recording Area (Top Half) */
-    .recording-area {
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 20px;
+    #lang-container img {
+      width: 24px;
+      height: 24px;
+      margin-right: 5px;
     }
-    .timer {
-      font-size: 18px;
-      margin-bottom: 10px;
-      color: #333;
+    #lang-select {
+      padding: 5px;
+      font-size: 14px;
     }
-    /* Textareas with auto-resize */
-    #transcription {
-      width: 100%;
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    input[type="text"] {
+      width: 300px;
       padding: 12px;
       border: 1px solid #ddd;
       border-radius: 10px;
@@ -72,32 +65,11 @@
       box-sizing: border-box;
       margin-bottom: 20px;
       font-family: 'Roboto', sans-serif;
-      resize: none;
-      min-height: 150px;
     }
-    #generatedNote {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      font-size: 16px;
-      box-sizing: border-box;
-      margin-bottom: 20px;
-      font-family: 'Roboto', sans-serif;
-      resize: none;
-      min-height: 150px;
-    }
-    #customPrompt {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      font-size: 16px;
-      box-sizing: border-box;
-      margin-bottom: 20px;
-      font-family: 'Roboto', sans-serif;
-      resize: none;
-      min-height: 200px;
+    input[type="text"]:focus {
+      border-color: #66afe9;
+      box-shadow: 0 0 8px rgba(102,175,233,0.6);
+      outline: none;
     }
     button {
       background-color: #5a9;
@@ -108,7 +80,7 @@
       font-size: 16px;
       cursor: pointer;
       transition: background-color 0.3s, transform 0.1s;
-      margin: 10px 0;
+      margin: 10px;
     }
     button:hover {
       background-color: #489;
@@ -116,181 +88,131 @@
     button:active {
       transform: scale(0.98);
     }
-    /* Bottom Half: Two Columns */
-    .bottom-half {
-      display: flex;
-      gap: 20px;
-      flex: 1;
-    }
-    .column {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    /* Right Sidebar (Ad Area) */
-    .ad-sidebar {
-      background-color: #e0e0e0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #adUnit {
-      width: 100%;
-      height: 200px;
-      background-color: #ddd;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .ad-revenue-message {
+      margin-top: 20px;
       font-size: 18px;
-      margin-bottom: 10px;
+      font-weight: bold;
+      color: #555;
     }
-    #impressionCounter {
-      font-size: 14px;
-      color: #333;
+    /* Consent Banner */
+    #cmp-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #f8f8f8;
+      border-top: 1px solid #ccc;
+      padding: 20px;
+      text-align: center;
+      font-size: 16px;
+      z-index: 1000;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
     }
-    /* Guide Overlay */
-    #guideView {
+    #cmp-banner button {
+      margin-left: 10px;
+      padding: 8px 16px;
+    }
+    /* API Guide Overlay */
+    #apiKeyGuideOverlay {
       display: none;
       position: fixed;
-      top: 10%;
-      left: 10%;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    #apiKeyGuideModal {
+      background: #fff;
       width: 80%;
-      height: 80%;
-      background: white;
-      border: 2px solid #ccc;
+      max-width: 600px;
+      margin: 40px auto;
       padding: 20px;
+      border-radius: 8px;
+      text-align: left;
+      max-height: 80vh;
       overflow-y: auto;
-      z-index: 2000;
     }
-    #guideView.active {
-      display: block;
+    #apiKeyGuideModal h2 {
+      margin-top: 0;
     }
-    /* Language Dropdown in Sidebar (Bottom Left) */
-    #lang-select-transcribe {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      padding: 5px;
-      font-size: 14px;
+    #apiKeyGuideModal p {
+      line-height: 1.5;
+      margin-bottom: 15px;
     }
   </style>
 </head>
 <body>
-  <div id="costIndicator">
-    <span id="costIndicatorText">Total: $0.0000 (~NOK 0.0000)<br>Transcription: $0.0000 (~NOK 0.0000)<br>Note Generation: $0.0000 (~NOK 0.0000)</span>
+  <!-- Language Icon & Dropdown -->
+  <div id="lang-container">
+    <img src="language-icon.png" alt="Language Icon">
+    <select id="lang-select">
+      <option value="en">English</option>
+      <option value="no">Norsk</option>
+      <option value="es">Español</option>
+      <option value="it">Italiano</option>
+      <option value="de">Deutsch</option>
+      <option value="pt">Português</option>
+      <option value="zh">中文</option>
+      <option value="ja">日本語</option>
+      <option value="ru">Русский</option>
+      <option value="ko">한국어</option>
+      <option value="th">ไทย</option>
+      <option value="fr">Français</option>
+      <option value="sv">Svenska</option>
+      <option value="da">Dansk</option>
+      <option value="fi">Suomi</option>
+    </select>
   </div>
-  <div class="grid-container">
-    <!-- Left Sidebar -->
-    <aside class="sidebar">
-      <button id="btnFunctions">Functions</button>
-      <button id="btnGuide">Guide</button>
-      <select id="lang-select-transcribe">
-        <option value="en">English</option>
-        <option value="no">Norsk</option>
-        <option value="es">Español</option>
-        <option value="it">Italiano</option>
-        <option value="de">Deutsch</option>
-        <option value="pt">Português</option>
-        <option value="zh">中文</option>
-        <option value="ja">日本語</option>
-        <option value="ru">Русский</option>
-        <option value="ko">한국어</option>
-        <option value="th">ไทย</option>
-        <option value="fr">Français</option>
-        <option value="sv">Svenska</option>
-        <option value="da">Dansk</option>
-        <option value="fi">Suomi</option>
-      </select>
-    </aside>
-    <!-- Main Content -->
-    <main class="main-content">
-      <!-- Top Half: Recording Area -->
-      <div class="recording-area">
-        <h3 id="recordingAreaTitle">Recording Area</h3>
-        <div id="recordIndicator" style="width:20px; height:20px; border-radius:50%; background-color:grey; margin:0 auto 10px;"></div>
-        <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
-        <div id="uploadTimer" class="timer">Upload Timer: 0 sec</div>
-        <div id="transcribeTimer" class="timer">Transcription Timer: 0 sec</div>
-        <textarea id="transcription" placeholder="Transcription result will appear here..."></textarea>
-        <div>
-          <button id="startButton">Start Recording</button>
-          <button id="stopButton" disabled>Stop Recording</button>
-          <button id="pauseResumeButton" disabled>Pause Recording</button>
-          <button id="transcribeButton" disabled>Transcribe</button>
-        </div>
-        <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
-      </div>
-      <!-- Bottom Half: Note Generation and Custom Prompt -->
-      <div class="bottom-half">
-        <div class="column">
-          <h3 id="noteGenerationTitle">Note Generation</h3>
-          <button id="generateNoteButton">Generate Note</button>
-          <div id="noteTimer" class="timer">Note Generation Timer: 0 sec</div>
-          <textarea id="generatedNote" readonly placeholder="Generated note will appear here..."></textarea>
-        </div>
-        <div class="column">
-          <h3 id="customPromptTitle">Custom Prompt</h3>
-          <label for="promptSlot" id="promptSlotLabel">Prompt Slot:</label>
-          <select id="promptSlot">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
-            <option value="9">9</option>
-            <option value="10">10</option>
-          </select>
-          <textarea id="customPrompt" placeholder="Enter custom prompt here" rows="1"></textarea>
-        </div>
-      </div>
-    </main>
-    <!-- Right Sidebar (Ad Area) -->
-    <aside class="ad-sidebar">
-      <div id="adArea">
-        <div id="adUnit">Your Ad Here</div>
-        <div id="impressionCounter">Impressions: 0</div>
-      </div>
-    </aside>
-  </div>
-  <!-- Guide Overlay -->
-  <div id="guideView">
-    <h3 id="guideHeading">Guide & Instructions</h3>
-    <p id="guideText">
-      Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
-      <br><br>
-      <strong>How to Use the Functions:</strong>
-      <ul>
-        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
-        <li><strong>Transcription:</strong> Once your audio is uploaded, click "Transcribe" to convert speech to text. The transcription will appear in the top area.</li>
-        <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcription and custom prompt. A timer shows the duration of note generation, and the generated note appears below.</li>
-        <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
-        <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide. The guide appears as an overlay and does not disturb the underlying layout.</li>
-      </ul>
-      Please click "Functions" to return to the main interface.
+  <header>
+    <h1 id="header-title">Whisper Transcription</h1>
+    <p id="header-subtitle">Convert speech to text for professional consultations</p>
+  </header>
+  <div class="container">
+    <p id="start-text">To get started, please enter your OpenAI API key:</p>
+    <input type="text" id="apiKeyInput" placeholder="Enter API Key here" autocomplete="off">
+    <br>
+    <button id="enterTranscriptionBtn">Enter Transcription Tool</button>
+    <br>
+    <button id="openGuideButton">Guide for setting up API key</button>
+    <p class="ad-revenue-message" id="ad-revenue-message">
+      As we do not charge for the use of this website and rely solely on ad revenue, we kindly ask you to consent to personalized ads to help support our service.
     </p>
+  </div>
+  <!-- API Guide Overlay -->
+  <div id="apiKeyGuideOverlay">
+    <div id="apiKeyGuideModal">
+      <h2 id="guide-heading">How to Set Up Your OpenAI API Key</h2>
+      <p id="guide-p1"><strong>What is Whisper Transcription?</strong><br>
+      Whisper Transcription is an AI tool that converts speech to text using the advanced OpenAI Whisper model. It quickly produces high-quality transcripts from speech recorded via a microphone. In addition, you can convert these transcripts into professional consultation notes using personalized prompts—prompts that are saved locally on your device so they remain available each time you log in from the same computer with your personal API key.</p>
+      <p id="guide-p2"><strong>How Does It Work?</strong><br>
+      To perform these tasks, the service uses powerful processing resources via the OpenAI servers. This means you don’t need a high-end local machine; you simply “lend” the necessary processing power by connecting your OpenAI API key. Your API key links to your OpenAI profile and wallet, which must be funded (in USD) to cover usage costs.</p>
+      <p id="guide-p3"><strong>Cost Breakdown:</strong><br>
+      <strong>Transcription Costs:</strong> The OpenAI Whisper model charges only <strong>$0.006 per minute</strong> for transcription. For example, if you perform transcriptions on 20 fifteen‑minute conversations, 4 days a week, for one month—that is 320 conversations total (20×4×4) with each lasting 15 minutes, the total transcription cost would be approximately:<br>
+      <strong>320 × 15 × $0.006 ≈ $28.80</strong> (which will be dynamically converted to NOK based on the current exchange rate).</p>
+      <p id="guide-p4"><strong>Note Generation Costs:</strong><br>
+      If you also use the website for note generation on all 320 consultations, this would add an additional estimated cost of about <strong>110 NOK</strong> (also converted to USD accordingly). Unlike competitors such as Noteless (around 900 NOK for 60 consultations) or Medbrics (up to 1750 NOK for unlimited consultations), you only pay per unit of work. We, however, do not charge you directly—usage costs are deducted from your OpenAI wallet.</p>
+      <p id="guide-p5"><strong>Obtaining Your OpenAI API Key:</strong><br>
+      1. Log into your OpenAI account at <a href="https://platform.openai.com/" target="_blank">https://platform.openai.com/</a> using your credentials.<br>
+      2. Navigate to your account dashboard and click on your profile icon to find the “API Keys” or “Manage API keys” section.<br>
+      3. Click the “Create new key” button to generate your unique API key. Tip: Copy and save this key in a text file on your computer for easy access, as you can only view the key once on the OpenAI webpage. (If you lose it, you can always generate another key – the new key will be linked to your existing OpenAI wallet.)<br>
+      4. Fund your OpenAI wallet (in USD) to cover usage charges for transcription and note generation.</p>
+      <p id="guide-p6"><strong>Why Choose Whisper Transcription?</strong><br>
+      We believe in offering high-quality transcription and note-generation services without the heavy price tag imposed by other companies. Although usage costs are deducted from your OpenAI wallet, you are not charged directly by us—our service is funded entirely by ad revenue, providing you access to the same powerful AI models that competitors use at a fraction of their cost.</p>
+      <button id="closeGuideBtn" style="background:red; color:#fff; padding:10px 20px; border:none; border-radius:10px; cursor:pointer; margin-top:20px;">Close</button>
+    </div>
+  </div>
+  <!-- Consent Banner -->
+  <div id="cmp-banner">
+    <span id="consent-text">This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking "Accept", you consent to the use of cookies.</span>
+    <button id="cmp-accept">Accept</button>
+    <button id="cmp-manage">Manage</button>
   </div>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      // Auto-resize function for textareas
-      function autoResizeTextarea(textarea) {
-        textarea.style.height = "auto";
-        textarea.style.height = textarea.scrollHeight + "px";
-      }
-      document.getElementById("transcription").addEventListener("input", function() {
-        autoResizeTextarea(document.getElementById("transcription"));
-      });
-      document.getElementById("generatedNote").addEventListener("input", function() {
-        autoResizeTextarea(document.getElementById("generatedNote"));
-      });
-      document.getElementById("customPrompt").addEventListener("input", function() {
-        autoResizeTextarea(document.getElementById("customPrompt"));
-      });
-
       /* --------------------------
          Translation Objects for Index Page
          -------------------------- */
@@ -332,24 +254,24 @@
           guideP6: "<strong>Sett inn penger på din OpenAI-lommebok:</strong><br>Legg til midler i din OpenAI-lommebok (i USD) for å dekke bruksutgiftene for transkripsjon og notatgenerering.",
           guideP7: "<strong>Hvorfor velge Whisper Transkripsjon?</strong><br>Vi tror på å tilby høykvalitets transkripsjons- og notatgenereringstjenester uten de høye kostnadene som andre selskaper pålegger. Selv om bruksutgiftene trekkes fra din OpenAI-lommebok, blir du ikke direkte belastet av oss – tjenesten vår finansieres utelukkende av annonseinntekter, noe som gir deg tilgang til de samme kraftige AI-modellene som konkurrentene bruker, til en brøkdel av prisen."
         },
-        // Placeholder objects for es, it, de, pt, zh, ja, ru, ko, th, fr, sv, da, fi
-        es: { pageTitle: "Transcripción Whisper (ES)" },
-        it: { pageTitle: "Trascrizione Whisper (IT)" },
-        de: { pageTitle: "Whisper Transkription (DE)" },
-        pt: { pageTitle: "Transcrição Whisper (PT)" },
-        zh: { pageTitle: "Whisper 转录 (中文)" },
-        ja: { pageTitle: "Whisper 文字起こし (JA)" },
-        ru: { pageTitle: "Whisper Транскрипция (RU)" },
-        ko: { pageTitle: "Whisper 전사 (KO)" },
-        th: { pageTitle: "Whisper การถอดความ (TH)" },
-        fr: { pageTitle: "Transcription Whisper (FR)" },
-        sv: { pageTitle: "Whisper Transkription (SV)" },
-        da: { pageTitle: "Whisper Transskription (DA)" },
-        fi: { pageTitle: "Whisper Transkriptio (FI)" }
+        // For brevity, placeholders for other languages follow.
+        es: { pageTitle: "Transcripción Whisper (ES)", /* ... */ },
+        it: { pageTitle: "Trascrizione Whisper (IT)", /* ... */ },
+        de: { pageTitle: "Whisper Transkription (DE)", /* ... */ },
+        pt: { pageTitle: "Transcrição Whisper (PT)", /* ... */ },
+        zh: { pageTitle: "Whisper 转录 (中文)", /* ... */ },
+        ja: { pageTitle: "Whisper 文字起こし (JA)", /* ... */ },
+        ru: { pageTitle: "Whisper Транскрипция (RU)", /* ... */ },
+        ko: { pageTitle: "Whisper 전사 (KO)", /* ... */ },
+        th: { pageTitle: "Whisper การถอดความ (TH)", /* ... */ },
+        fr: { pageTitle: "Transcription Whisper (FR)", /* ... */ },
+        sv: { pageTitle: "Whisper Transkription (SV)", /* ... */ },
+        da: { pageTitle: "Whisper Transskription (DA)", /* ... */ },
+        fi: { pageTitle: "Whisper Transkriptio (FI)", /* ... */ }
       };
 
       /* --------------------------
-         Update Index Page Language
+         Index Page Language Update
          -------------------------- */
       function updateLanguageIndex(lang) {
         document.getElementById("page-title").textContent = indexTranslations[lang].pageTitle;
@@ -379,7 +301,7 @@
       });
 
       /* --------------------------
-         Consent Banner & Cookie Management for Index Page
+         Consent Banner & Cookie Management (Index Page)
          -------------------------- */
       function setCookie(name, value, days) {
         var expires = "";
@@ -424,7 +346,7 @@
       })();
 
       /* --------------------------
-         API Key & Guide Logic for Index Page
+         API Key & Guide Logic (Index Page)
          -------------------------- */
       const overlayIndex = document.getElementById("apiKeyGuideOverlay");
       const closeGuideIndex = document.getElementById("closeGuideBtn");

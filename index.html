@@ -271,22 +271,23 @@
 
       // LANGUAGE DETECTION:
       // If no language is stored, detect browser language and store it.
-      let storedLang = localStorage.getItem("siteLanguage");
-      if (!storedLang) {
-        const userLang = navigator.language || navigator.userLanguage;
-        const langCode = userLang.substring(0, 2).toLowerCase();
-        const supportedLangs = ["en", "no", "sv", "zh", "de", "fr"];
-        storedLang = supportedLangs.includes(langCode) ? langCode : "en";
-        localStorage.setItem("siteLanguage", storedLang);
-      }
-      let currentLang = storedLang;
-      document.getElementById("lang-select").value = currentLang;
-      updateLanguageIndex(currentLang);
-
-      document.getElementById("lang-select").addEventListener("change", function() {
-        currentLang = this.value;
-        localStorage.setItem("siteLanguage", currentLang);
-        updateLanguageIndex(currentLang);
+// LANGUAGE DETECTION:
+// If no language is stored, detect browser language and store it.
+let storedLang = localStorage.getItem("siteLanguage");
+if (!storedLang) {
+  const userLang = navigator.language || navigator.userLanguage;
+  let langCode = userLang.substring(0, 2).toLowerCase();
+  // Map Norwegian Bokmål ('nb') to 'no'
+  if (langCode === "nb") {
+    langCode = "no";
+  }
+  const supportedLangs = ["en", "no", "sv", "zh", "de", "fr"];
+  storedLang = supportedLangs.includes(langCode) ? langCode : "en";
+  localStorage.setItem("siteLanguage", storedLang);
+}
+let currentLang = storedLang;
+document.getElementById("lang-select").value = currentLang;
+updateLanguageIndex(currentLang);
       });
 
       /* --------------------------

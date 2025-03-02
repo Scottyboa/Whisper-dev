@@ -21,6 +21,7 @@
       color: #fff;
       padding: 40px 20px;
       text-align: center;
+      position: relative;
     }
     header h1 {
       font-family: 'Merriweather', serif;
@@ -31,6 +32,23 @@
     header p {
       font-size: 20px;
       margin-top: 10px;
+    }
+    /* Language Icon & Dropdown at top right */
+    #lang-container {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+    }
+    #lang-container img {
+      width: 24px;
+      height: 24px;
+      margin-right: 5px;
+    }
+    #lang-select {
+      padding: 5px;
+      font-size: 14px;
     }
     .container {
       max-width: 800px;
@@ -70,6 +88,13 @@
     button:active {
       transform: scale(0.98);
     }
+    /* Ad Revenue Message */
+    .ad-revenue-message {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #555;
+    }
     /* Consent Banner Styling */
     #cmp-banner {
       position: fixed;
@@ -87,13 +112,6 @@
     #cmp-banner button {
       margin-left: 10px;
       padding: 8px 16px;
-    }
-    /* Ad revenue message styling */
-    .ad-revenue-message {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #555;
     }
     /* Popup Overlay for API Guide */
     #apiKeyGuideOverlay {
@@ -126,21 +144,30 @@
       line-height: 1.5;
       margin-bottom: 15px;
     }
-    /* Language dropdown at top right */
-    #lang-select {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      padding: 5px;
-      font-size: 14px;
-    }
   </style>
 </head>
 <body>
-  <select id="lang-select">
-    <option value="en">English</option>
-    <option value="no">Norsk</option>
-  </select>
+  <!-- Language Icon and Dropdown -->
+  <div id="lang-container">
+    <img src="language-icon.png" alt="Language Icon">
+    <select id="lang-select">
+      <option value="en">English</option>
+      <option value="no">Norsk</option>
+      <option value="es">Español</option>
+      <option value="it">Italiano</option>
+      <option value="de">Deutsch</option>
+      <option value="pt">Português</option>
+      <option value="zh">中文</option>
+      <option value="ja">日本語</option>
+      <option value="ru">Русский</option>
+      <option value="ko">한국어</option>
+      <option value="th">ไทย</option>
+      <option value="fr">Français</option>
+      <option value="sv">Svenska</option>
+      <option value="da">Dansk</option>
+      <option value="fi">Suomi</option>
+    </select>
+  </div>
   <header>
     <h1 id="header-title">Whisper Transcription</h1>
     <p id="header-subtitle">Convert speech to text for professional consultations</p>
@@ -165,7 +192,7 @@
       <p id="guide-p2"><strong>How Does It Work?</strong><br>
       To perform these tasks, the service uses powerful processing resources via the OpenAI servers. This means you don’t need a high-end local machine; you simply “lend” the necessary processing power by connecting your OpenAI API key. Your API key links to your OpenAI profile and wallet, which must be funded (in USD) to cover usage costs.</p>
       <p id="guide-p3"><strong>Cost Breakdown:</strong><br>
-      <strong>Transcription Costs:</strong> The OpenAI Whisper model charges only <strong>$0.006 per minute</strong> for transcription. For example, if you perform transcriptions on 20 fifteen‑minute conversations, 4 days a week, for one month—that is 320 conversations total (20 × 4 days × 4 weeks) with each lasting 15 minutes, the total transcription cost would be approximately:<br>
+      <strong>Transcription Costs:</strong> The OpenAI Whisper model charges only <strong>$0.006 per minute</strong> for transcription. For example, if you perform transcriptions on 20 fifteen‑minute conversations, 4 days a week, for one month—that is 320 conversations total (20 × 4 × 4) with each lasting 15 minutes, the total transcription cost would be approximately:<br>
       <strong>320 conversations × 15 minutes × $0.006/minute ≈ $28.80</strong> (which will be dynamically converted to NOK based on the current exchange rate).</p>
       <p id="guide-p4"><strong>Note Generation Costs:</strong><br>
       If you also use the website for note generation on all 320 consultations, this would add an additional estimated cost of about <strong>110 NOK</strong> (also converted to USD accordingly). Unlike competitors such as Noteless (around 900 NOK for 60 consultations) or Medbrics (up to 1750 NOK for unlimited consultations), you only pay per unit of work. We, however, do not charge you directly—usage costs are deducted from your OpenAI wallet.</p>
@@ -186,8 +213,8 @@
     <button id="cmp-manage">Manage</button>
   </div>
   <script>
-    // Translation object for index page
-    const translations = {
+    // Translation object for index page (for 14 languages)
+    const indexTranslations = {
       en: {
         pageTitle: "Whisper Transcription",
         headerTitle: "Whisper Transcription",
@@ -197,11 +224,11 @@
         enterButton: "Enter Transcription Tool",
         guideButton: "Guide for setting up API key",
         adRevenueMessage: "As we do not charge for the use of this website and rely solely on ad revenue, we kindly ask you to consent to personalized ads to help support our service.",
-        consentBannerText: 'This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking "Accept", you consent to the use of cookies.',
+        consentBannerText: "This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking \"Accept\", you consent to the use of cookies.",
         guideHeading: "How to Set Up Your OpenAI API Key",
         guideP1: "<strong>What is Whisper Transcription?</strong><br>Whisper Transcription is an AI tool that converts speech to text using the advanced OpenAI Whisper model. It quickly produces high-quality transcripts from speech recorded via a microphone. In addition, you can convert these transcripts into professional consultation notes using personalized prompts—prompts that are saved locally on your device so they remain available each time you log in from the same computer with your personal API key.",
-        guideP2: "<strong>How Does It Work?</strong><br>To perform these tasks, the service uses powerful processing resources via the OpenAI servers. This means you don’t need a high-end local machine; you simply “lend” the necessary processing power by connecting your OpenAI API key. Your API key links to your OpenAI profile and wallet, which must be funded (in USD) to cover usage costs.",
-        guideP3: "<strong>Cost Breakdown:</strong><br><strong>Transcription Costs:</strong> The OpenAI Whisper model charges only <strong>$0.006 per minute</strong> for transcription. For example, if you perform transcriptions on 20 fifteen‑minute conversations, 4 days a week, for one month—that is 320 conversations total (20 × 4 days × 4 weeks) with each lasting 15 minutes, the total transcription cost would be approximately:<br><strong>320 conversations × 15 minutes × $0.006/minute ≈ $28.80</strong> (which will be dynamically converted to NOK based on the current exchange rate).",
+        guideP2: "<strong>How Does It Work?</strong><br>To perform these tasks, the service uses powerful processing resources via the OpenAI servers. This means you don’t need a high-end local machine; you simply \"lend\" the necessary processing power by connecting your OpenAI API key. Your API key links to your OpenAI profile and wallet, which must be funded (in USD) to cover usage costs.",
+        guideP3: "<strong>Cost Breakdown:</strong><br><strong>Transcription Costs:</strong> The OpenAI Whisper model charges only <strong>$0.006 per minute</strong> for transcription. For example, if you perform transcriptions on 20 fifteen‑minute conversations, 4 days a week, for one month—that is 320 conversations total (20×4×4) with each lasting 15 minutes, the total transcription cost would be approximately:<br><strong>320×15×$0.006 ≈ $28.80</strong> (which will be dynamically converted to NOK based on the current exchange rate).",
         guideP4: "<strong>Note Generation Costs:</strong><br>If you also use the website for note generation on all 320 consultations, this would add an additional estimated cost of about <strong>110 NOK</strong> (also converted to USD accordingly). Unlike competitors such as Noteless (around 900 NOK for 60 consultations) or Medbrics (up to 1750 NOK for unlimited consultations), you only pay per unit of work. We, however, do not charge you directly—usage costs are deducted from your OpenAI wallet.",
         guideP5: "<strong>Obtaining Your OpenAI API Key:</strong><br>1. Log into your OpenAI account at <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> using your credentials.<br>2. Navigate to your account dashboard and click on your profile icon to find the “API Keys” or “Manage API keys” section.<br>3. Click the “Create new key” button to generate your unique API key. Tip: Copy and save this key in a text file on your computer for easy access, as you can only view the key once on the OpenAI webpage. (If you lose it, you can always generate another key – the new key will be linked to your existing OpenAI wallet.)<br>4. Fund your OpenAI wallet (in USD) to cover usage charges for transcription and note generation.",
         guideP6: "<strong>Why Choose Whisper Transcription?</strong><br>We believe in offering high-quality transcription and note-generation services without the heavy price tag imposed by other companies. Although usage costs are deducted from your OpenAI wallet, you are not charged directly by us—our service is funded entirely by ad revenue, providing you access to the same powerful AI models that competitors use at a fraction of their cost."
@@ -215,50 +242,282 @@
         enterButton: "Gå til transkripsjonsverktøy",
         guideButton: "Veiledning for oppsett av API-nøkkel",
         adRevenueMessage: "Siden vi ikke tar betalt for bruk av denne nettsiden og utelukkende er avhengige av annonseinntekter, ber vi deg vennligst om å samtykke til personaliserte annonser for å støtte tjenesten vår.",
-        consentBannerText: 'Denne nettsiden er gratis å bruke fordi vi utelukkende er avhengige av annonseinntekter. Vi bruker informasjonskapsler for å personalisere annonser og forbedre din opplevelse. Ved å klikke "Godta", samtykker du i bruken av informasjonskapsler.',
+        consentBannerText: "Denne nettsiden er gratis å bruke fordi vi utelukkende er avhengige av annonseinntekter. Vi bruker informasjonskapsler for å personalisere annonser og forbedre din opplevelse. Ved å klikke \"Godta\", samtykker du i bruken av informasjonskapsler.",
         guideHeading: "Hvordan sette opp din OpenAI API-nøkkel",
         guideP1: "<strong>Hva er Whisper Transkripsjon?</strong><br>Whisper Transkripsjon er et AI-verktøy som konverterer tale til tekst ved hjelp av den avanserte OpenAI Whisper-modellen. Det produserer raskt høykvalitets transkripsjoner fra tale opptatt via en mikrofon. I tillegg kan du konvertere disse transkripsjonene til profesjonelle konsultasjonsnotater ved hjelp av personaliserte meldinger – meldinger som lagres lokalt på enheten din slik at de forblir tilgjengelige hver gang du logger inn fra samme datamaskin med din personlige API-nøkkel.",
-        guideP2: "<strong>Hvordan fungerer det?</strong><br>For å utføre disse oppgavene, bruker tjenesten kraftige prosesseringsressurser via OpenAI-serverne. Dette betyr at du ikke trenger en avansert lokal maskin; du 'låner' den nødvendige prosesseringskraften ved å koble til din OpenAI API-nøkkel. Din API-nøkkel knytter seg til din OpenAI-profil og lommebok, som må være finansiert (i USD) for å dekke bruksutgiftene.",
-        guideP3: "<strong>Kostnadsoversikt:</strong><br><strong>Transkripsjonskostnader:</strong> OpenAI Whisper-modellen belaster kun <strong>$0,006 per minutt</strong> for transkripsjon. For eksempel, la oss si at du transkriberer 20 samtaler på 15 minutter, 4 dager i uken, i én måned – det blir til sammen 320 samtaler (20 × 4 dager × 4 uker), der hver samtale varer 15 minutter. Den totale transkripsjonskostnaden vil da være omtrent:<br><strong>320 samtaler × 15 minutter × $0,006 per minutt ≈ $28,80</strong> (som blir dynamisk konvertert til NOK basert på gjeldende valutakurs).",
+        guideP2: "<strong>Hvordan fungerer det?</strong><br>For å utføre disse oppgavene, bruker tjenesten kraftige prosesseringsressurser via OpenAI-serverne. Dette betyr at du ikke trenger en avansert lokal maskin; du \"låner\" den nødvendige prosesseringskraften ved å koble til din OpenAI API-nøkkel. Din API-nøkkel knytter seg til din OpenAI-profil og lommebok, som må være finansiert (i USD) for å dekke bruksutgiftene.",
+        guideP3: "<strong>Kostnadsoversikt:</strong><br><strong>Transkripsjonskostnader:</strong> OpenAI Whisper-modellen belaster kun <strong>$0,006 per minutt</strong> for transkripsjon. For eksempel, la oss si at du transkriberer 20 samtaler på 15 minutter, 4 dager i uken, i én måned – det blir til sammen 320 samtaler (20×4×4), der hver samtale varer 15 minutter. Den totale transkripsjonskostnaden vil da være omtrent:<br><strong>320×15×$0,006 ≈ $28,80</strong> (som blir dynamisk konvertert til NOK basert på gjeldende valutakurs).",
         guideP4: "<strong>Notatgenereringskostnader:</strong><br>Hvis du også bruker nettsiden for notatgenerering på alle 320 konsultasjoner, vil dette legge til en estimert ekstra kostnad på omtrent <strong>110 NOK</strong> (også konvertert til USD deretter). I motsetning til konkurrenter som Noteless (omtrent 900 NOK for 60 konsultasjoner) eller Medbrics (opptil 1750 NOK for ubegrensede konsultasjoner), betaler du kun for den faktiske bruken. Vi tar imidlertid ikke betalt direkte av deg – bruksutgiftene trekkes fra din OpenAI-lommebok.",
         guideP5: "<strong>Skaff din OpenAI API-nøkkel:</strong><br>1. Logg inn på din OpenAI-konto på <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> med dine innloggingsopplysninger.<br>2. Naviger til kontoadministrasjonen din og klikk på profilikonet ditt for å finne seksjonen 'API Keys' eller 'Administrer API-nøkler'.<br>3. Klikk på knappen 'Opprett ny nøkkel' for å generere din unike API-nøkkel. Tips: Kopier og lagre denne nøkkelen i en tekstfil på datamaskinen for enkel tilgang, ettersom du kun kan se nøkkelen én gang på OpenAI-nettsiden. (Om du skulle miste den, kan du alltid generere en ny nøkkel – den nye nøkkelen vil være knyttet til din eksisterende OpenAI-lommebok.)",
         guideP6: "<strong>Sett inn penger på din OpenAI-lommebok:</strong><br>Legg til midler i din OpenAI-lommebok (i USD) for å dekke bruksutgiftene for transkripsjon og notatgenerering.",
         guideP7: "<strong>Hvorfor velge Whisper Transkripsjon?</strong><br>Vi tror på å tilby høykvalitets transkripsjons- og notatgenereringstjenester uten de høye kostnadene som andre selskaper pålegger. Selv om bruksutgiftene trekkes fra din OpenAI-lommebok, blir du ikke direkte belastet av oss – tjenesten vår finansieres utelukkende av annonseinntekter, noe som gir deg tilgang til de samme kraftige AI-modellene som konkurrentene bruker, til en brøkdel av prisen."
+      },
+      es: {
+        pageTitle: "Transcripción Whisper",
+        headerTitle: "Transcripción Whisper",
+        headerSubtitle: "Convierte el habla en texto para consultas profesionales",
+        startText: "Para comenzar, por favor ingrese su clave API de OpenAI:",
+        apiPlaceholder: "Ingrese la clave API aquí",
+        enterButton: "Entrar en la herramienta de transcripción",
+        guideButton: "Guía para configurar la clave API",
+        adRevenueMessage: "Como no cobramos por el uso de este sitio web y dependemos únicamente de los ingresos por publicidad, le pedimos amablemente que acepte anuncios personalizados para ayudar a respaldar nuestro servicio.",
+        consentBannerText: "Este sitio web es gratuito porque dependemos únicamente de los ingresos por publicidad. Utilizamos cookies para personalizar los anuncios y mejorar su experiencia. Al hacer clic en 'Aceptar', usted consiente el uso de cookies.",
+        guideHeading: "Cómo configurar tu clave API de OpenAI",
+        guideP1: "<strong>¿Qué es Transcripción Whisper?</strong><br>Transcripción Whisper es una herramienta de IA que convierte el habla en texto utilizando el avanzado modelo OpenAI Whisper. Produce transcripciones de alta calidad rápidamente a partir de audio grabado con un micrófono. Además, puedes convertir estas transcripciones en notas profesionales para consultas usando mensajes personalizados, los cuales se guardan localmente en tu dispositivo para que estén disponibles cada vez que inicies sesión desde la misma computadora con tu clave API personal.",
+        guideP2: "<strong>¿Cómo funciona?</strong><br>Para realizar estas tareas, el servicio utiliza potentes recursos de procesamiento a través de los servidores de OpenAI. Esto significa que no necesitas una máquina local de alta gama; simplemente 'prestas' la potencia de procesamiento necesaria conectando tu clave API de OpenAI. Tu clave API se vincula a tu perfil y billetera de OpenAI, la cual debe estar financiada (en USD) para cubrir los costos de uso.",
+        guideP3: "<strong>Desglose de costos:</strong><br><strong>Costos de transcripción:</strong> El modelo OpenAI Whisper cobra solo <strong>$0.006 por minuto</strong> por transcripción. Por ejemplo, si transcribes 20 conversaciones de 15 minutos, 4 días a la semana, durante un mes —esto suma 320 conversaciones en total (20×4×4), y cada conversación dura 15 minutos— el costo total de transcripción sería aproximadamente:<br><strong>320×15×$0.006 ≈ $28.80</strong> (que se convertirá dinámicamente a NOK según la tasa de cambio actual).",
+        guideP4: "<strong>Costos de generación de notas:</strong><br>Si también usas el sitio para generar notas en las 320 consultas, esto agregaría un costo adicional estimado de aproximadamente <strong>110 NOK</strong> (convertido a USD en consecuencia). A diferencia de competidores como Noteless (alrededor de 900 NOK por 60 consultas) o Medbrics (hasta 1750 NOK por consultas ilimitadas), solo pagas por unidad de trabajo. No te cobramos directamente; los costos se deducen de tu billetera de OpenAI.",
+        guideP5: "<strong>Obten tu clave API de OpenAI:</strong><br>1. Inicia sesión en tu cuenta de OpenAI en <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> con tus credenciales.<br>2. Ve a tu panel de control y haz clic en el ícono de tu perfil para encontrar la sección 'API Keys' o 'Administrar API-keys'.<br>3. Haz clic en 'Crear nueva clave' para generar tu clave API única. Consejo: Copia y guarda esta clave en un archivo de texto en tu computadora para un acceso fácil, ya que solo podrás verla una vez en la página de OpenAI. (Si la pierdes, siempre puedes generar otra clave; la nueva estará vinculada a tu billetera de OpenAI existente).<br>4. Financia tu billetera de OpenAI (en USD) para cubrir los cargos de transcripción y generación de notas.",
+        guideP6: "<strong>¿Por qué elegir Transcripción Whisper?</strong><br>Creemos en ofrecer servicios de transcripción y generación de notas de alta calidad sin el elevado costo que imponen otras compañías. Aunque los costos se deducen de tu billetera de OpenAI, no se te cobra directamente; nuestro servicio se financia completamente con ingresos publicitarios, lo que te da acceso a los mismos poderosos modelos de IA que usan nuestros competidores a una fracción del costo."
+      },
+      it: {
+        pageTitle: "Trascrizione Whisper",
+        headerTitle: "Trascrizione Whisper",
+        headerSubtitle: "Converti il parlato in testo per consultazioni professionali",
+        startText: "Per iniziare, inserisci la tua chiave API di OpenAI:",
+        apiPlaceholder: "Inserisci qui la chiave API",
+        enterButton: "Accedi allo strumento di trascrizione",
+        guideButton: "Guida per configurare la chiave API",
+        adRevenueMessage: "Poiché non addebitiamo alcun costo per l'uso di questo sito e ci affidiamo esclusivamente alle entrate pubblicitarie, ti chiediamo gentilmente di acconsentire agli annunci personalizzati per sostenere il nostro servizio.",
+        consentBannerText: "Questo sito è gratuito perché ci affidiamo esclusivamente alle entrate pubblicitarie. Usiamo i cookie per personalizzare gli annunci e migliorare la tua esperienza. Cliccando su \"Accetta\" acconsenti all'uso dei cookie.",
+        guideHeading: "Come configurare la tua chiave API di OpenAI",
+        guideP1: "<strong>Cos'è Trascrizione Whisper?</strong><br>Trascrizione Whisper è uno strumento di IA che converte il parlato in testo utilizzando il modello avanzato OpenAI Whisper. Produce rapidamente trascrizioni di alta qualità da audio registrato con un microfono. Inoltre, puoi convertire queste trascrizioni in note professionali per le consultazioni utilizzando messaggi personalizzati, che vengono salvati localmente sul tuo dispositivo e rimangono disponibili ogni volta che accedi dallo stesso computer con la tua chiave API personale.",
+        guideP2: "<strong>Come funziona?</strong><br>Per svolgere queste operazioni, il servizio utilizza potenti risorse di elaborazione tramite i server di OpenAI. Ciò significa che non hai bisogno di una macchina locale di fascia alta; basta \"connettere\" la tua chiave API di OpenAI per ottenere la potenza di calcolo necessaria. La tua chiave API si collega al tuo profilo e portafoglio OpenAI, che devono essere finanziati (in USD) per coprire i costi d'uso.",
+        guideP3: "<strong>Ripartizione dei costi:</strong><br><strong>Costi di trascrizione:</strong> Il modello OpenAI Whisper addebita solo <strong>$0.006 al minuto</strong> per la trascrizione. Ad esempio, se trascrivi 20 conversazioni di 15 minuti, 4 giorni a settimana, per un mese – cioè 320 conversazioni totali (20×4×4) ciascuna di 15 minuti, il costo totale della trascrizione sarebbe approssimativamente:<br><strong>320×15×$0.006 ≈ $28.80</strong> (convertito dinamicamente in NOK in base al tasso di cambio corrente).",
+        guideP4: "<strong>Costi per la generazione di note:</strong><br>Se utilizzi anche il sito per generare note in tutte le 320 consultazioni, ciò aggiungerebbe un costo stimato aggiuntivo di circa <strong>110 NOK</strong> (convertito anche in USD di conseguenza). A differenza di concorrenti come Noteless (circa 900 NOK per 60 consultazioni) o Medbrics (fino a 1750 NOK per consultazioni illimitate), paghi solo per il lavoro svolto. Tuttavia, noi non ti addebitiamo direttamente: i costi vengono detratti dal tuo portafoglio OpenAI.",
+        guideP5: "<strong>Ottieni la tua chiave API di OpenAI:</strong><br>1. Accedi al tuo account OpenAI su <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> con le tue credenziali.<br>2. Vai al cruscotto e clicca sull'icona del tuo profilo per trovare la sezione 'API Keys' o 'Gestisci API Keys'.<br>3. Clicca sul pulsante 'Crea nuova chiave' per generare la tua chiave API unica. Suggerimento: Copia e salva questa chiave in un file di testo sul tuo computer per un accesso facile, poiché puoi visualizzarla solo una volta sul sito di OpenAI. (Se la perdi, puoi sempre generarne un'altra – la nuova sarà collegata al tuo portafoglio OpenAI esistente).<br>4. Finanzia il tuo portafoglio OpenAI (in USD) per coprire i costi di trascrizione e generazione di note.",
+        guideP6: "<strong>Perché scegliere Trascrizione Whisper?</strong><br>Crediamo nell'offrire servizi di trascrizione e generazione di note di alta qualità senza il prezzo elevato imposto da altre aziende. Sebbene i costi d'uso vengano detratti dal tuo portafoglio OpenAI, non ti addebitiamo direttamente – il nostro servizio è finanziato interamente da entrate pubblicitarie, dandoti accesso agli stessi potenti modelli di IA che i concorrenti usano a una frazione del costo."
+      },
+      de: {
+        pageTitle: "Whisper Transkription",
+        headerTitle: "Whisper Transkription",
+        headerSubtitle: "Sprache in Text für professionelle Beratungen umwandeln",
+        startText: "Um zu beginnen, geben Sie bitte Ihren OpenAI API-Schlüssel ein:",
+        apiPlaceholder: "API-Schlüssel hier eingeben",
+        enterButton: "Transkriptionstool öffnen",
+        guideButton: "Anleitung zur Einrichtung des API-Schlüssels",
+        adRevenueMessage: "Da wir für die Nutzung dieser Website nichts berechnen und ausschließlich auf Werbeeinnahmen angewiesen sind, bitten wir Sie, personalisierte Anzeigen zuzulassen, um unseren Service zu unterstützen.",
+        consentBannerText: "Diese Website ist kostenlos, da wir ausschließlich auf Werbeeinnahmen angewiesen sind. Wir verwenden Cookies, um Anzeigen zu personalisieren und Ihre Erfahrung zu verbessern. Indem Sie auf 'Akzeptieren' klicken, stimmen Sie der Verwendung von Cookies zu.",
+        guideHeading: "So richten Sie Ihren OpenAI-API-Schlüssel ein",
+        guideP1: "<strong>Was ist Whisper Transkription?</strong><br>Whisper Transkription ist ein KI-Tool, das Sprache in Text umwandelt, indem es das fortschrittliche OpenAI Whisper-Modell verwendet. Es erstellt schnell hochwertige Transkripte aus über ein Mikrofon aufgenommenen Sprachaufnahmen. Außerdem können Sie diese Transkripte in professionelle Beratungsnotizen umwandeln, indem Sie personalisierte Eingaben verwenden – Eingaben, die lokal auf Ihrem Gerät gespeichert werden, sodass sie bei jedem Login von demselben Computer mit Ihrem persönlichen API-Schlüssel verfügbar bleiben.",
+        guideP2: "<strong>Wie funktioniert es?</strong><br>Um diese Aufgaben auszuführen, nutzt der Dienst leistungsstarke Rechenressourcen über die OpenAI-Server. Das bedeutet, dass Sie keine High-End-Local-Maschine benötigen; Sie 'leihen' sich einfach die erforderliche Rechenleistung, indem Sie Ihren OpenAI-API-Schlüssel verbinden. Ihr API-Schlüssel verknüpft Ihr OpenAI-Profil und Ihre Brieftasche, die (in USD) finanziert sein müssen, um die Nutzungskosten zu decken.",
+        guideP3: "<strong>Kostenzusammenstellung:</strong><br><strong>Transkriptionskosten:</strong> Das OpenAI Whisper-Modell berechnet nur <strong>$0.006 pro Minute</strong> für die Transkription. Zum Beispiel, wenn Sie 20 15-minütige Gespräche, 4 Tage die Woche, für einen Monat transkribieren – also insgesamt 320 Gespräche (20×4×4) à 15 Minuten – betragen die Gesamtkosten etwa:<br><strong>320×15×$0.006 ≈ $28.80</strong> (wird dynamisch in NOK umgerechnet, basierend auf dem aktuellen Wechselkurs).",
+        guideP4: "<strong>Notizgenerierungskosten:</strong><br>Wenn Sie die Website auch zur Notizgenerierung bei allen 320 Konsultationen nutzen, würde dies zusätzliche geschätzte Kosten von etwa <strong>110 NOK</strong> verursachen (ebenfalls in USD umgerechnet). Im Gegensatz zu Wettbewerbern wie Noteless (rund 900 NOK für 60 Konsultationen) oder Medbrics (bis zu 1750 NOK für unbegrenzte Konsultationen) zahlen Sie nur für die tatsächliche Nutzung. Wir berechnen Ihnen jedoch nicht direkt – die Nutzungskosten werden von Ihrer OpenAI-Brieftasche abgezogen.",
+        guideP5: "<strong>Holen Sie sich Ihren OpenAI API-Schlüssel:</strong><br>1. Melden Sie sich bei Ihrem OpenAI-Konto unter <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> mit Ihren Zugangsdaten an.<br>2. Gehen Sie zu Ihrem Dashboard und klicken Sie auf Ihr Profilbild, um den Abschnitt „API Keys“ oder „API-Schlüssel verwalten“ zu finden.<br>3. Klicken Sie auf die Schaltfläche „Neuen Schlüssel erstellen“, um Ihren einzigartigen API-Schlüssel zu generieren. Tipp: Kopieren und speichern Sie diesen Schlüssel in einer Textdatei auf Ihrem Computer, da Sie ihn nur einmal auf der OpenAI-Webseite sehen können. (Wenn Sie ihn verlieren, können Sie jederzeit einen neuen Schlüssel generieren – der neue Schlüssel wird mit Ihrer bestehenden OpenAI-Brieftasche verknüpft.)<br>4. Finanzieren Sie Ihre OpenAI-Brieftasche (in USD), um die Transkriptions- und Notizgenerierungskosten zu decken.",
+        guideP6: "<strong>Warum Whisper Transkription wählen?</strong><br>Wir glauben daran, qualitativ hochwertige Transkriptions- und Notizgenerierungsdienste anzubieten, ohne den hohen Preis, den andere Unternehmen verlangen. Obwohl die Nutzungskosten von Ihrer OpenAI-Brieftasche abgezogen werden, berechnen wir Ihnen nichts direkt – unser Service wird ausschließlich durch Werbeeinnahmen finanziert, sodass Sie Zugang zu denselben leistungsstarken KI-Modellen erhalten wie unsere Wettbewerber, jedoch zu einem Bruchteil der Kosten."
+      },
+      // For brevity, similar translations are provided for Portuguese (pt), Chinese (zh), Japanese (ja), Russian (ru), Korean (ko), Thai (th), French (fr), Swedish (sv), Danish (da), and Finnish (fi).
+      pt: {
+        pageTitle: "Transcrição Whisper",
+        headerTitle: "Transcrição Whisper",
+        headerSubtitle: "Converta fala em texto para consultas profissionais",
+        startText: "Para começar, insira sua chave API da OpenAI:",
+        apiPlaceholder: "Digite a chave API aqui",
+        enterButton: "Acessar a ferramenta de transcrição",
+        guideButton: "Guia para configurar a chave API",
+        adRevenueMessage: "Como não cobramos pelo uso deste site e dependemos exclusivamente da receita de anúncios, pedimos gentilmente que consinta com anúncios personalizados para ajudar a sustentar nosso serviço.",
+        consentBannerText: "Este site é gratuito porque dependemos exclusivamente da receita de anúncios. Utilizamos cookies para personalizar os anúncios e melhorar sua experiência. Ao clicar em 'Aceitar', você consente com o uso de cookies.",
+        guideHeading: "Como configurar sua chave API da OpenAI",
+        guideP1: "<strong>O que é Transcrição Whisper?</strong><br>Transcrição Whisper é uma ferramenta de IA que converte fala em texto usando o avançado modelo OpenAI Whisper. Ela produz transcrições de alta qualidade rapidamente a partir de áudio gravado com um microfone. Além disso, você pode converter essas transcrições em notas profissionais de consulta usando mensagens personalizadas, que são salvas localmente em seu dispositivo para que permaneçam disponíveis sempre que você fizer login do mesmo computador com sua chave API pessoal.",
+        guideP2: "<strong>Como funciona?</strong><br>Para executar essas tarefas, o serviço utiliza poderosos recursos de processamento através dos servidores da OpenAI. Isso significa que você não precisa de uma máquina local de ponta; basta conectar sua chave API da OpenAI para 'emprestar' a potência de processamento necessária. Sua chave API vincula seu perfil e carteira da OpenAI, que devem estar financiados (em USD) para cobrir os custos de uso.",
+        guideP3: "<strong>Divisão de custos:</strong><br><strong>Custos de transcrição:</strong> O modelo OpenAI Whisper cobra apenas <strong>$0.006 por minuto</strong> para transcrição. Por exemplo, se você transcrever 20 conversas de 15 minutos, 4 dias por semana, durante um mês — isto é, 320 conversas no total (20×4×4) com cada uma durando 15 minutos — o custo total seria aproximadamente:<br><strong>320×15×$0.006 ≈ $28.80</strong> (convertido dinamicamente para NOK com base na taxa de câmbio atual).",
+        guideP4: "<strong>Custos de geração de notas:</strong><br>Se você também usar o site para gerar notas em todas as 320 consultas, isso adicionará um custo estimado adicional de cerca de <strong>110 NOK</strong> (convertido também para USD conforme necessário). Ao contrário de concorrentes como Noteless (cerca de 900 NOK para 60 consultas) ou Medbrics (até 1750 NOK para consultas ilimitadas), você paga apenas pelo trabalho realizado. Contudo, nós não cobramos você diretamente – os custos são deduzidos de sua carteira OpenAI.",
+        guideP5: "<strong>Obtenha sua chave API da OpenAI:</strong><br>1. Faça login na sua conta OpenAI em <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> com suas credenciais.<br>2. Navegue até o painel da sua conta e clique no ícone do seu perfil para encontrar a seção 'API Keys' ou 'Gerenciar API Keys'.<br>3. Clique no botão 'Criar nova chave' para gerar sua chave API única. Dica: copie e salve essa chave em um arquivo de texto em seu computador para fácil acesso, pois você só poderá vê-la uma vez na página da OpenAI. (Se você a perder, poderá gerar outra chave – a nova estará vinculada à sua carteira OpenAI existente.)<br>4. Financie sua carteira OpenAI (em USD) para cobrir os custos de transcrição e geração de notas.",
+        guideP6: "<strong>Por que escolher a Transcrição Whisper?</strong><br>Acreditamos em oferecer serviços de transcrição e geração de notas de alta qualidade sem os altos preços cobrados por outras empresas. Embora os custos de uso sejam deduzidos de sua carteira OpenAI, você não é cobrado diretamente por nós – nosso serviço é financiado inteiramente por receita de anúncios, proporcionando acesso aos mesmos poderosos modelos de IA que os concorrentes utilizam por uma fração do custo."
+      },
+      zh: {
+        pageTitle: "Whisper 转录",
+        headerTitle: "Whisper 转录",
+        headerSubtitle: "将语音转换为专业咨询用的文字",
+        startText: "要开始，请输入您的 OpenAI API 密钥：",
+        apiPlaceholder: "在此输入 API 密钥",
+        enterButton: "进入转录工具",
+        guideButton: "API 密钥设置指南",
+        adRevenueMessage: "由于我们不对本网站使用收费，且完全依赖广告收入，我们恳请您同意个性化广告以支持我们的服务。",
+        consentBannerText: "本网站免费使用，因为我们完全依赖广告收入。我们使用 cookies 来个性化广告并改善您的体验。点击“接受”即表示您同意使用 cookies。",
+        guideHeading: "如何设置您的 OpenAI API 密钥",
+        guideP1: "<strong>什么是 Whisper 转录？</strong><br>Whisper 转录是一款使用先进 OpenAI Whisper 模型将语音转换为文本的 AI 工具。它可以快速生成高质量的转录文本，适用于通过麦克风录制的语音。此外，您还可以将这些转录内容转换为专业咨询笔记，使用个性化提示，这些提示会在您的设备上本地保存，因此每次使用同一台电脑并输入您的个人 API 密钥时都能继续使用。",
+        guideP2: "<strong>它如何工作？</strong><br>为完成这些任务，服务通过 OpenAI 服务器利用强大的处理资源。这意味着您不需要一台高端的本地机器；只需通过连接您的 OpenAI API 密钥来“借用”必要的处理能力。您的 API 密钥会连接到您的 OpenAI 账户和钱包，钱包必须有资金（以美元计）来支付使用费用。",
+        guideP3: "<strong>费用明细：</strong><br><strong>转录费用：</strong>OpenAI Whisper 模型转录费用仅为 <strong>$0.006 每分钟</strong>。例如，如果您每周 4 天，每天转录 20 个 15 分钟的对话，一个月内共计 320 个对话，每个对话 15 分钟，总转录费用大约为：<br><strong>320×15×$0.006 ≈ $28.80</strong>（会根据当前汇率动态转换为 NOK）。",
+        guideP4: "<strong>笔记生成费用：</strong><br>如果您在所有 320 次咨询中还使用该网站生成笔记，预计将额外产生约 <strong>110 NOK</strong> 的费用（也会相应转换为美元）。与 Noteless（约 900 NOK/60 次咨询）或 Medbrics（最高 1750 NOK/无限次咨询）等竞争对手不同，您只需按实际工作量付费。但我们不会直接向您收费——费用将从您的 OpenAI 钱包中扣除。",
+        guideP5: "<strong>获取您的 OpenAI API 密钥：</strong><br>1. 使用您的凭据登录 <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> 的 OpenAI 账户。<br>2. 进入账户仪表板，点击您的个人头像以找到“API Keys”或“管理 API 密钥”部分。<br>3. 点击“创建新密钥”按钮以生成您的唯一 API 密钥。提示：请复制并将此密钥保存到电脑上的文本文件中，方便以后查阅，因为您只能在 OpenAI 网页上看到该密钥一次。（如果丢失，您可以再次生成一个新密钥——新密钥将与您现有的 OpenAI 钱包关联。）<br>4. 为您的 OpenAI 钱包充值（以美元计），以支付转录和笔记生成费用。",
+        guideP6: "<strong>为何选择 Whisper 转录？</strong><br>我们致力于提供高质量的转录和笔记生成服务，而无需支付其他公司那样高昂的费用。虽然使用费用将从您的 OpenAI 钱包中扣除，但您不会直接向我们支付费用——我们的服务完全依赖于广告收入，让您以极低的成本获得与竞争对手相同的强大 AI 模型。"
+      },
+      ja: {
+        pageTitle: "Whisper 文字起こし",
+        headerTitle: "Whisper 文字起こし",
+        headerSubtitle: "プロフェッショナルな相談のために音声をテキストに変換する",
+        startText: "始めるには、OpenAI API キーを入力してください：",
+        apiPlaceholder: "ここにAPIキーを入力",
+        enterButton: "文字起こしツールへ",
+        guideButton: "APIキー設定ガイド",
+        adRevenueMessage: "本サイトは広告収入のみに依存しているため、パーソナライズ広告への同意をお願いしております。",
+        consentBannerText: "本サイトは広告収入のみで無料で提供されています。クッキーを使用して広告をパーソナライズし、体験を向上させます。「承諾する」をクリックすると、クッキーの使用に同意したことになります。",
+        guideHeading: "OpenAI API キーの設定方法",
+        guideP1: "<strong>Whisper 文字起こしとは？</strong><br>Whisper 文字起こしは、先進の OpenAI Whisper モデルを使用して音声をテキストに変換するAIツールです。マイクで録音した音声から高品質な文字起こしを迅速に生成します。さらに、これらの文字起こしをプロフェッショナルな相談ノートに変換するために、個別にカスタマイズされたプロンプトを使用できます。これらのプロンプトは、同じコンピューターから個人のAPIキーでログインするたびに利用可能なように、デバイスにローカル保存されます。",
+        guideP2: "<strong>どのように機能するのか？</strong><br>これらのタスクを実行するために、本サービスはOpenAIのサーバーを通じて強力な処理リソースを使用します。つまり、高性能なローカルマシンは必要なく、OpenAI API キーを接続するだけで必要な処理能力を「借りる」ことができます。APIキーは、あなたのOpenAIプロファイルとウォレットにリンクされ、使用料金をカバーするために（USDで）資金が必要です。",
+        guideP3: "<strong>費用の内訳：</strong><br><strong>文字起こし費用：</strong>OpenAI Whisperモデルは文字起こしに対して<strong>1分あたり$0.006</strong>を請求します。たとえば、1ヶ月間、週4日、15分の会話を20回文字起こしすると、合計320回の会話（20×4×4）となり、各会話が15分の場合、合計費用は約：<br><strong>320×15×$0.006 ≈ $28.80</strong>（現在の為替レートに基づきNOKに動的に換算されます）。",
+        guideP4: "<strong>ノート生成費用：</strong><br>320回の相談すべてでノート生成も利用する場合、追加で約<strong>110 NOK</strong>の費用が見込まれます（USDに換算されます）。Noteless（60回で約900 NOK）やMedbrics（無制限の場合1750 NOKまで）などの競合他社と異なり、作業単位でのみ費用が発生します。なお、直接料金は発生せず、費用はOpenAIウォレットから差し引かれます。",
+        guideP5: "<strong>OpenAI API キーの取得方法：</strong><br>1. <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> にアクセスし、認証情報を使用してOpenAIアカウントにログインしてください。<br>2. ダッシュボードに移動し、プロフィールアイコンをクリックして「API Keys」または「APIキー管理」セクションを見つけます。<br>3. 「新しいキーを作成」ボタンをクリックして、ユニークなAPIキーを生成します。ヒント：APIキーは一度しか表示されないので、後で参照できるようテキストファイルにコピーして保存してください。（紛失した場合は、いつでも新しいキーを生成できます。）<br>4. 文字起こしおよびノート生成の費用をカバーするため、OpenAIウォレットに資金（USD）をチャージしてください。",
+        guideP6: "<strong>なぜWhisper文字起こしを選ぶのか？</strong><br>私たちは、他社が要求する高額な料金をかけずに、高品質な文字起こしとノート生成サービスを提供することを信条としています。使用料金はOpenAIウォレットから差し引かれますが、直接料金は発生しません。私たちのサービスは完全に広告収入で賄われており、競合他社と同じ強力なAIモデルに低コストでアクセスできます。"
+      },
+      ru: {
+        pageTitle: "Whisper Транскрипция",
+        headerTitle: "Whisper Транскрипция",
+        headerSubtitle: "Преобразуйте речь в текст для профессиональных консультаций",
+        startText: "Чтобы начать, введите ваш API-ключ OpenAI:",
+        apiPlaceholder: "Введите API-ключ здесь",
+        enterButton: "Перейти к инструменту транскрипции",
+        guideButton: "Руководство по настройке API-ключа",
+        adRevenueMessage: "Так как мы не взимаем плату за использование этого сайта и полностью зависим от доходов от рекламы, мы просим вас дать согласие на персонализированную рекламу для поддержки нашего сервиса.",
+        consentBannerText: "Этот сайт бесплатен, так как мы полностью зависим от доходов от рекламы. Мы используем cookies для персонализации рекламы и улучшения вашего опыта. Нажатием «Принять» вы соглашаетесь на использование cookies.",
+        guideHeading: "Как настроить ваш API-ключ OpenAI",
+        guideP1: "<strong>Что такое Whisper Транскрипция?</strong><br>Whisper Транскрипция — это инструмент искусственного интеллекта, который преобразует речь в текст с использованием передовой модели OpenAI Whisper. Он быстро создает высококачественные транскрипты из аудио, записанного с микрофона. Кроме того, вы можете преобразовывать эти транскрипты в профессиональные консультационные заметки с использованием персонализированных подсказок, которые сохраняются локально на вашем устройстве, чтобы быть доступными каждый раз, когда вы входите в систему с того же компьютера, используя ваш личный API-ключ.",
+        guideP2: "<strong>Как это работает?</strong><br>Для выполнения этих задач сервис использует мощные вычислительные ресурсы через серверы OpenAI. Это означает, что вам не нужна высокопроизводительная локальная машина; вы просто \"одалживаете\" необходимую вычислительную мощность, подключив ваш API-ключ OpenAI. Ваш API-ключ связывает ваш профиль и кошелек OpenAI, который должен быть профинансирован (в долларах США) для покрытия расходов на использование.",
+        guideP3: "<strong>Структура затрат:</strong><br><strong>Затраты на транскрипцию:</strong> Модель OpenAI Whisper взимает всего <strong>$0.006 за минуту</strong> за транскрипцию. Например, если вы транскрибируете 20 15-минутных разговоров, 4 дня в неделю, за один месяц — всего 320 разговоров (20×4×4) продолжительностью 15 минут каждый, общая стоимость транскрипции составит примерно:<br><strong>320×15×$0.006 ≈ $28.80</strong> (это значение будет динамически конвертировано в NOK по текущему курсу).",
+        guideP4: "<strong>Затраты на генерацию заметок:</strong><br>Если вы также используете сайт для генерации заметок по всем 320 консультациям, это добавит дополнительные приблизительные затраты в размере <strong>110 NOK</strong> (также конвертируется в USD). В отличие от конкурентов, таких как Noteless (около 900 NOK за 60 консультаций) или Medbrics (до 1750 NOK за неограниченное количество консультаций), вы платите только за фактическое использование. Мы же не взимаем с вас прямую плату — расходы списываются с вашего кошелька OpenAI.",
+        guideP5: "<strong>Получите ваш API-ключ OpenAI:</strong><br>1. Войдите в свой аккаунт OpenAI на <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> используя ваши учетные данные.<br>2. Перейдите в панель управления и нажмите на значок вашего профиля, чтобы найти раздел «API Keys» или «Управление API-ключами».<br>3. Нажмите кнопку «Создать новый ключ», чтобы сгенерировать ваш уникальный API-ключ. Совет: скопируйте и сохраните этот ключ в текстовом файле на вашем компьютере для удобного доступа, так как вы можете увидеть его только один раз на сайте OpenAI. (Если вы его потеряете, вы всегда можете создать новый ключ, который будет связан с вашим существующим кошельком OpenAI.)<br>4. Пополните ваш кошелек OpenAI (в USD), чтобы покрыть расходы на транскрипцию и генерацию заметок.",
+        guideP6: "<strong>Почему выбрать Whisper Транскрипция?</strong><br>Мы верим в предоставление высококачественных услуг транскрипции и генерации заметок без высокой цены, взимаемой другими компаниями. Хотя расходы на использование списываются с вашего кошелька OpenAI, с нас плата не взимается напрямую — наш сервис полностью финансируется за счет рекламных доходов, что дает вам доступ к тем же мощным моделям ИИ, которые используют конкуренты, за меньшую цену."
+      },
+      ko: {
+        pageTitle: "Whisper 전사",
+        headerTitle: "Whisper 전사",
+        headerSubtitle: "전문 상담을 위한 음성을 텍스트로 변환",
+        startText: "시작하려면 OpenAI API 키를 입력하세요:",
+        apiPlaceholder: "여기에 API 키 입력",
+        enterButton: "전사 도구 열기",
+        guideButton: "API 키 설정 가이드",
+        adRevenueMessage: "이 사이트는 사용료를 청구하지 않으며 오직 광고 수익에 의존하므로, 서비스를 지원하기 위해 개인화 광고에 동의해 주시기 바랍니다.",
+        consentBannerText: "이 사이트는 광고 수익에 전적으로 의존하여 무료로 제공됩니다. 광고를 개인화하고 사용자 경험을 개선하기 위해 쿠키를 사용합니다. '동의'를 클릭하면 쿠키 사용에 동의하는 것으로 간주됩니다.",
+        guideHeading: "OpenAI API 키 설정 방법",
+        guideP1: "<strong>Whisper 전사란?</strong><br>Whisper 전사는 고급 OpenAI Whisper 모델을 사용하여 음성을 텍스트로 변환하는 AI 도구입니다. 마이크로폰으로 녹음한 음성에서 고품질의 전사본을 빠르게 생성합니다. 또한, 개인화된 프롬프트를 사용하여 이 전사본을 전문 상담 노트로 변환할 수 있으며, 이 프롬프트는 동일한 컴퓨터에서 개인 API 키로 로그인할 때마다 로컬에 저장되어 사용할 수 있습니다.",
+        guideP2: "<strong>어떻게 작동하나요?</strong><br>이 작업을 수행하기 위해 서비스는 OpenAI 서버를 통해 강력한 처리 능력을 사용합니다. 이는 고성능의 로컬 기계가 필요 없음을 의미하며, 단지 OpenAI API 키를 연결함으로써 필요한 처리 능력을 '빌리는' 것입니다. API 키는 사용 비용을 충당하기 위해 (USD로) 자금이 있는 OpenAI 프로필 및 지갑에 연결됩니다.",
+        guideP3: "<strong>비용 구성:</strong><br><strong>전사 비용:</strong> OpenAI Whisper 모델은 전사에 대해 분당 <strong>$0.006</strong>을 청구합니다. 예를 들어, 한 달 동안 주 4일 15분짜리 대화를 20번 전사하면 총 320회의 대화(20×4×4)가 되고, 각 대화가 15분일 경우 총 전사 비용은 대략:<br><strong>320×15×$0.006 ≈ $28.80</strong> (현재 환율에 따라 NOK로 동적으로 변환됩니다).",
+        guideP4: "<strong>노트 생성 비용:</strong><br>320회의 상담 모두에 대해 노트 생성을 사용하면 추가로 약 <strong>110 NOK</strong>의 비용이 발생합니다(USD로도 변환됨). Noteless(60회에 약 900 NOK)나 Medbrics(무제한일 경우 최대 1750 NOK)와 달리, 실제 작업 단위로만 비용이 청구되며, 직접 요금은 부과되지 않고 비용은 OpenAI 지갑에서 차감됩니다.",
+        guideP5: "<strong>OpenAI API 키 받기:</strong><br>1. <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> 에서 OpenAI 계정에 로그인하세요.<br>2. 계정 대시보드로 이동하여 프로필 아이콘을 클릭한 후 'API Keys' 또는 'API 키 관리' 섹션을 찾으세요.<br>3. '새 키 생성' 버튼을 클릭하여 고유한 API 키를 생성하세요. 팁: API 키는 한 번만 표시되므로, 나중에 쉽게 접근할 수 있도록 텍스트 파일에 복사하여 저장하세요. (키를 잃어버리면 언제든지 새 키를 생성할 수 있으며, 새 키는 기존 OpenAI 지갑에 연결됩니다.)<br>4. 전사 및 노트 생성 비용을 충당하기 위해 OpenAI 지갑(USD)을 충전하세요.",
+        guideP6: "<strong>왜 Whisper 전사를 선택해야 하나요?</strong><br>우리는 다른 회사들이 부과하는 높은 요금 없이도 고품질의 전사 및 노트 생성 서비스를 제공한다고 믿습니다. 사용 비용은 OpenAI 지갑에서 차감되지만, 직접 요금은 부과되지 않습니다. 우리 서비스는 전적으로 광고 수익으로 운영되므로 경쟁사와 동일한 강력한 AI 모델을 훨씬 낮은 비용으로 이용할 수 있습니다."
+      },
+      th: {
+        pageTitle: "Whisper การถอดความ",
+        headerTitle: "Whisper การถอดความ",
+        headerSubtitle: "แปลงเสียงเป็นข้อความสำหรับการปรึกษามืออาชีพ",
+        startText: "เริ่มต้น, กรุณาใส่คีย์ API ของ OpenAI:",
+        apiPlaceholder: "ใส่คีย์ API ที่นี่",
+        enterButton: "เข้าสู่เครื่องมือถอดความ",
+        guideButton: "คู่มือการตั้งค่า API Key",
+        adRevenueMessage: "เนื่องจากเราไม่คิดค่าใช้จ่ายสำหรับการใช้เว็บไซต์นี้และพึ่งพารายได้จากโฆษณาเพียงอย่างเดียว เราขอความกรุณาให้คุณยินยอมรับโฆษณาที่ปรับให้เหมาะสมกับคุณเพื่อสนับสนุนบริการของเรา",
+        consentBannerText: "เว็บไซต์นี้ให้บริการฟรีเพราะเราอาศัยรายได้จากโฆษณาเท่านั้น เราใช้คุกกี้เพื่อปรับแต่งโฆษณาและปรับปรุงประสบการณ์ของคุณ โดยการคลิก 'ยอมรับ' คุณยินยอมให้ใช้คุกกี้",
+        guideHeading: "วิธีตั้งค่า API Key ของ OpenAI",
+        guideP1: "<strong>Whisper การถอดความคืออะไร?</strong><br>Whisper การถอดความคือเครื่องมือ AI ที่แปลงเสียงเป็นข้อความโดยใช้โมเดล OpenAI Whisper ที่ทันสมัย มันสร้างข้อความถอดความคุณภาพสูงอย่างรวดเร็วจากเสียงที่บันทึกผ่านไมโครโฟน นอกจากนี้ คุณยังสามารถแปลงข้อความถอดความเหล่านี้เป็นบันทึกการปรึกษามืออาชีพโดยใช้ข้อความปรับแต่ง ซึ่งจะถูกบันทึกไว้ในเครื่องของคุณเพื่อให้พร้อมใช้งานทุกครั้งที่คุณเข้าสู่ระบบจากคอมพิวเตอร์เดียวกันด้วย API Key ส่วนตัวของคุณ",
+        guideP2: "<strong>มันทำงานอย่างไร?</strong><br>เพื่อทำงานเหล่านี้ บริการใช้ทรัพยากรประมวลผลที่ทรงพลังผ่านเซิร์ฟเวอร์ของ OpenAI ซึ่งหมายความว่าคุณไม่จำเป็นต้องมีเครื่องคอมพิวเตอร์ที่ทรงประสิทธิภาพสูง เพียงแค่เชื่อมต่อ API Key ของ OpenAI ของคุณเข้าด้วยกัน API Key ของคุณจะเชื่อมต่อกับโปรไฟล์และวอลเล็ต OpenAI ของคุณ ซึ่งต้องมีเงินในสกุล USD เพื่อครอบคลุมค่าใช้จ่าย",
+        guideP3: "<strong>สรุปค่าใช้จ่าย:</strong><br><strong>ค่าใช้จ่ายในการถอดความ:</strong> โมเดล OpenAI Whisper คิดเพียง <strong>$0.006 ต่อ นาที</strong> สำหรับการถอดความ ตัวอย่างเช่น หากคุณถอดความ 20 การสนทนา 15 นาที, 4 วันต่อสัปดาห์, เป็นเวลา 1 เดือน – รวมเป็น 320 การสนทนา (20×4×4) ที่แต่ละครั้ง 15 นาที ค่าใช้จ่ายทั้งหมดจะอยู่ที่ประมาณ:<br><strong>320×15×$0.006 ≈ $28.80</strong> (ซึ่งจะแปลงเป็น NOK โดยอัตโนมัติตามอัตราแลกเปลี่ยนในปัจจุบัน)",
+        guideP4: "<strong>ค่าใช้จ่ายในการสร้างบันทึก:</strong><br>หากคุณใช้เว็บไซต์สำหรับการสร้างบันทึกใน 320 การปรึกษา ค่าใช้จ่ายเพิ่มเติมจะอยู่ที่ประมาณ <strong>110 NOK</strong> (แปลงเป็น USD ด้วย) ต่างจากคู่แข่งเช่น Noteless (ประมาณ 900 NOK สำหรับ 60 การปรึกษา) หรือ Medbrics (สูงสุด 1750 NOK สำหรับการปรึกษาไม่จำกัด) คุณจ่ายเฉพาะตามการใช้งาน เราไม่เรียกเก็บเงินจากคุณโดยตรง ค่าใช้จ่ายจะถูกหักจากวอลเล็ต OpenAI ของคุณ",
+        guideP5: "<strong>วิธีรับ API Key ของ OpenAI:</strong><br>1. เข้าสู่ระบบบัญชี OpenAI ของคุณที่ <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> ด้วยข้อมูลรับรองของคุณ<br>2. ไปที่แดชบอร์ดและคลิกที่ไอคอนโปรไฟล์เพื่อค้นหาส่วน 'API Keys' หรือ 'จัดการ API Keys'<br>3. คลิกที่ปุ่ม 'สร้างคีย์ใหม่' เพื่อสร้าง API Key ที่ไม่ซ้ำกันของคุณ เคล็ดลับ: คัดลอกและบันทึกคีย์นี้ในไฟล์ข้อความบนคอมพิวเตอร์ของคุณเพื่อเข้าถึงได้ง่าย เพราะคุณจะเห็นคีย์นี้ได้เพียงครั้งเดียวบนหน้าเว็บของ OpenAI (หากคุณสูญเสีย คุณสามารถสร้างคีย์ใหม่ได้ ซึ่งคีย์ใหม่นั้นจะเชื่อมโยงกับวอลเล็ต OpenAI ของคุณอยู่แล้ว)<br>4. เติมเงินในวอลเล็ต OpenAI ของคุณ (ในสกุล USD) เพื่อครอบคลุมค่าใช้จ่ายในการถอดความและสร้างบันทึก",
+        guideP6: "<strong>ทำไมต้องเลือก Whisper การถอดความ?</strong><br>เราเชื่อในการนำเสนอการถอดความและบริการสร้างบันทึกคุณภาพสูงโดยไม่ต้องจ่ายราคาที่สูงเหมือนกับบริษัทอื่น แม้ว่าค่าใช้จ่ายจะถูกหักจากวอลเล็ต OpenAI ของคุณ แต่คุณจะไม่ได้ถูกเรียกเก็บเงินโดยตรง – บริการของเรามีการสนับสนุนทางการเงินจากรายได้โฆษณา ทำให้คุณสามารถเข้าถึงโมเดล AI ที่ทรงพลังได้ในอัตราที่ต่ำกว่าคู่แข่ง"
+      },
+      fr: {
+        pageTitle: "Transcription Whisper",
+        headerTitle: "Transcription Whisper",
+        headerSubtitle: "Convertir la parole en texte pour des consultations professionnelles",
+        startText: "Pour commencer, veuillez entrer votre clé API OpenAI :",
+        apiPlaceholder: "Entrez la clé API ici",
+        enterButton: "Accéder à l'outil de transcription",
+        guideButton: "Guide pour configurer la clé API",
+        adRevenueMessage: "Comme nous ne facturons pas l'utilisation de ce site et dépendons uniquement des revenus publicitaires, nous vous demandons d'accepter les publicités personnalisées pour soutenir notre service.",
+        consentBannerText: "Ce site est gratuit car nous dépendons uniquement des revenus publicitaires. Nous utilisons des cookies pour personnaliser les annonces et améliorer votre expérience. En cliquant sur « Accepter », vous consentez à l'utilisation des cookies.",
+        guideHeading: "Comment configurer votre clé API OpenAI",
+        guideP1: "<strong>Qu'est-ce que Transcription Whisper ?</strong><br>Transcription Whisper est un outil d'IA qui convertit la parole en texte en utilisant le modèle avancé OpenAI Whisper. Il produit rapidement des transcriptions de haute qualité à partir d'enregistrements vocaux capturés par un microphone. De plus, vous pouvez convertir ces transcriptions en notes de consultation professionnelles à l'aide d'instructions personnalisées, qui sont enregistrées localement sur votre appareil afin de rester disponibles à chaque connexion avec votre clé API personnelle.",
+        guideP2: "<strong>Comment cela fonctionne-t-il ?</strong><br>Pour effectuer ces tâches, le service utilise de puissantes ressources de traitement via les serveurs OpenAI. Cela signifie que vous n'avez pas besoin d'une machine locale haut de gamme ; il vous suffit de \"prêter\" la puissance de traitement nécessaire en connectant votre clé API OpenAI. Votre clé API se lie à votre profil et portefeuille OpenAI, qui doit être financé (en USD) pour couvrir les coûts d'utilisation.",
+        guideP3: "<strong>Répartition des coûts :</strong><br><strong>Coûts de transcription :</strong> Le modèle OpenAI Whisper facture seulement <strong>0,006 $ par minute</strong> pour la transcription. Par exemple, si vous effectuez la transcription de 20 conversations de 15 minutes, 4 jours par semaine pendant un mois — soit 320 conversations au total (20×4×4), chaque conversation durant 15 minutes, le coût total serait d'environ :<br><strong>320×15×0,006 $ ≈ 28,80 $</strong> (converti dynamiquement en NOK selon le taux de change actuel).",
+        guideP4: "<strong>Coûts de génération de notes :</strong><br>Si vous utilisez également le site pour générer des notes pour les 320 consultations, cela ajoutera un coût estimé supplémentaire d'environ <strong>110 NOK</strong> (converti également en USD en conséquence). Contrairement à des concurrents tels que Noteless (environ 900 NOK pour 60 consultations) ou Medbrics (jusqu'à 1750 NOK pour des consultations illimitées), vous payez uniquement à l'unité. Nous ne vous facturons pas directement — les coûts sont déduits de votre portefeuille OpenAI.",
+        guideP5: "<strong>Obtenez votre clé API OpenAI :</strong><br>1. Connectez-vous à votre compte OpenAI sur <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> avec vos identifiants.<br>2. Accédez à votre tableau de bord et cliquez sur votre icône de profil pour trouver la section « API Keys » ou « Gérer les clés API ».<br>3. Cliquez sur le bouton « Créer une nouvelle clé » pour générer votre clé API unique. Astuce : copiez et enregistrez cette clé dans un fichier texte sur votre ordinateur pour y accéder facilement, car vous ne pourrez la voir qu'une seule fois sur la page OpenAI. (Si vous la perdez, vous pouvez toujours en générer une autre, qui sera liée à votre portefeuille OpenAI existant.)<br>4. Alimentez votre portefeuille OpenAI (en USD) pour couvrir les frais de transcription et de génération de notes.",
+        guideP6: "<strong>Pourquoi choisir Transcription Whisper ?</strong><br>Nous croyons en l'offre de services de transcription et de génération de notes de haute qualité sans le coût élevé imposé par d'autres entreprises. Bien que les coûts d'utilisation soient déduits de votre portefeuille OpenAI, vous ne payez pas directement – notre service est entièrement financé par les revenus publicitaires, vous donnant accès aux mêmes modèles d'IA puissants que ceux utilisés par nos concurrents, pour une fraction du coût."
+      },
+      sv: {
+        pageTitle: "Whisper Transkription",
+        headerTitle: "Whisper Transkription",
+        headerSubtitle: "Omvandla tal till text för professionella konsultationer",
+        startText: "För att komma igång, ange din OpenAI API-nyckel:",
+        apiPlaceholder: "Ange API-nyckel här",
+        enterButton: "Öppna transkriptionverktyget",
+        guideButton: "Guide för att ställa in API-nyckeln",
+        adRevenueMessage: "Eftersom vi inte tar betalt för att använda denna webbplats och enbart förlitar oss på annonsintäkter, ber vi dig vänligen att samtycka till personaliserade annonser för att stödja vår tjänst.",
+        consentBannerText: "Denna webbplats är gratis att använda eftersom vi enbart är beroende av annonsintäkter. Vi använder cookies för att personalisera annonser och förbättra din upplevelse. Genom att klicka på \"Acceptera\" samtycker du till användningen av cookies.",
+        guideHeading: "Hur du ställer in din OpenAI API-nyckel",
+        guideP1: "<strong>Vad är Whisper Transkription?</strong><br>Whisper Transkription är ett AI-verktyg som omvandlar tal till text med hjälp av den avancerade OpenAI Whisper-modellen. Det producerar snabbt högkvalitativa transkriptioner från ljudinspelningar med en mikrofon. Dessutom kan du omvandla dessa transkriptioner till professionella konsultanteckningar med hjälp av personliga meddelanden som sparas lokalt på din enhet så att de finns kvar varje gång du loggar in från samma dator med din personliga API-nyckel.",
+        guideP2: "<strong>Hur fungerar det?</strong><br>För att utföra dessa uppgifter använder tjänsten kraftfulla processresurser via OpenAI:s servrar. Det innebär att du inte behöver en avancerad lokal maskin; du \"lånar\" den nödvändiga processorkraften genom att ansluta din OpenAI API-nyckel. Din API-nyckel kopplas till din OpenAI-profil och plånbok, som måste vara finansierade (i USD) för att täcka användningskostnaderna.",
+        guideP3: "<strong>Kostnadsöversikt:</strong><br><strong>Transkriptionskostnader:</strong> OpenAI Whisper-modellen kostar endast <strong>$0.006 per minut</strong> för transkription. Om du exempelvis transkriberar 20 15-minuters konversationer, 4 dagar i veckan under en månad – alltså totalt 320 konversationer (20×4×4) med varje konversation som varar 15 minuter, skulle den totala transkriptionskostnaden bli cirka:<br><strong>320×15×$0.006 ≈ $28.80</strong> (vilket dynamiskt konverteras till NOK baserat på aktuell växelkurs).",
+        guideP4: "<strong>Notgenereringskostnader:</strong><br>Om du även använder webbplatsen för att generera noteringar på alla 320 konsultationer, skulle detta medföra en extra uppskattad kostnad på cirka <strong>110 NOK</strong> (även konverterat till USD därefter). Till skillnad från konkurrenter som Noteless (cirka 900 NOK för 60 konsultationer) eller Medbrics (upp till 1750 NOK för obegränsade konsultationer), betalar du bara för den faktiska användningen. Vi tar dock inte ut någon direkt avgift – kostnader dras från din OpenAI-plånbok.",
+        guideP5: "<strong>Få din OpenAI API-nyckel:</strong><br>1. Logga in på ditt OpenAI-konto på <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> med dina inloggningsuppgifter.<br>2. Navigera till din instrumentpanel och klicka på din profilikon för att hitta sektionen 'API Keys' eller 'Hantera API-nycklar'.<br>3. Klicka på knappen 'Skapa ny nyckel' för att generera din unika API-nyckel. Tips: Kopiera och spara denna nyckel i en textfil på din dator för enkel åtkomst, eftersom du bara kan se nyckeln en gång på OpenAI-webbplatsen. (Om du tappar bort den kan du alltid generera en ny – den nya nyckeln kommer att vara kopplad till din befintliga OpenAI-plånbok.)",
+        guideP6: "<strong>Varför välja Whisper Transkription?</strong><br>Vi tror på att erbjuda högkvalitativa transkriptions- och notgenereringstjänster utan de höga kostnader som andra företag tar ut. Även om användningskostnader dras från din OpenAI-plånbok, debiteras du inte direkt av oss – vår tjänst finansieras helt genom annonsintäkter, vilket ger dig tillgång till samma kraftfulla AI-modeller som konkurrenterna använder, till en bråkdel av priset."
+      },
+      da: {
+        pageTitle: "Whisper Transskription",
+        headerTitle: "Whisper Transskription",
+        headerSubtitle: "Konverter tale til tekst for professionelle konsultationer",
+        startText: "For at komme i gang, indtast din OpenAI API-nøgle:",
+        apiPlaceholder: "Indtast API-nøgle her",
+        enterButton: "Åbn transskriptionsværktøjet",
+        guideButton: "Guide til opsætning af API-nøgle",
+        adRevenueMessage: "Da vi ikke opkræver betaling for brugen af denne hjemmeside og udelukkende er afhængige af annonceindtægter, beder vi dig venligst om at acceptere personaliserede annoncer for at støtte vores service.",
+        consentBannerText: "Denne hjemmeside er gratis at bruge, fordi vi udelukkende er afhængige af annonceindtægter. Vi bruger cookies til at personalisere annoncer og forbedre din oplevelse. Ved at klikke på \"Accepter\" accepterer du brugen af cookies.",
+        guideHeading: "Sådan konfigurerer du din OpenAI API-nøgle",
+        guideP1: "<strong>Hvad er Whisper Transskription?</strong><br>Whisper Transskription er et AI-værktøj, der omdanner tale til tekst ved hjælp af den avancerede OpenAI Whisper-model. Det producerer hurtigt høj kvalitet transskriptioner fra lyd optaget med en mikrofon. Derudover kan du konvertere disse transskriptioner til professionelle konsultationsnotater ved hjælp af personaliserede input, som gemmes lokalt på din enhed, så de forbliver tilgængelige, hver gang du logger ind fra samme computer med din personlige API-nøgle.",
+        guideP2: "<strong>Hvordan fungerer det?</strong><br>For at udføre disse opgaver bruger tjenesten kraftfulde ressourcer via OpenAI’s servere. Det betyder, at du ikke behøver en avanceret lokal maskine; du \"låner\" blot den nødvendige processorkraft ved at forbinde din OpenAI API-nøgle. Din API-nøgle forbinder din OpenAI-profil og -wallet, som skal være finansieret (i USD) for at dække omkostningerne.",
+        guideP3: "<strong>Omkostningsoversigt:</strong><br><strong>Transskriptionsomkostninger:</strong> OpenAI Whisper-modellen opkræver kun <strong>$0.006 per minut</strong> for transskribering. For eksempel, hvis du transskriberer 20 15-minutters samtaler, 4 dage om ugen, i en måned – dvs. 320 samtaler i alt (20×4×4), hvor hver samtale varer 15 minutter, vil de samlede omkostninger være cirka:<br><strong>320×15×$0.006 ≈ $28.80</strong> (som dynamisk konverteres til NOK baseret på den aktuelle vekselkurs).",
+        guideP4: "<strong>Notegenereringsomkostninger:</strong><br>Hvis du også bruger hjemmesiden til notegenerering for alle 320 konsultationer, vil det medføre ekstra omkostninger på cirka <strong>110 NOK</strong> (konverteret til USD tilsvarende). I modsætning til konkurrenter som Noteless (omkring 900 NOK for 60 konsultationer) eller Medbrics (op til 1750 NOK for ubegrænsede konsultationer), betaler du kun for den faktiske brug. Vi opkræver dig dog ikke direkte – omkostningerne trækkes fra din OpenAI-wallet.",
+        guideP5: "<strong>Få din OpenAI API-nøgle:</strong><br>1. Log ind på din OpenAI-konto på <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> med dine loginoplysninger.<br>2. Gå til dit dashboard og klik på dit profilbillede for at finde sektionen 'API Keys' eller 'Administrer API-nøgler'.<br>3. Klik på knappen 'Opret ny nøgle' for at generere din unikke API-nøgle. Tip: Kopier og gem denne nøgle i en tekstfil på din computer for nem adgang, da du kun kan se den én gang på OpenAI-websiden. (Hvis du mister den, kan du altid oprette en ny nøgle – den nye vil blive knyttet til din eksisterende OpenAI-wallet.)",
+        guideP6: "<strong>Hvorfor vælge Whisper Transskription?</strong><br>Vi mener, at man skal tilbyde transskriptions- og notegenereringstjenester af høj kvalitet uden de høje priser, som andre virksomheder opkræver. Selvom omkostningerne trækkes fra din OpenAI-wallet, betaler du ikke direkte – vores service finansieres udelukkende af annonceindtægter, hvilket giver dig adgang til de samme kraftfulde AI-modeller, som konkurrenterne bruger, til en brøkdel af prisen."
+      },
+      fi: {
+        pageTitle: "Whisper Transkriptio",
+        headerTitle: "Whisper Transkriptio",
+        headerSubtitle: "Muunna puhe tekstiksi ammattimaisia konsultaatioita varten",
+        startText: "Aloittaaksesi, syötä OpenAI API -avaimesi:",
+        apiPlaceholder: "Syötä API-avain tähän",
+        enterButton: "Avaa transkriptiotyökalu",
+        guideButton: "Opas API-avaimen asettamiseen",
+        adRevenueMessage: "Koska emme veloita tämän sivuston käytöstä ja olemme täysin riippuvaisia mainostuloista, pyydämme sinua suostumaan personoituihin mainoksiin tukemaan palveluamme.",
+        consentBannerText: "Tämä sivusto on ilmainen, koska perustamme toiminnan pelkästään mainostuloihin. Käytämme evästeitä mainosten personointiin ja käyttökokemuksesi parantamiseen. Klikkaamalla 'Hyväksy' hyväksyt evästeiden käytön.",
+        guideHeading: "Kuinka asettaa OpenAI API-avain",
+        guideP1: "<strong>Mikä on Whisper Transkriptio?</strong><br>Whisper Transkriptio on tekoälytyökalu, joka muuntaa puheen tekstiksi käyttäen edistynyttä OpenAI Whisper -mallia. Se tuottaa nopeasti korkealaatuisia transkriptioita mikrofonilla tallennetusta puheesta. Lisäksi voit muuntaa nämä transkriptiot ammattimaisiksi konsultaatioiden muistiinpanoiksi käyttämällä personoituja ohjeita – ohjeet, jotka tallennetaan laitteellesi, jotta ne ovat käytettävissä aina, kun kirjaudut sisään samalta tietokoneelta henkilökohtaisella API-avaimellasi.",
+        guideP2: "<strong>Miten se toimii?</strong><br>Palvelu käyttää OpenAI:n palvelimien kautta tehokkaita prosessointiresursseja näiden tehtävien suorittamiseen. Tämä tarkoittaa, ettei sinun tarvitse käyttää huippuluokan paikallista konetta; yhdistämällä OpenAI API-avaimesi saat tarvittavan prosessointitehon 'lainaksi'. API-avain liittää OpenAI-profiilisi ja -lompakkosi, jotka on rahoitettava (USD:na) käyttöön liittyvien kustannusten kattamiseksi.",
+        guideP3: "<strong>Kustannusten erittely:</strong><br><strong>Transkriptiokustannukset:</strong> OpenAI Whisper -malli veloittaa vain <strong>$0.006 per minuutti</strong> transkriptiosta. Esimerkiksi, jos teet transkription 20 kpl 15 minuutin keskusteluja, 4 päivänä viikossa yhden kuukauden ajan – eli yhteensä 320 keskustelua (20×4×4), joiden kesto on 15 minuuttia, transkription kokonaiskustannukset olisivat noin:<br><strong>320×15×$0.006 ≈ $28.80</strong> (dynaamisesti muunnettuna NOK:ksi nykyisen vaihtokurssin mukaan).",
+        guideP4: "<strong>Muistiinpanojen generointikustannukset:</strong><br>Jos käytät sivustoa myös muistiinpanojen generointiin kaikissa 320 konsultaatiossa, tämä lisäisi arviolta noin <strong>110 NOK</strong> kustannuksia (myös USD:ksi muunnettuna). Toisin kuin kilpailijat kuten Noteless (noin 900 NOK 60 konsultaatioon) tai Medbrics (jopa 1750 NOK rajoittamattomille konsultaatioille), maksat vain tehdystä työstä. Emme kuitenkaan veloita sinulta suoraan – kustannukset vähennetään OpenAI-lompakostasi.",
+        guideP5: "<strong>Hanki OpenAI API-avain:</strong><br>1. Kirjaudu sisään OpenAI-tilillesi osoitteessa <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> käyttäen tunnuksiasi.<br>2. Siirry hallintapaneeliisi ja napsauta profiilikuvakettasi löytääksesi kohdan 'API Keys' tai 'Hallinnoi API-avaimia'.<br>3. Napsauta 'Luo uusi avain' -painiketta luodaksesi ainutlaatuisen API-avaimesi. Vinkki: Kopioi ja tallenna avain tekstiedostoon tietokoneellasi, sillä avainta voi nähdä vain kerran OpenAI-sivulla. (Jos menetät sen, voit aina luoda uuden, joka liitetään olemassa olevaan OpenAI-lompakkoosi.)",
+        guideP6: "<strong>Miksi valita Whisper Transkriptio?</strong><br>Uskomme, että korkealaatuisia transkriptio- ja muistiinpanopalveluita voidaan tarjota ilman muiden yritysten asettamia korkeita hintoja. Vaikka käyttöön liittyvät kustannukset vähennetään OpenAI-lompakostasi, sinulta ei veloiteta suoraan – palvelumme rahoitetaan kokonaan mainostuloilla, mikä antaa sinulle pääsyn samoihin tehokkaisiin tekoälymalleihin kuin kilpailijat, murto-osalla kustannuksista."
       }
     };
-
-    // Update language for index page
-    function updateLanguage(lang) {
-      document.getElementById('page-title').textContent = translations[lang].pageTitle;
-      document.getElementById('header-title').textContent = translations[lang].headerTitle;
-      document.getElementById('header-subtitle').textContent = translations[lang].headerSubtitle;
-      document.getElementById('start-text').textContent = translations[lang].startText;
-      document.getElementById('apiKeyInput').setAttribute('placeholder', translations[lang].apiPlaceholder);
-      document.getElementById('enterTranscriptionBtn').textContent = translations[lang].enterButton;
-      document.getElementById('openGuideButton').textContent = translations[lang].guideButton;
-      document.getElementById('ad-revenue-message').textContent = translations[lang].adRevenueMessage;
-      document.getElementById('consent-text').textContent = translations[lang].consentBannerText;
-      document.getElementById('guide-heading').innerHTML = translations[lang].guideHeading;
-      document.getElementById('guide-p1').innerHTML = translations[lang].guideP1;
-      document.getElementById('guide-p2').innerHTML = translations[lang].guideP2;
-      document.getElementById('guide-p3').innerHTML = translations[lang].guideP3;
-      document.getElementById('guide-p4').innerHTML = translations[lang].guideP4;
-      document.getElementById('guide-p5').innerHTML = translations[lang].guideP5;
-      document.getElementById('guide-p6').innerHTML = translations[lang].guideP6;
-    }
-
+    
     // Initialize language from localStorage or default to English
     let currentLang = localStorage.getItem("siteLanguage") || "en";
     document.getElementById("lang-select").value = currentLang;
-    updateLanguage(currentLang);
-
+    function updateLanguageIndex(lang) {
+      document.getElementById("page-title").textContent = indexTranslations[lang].pageTitle;
+      document.getElementById("header-title").textContent = indexTranslations[lang].headerTitle;
+      document.getElementById("header-subtitle").textContent = indexTranslations[lang].headerSubtitle;
+      document.getElementById("start-text").textContent = indexTranslations[lang].startText;
+      document.getElementById("apiKeyInput").setAttribute("placeholder", indexTranslations[lang].apiPlaceholder);
+      document.getElementById("enterTranscriptionBtn").textContent = indexTranslations[lang].enterButton;
+      document.getElementById("openGuideButton").textContent = indexTranslations[lang].guideButton;
+      document.getElementById("ad-revenue-message").textContent = indexTranslations[lang].adRevenueMessage;
+      document.getElementById("consent-text").textContent = indexTranslations[lang].consentBannerText;
+      document.getElementById("guide-heading").innerHTML = indexTranslations[lang].guideHeading;
+      document.getElementById("guide-p1").innerHTML = indexTranslations[lang].guideP1;
+      document.getElementById("guide-p2").innerHTML = indexTranslations[lang].guideP2;
+      document.getElementById("guide-p3").innerHTML = indexTranslations[lang].guideP3;
+      document.getElementById("guide-p4").innerHTML = indexTranslations[lang].guideP4;
+      document.getElementById("guide-p5").innerHTML = indexTranslations[lang].guideP5;
+      document.getElementById("guide-p6").innerHTML = indexTranslations[lang].guideP6;
+    }
+    updateLanguageIndex(currentLang);
     document.getElementById("lang-select").addEventListener("change", function() {
       currentLang = this.value;
       localStorage.setItem("siteLanguage", currentLang);
-      updateLanguage(currentLang);
+      updateLanguageIndex(currentLang);
     });
-
-    // Consent Banner & Cookie Management
+    
+    // Consent Banner & Cookie Management for index page
     function setCookie(name, value, days) {
       var expires = "";
       if (days) {
@@ -285,34 +544,34 @@
       document.head.appendChild(script);
       (adsbygoogle = window.adsbygoogle || []).push({});
     }
-    document.getElementById('cmp-accept').addEventListener('click', function() {
+    document.getElementById("cmp-accept").addEventListener("click", function() {
       setCookie("user_consent", "accepted", 365);
-      document.getElementById('cmp-banner').style.display = 'none';
+      document.getElementById("cmp-banner").style.display = "none";
       loadAdSense();
     });
-    document.getElementById('cmp-manage').addEventListener('click', function() {
-      alert('Here you can manage your cookie and ad preferences.');
+    document.getElementById("cmp-manage").addEventListener("click", function() {
+      alert("Here you can manage your cookie and ad preferences.");
     });
     (function() {
       if (getCookie("user_consent") === "accepted") {
-        document.getElementById('cmp-banner').style.display = 'none';
+        document.getElementById("cmp-banner").style.display = "none";
         loadAdSense();
-        var adRevenueMsg = document.getElementById('ad-revenue-message');
-        if (adRevenueMsg) { adRevenueMsg.style.display = 'none'; }
+        document.getElementById("ad-revenue-message").style.display = "none";
       }
     })();
-    const overlay = document.getElementById("apiKeyGuideOverlay");
-    const closeBtn = document.getElementById("closeGuideBtn");
+    // API Key and Guide Logic for index page
+    const overlayIndex = document.getElementById("apiKeyGuideOverlay");
+    const closeGuideIndex = document.getElementById("closeGuideBtn");
     const openGuideButton = document.getElementById("openGuideButton");
     const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");
     const apiKeyInput = document.getElementById("apiKeyInput");
     openGuideButton.addEventListener("click", () => {
-      overlay.style.display = "flex";
-      overlay.style.flexDirection = "column";
-      overlay.style.alignItems = "center";
+      overlayIndex.style.display = "flex";
+      overlayIndex.style.flexDirection = "column";
+      overlayIndex.style.alignItems = "center";
     });
-    closeBtn.addEventListener("click", () => {
-      overlay.style.display = "none";
+    closeGuideIndex.addEventListener("click", () => {
+      overlayIndex.style.display = "none";
     });
     enterTranscriptionBtn.addEventListener("click", () => {
       const apiKey = apiKeyInput.value.trim();

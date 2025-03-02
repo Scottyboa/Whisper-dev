@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Whisper Transcription</title>
+  <title id="page-title">Whisper Transcription</title>
   <!-- Import Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
   <style>
@@ -37,7 +37,6 @@
       margin: 40px auto;
       padding: 20px;
     }
-    /* Updated rule to force Roboto on input fields */
     input[type="text"], textarea, select {
       width: 300px;
       padding: 12px;
@@ -127,75 +126,139 @@
       line-height: 1.5;
       margin-bottom: 15px;
     }
+    /* Language dropdown at top right */
+    #lang-select {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 5px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
+  <select id="lang-select">
+    <option value="en">English</option>
+    <option value="no">Norsk</option>
+  </select>
   <header>
-    <h1>Whisper Transcription</h1>
-    <p>Convert speech to text for professional consultations</p>
+    <h1 id="header-title">Whisper Transcription</h1>
+    <p id="header-subtitle">Convert speech to text for professional consultations</p>
   </header>
   <div class="container">
-    <p>To get started, please enter your OpenAI API key:</p>
-    <!-- API Key Input with autocomplete off -->
+    <p id="start-text">To get started, please enter your OpenAI API key:</p>
     <input type="text" id="apiKeyInput" placeholder="Enter API Key here" autocomplete="off">
     <br>
     <button id="enterTranscriptionBtn">Enter Transcription Tool</button>
     <br>
     <button id="openGuideButton">Guide for setting up API key</button>
-    <!-- Ad Revenue Explanation Text -->
-    <p class="ad-revenue-message">
+    <p class="ad-revenue-message" id="ad-revenue-message">
       As we do not charge for the use of this website and rely solely on ad revenue, we kindly ask you to consent to personalized ads to help support our service.
     </p>
   </div>
-  
   <!-- Popup Overlay for API Guide -->
   <div id="apiKeyGuideOverlay">
     <div id="apiKeyGuideModal">
-      <h2>How to Set Up Your OpenAI API Key</h2>
-      <p>
-        <strong>What is Whisper Transcription?</strong><br>
-        Whisper Transcription is an AI tool that converts speech to text using the advanced OpenAI Whisper model. It quickly produces high-quality transcripts from speech recorded via a microphone. In addition, you can convert these transcripts into professional consultation notes using personalized prompts—prompts that are saved locally on your device so they remain available each time you log in from the same computer with your personal API key.
-      </p>
-      <p>
-        <strong>How Does It Work?</strong><br>
-        To perform these tasks, the service uses powerful processing resources via the OpenAI servers. This means you don’t need a high-end local machine; you simply “lend” the necessary processing power by connecting your OpenAI API key. Your API key links to your OpenAI profile and wallet, which must be funded (in USD) to cover usage costs.
-      </p>
-      <p>
-        <strong>Cost Breakdown:</strong><br>
-        The OpenAI Whisper model charges only <strong>$0.006 per minute</strong> for transcription. For example, if you perform transcriptions on 20 fifteen‑minute conversations, 4 days a week, for one month—that is 320 conversations total (20 × 4 days × 4 weeks) with each lasting 15 minutes—the total transcription cost would be approximately: 
-        <br>
-        <strong>320 conversations × 15 minutes × $0.006/minute ≈ $28.80</strong> (which will be dynamically converted to NOK based on the current exchange rate).
-      </p>
-      <p>
-        If you also use the website for note generation on all 320 consultations, this would add an additional estimated cost of about <strong>110 NOK</strong> (also converted to USD accordingly). Unlike competitors such as Noteless (around 900 NOK for 60 consultations) or Medbrics (up to 1750 NOK for unlimited consultations), you only pay per unit of work. We, however, do not charge you directly—our service is funded entirely by ad revenue.
-      </p>
-      <p>
-        <strong>Obtaining Your OpenAI API Key:</strong><br>
-        1. Log into your OpenAI account at <a href="https://platform.openai.com/" target="_blank">https://platform.openai.com/</a> using your credentials.<br>
-        2. Navigate to your account dashboard and click on your profile icon to find the “API Keys” or “Manage API keys” section.<br>
-        3. Click the “Create new key” button to generate your unique API key. <em>Tip:</em> Copy and save this key in a text file on your computer for easy access, as you can only view the key once on the OpenAI webpage. (If you lose it, you can always generate another key—the new key will be linked to your existing OpenAI wallet.)<br>
-        4. Finally, add funds to your OpenAI wallet (in USD) to cover the transcription and note generation costs.
-      </p>
+      <h2 id="guide-heading">How to Set Up Your OpenAI API Key</h2>
+      <p id="guide-p1"><strong>What is Whisper Transcription?</strong><br>
+      Whisper Transcription is an AI tool that converts speech to text using the advanced OpenAI Whisper model. It quickly produces high-quality transcripts from speech recorded via a microphone. In addition, you can convert these transcripts into professional consultation notes using personalized prompts—prompts that are saved locally on your device so they remain available each time you log in from the same computer with your personal API key.</p>
+      <p id="guide-p2"><strong>How Does It Work?</strong><br>
+      To perform these tasks, the service uses powerful processing resources via the OpenAI servers. This means you don’t need a high-end local machine; you simply “lend” the necessary processing power by connecting your OpenAI API key. Your API key links to your OpenAI profile and wallet, which must be funded (in USD) to cover usage costs.</p>
+      <p id="guide-p3"><strong>Cost Breakdown:</strong><br>
+      <strong>Transcription Costs:</strong> The OpenAI Whisper model charges only <strong>$0.006 per minute</strong> for transcription. For example, if you perform transcriptions on 20 fifteen‑minute conversations, 4 days a week, for one month—that is 320 conversations total (20 × 4 days × 4 weeks) with each lasting 15 minutes, the total transcription cost would be approximately:<br>
+      <strong>320 conversations × 15 minutes × $0.006/minute ≈ $28.80</strong> (which will be dynamically converted to NOK based on the current exchange rate).</p>
+      <p id="guide-p4"><strong>Note Generation Costs:</strong><br>
+      If you also use the website for note generation on all 320 consultations, this would add an additional estimated cost of about <strong>110 NOK</strong> (also converted to USD accordingly). Unlike competitors such as Noteless (around 900 NOK for 60 consultations) or Medbrics (up to 1750 NOK for unlimited consultations), you only pay per unit of work. We, however, do not charge you directly—usage costs are deducted from your OpenAI wallet.</p>
+      <p id="guide-p5"><strong>Obtaining Your OpenAI API Key:</strong><br>
+      1. Log into your OpenAI account at <a href="https://platform.openai.com/" target="_blank">https://platform.openai.com/</a> using your credentials.<br>
+      2. Navigate to your account dashboard and click on your profile icon to find the “API Keys” or “Manage API keys” section.<br>
+      3. Click the “Create new key” button to generate your unique API key. Tip: Copy and save this key in a text file on your computer for easy access, as you can only view the key once on the OpenAI webpage. (If you lose it, you can always generate another key – the new key will be linked to your existing OpenAI wallet.)<br>
+      4. Fund your OpenAI wallet (in USD) to cover usage charges for transcription and note generation.</p>
+      <p id="guide-p6"><strong>Why Choose Whisper Transcription?</strong><br>
+      We believe in offering high-quality transcription and note-generation services without the heavy price tag imposed by other companies. Although usage costs are deducted from your OpenAI wallet, you are not charged directly by us—our service is funded entirely by ad revenue, providing you access to the same powerful AI models that competitors use at a fraction of their cost.</p>
       <button id="closeGuideBtn" style="background:red; color:#fff; padding:10px 20px; border:none; border-radius:10px; cursor:pointer; margin-top:20px;">Close</button>
     </div>
   </div>
-  
   <!-- Consent Banner -->
   <div id="cmp-banner">
-    <span>
-      This website is free to use because we rely solely on ad revenue.
-      We use cookies to personalize ads and improve your experience.
-      By clicking "Accept", you consent to the use of cookies.
-    </span>
+    <span id="consent-text">This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking "Accept", you consent to the use of cookies.</span>
     <button id="cmp-accept">Accept</button>
     <button id="cmp-manage">Manage</button>
   </div>
-  
-  <!-- Scripts -->
   <script>
-    // Consent Banner & Cookie Management Script
+    // Translation object for index page
+    const translations = {
+      en: {
+        pageTitle: "Whisper Transcription",
+        headerTitle: "Whisper Transcription",
+        headerSubtitle: "Convert speech to text for professional consultations",
+        startText: "To get started, please enter your OpenAI API key:",
+        apiPlaceholder: "Enter API Key here",
+        enterButton: "Enter Transcription Tool",
+        guideButton: "Guide for setting up API key",
+        adRevenueMessage: "As we do not charge for the use of this website and rely solely on ad revenue, we kindly ask you to consent to personalized ads to help support our service.",
+        consentBannerText: 'This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking "Accept", you consent to the use of cookies.',
+        guideHeading: "How to Set Up Your OpenAI API Key",
+        guideP1: "<strong>What is Whisper Transcription?</strong><br>Whisper Transcription is an AI tool that converts speech to text using the advanced OpenAI Whisper model. It quickly produces high-quality transcripts from speech recorded via a microphone. In addition, you can convert these transcripts into professional consultation notes using personalized prompts—prompts that are saved locally on your device so they remain available each time you log in from the same computer with your personal API key.",
+        guideP2: "<strong>How Does It Work?</strong><br>To perform these tasks, the service uses powerful processing resources via the OpenAI servers. This means you don’t need a high-end local machine; you simply “lend” the necessary processing power by connecting your OpenAI API key. Your API key links to your OpenAI profile and wallet, which must be funded (in USD) to cover usage costs.",
+        guideP3: "<strong>Cost Breakdown:</strong><br><strong>Transcription Costs:</strong> The OpenAI Whisper model charges only <strong>$0.006 per minute</strong> for transcription. For example, if you perform transcriptions on 20 fifteen‑minute conversations, 4 days a week, for one month—that is 320 conversations total (20 × 4 days × 4 weeks) with each lasting 15 minutes, the total transcription cost would be approximately:<br><strong>320 conversations × 15 minutes × $0.006/minute ≈ $28.80</strong> (which will be dynamically converted to NOK based on the current exchange rate).",
+        guideP4: "<strong>Note Generation Costs:</strong><br>If you also use the website for note generation on all 320 consultations, this would add an additional estimated cost of about <strong>110 NOK</strong> (also converted to USD accordingly). Unlike competitors such as Noteless (around 900 NOK for 60 consultations) or Medbrics (up to 1750 NOK for unlimited consultations), you only pay per unit of work. We, however, do not charge you directly—usage costs are deducted from your OpenAI wallet.",
+        guideP5: "<strong>Obtaining Your OpenAI API Key:</strong><br>1. Log into your OpenAI account at <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> using your credentials.<br>2. Navigate to your account dashboard and click on your profile icon to find the “API Keys” or “Manage API keys” section.<br>3. Click the “Create new key” button to generate your unique API key. Tip: Copy and save this key in a text file on your computer for easy access, as you can only view the key once on the OpenAI webpage. (If you lose it, you can always generate another key – the new key will be linked to your existing OpenAI wallet.)<br>4. Fund your OpenAI wallet (in USD) to cover usage charges for transcription and note generation.",
+        guideP6: "<strong>Why Choose Whisper Transcription?</strong><br>We believe in offering high-quality transcription and note-generation services without the heavy price tag imposed by other companies. Although usage costs are deducted from your OpenAI wallet, you are not charged directly by us—our service is funded entirely by ad revenue, providing you access to the same powerful AI models that competitors use at a fraction of their cost."
+      },
+      no: {
+        pageTitle: "Whisper Transkripsjon",
+        headerTitle: "Whisper Transkripsjon",
+        headerSubtitle: "Konverter tale til tekst for profesjonelle konsultasjoner",
+        startText: "For å komme i gang, vennligst skriv inn din OpenAI API-nøkkel:",
+        apiPlaceholder: "Skriv inn API-nøkkel her",
+        enterButton: "Gå til transkripsjonsverktøy",
+        guideButton: "Veiledning for oppsett av API-nøkkel",
+        adRevenueMessage: "Siden vi ikke tar betalt for bruk av denne nettsiden og utelukkende er avhengige av annonseinntekter, ber vi deg vennligst om å samtykke til personaliserte annonser for å støtte tjenesten vår.",
+        consentBannerText: 'Denne nettsiden er gratis å bruke fordi vi utelukkende er avhengige av annonseinntekter. Vi bruker informasjonskapsler for å personalisere annonser og forbedre din opplevelse. Ved å klikke "Godta", samtykker du i bruken av informasjonskapsler.',
+        guideHeading: "Hvordan sette opp din OpenAI API-nøkkel",
+        guideP1: "<strong>Hva er Whisper Transkripsjon?</strong><br>Whisper Transkripsjon er et AI-verktøy som konverterer tale til tekst ved hjelp av den avanserte OpenAI Whisper-modellen. Det produserer raskt høykvalitets transkripsjoner fra tale opptatt via en mikrofon. I tillegg kan du konvertere disse transkripsjonene til profesjonelle konsultasjonsnotater ved hjelp av personaliserte meldinger – meldinger som lagres lokalt på enheten din slik at de forblir tilgjengelige hver gang du logger inn fra samme datamaskin med din personlige API-nøkkel.",
+        guideP2: "<strong>Hvordan fungerer det?</strong><br>For å utføre disse oppgavene, bruker tjenesten kraftige prosesseringsressurser via OpenAI-serverne. Dette betyr at du ikke trenger en avansert lokal maskin; du 'låner' den nødvendige prosesseringskraften ved å koble til din OpenAI API-nøkkel. Din API-nøkkel knytter seg til din OpenAI-profil og lommebok, som må være finansiert (i USD) for å dekke bruksutgiftene.",
+        guideP3: "<strong>Kostnadsoversikt:</strong><br><strong>Transkripsjonskostnader:</strong> OpenAI Whisper-modellen belaster kun <strong>$0,006 per minutt</strong> for transkripsjon. For eksempel, la oss si at du transkriberer 20 samtaler på 15 minutter, 4 dager i uken, i én måned – det blir til sammen 320 samtaler (20 × 4 dager × 4 uker), der hver samtale varer 15 minutter. Den totale transkripsjonskostnaden vil da være omtrent:<br><strong>320 samtaler × 15 minutter × $0,006 per minutt ≈ $28,80</strong> (som blir dynamisk konvertert til NOK basert på gjeldende valutakurs).",
+        guideP4: "<strong>Notatgenereringskostnader:</strong><br>Hvis du også bruker nettsiden for notatgenerering på alle 320 konsultasjoner, vil dette legge til en estimert ekstra kostnad på omtrent <strong>110 NOK</strong> (også konvertert til USD deretter). I motsetning til konkurrenter som Noteless (omtrent 900 NOK for 60 konsultasjoner) eller Medbrics (opptil 1750 NOK for ubegrensede konsultasjoner), betaler du kun for den faktiske bruken. Vi tar imidlertid ikke betalt direkte av deg – bruksutgiftene trekkes fra din OpenAI-lommebok.",
+        guideP5: "<strong>Skaff din OpenAI API-nøkkel:</strong><br>1. Logg inn på din OpenAI-konto på <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> med dine innloggingsopplysninger.<br>2. Naviger til kontoadministrasjonen din og klikk på profilikonet ditt for å finne seksjonen 'API Keys' eller 'Administrer API-nøkler'.<br>3. Klikk på knappen 'Opprett ny nøkkel' for å generere din unike API-nøkkel. Tips: Kopier og lagre denne nøkkelen i en tekstfil på datamaskinen for enkel tilgang, ettersom du kun kan se nøkkelen én gang på OpenAI-nettsiden. (Om du skulle miste den, kan du alltid generere en ny nøkkel – den nye nøkkelen vil være knyttet til din eksisterende OpenAI-lommebok.)",
+        guideP6: "<strong>Sett inn penger på din OpenAI-lommebok:</strong><br>Legg til midler i din OpenAI-lommebok (i USD) for å dekke bruksutgiftene for transkripsjon og notatgenerering.",
+        guideP7: "<strong>Hvorfor velge Whisper Transkripsjon?</strong><br>Vi tror på å tilby høykvalitets transkripsjons- og notatgenereringstjenester uten de høye kostnadene som andre selskaper pålegger. Selv om bruksutgiftene trekkes fra din OpenAI-lommebok, blir du ikke direkte belastet av oss – tjenesten vår finansieres utelukkende av annonseinntekter, noe som gir deg tilgang til de samme kraftige AI-modellene som konkurrentene bruker, til en brøkdel av prisen."
+      }
+    };
 
-    // Function to set a cookie
+    // Update language for index page
+    function updateLanguage(lang) {
+      document.getElementById('page-title').textContent = translations[lang].pageTitle;
+      document.getElementById('header-title').textContent = translations[lang].headerTitle;
+      document.getElementById('header-subtitle').textContent = translations[lang].headerSubtitle;
+      document.getElementById('start-text').textContent = translations[lang].startText;
+      document.getElementById('apiKeyInput').setAttribute('placeholder', translations[lang].apiPlaceholder);
+      document.getElementById('enterTranscriptionBtn').textContent = translations[lang].enterButton;
+      document.getElementById('openGuideButton').textContent = translations[lang].guideButton;
+      document.getElementById('ad-revenue-message').textContent = translations[lang].adRevenueMessage;
+      document.getElementById('consent-text').textContent = translations[lang].consentBannerText;
+      document.getElementById('guide-heading').innerHTML = translations[lang].guideHeading;
+      document.getElementById('guide-p1').innerHTML = translations[lang].guideP1;
+      document.getElementById('guide-p2').innerHTML = translations[lang].guideP2;
+      document.getElementById('guide-p3').innerHTML = translations[lang].guideP3;
+      document.getElementById('guide-p4').innerHTML = translations[lang].guideP4;
+      document.getElementById('guide-p5').innerHTML = translations[lang].guideP5;
+      document.getElementById('guide-p6').innerHTML = translations[lang].guideP6;
+    }
+
+    // Initialize language from localStorage or default to English
+    let currentLang = localStorage.getItem("siteLanguage") || "en";
+    document.getElementById("lang-select").value = currentLang;
+    updateLanguage(currentLang);
+
+    document.getElementById("lang-select").addEventListener("change", function() {
+      currentLang = this.value;
+      localStorage.setItem("siteLanguage", currentLang);
+      updateLanguage(currentLang);
+    });
+
+    // Consent Banner & Cookie Management
     function setCookie(name, value, days) {
       var expires = "";
       if (days) {
@@ -205,8 +268,6 @@
       }
       document.cookie = name + "=" + (value || "") + expires + "; path=/";
     }
-
-    // Function to get a cookie by name
     function getCookie(name) {
       var nameEQ = name + "=";
       var ca = document.cookie.split(';');
@@ -217,50 +278,34 @@
       }
       return null;
     }
-
-    // Function to dynamically load the AdSense script after consent
     function loadAdSense() {
       var script = document.createElement('script');
       script.async = true;
       script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
       document.head.appendChild(script);
-      // Initialize ad slots (if any are on this page)
       (adsbygoogle = window.adsbygoogle || []).push({});
     }
-
-    // Consent Banner actions
     document.getElementById('cmp-accept').addEventListener('click', function() {
-      setCookie("user_consent", "accepted", 365); // Set consent for 1 year
+      setCookie("user_consent", "accepted", 365);
       document.getElementById('cmp-banner').style.display = 'none';
-      loadAdSense(); // Load AdSense after consent is given
-      // Note: If consent is given while on the page, the ad revenue message remains until reload.
+      loadAdSense();
     });
-
     document.getElementById('cmp-manage').addEventListener('click', function() {
       alert('Here you can manage your cookie and ad preferences.');
-      // Replace alert with a modal or settings page as needed.
     });
-
-    // On page load, check for existing consent
     (function() {
       if (getCookie("user_consent") === "accepted") {
         document.getElementById('cmp-banner').style.display = 'none';
         loadAdSense();
-        // Hide the ad revenue message if consent is already given
-        var adRevenueMsg = document.querySelector('.ad-revenue-message');
-        if (adRevenueMsg) {
-          adRevenueMsg.style.display = 'none';
-        }
+        var adRevenueMsg = document.getElementById('ad-revenue-message');
+        if (adRevenueMsg) { adRevenueMsg.style.display = 'none'; }
       }
     })();
-
-    // API Key and Guide Logic
     const overlay = document.getElementById("apiKeyGuideOverlay");
     const closeBtn = document.getElementById("closeGuideBtn");
     const openGuideButton = document.getElementById("openGuideButton");
     const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");
     const apiKeyInput = document.getElementById("apiKeyInput");
-
     openGuideButton.addEventListener("click", () => {
       overlay.style.display = "flex";
       overlay.style.flexDirection = "column";

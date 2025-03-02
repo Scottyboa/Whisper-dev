@@ -13,6 +13,7 @@
       margin: 0;
       padding: 0;
     }
+    /* Cost Indicator */
     #costIndicator {
       position: fixed;
       top: 10px;
@@ -24,52 +25,34 @@
       font-size: 14px;
       z-index: 1000;
     }
+    /* Grid Layout: Three columns: left sidebar, main content, right ad sidebar */
     .grid-container {
       display: grid;
       grid-template-columns: 250px 1fr 250px;
       height: 100vh;
     }
+    /* Left Sidebar */
     .sidebar {
       background-color: #e0e0e0;
       padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 20px;
-      align-items: stretch;
       position: relative;
     }
     .sidebar button {
       font-size: 18px;
       padding: 15px;
     }
+    /* Main Content Area */
     .main-content {
       padding: 20px;
-      overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 20px;
+      overflow-y: auto;
     }
-    .ad-sidebar {
-      background-color: #e0e0e0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #adUnit {
-      width: 100%;
-      height: 200px;
-      background-color: #ddd;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      margin-bottom: 10px;
-    }
-    #impressionCounter {
-      font-size: 14px;
-      color: #333;
-    }
+    /* Recording Area (Top Half) */
     .recording-area {
       border-bottom: 1px solid #ddd;
       padding-bottom: 20px;
@@ -108,6 +91,41 @@
     button:active {
       transform: scale(0.98);
     }
+    /* Bottom Half: Two Columns */
+    .bottom-half {
+      display: flex;
+      gap: 20px;
+      flex: 1;
+    }
+    .column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    /* Right Sidebar (Ad Area) */
+    .ad-sidebar {
+      background-color: #e0e0e0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #adUnit {
+      width: 100%;
+      height: 200px;
+      background-color: #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    #impressionCounter {
+      font-size: 14px;
+      color: #333;
+    }
+    /* Guide Overlay */
     #guideView {
       display: none;
       position: fixed;
@@ -124,7 +142,7 @@
     #guideView.active {
       display: block;
     }
-    /* Language dropdown in bottom left of sidebar */
+    /* Language Dropdown in Sidebar (Bottom Left) */
     #lang-select-transcribe {
       position: absolute;
       bottom: 20px;
@@ -150,6 +168,7 @@
     </aside>
     <!-- Main Content -->
     <main class="main-content">
+      <!-- Top Half: Recording Area -->
       <div class="recording-area">
         <h3 id="recordingAreaTitle">Recording Area</h3>
         <div id="recordIndicator" style="width:20px; height:20px; border-radius:50%; background-color:grey; margin:0 auto 10px;"></div>
@@ -165,6 +184,7 @@
         </div>
         <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
       </div>
+      <!-- Bottom Half: Note Generation and Custom Prompt -->
       <div class="bottom-half">
         <div class="column">
           <h3 id="noteGenerationTitle">Note Generation</h3>
@@ -217,7 +237,7 @@
     </p>
   </div>
   <script>
-    // Translation object for transcribe page
+    // Transcribe Page: Translation Object
     const transcribeTranslations = {
       en: {
         pageTitle: "Transcription Tool with Ads and Guide Overlay",
@@ -295,7 +315,9 @@ Klikk "Funksjoner" for å vende tilbake til hovedgrensesnittet.`
       }
     };
 
-    // Function to update language for transcribe page
+    // Initialize language for transcribe page from localStorage or default to English
+    let currentLangTranscribe = localStorage.getItem("siteLanguage") || "en";
+    document.getElementById("lang-select-transcribe").value = currentLangTranscribe;
     function updateLanguageTranscribe(lang) {
       document.getElementById("page-title-transcribe").textContent = transcribeTranslations[lang].pageTitle;
       document.getElementById("costIndicatorText").innerHTML = transcribeTranslations[lang].costIndicator;
@@ -323,15 +345,64 @@ Klikk "Funksjoner" for å vende tilbake til hovedgrensesnittet.`
       document.getElementById("guideHeading").textContent = transcribeTranslations[lang].guideHeading;
       document.getElementById("guideText").innerHTML = transcribeTranslations[lang].guideText;
     }
-    let currentLangTranscribe = localStorage.getItem("siteLanguage") || "en";
-    document.getElementById("lang-select-transcribe").value = currentLangTranscribe;
     updateLanguageTranscribe(currentLangTranscribe);
     document.getElementById("lang-select-transcribe").addEventListener("change", function() {
       currentLangTranscribe = this.value;
       localStorage.setItem("siteLanguage", currentLangTranscribe);
       updateLanguageTranscribe(currentLangTranscribe);
     });
-    // (Additional transcribe functionality would follow here)
+    // Consent Banner & Cookie Management for transcribe page
+    function setCookie(name, value, days) {
+      var expires = "";
+      if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+      }
+      document.cookie = name + "=" + (value || "") + expires + "; path=/";
+    }
+    function getCookie(name) {
+      var nameEQ = name + "=";
+      var ca = document.cookie.split(';');
+      for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
+      }
+      return null;
+    }
+    function loadAdSense() {
+      var script = document.createElement('script');
+      script.async = true;
+      script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+      document.head.appendChild(script);
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    }
+    document.getElementById('cmp-accept').addEventListener('click', function() {
+      setCookie("user_consent", "accepted", 365);
+      document.getElementById('cmp-banner').style.display = 'none';
+      loadAdSense();
+    });
+    document.getElementById('cmp-manage').addEventListener('click', function() {
+      alert('Here you can manage your cookie and ad preferences.');
+    });
+    (function() {
+      if (getCookie("user_consent") === "accepted") {
+        document.getElementById('cmp-banner').style.display = 'none';
+        loadAdSense();
+      }
+    })();
+    // Guide Overlay Logic
+    const overlay = document.getElementById("guideView");
+    const btnGuide = document.getElementById("btnGuide");
+    const btnFunctions = document.getElementById("btnFunctions");
+    btnGuide.addEventListener("click", () => {
+      overlay.classList.add("active");
+    });
+    btnFunctions.addEventListener("click", () => {
+      overlay.classList.remove("active");
+    });
+    // (Additional transcribe functionalities, e.g., recording, transcription, note generation, would follow here)
   </script>
 </body>
 </html>

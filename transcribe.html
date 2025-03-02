@@ -146,10 +146,6 @@
       font-size: 18px;
       margin-bottom: 10px;
     }
-    #impressionCounter {
-      font-size: 14px;
-      color: #333;
-    }
     /* Guide Overlay */
     #guideView {
       display: none;
@@ -262,7 +258,7 @@
     <aside class="ad-sidebar">
       <div id="adArea">
         <div id="adUnit">Your Ad Here</div>
-        <div id="impressionCounter">Impressions: 0</div>
+        <!-- Impression counter removed -->
       </div>
     </aside>
   </div>
@@ -318,7 +314,6 @@
           promptSlotLabel: "Prompt Slot:",
           customPromptPlaceholder: "Enter custom prompt here",
           adUnitText: "Your Ad Here",
-          impressionCounter: "Impressions: 0",
           guideHeading: "Guide & Instructions",
           guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
 <br><br>
@@ -355,7 +350,6 @@ Please click "Functions" to return to the main interface.`
           promptSlotLabel: "Meldingsplass:",
           customPromptPlaceholder: "Skriv inn tilpasset melding her",
           adUnitText: "Din annonse her",
-          impressionCounter: "Visninger: 0",
           guideHeading: "Veiledning og Instruksjoner",
           guideText: `Velkommen til Whisper Transkripsjonsverktøy. Denne applikasjonen lar medisinske fagpersoner, terapeuter og andre utøvere ta opp og transkribere konsultasjoner, samt generere profesjonelle notater ved hjelp av en AI-drevet notatgenerator.
 <br><br>
@@ -392,7 +386,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           promptSlotLabel: "Meddelandefält:",
           customPromptPlaceholder: "Ange ditt anpassade meddelande här",
           adUnitText: "Din annons här",
-          impressionCounter: "Visningar: 0",
           guideHeading: "Guide & Instruktioner",
           guideText: `Välkommen till Whisper Transkriptionsverktyget. Detta verktyg låter medicinska experter, terapeuter och andra utövare spela in och transkribera konsultationer samt generera professionella noteringar med hjälp av en AI-driven notatgenerator.
 <br><br>
@@ -429,7 +422,6 @@ Klicka på "Funktioner" för att återgå till huvudsidan.`
           promptSlotLabel: "提示槽：",
           customPromptPlaceholder: "在此输入自定义提示",
           adUnitText: "您的广告在此",
-          impressionCounter: "展示次数: 0",
           guideHeading: "指南与说明",
           guideText: `欢迎使用 Whisper 转录工具。本工具允许医疗专业人员、治疗师及其他从业者录制并转录咨询内容，同时利用 AI 驱动的笔记生成器生成专业笔记。
 <br><br>
@@ -466,7 +458,6 @@ Klicka på "Funktioner" för att återgå till huvudsidan.`
           promptSlotLabel: "Eingabefeld:",
           customPromptPlaceholder: "Geben Sie hier Ihre benutzerdefinierte Eingabe ein",
           adUnitText: "Ihre Anzeige hier",
-          impressionCounter: "Impressionen: 0",
           guideHeading: "Guide & Anleitungen",
           guideText: `Willkommen beim Whisper Transkriptionswerkzeug. Diese Anwendung ermöglicht es medizinischen Fachkräften, Therapeuten und anderen Anwendern, Beratungsgespräche aufzunehmen und zu transkribieren sowie professionelle Notizen mit Hilfe eines KI-gestützten Notizgenerators zu erstellen.
 <br><br>
@@ -503,7 +494,6 @@ Klicken Sie auf "Funktionen", um zur Hauptansicht zurückzukehren.`
           promptSlotLabel: "Emplacement du message :",
           customPromptPlaceholder: "Entrez votre message personnalisé ici",
           adUnitText: "Votre annonce ici",
-          impressionCounter: "Impressions : 0",
           guideHeading: "Guide & Instructions",
           guideText: `Bienvenue sur l'outil de transcription Whisper. Cette application permet aux professionnels de la santé, aux thérapeutes et à d'autres praticiens d'enregistrer et de transcrire des consultations, ainsi que de générer des notes professionnelles à l'aide d'un générateur de notes propulsé par l'IA.
 <br><br>
@@ -542,9 +532,6 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         document.getElementById("promptSlotLabel").textContent = transcribeTranslations[lang].promptSlotLabel;
         document.getElementById("customPrompt").setAttribute("placeholder", transcribeTranslations[lang].customPromptPlaceholder);
         document.getElementById("adUnit").textContent = transcribeTranslations[lang].adUnitText;
-        document.getElementById("impressionCounter").textContent = transcribeTranslations[lang].impressionCounter;
-        document.getElementById("guideHeading").textContent = transcribeTranslations[lang].guideHeading;
-        document.getElementById("guideText").innerHTML = transcribeTranslations[lang].guideText;
       }
       let currentLangTranscribe = localStorage.getItem("siteLanguage") || "en";
       document.getElementById("lang-select-transcribe").value = currentLangTranscribe;

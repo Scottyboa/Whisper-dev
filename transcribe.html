@@ -13,12 +13,12 @@
       margin: 0;
       padding: 0;
     }
-    /* Style for the OpenAI usage hyperlink */
+    /* OpenAI usage hyperlink */
     #openaiUsageLink {
       position: fixed;
-      top: 30px;       
-      right: 400px;    /* Moved further left to avoid overlapping the ad area */
-      font-size: 18px; 
+      top: 30px;
+      right: 400px;
+      font-size: 18px;
       text-decoration: underline;
       color: #0077cc;
       z-index: 1000;
@@ -37,6 +37,20 @@
       flex-direction: column;
       gap: 20px;
       position: relative;
+    }
+    /* Language Icon & Dropdown in Sidebar */
+    #languageSelectorTranscribe {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #languageIconTranscribe {
+      width: 24px;
+      height: 24px;
+    }
+    #lang-select-transcribe {
+      padding: 5px;
+      font-size: 14px;
     }
     .sidebar button {
       font-size: 18px;
@@ -144,11 +158,7 @@
     }
     /* Language Dropdown in Sidebar (Bottom Left) */
     #lang-select-transcribe {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      padding: 5px;
-      font-size: 14px;
+      /* Already used above inside #languageSelectorTranscribe */
     }
     /* Consent Banner */
     #cmp-banner {
@@ -179,14 +189,18 @@
     <aside class="sidebar">
       <button id="btnFunctions">Functions</button>
       <button id="btnGuide">Guide</button>
-      <select id="lang-select-transcribe">
-        <option value="en">English</option>
-        <option value="no">Norsk</option>
-        <option value="sv">Svenska</option>
-        <option value="zh">中文</option>
-        <option value="de">Deutsch</option>
-        <option value="fr">Français</option>
-      </select>
+      <!-- Language Icon & Dropdown Container for Transcribe Page -->
+      <div id="languageSelectorTranscribe">
+        <img src="language-icon.png" alt="Language Icon" id="languageIconTranscribe">
+        <select id="lang-select-transcribe">
+          <option value="en">English</option>
+          <option value="no">Norsk</option>
+          <option value="sv">Svenska</option>
+          <option value="zh">中文</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+        </select>
+      </div>
     </aside>
     <!-- Main Content -->
     <main class="main-content">

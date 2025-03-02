@@ -13,6 +13,16 @@
       margin: 0;
       padding: 0;
     }
+    /* Style for the OpenAI usage hyperlink */
+    #openaiUsageLink {
+      position: fixed;
+      top: 10px;
+      right: 270px;
+      font-size: 14px;
+      text-decoration: underline;
+      color: #0077cc;
+      z-index: 1000;
+    }
     /* Grid Layout */
     .grid-container {
       display: grid;
@@ -51,7 +61,7 @@
       color: #333;
     }
     /* Auto-resizing Textareas */
-    #transcription {
+    #transcription, #generatedNote, #customPrompt {
       width: 100%;
       padding: 12px;
       border: 1px solid #ddd;
@@ -61,30 +71,11 @@
       margin-bottom: 20px;
       font-family: 'Roboto', sans-serif;
       resize: none;
-      min-height: 150px;
     }
-    #generatedNote {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      font-size: 16px;
-      box-sizing: border-box;
-      margin-bottom: 20px;
-      font-family: 'Roboto', sans-serif;
-      resize: none;
+    #transcription, #generatedNote {
       min-height: 150px;
     }
     #customPrompt {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      font-size: 16px;
-      box-sizing: border-box;
-      margin-bottom: 20px;
-      font-family: 'Roboto', sans-serif;
-      resize: none;
       min-height: 200px;
     }
     button {
@@ -180,7 +171,9 @@
   </style>
 </head>
 <body>
-  <!-- Removed cost indicator block -->
+  <!-- Replace cost indicator with a hyperlink -->
+  <a id="openaiUsageLink" href="https://platform.openai.com/usage" target="_blank">Cost usage overview</a>
+  
   <div class="grid-container">
     <!-- Left Sidebar -->
     <aside class="sidebar">
@@ -244,7 +237,6 @@
     <aside class="ad-sidebar">
       <div id="adArea">
         <div id="adUnit">Your Ad Here</div>
-        <!-- Impression counter removed -->
       </div>
     </aside>
   </div>
@@ -279,6 +271,7 @@
       const transcribeTranslations = {
         en: {
           pageTitle: "Transcription Tool with Ads and Guide Overlay",
+          openaiUsageLinkText: "Cost usage overview",
           btnFunctions: "Functions",
           btnGuide: "Guide",
           recordingAreaTitle: "Recording Area",
@@ -314,6 +307,7 @@ Please click "Functions" to return to the main interface.`
         },
         no: {
           pageTitle: "Transkripsjonsverktøy med annonser og veiledningsoverlegg",
+          openaiUsageLinkText: "Vis OpenAI bruk",
           btnFunctions: "Funksjoner",
           btnGuide: "Veiledning",
           recordingAreaTitle: "Opptaksområde",
@@ -349,6 +343,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         },
         sv: {
           pageTitle: "Transkriptionsverktyg med annonser och guideöverlägg",
+          openaiUsageLinkText: "Visa OpenAI användning",
           btnFunctions: "Funktioner",
           btnGuide: "Guide",
           recordingAreaTitle: "Inspelningsområde",
@@ -384,6 +379,7 @@ Klicka på "Funktioner" för att återgå till huvudsidan.`
         },
         zh: {
           pageTitle: "转录工具与广告及指南覆盖",
+          openaiUsageLinkText: "查看 OpenAI 使用情况",
           btnFunctions: "功能",
           btnGuide: "指南",
           recordingAreaTitle: "录音区域",
@@ -419,6 +415,7 @@ Klicka på "Funktioner" för att återgå till huvudsidan.`
         },
         de: {
           pageTitle: "Whisper Transkription",
+          openaiUsageLinkText: "OpenAI-Nutzung anzeigen",
           btnFunctions: "Funktionen",
           btnGuide: "Guide",
           recordingAreaTitle: "Aufnahmebereich",
@@ -454,6 +451,7 @@ Klicken Sie auf "Funktionen", um zur Hauptansicht zurückzukehren.`
         },
         fr: {
           pageTitle: "Transcription Whisper",
+          openaiUsageLinkText: "Voir l'utilisation OpenAI",
           btnFunctions: "Fonctions",
           btnGuide: "Guide",
           recordingAreaTitle: "Zone d'enregistrement",
@@ -491,6 +489,7 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
       
       function updateLanguageTranscribe(lang) {
         document.getElementById("page-title-transcribe").textContent = transcribeTranslations[lang].pageTitle;
+        document.getElementById("openaiUsageLink").textContent = transcribeTranslations[lang].openaiUsageLinkText;
         document.getElementById("btnFunctions").textContent = transcribeTranslations[lang].btnFunctions;
         document.getElementById("btnGuide").textContent = transcribeTranslations[lang].btnGuide;
         document.getElementById("recordingAreaTitle").textContent = transcribeTranslations[lang].recordingAreaTitle;

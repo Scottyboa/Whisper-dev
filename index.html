@@ -79,22 +79,53 @@
       right: 0;
       background: #f8f8f8;
       border-top: 1px solid #ccc;
-      padding: 20px;  /* increased padding */
+      padding: 20px;
       text-align: center;
-      font-size: 16px; /* increased base font size */
+      font-size: 16px;
       z-index: 1000;
       box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
     }
     #cmp-banner button {
       margin-left: 10px;
-      padding: 8px 16px;  /* larger buttons */
+      padding: 8px 16px;
     }
     /* Ad revenue message styling */
     .ad-revenue-message {
       margin-top: 20px;
-      font-size: 18px;  /* larger font size */
+      font-size: 18px;
       font-weight: bold;
       color: #555;
+    }
+    /* Popup Overlay for API Guide */
+    #apiKeyGuideOverlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    #apiKeyGuideModal {
+      background: #fff;
+      width: 80%;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: left;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #apiKeyGuideModal h2 {
+      margin-top: 0;
+    }
+    #apiKeyGuideModal p {
+      line-height: 1.5;
+      margin-bottom: 15px;
     }
   </style>
 </head>
@@ -118,10 +149,33 @@
   </div>
   
   <!-- Popup Overlay for API Guide -->
-  <div id="apiKeyGuideOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:9999;">
-    <div id="apiKeyGuideModal" style="background:#fff; width:80%; max-width:600px; margin:40px auto; padding:20px; border-radius:8px; text-align:left; max-height:80vh; overflow-y:auto;">
-      <h2>How to Sign Up for an OpenAI API Account and Use It for Transcription</h2>
-      <!-- (Your guide content goes here.) -->
+  <div id="apiKeyGuideOverlay">
+    <div id="apiKeyGuideModal">
+      <h2>How to Set Up Your OpenAI API Key</h2>
+      <p>
+        <strong>What is Whisper Transcription?</strong><br>
+        Whisper Transcription is an AI tool that converts speech to text using the advanced OpenAI Whisper model. It quickly produces high-quality transcripts from speech recorded via a microphone. In addition, you can convert these transcripts into professional consultation notes using personalized prompts—prompts that are saved locally on your device so they remain available each time you log in from the same computer with your personal API key.
+      </p>
+      <p>
+        <strong>How Does It Work?</strong><br>
+        To perform these tasks, the service uses powerful processing resources via the OpenAI servers. This means you don’t need a high-end local machine; you simply “lend” the necessary processing power by connecting your OpenAI API key. Your API key links to your OpenAI profile and wallet, which must be funded (in USD) to cover usage costs.
+      </p>
+      <p>
+        <strong>Cost Breakdown:</strong><br>
+        The OpenAI Whisper model charges only <strong>$0.006 per minute</strong> for transcription. For example, if you perform transcriptions on 20 fifteen‑minute conversations, 4 days a week, for one month—that is 320 conversations total (20 × 4 days × 4 weeks) with each lasting 15 minutes—the total transcription cost would be approximately: 
+        <br>
+        <strong>320 conversations × 15 minutes × $0.006/minute ≈ $28.80</strong> (which will be dynamically converted to NOK based on the current exchange rate).
+      </p>
+      <p>
+        If you also use the website for note generation on all 320 consultations, this would add an additional estimated cost of about <strong>110 NOK</strong> (also converted to USD accordingly). Unlike competitors such as Noteless (around 900 NOK for 60 consultations) or Medbrics (up to 1750 NOK for unlimited consultations), you only pay per unit of work. We, however, do not charge you directly—our service is funded entirely by ad revenue.
+      </p>
+      <p>
+        <strong>Obtaining Your OpenAI API Key:</strong><br>
+        1. Log into your OpenAI account at <a href="https://platform.openai.com/" target="_blank">https://platform.openai.com/</a> using your credentials.<br>
+        2. Navigate to your account dashboard and click on your profile icon to find the “API Keys” or “Manage API keys” section.<br>
+        3. Click the “Create new key” button to generate your unique API key. <em>Tip:</em> Copy and save this key in a text file on your computer for easy access, as you can only view the key once on the OpenAI webpage. (If you lose it, you can always generate another key—the new key will be linked to your existing OpenAI wallet.)<br>
+        4. Finally, add funds to your OpenAI wallet (in USD) to cover the transcription and note generation costs.
+      </p>
       <button id="closeGuideBtn" style="background:red; color:#fff; padding:10px 20px; border:none; border-radius:10px; cursor:pointer; margin-top:20px;">Close</button>
     </div>
   </div>
@@ -170,7 +224,7 @@
       script.async = true;
       script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
       document.head.appendChild(script);
-      // Example: Initialize ad slots if any are on this page.
+      // Initialize ad slots (if any are on this page)
       (adsbygoogle = window.adsbygoogle || []).push({});
     }
 
@@ -179,6 +233,7 @@
       setCookie("user_consent", "accepted", 365); // Set consent for 1 year
       document.getElementById('cmp-banner').style.display = 'none';
       loadAdSense(); // Load AdSense after consent is given
+      // Note: If consent is given while on the page, the ad revenue message remains until reload.
     });
 
     document.getElementById('cmp-manage').addEventListener('click', function() {
@@ -191,6 +246,11 @@
       if (getCookie("user_consent") === "accepted") {
         document.getElementById('cmp-banner').style.display = 'none';
         loadAdSense();
+        // Hide the ad revenue message if consent is already given
+        var adRevenueMsg = document.querySelector('.ad-revenue-message');
+        if (adRevenueMsg) {
+          adRevenueMsg.style.display = 'none';
+        }
       }
     })();
 

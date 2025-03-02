@@ -44,7 +44,7 @@
       font-size: 18px;
       padding: 15px;
     }
-    /* Main Content */
+    /* Main Content Area */
     .main-content {
       padding: 20px;
       display: flex;
@@ -62,7 +62,7 @@
       margin-bottom: 10px;
       color: #333;
     }
-    /* Textareas with auto-resize */
+    /* Auto-resizing Textareas */
     #transcription {
       width: 100%;
       padding: 12px;
@@ -275,181 +275,213 @@
     </p>
   </div>
   <script>
-    // Auto-resize function for textareas
-    function autoResizeTextarea(textarea) {
-      textarea.style.height = "auto";
-      textarea.style.height = textarea.scrollHeight + "px";
-    }
-    document.getElementById("transcription").addEventListener("input", () => autoResizeTextarea(document.getElementById("transcription")));
-    document.getElementById("generatedNote").addEventListener("input", () => autoResizeTextarea(document.getElementById("generatedNote")));
-    document.getElementById("customPrompt").addEventListener("input", () => autoResizeTextarea(document.getElementById("customPrompt")));
-    
-    /* --------------------------
-       Translation Objects
-       -------------------------- */
-    // For index page – full translations for English and Norwegian; placeholders for others.
-    const indexTranslations = {
-      en: {
-        pageTitle: "Whisper Transcription",
-        headerTitle: "Whisper Transcription",
-        headerSubtitle: "Convert speech to text for professional consultations",
-        startText: "To get started, please enter your OpenAI API key:",
-        apiPlaceholder: "Enter API Key here",
-        enterButton: "Enter Transcription Tool",
-        guideButton: "Guide for setting up API key",
-        adRevenueMessage: "As we do not charge for the use of this website and rely solely on ad revenue, we kindly ask you to consent to personalized ads to help support our service.",
-        consentBannerText: "This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking \"Accept\", you consent to the use of cookies.",
-        guideHeading: "How to Set Up Your OpenAI API Key",
-        guideP1: "<strong>What is Whisper Transcription?</strong><br>Whisper Transcription is an AI tool that converts speech to text using the advanced OpenAI Whisper model. It quickly produces high-quality transcripts from speech recorded via a microphone. In addition, you can convert these transcripts into professional consultation notes using personalized prompts—prompts that are saved locally on your device so they remain available each time you log in from the same computer with your personal API key.",
-        guideP2: "<strong>How Does It Work?</strong><br>To perform these tasks, the service uses powerful processing resources via the OpenAI servers. This means you don’t need a high-end local machine; you simply “lend” the necessary processing power by connecting your OpenAI API key. Your API key links to your OpenAI profile and wallet, which must be funded (in USD) to cover usage costs.",
-        guideP3: "<strong>Cost Breakdown:</strong><br><strong>Transcription Costs:</strong> The OpenAI Whisper model charges only <strong>$0.006 per minute</strong> for transcription. For example, if you perform transcriptions on 20 fifteen‑minute conversations, 4 days a week, for one month—that is 320 conversations total (20×4×4) with each lasting 15 minutes, the total transcription cost would be approximately:<br><strong>320 × 15 × $0.006 ≈ $28.80</strong> (which will be dynamically converted to NOK based on the current exchange rate).",
-        guideP4: "<strong>Note Generation Costs:</strong><br>If you also use the website for note generation on all 320 consultations, this would add an additional estimated cost of about <strong>110 NOK</strong> (also converted to USD accordingly). Unlike competitors such as Noteless (around 900 NOK for 60 consultations) or Medbrics (up to 1750 NOK for unlimited consultations), you only pay per unit of work. We, however, do not charge you directly—usage costs are deducted from your OpenAI wallet.",
-        guideP5: "<strong>Obtaining Your OpenAI API Key:</strong><br>1. Log into your OpenAI account at <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> using your credentials.<br>2. Navigate to your account dashboard and click on your profile icon to find the “API Keys” or “Manage API keys” section.<br>3. Click the “Create new key” button to generate your unique API key. Tip: Copy and save this key in a text file on your computer for easy access, as you can only view the key once on the OpenAI webpage. (If you lose it, you can always generate another key – the new key will be linked to your existing OpenAI wallet.)<br>4. Fund your OpenAI wallet (in USD) to cover usage charges for transcription and note generation.",
-        guideP6: "<strong>Why Choose Whisper Transcription?</strong><br>We believe in offering high-quality transcription and note-generation services without the heavy price tag imposed by other companies. Although usage costs are deducted from your OpenAI wallet, you are not charged directly by us—our service is funded entirely by ad revenue, providing you access to the same powerful AI models that competitors use at a fraction of their cost."
-      },
-      no: {
-        pageTitle: "Whisper Transkripsjon",
-        headerTitle: "Whisper Transkripsjon",
-        headerSubtitle: "Konverter tale til tekst for profesjonelle konsultasjoner",
-        startText: "For å komme i gang, vennligst skriv inn din OpenAI API-nøkkel:",
-        apiPlaceholder: "Skriv inn API-nøkkel her",
-        enterButton: "Gå til transkripsjonsverktøy",
-        guideButton: "Veiledning for oppsett av API-nøkkel",
-        adRevenueMessage: "Siden vi ikke tar betalt for bruk av denne nettsiden og utelukkende er avhengige av annonseinntekter, ber vi deg vennligst om å samtykke til personaliserte annonser for å støtte tjenesten vår.",
-        consentBannerText: "Denne nettsiden er gratis å bruke fordi vi utelukkende er avhengige av annonseinntekter. Vi bruker informasjonskapsler for å personalisere annonser og forbedre din opplevelse. Ved å klikke \"Godta\", samtykker du i bruken av informasjonskapsler.",
-        guideHeading: "Hvordan sette opp din OpenAI API-nøkkel",
-        guideP1: "<strong>Hva er Whisper Transkripsjon?</strong><br>Whisper Transkripsjon er et AI-verktøy som konverterer tale til tekst ved hjelp av den avanserte OpenAI Whisper-modellen. Det produserer raskt høykvalitets transkripsjoner fra tale opptatt via en mikrofon. I tillegg kan du konvertere disse transkripsjonene til profesjonelle konsultasjonsnotater ved hjelp av personaliserte meldinger – meldinger som lagres lokalt på enheten din slik at de forblir tilgjengelige hver gang du logger inn fra samme datamaskin med din personlige API-nøkkel.",
-        guideP2: "<strong>Hvordan fungerer det?</strong><br>For å utføre disse oppgavene, bruker tjenesten kraftige prosesseringsressurser via OpenAI-serverne. Dette betyr at du ikke trenger en avansert lokal maskin; du \"låner\" den nødvendige prosesseringskraften ved å koble til din OpenAI API-nøkkel. Din API-nøkkel knytter seg til din OpenAI-profil og lommebok, som må være finansiert (i USD) for å dekke bruksutgiftene.",
-        guideP3: "<strong>Kostnadsoversikt:</strong><br><strong>Transkripsjonskostnader:</strong> OpenAI Whisper-modellen belaster kun <strong>$0,006 per minutt</strong> for transkripsjon. For eksempel, la oss si at du transkriberer 20 samtaler på 15 minutter, 4 dager i uken, i én måned – det blir til sammen 320 samtaler (20×4×4), der hver samtale varer 15 minutter, den totale transkripsjonskostnaden vil da være omtrent:<br><strong>320 × 15 × $0,006 ≈ $28,80</strong> (som blir dynamisk konvertert til NOK basert på gjeldende valutakurs).",
-        guideP4: "<strong>Notatgenereringskostnader:</strong><br>Hvis du også bruker nettsiden for notatgenerering på alle 320 konsultasjoner, vil dette legge til en estimert ekstra kostnad på omtrent <strong>110 NOK</strong> (også konvertert til USD deretter). I motsetning til konkurrenter som Noteless (omtrent 900 NOK for 60 konsultasjoner) eller Medbrics (opptil 1750 NOK for ubegrensede konsultasjoner), betaler du kun for den faktiske bruken. Vi tar imidlertid ikke betalt direkte av deg – bruksutgiftene trekkes fra din OpenAI-lommebok.",
-        guideP5: "<strong>Skaff din OpenAI API-nøkkel:</strong><br>1. Logg inn på din OpenAI-konto på <a href='https://platform.openai.com/' target='_blank'>https://platform.openai.com/</a> med dine innloggingsopplysninger.<br>2. Naviger til kontoadministrasjonen din og klikk på profilikonet ditt for å finne seksjonen 'API Keys' eller 'Administrer API-nøkler'.<br>3. Klikk på knappen 'Opprett ny nøkkel' for å generere din unike API-nøkkel. Tips: Kopier og lagre denne nøkkelen i en tekstfil på datamaskinen for enkel tilgang, ettersom du kun kan se nøkkelen én gang på OpenAI-nettsiden. (Om du skulle miste den, kan du alltid generere en ny nøkkel – den nye nøkkelen vil være knyttet til din eksisterende OpenAI-lommebok.)",
-        guideP6: "<strong>Sett inn penger på din OpenAI-lommebok:</strong><br>Legg til midler i din OpenAI-lommebok (i USD) for å dekke bruksutgiftene for transkripsjon og notatgenerering.",
-        guideP7: "<strong>Hvorfor velge Whisper Transkripsjon?</strong><br>Vi tror på å tilby høykvalitets transkripsjons- og notatgenereringstjenester uten de høye kostnadene som andre selskaper pålegger. Selv om bruksutgiftene trekkes fra din OpenAI-lommebok, blir du ikke direkte belastet av oss – tjenesten vår finansieres utelukkende av annonseinntekter, noe som gir deg tilgang til de samme kraftige AI-modellene som konkurrentene bruker, til en brøkdel av prisen."
-      },
-      es: {
-        // Placeholder translations for Spanish:
-        pageTitle: "Transcripción Whisper (ES)",
-        headerTitle: "Transcripción Whisper (ES)",
-        headerSubtitle: "Convierte voz en texto para consultas profesionales",
-        startText: "Para comenzar, ingresa tu clave API de OpenAI:",
-        apiPlaceholder: "Ingresa la clave API aquí",
-        enterButton: "Entrar a la herramienta de transcripción",
-        guideButton: "Guía para configurar la clave API",
-        adRevenueMessage: "Como no cobramos por usar este sitio y dependemos de ingresos publicitarios, por favor acepta anuncios personalizados para apoyar el servicio.",
-        consentBannerText: "Este sitio es gratuito porque depende exclusivamente de ingresos publicitarios. Al hacer clic en 'Aceptar', aceptas el uso de cookies.",
-        guideHeading: "Cómo configurar tu clave API de OpenAI",
-        guideP1: "<strong>¿Qué es Transcripción Whisper?</strong> (ES)",
-        guideP2: "<strong>¿Cómo funciona?</strong> (ES)",
-        guideP3: "<strong>Costos de transcripción:</strong> Aproximadamente $28.80 (convertido a NOK)",
-        guideP4: "<strong>Costos de generación de notas:</strong> Aproximadamente 110 NOK.",
-        guideP5: "<strong>Obtén tu clave API:</strong> (Instrucciones en ES)",
-        guideP6: "<strong>¿Por qué elegir Transcripción Whisper?</strong> (ES)"
-      },
-      it: { pageTitle: "Trascrizione Whisper (IT)", /* ... similar placeholders ... */ },
-      de: { pageTitle: "Whisper Transkription (DE)", /* ... */ },
-      pt: { pageTitle: "Transcrição Whisper (PT)", /* ... */ },
-      zh: { pageTitle: "Whisper 转录 (中文)", /* ... */ },
-      ja: { pageTitle: "Whisper 文字起こし (JA)", /* ... */ },
-      ru: { pageTitle: "Whisper Транскрипция (RU)", /* ... */ },
-      ko: { pageTitle: "Whisper 전사 (KO)", /* ... */ },
-      th: { pageTitle: "Whisper การถอดความ (TH)", /* ... */ },
-      fr: { pageTitle: "Transcription Whisper (FR)", /* ... */ },
-      sv: { pageTitle: "Whisper Transkription (SV)", /* ... */ },
-      da: { pageTitle: "Whisper Transskription (DA)", /* ... */ },
-      fi: { pageTitle: "Whisper Transkriptio (FI)", /* ... */ }
-    };
+    document.addEventListener("DOMContentLoaded", function() {
+      // Auto-resize function for textareas
+      function autoResizeTextarea(textarea) {
+        textarea.style.height = "auto";
+        textarea.style.height = textarea.scrollHeight + "px";
+      }
+      document.getElementById("transcription").addEventListener("input", function() {
+        autoResizeTextarea(document.getElementById("transcription"));
+      });
+      document.getElementById("generatedNote").addEventListener("input", function() {
+        autoResizeTextarea(document.getElementById("generatedNote"));
+      });
+      document.getElementById("customPrompt").addEventListener("input", function() {
+        autoResizeTextarea(document.getElementById("customPrompt"));
+      });
 
-    // Update language for transcribe page
-    function updateLanguageTranscribe(lang) {
-      document.getElementById("page-title-transcribe").textContent = transcribeTranslations[lang].pageTitle;
-      document.getElementById("costIndicatorText").innerHTML = transcribeTranslations[lang].costIndicator;
-      document.getElementById("btnFunctions").textContent = transcribeTranslations[lang].btnFunctions;
-      document.getElementById("btnGuide").textContent = transcribeTranslations[lang].btnGuide;
-      document.getElementById("recordingAreaTitle").textContent = transcribeTranslations[lang].recordingAreaTitle;
-      document.getElementById("recordTimer").textContent = transcribeTranslations[lang].recordTimer;
-      document.getElementById("uploadTimer").textContent = transcribeTranslations[lang].uploadTimer;
-      document.getElementById("transcribeTimer").textContent = transcribeTranslations[lang].transcribeTimer;
-      document.getElementById("transcription").setAttribute("placeholder", transcribeTranslations[lang].transcriptionPlaceholder);
-      document.getElementById("startButton").textContent = transcribeTranslations[lang].startButton;
-      document.getElementById("stopButton").textContent = transcribeTranslations[lang].stopButton;
-      document.getElementById("pauseResumeButton").textContent = transcribeTranslations[lang].pauseButton;
-      document.getElementById("transcribeButton").textContent = transcribeTranslations[lang].transcribeButton;
-      document.getElementById("statusMessage").textContent = transcribeTranslations[lang].statusMessage;
-      document.getElementById("noteGenerationTitle").textContent = transcribeTranslations[lang].noteGenerationTitle;
-      document.getElementById("generateNoteButton").textContent = transcribeTranslations[lang].generateNoteButton;
-      document.getElementById("noteTimer").textContent = transcribeTranslations[lang].noteTimer;
-      document.getElementById("generatedNote").setAttribute("placeholder", transcribeTranslations[lang].generatedNotePlaceholder);
-      document.getElementById("customPromptTitle").textContent = transcribeTranslations[lang].customPromptTitle;
-      document.getElementById("promptSlotLabel").textContent = transcribeTranslations[lang].promptSlotLabel;
-      document.getElementById("customPrompt").setAttribute("placeholder", transcribeTranslations[lang].customPromptPlaceholder);
-      document.getElementById("adUnit").textContent = transcribeTranslations[lang].adUnitText;
-      document.getElementById("impressionCounter").textContent = transcribeTranslations[lang].impressionCounter;
-      document.getElementById("guideHeading").textContent = transcribeTranslations[lang].guideHeading;
-      document.getElementById("guideText").innerHTML = transcribeTranslations[lang].guideText;
-    }
-    let currentLangTranscribe = localStorage.getItem("siteLanguage") || "en";
-    document.getElementById("lang-select-transcribe").value = currentLangTranscribe;
-    updateLanguageTranscribe(currentLangTranscribe);
-    document.getElementById("lang-select-transcribe").addEventListener("change", function() {
-      currentLangTranscribe = this.value;
-      localStorage.setItem("siteLanguage", currentLangTranscribe);
+      /* --------------------------
+         Translation Objects for Transcribe Page
+         -------------------------- */
+      const transcribeTranslations = {
+        en: {
+          pageTitle: "Transcription Tool with Ads and Guide Overlay",
+          costIndicator: "Total: $0.0000 (~NOK 0.0000)<br>Transcription: $0.0000 (~NOK 0.0000)<br>Note Generation: $0.0000 (~NOK 0.0000)",
+          btnFunctions: "Functions",
+          btnGuide: "Guide",
+          recordingAreaTitle: "Recording Area",
+          recordTimer: "Recording Timer: 0 sec",
+          uploadTimer: "Upload Timer: 0 sec",
+          transcribeTimer: "Transcription Timer: 0 sec",
+          transcriptionPlaceholder: "Transcription result will appear here...",
+          startButton: "Start Recording",
+          stopButton: "Stop Recording",
+          pauseButton: "Pause Recording",
+          transcribeButton: "Transcribe",
+          statusMessage: "Welcome! Click \"Start Recording\" to begin.",
+          noteGenerationTitle: "Note Generation",
+          generateNoteButton: "Generate Note",
+          noteTimer: "Note Generation Timer: 0 sec",
+          generatedNotePlaceholder: "Generated note will appear here...",
+          customPromptTitle: "Custom Prompt",
+          promptSlotLabel: "Prompt Slot:",
+          customPromptPlaceholder: "Enter custom prompt here",
+          adUnitText: "Your Ad Here",
+          impressionCounter: "Impressions: 0",
+          guideHeading: "Guide & Instructions",
+          guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
+<br><br>
+<strong>How to Use the Functions:</strong>
+<ul>
+  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
+  <li><strong>Transcription:</strong> Once your audio is uploaded, click "Transcribe" to convert speech to text. The transcription will appear in the top area.</li>
+  <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcription and custom prompt. A timer shows the duration of note generation, and the generated note appears below.</li>
+  <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
+  <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide. The guide appears as an overlay and does not disturb the underlying layout.</li>
+</ul>
+Please click "Functions" to return to the main interface.`
+        },
+        no: {
+          pageTitle: "Transkripsjonsverktøy med annonser og veiledningsoverlay",
+          costIndicator: "Totalt: $0.0000 (~NOK 0.0000)<br>Transkripsjon: $0.0000 (~NOK 0.0000)<br>Notatgenerering: $0.0000 (~NOK 0.0000)",
+          btnFunctions: "Funksjoner",
+          btnGuide: "Veiledning",
+          recordingAreaTitle: "Opptaksområde",
+          recordTimer: "Opptakstimer: 0 sek",
+          uploadTimer: "Opplastningstimer: 0 sek",
+          transcribeTimer: "Transkripsjonstimer: 0 sek",
+          transcriptionPlaceholder: "Transkripsjonsresultatet vises her...",
+          startButton: "Start opptak",
+          stopButton: "Stopp opptak",
+          pauseButton: "Pause opptak",
+          transcribeButton: "Transkriber",
+          statusMessage: "Velkommen! Klikk 'Start opptak' for å begynne.",
+          noteGenerationTitle: "Notatgenerering",
+          generateNoteButton: "Generer notat",
+          noteTimer: "Notatgenereringstimer: 0 sek",
+          generatedNotePlaceholder: "Generert notat vises her...",
+          customPromptTitle: "Tilpasset melding",
+          promptSlotLabel: "Meldingsplass:",
+          customPromptPlaceholder: "Skriv inn tilpasset melding her",
+          adUnitText: "Din annonse her",
+          impressionCounter: "Visninger: 0",
+          guideHeading: "Veiledning og Instruksjoner",
+          guideText: `Velkommen til Whisper Transkripsjonsverktøy. Denne applikasjonen lar medisinske fagpersoner, terapeuter og andre utøvere ta opp og transkribere konsultasjoner, samt generere profesjonelle notater ved hjelp av en AI-drevet notatgenerator.
+<br><br>
+<strong>Slik bruker du funksjonene:</strong>
+<ul>
+  <li><strong>Opptak:</strong> Klikk "Start opptak" for å begynne å fange lyd. Bruk "Stopp opptak" for å avslutte og laste opp opptaket.</li>
+  <li><strong>Transkripsjon:</strong> Når lyden er lastet opp, klikk "Transkriber" for å konvertere tale til tekst. Transkripsjonen vises øverst.</li>
+  <li><strong>Notatgenerering:</strong> Etter transkripsjonen, klikk "Generer notat" for å lage et notat basert på transkripsjonen og tilpasset melding. En timer viser varigheten av notatgenereringen, og det genererte notatet vises nedenfor.</li>
+  <li><strong>Tilpasset melding:</strong> Til høyre velger du en meldingsplass (1–10) og skriver inn din tilpassede melding. Meldingen lagres automatisk og knyttes til din API-nøkkel.</li>
+  <li><strong>Veiledning:</strong> Bruk knappene "Funksjoner" og "Veiledning" for å bytte mellom funksjonsvisningen og denne veiledningen. Veiledningen vises som et overlay og forstyrrer ikke den underliggende layouten.</li>
+</ul>
+Klikk "Funksjoner" for å vende tilbake til hovedgrensesnittet.`
+        },
+        // Placeholders for other languages:
+        es: { pageTitle: "Transcription Tool with Ads and Guide Overlay (ES)" },
+        it: { pageTitle: "Transcription Tool with Ads and Guide Overlay (IT)" },
+        de: { pageTitle: "Transcription Tool with Ads and Guide Overlay (DE)" },
+        pt: { pageTitle: "Transcription Tool with Ads and Guide Overlay (PT)" },
+        zh: { pageTitle: "Transcription Tool with Ads and Guide Overlay (中文)" },
+        ja: { pageTitle: "Transcription Tool with Ads and Guide Overlay (JA)" },
+        ru: { pageTitle: "Transcription Tool with Ads and Guide Overlay (RU)" },
+        ko: { pageTitle: "Transcription Tool with Ads and Guide Overlay (KO)" },
+        th: { pageTitle: "Transcription Tool with Ads and Guide Overlay (TH)" },
+        fr: { pageTitle: "Transcription Tool with Ads and Guide Overlay (FR)" },
+        sv: { pageTitle: "Transcription Tool with Ads and Guide Overlay (SV)" },
+        da: { pageTitle: "Transcription Tool with Ads and Guide Overlay (DA)" },
+        fi: { pageTitle: "Transcription Tool with Ads and Guide Overlay (FI)" }
+      };
+
+      /* --------------------------
+         Update Transcribe Page Language
+         -------------------------- */
+      function updateLanguageTranscribe(lang) {
+        document.getElementById("page-title-transcribe").textContent = transcribeTranslations[lang].pageTitle;
+        document.getElementById("costIndicatorText").innerHTML = transcribeTranslations[lang].costIndicator;
+        document.getElementById("btnFunctions").textContent = transcribeTranslations[lang].btnFunctions;
+        document.getElementById("btnGuide").textContent = transcribeTranslations[lang].btnGuide;
+        document.getElementById("recordingAreaTitle").textContent = transcribeTranslations[lang].recordingAreaTitle;
+        document.getElementById("recordTimer").textContent = transcribeTranslations[lang].recordTimer;
+        document.getElementById("uploadTimer").textContent = transcribeTranslations[lang].uploadTimer;
+        document.getElementById("transcribeTimer").textContent = transcribeTranslations[lang].transcribeTimer;
+        document.getElementById("transcription").setAttribute("placeholder", transcribeTranslations[lang].transcriptionPlaceholder);
+        document.getElementById("startButton").textContent = transcribeTranslations[lang].startButton;
+        document.getElementById("stopButton").textContent = transcribeTranslations[lang].stopButton;
+        document.getElementById("pauseResumeButton").textContent = transcribeTranslations[lang].pauseButton;
+        document.getElementById("transcribeButton").textContent = transcribeTranslations[lang].transcribeButton;
+        document.getElementById("statusMessage").textContent = transcribeTranslations[lang].statusMessage;
+        document.getElementById("noteGenerationTitle").textContent = transcribeTranslations[lang].noteGenerationTitle;
+        document.getElementById("generateNoteButton").textContent = transcribeTranslations[lang].generateNoteButton;
+        document.getElementById("noteTimer").textContent = transcribeTranslations[lang].noteTimer;
+        document.getElementById("generatedNote").setAttribute("placeholder", transcribeTranslations[lang].generatedNotePlaceholder);
+        document.getElementById("customPromptTitle").textContent = transcribeTranslations[lang].customPromptTitle;
+        document.getElementById("promptSlotLabel").textContent = transcribeTranslations[lang].promptSlotLabel;
+        document.getElementById("customPrompt").setAttribute("placeholder", transcribeTranslations[lang].customPromptPlaceholder);
+        document.getElementById("adUnit").textContent = transcribeTranslations[lang].adUnitText;
+        document.getElementById("impressionCounter").textContent = transcribeTranslations[lang].impressionCounter;
+        document.getElementById("guideHeading").textContent = transcribeTranslations[lang].guideHeading;
+        document.getElementById("guideText").innerHTML = transcribeTranslations[lang].guideText;
+      }
+      let currentLangTranscribe = localStorage.getItem("siteLanguage") || "en";
+      document.getElementById("lang-select-transcribe").value = currentLangTranscribe;
       updateLanguageTranscribe(currentLangTranscribe);
-    });
-    
-    // Consent Banner & Cookie Management for transcribe page
-    function setCookieTranscribe(name, value, days) {
-      var expires = "";
-      if (days) {
-        var date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        expires = "; expires=" + date.toUTCString();
+      document.getElementById("lang-select-transcribe").addEventListener("change", function() {
+        currentLangTranscribe = this.value;
+        localStorage.setItem("siteLanguage", currentLangTranscribe);
+        updateLanguageTranscribe(currentLangTranscribe);
+      });
+
+      /* --------------------------
+         Consent Banner & Cookie Management for Transcribe Page
+         -------------------------- */
+      function setCookieTranscribe(name, value, days) {
+        var expires = "";
+        if (days) {
+          var date = new Date();
+          date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+          expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "") + expires + "; path=/";
       }
-      document.cookie = name + "=" + (value || "") + expires + "; path=/";
-    }
-    function getCookieTranscribe(name) {
-      var nameEQ = name + "=";
-      var ca = document.cookie.split(';');
-      for (var i = 0; i < ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
+      function getCookieTranscribe(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+          var c = ca[i];
+          while (c.charAt(0) === ' ') c = c.substring(1);
+          if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
+        }
+        return null;
       }
-      return null;
-    }
-    function loadAdSenseTranscribe() {
-      var script = document.createElement('script');
-      script.async = true;
-      script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
-      document.head.appendChild(script);
-      (adsbygoogle = window.adsbygoogle || []).push({});
-    }
-    document.getElementById("cmp-accept").addEventListener("click", function() {
-      setCookieTranscribe("user_consent", "accepted", 365);
-      document.getElementById("cmp-banner").style.display = "none";
-      loadAdSenseTranscribe();
-    });
-    document.getElementById("cmp-manage").addEventListener("click", function() {
-      alert("Here you can manage your cookie and ad preferences.");
-    });
-    (function() {
-      if (getCookieTranscribe("user_consent") === "accepted") {
+      function loadAdSenseTranscribe() {
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+        document.head.appendChild(script);
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      }
+      document.getElementById("cmp-accept").addEventListener("click", function() {
+        setCookieTranscribe("user_consent", "accepted", 365);
         document.getElementById("cmp-banner").style.display = "none";
         loadAdSenseTranscribe();
-      }
-    })();
-    
-    // Guide Overlay Logic for transcribe page
-    const overlayGuide = document.getElementById("guideView");
-    const btnGuide = document.getElementById("btnGuide");
-    const btnFunctions = document.getElementById("btnFunctions");
-    btnGuide.addEventListener("click", () => {
-      overlayGuide.classList.add("active");
+      });
+      document.getElementById("cmp-manage").addEventListener("click", function() {
+        alert("Here you can manage your cookie and ad preferences.");
+      });
+      (function() {
+        if (getCookieTranscribe("user_consent") === "accepted") {
+          document.getElementById("cmp-banner").style.display = "none";
+          loadAdSenseTranscribe();
+        }
+      })();
+
+      /* --------------------------
+         Guide Overlay Logic for Transcribe Page
+         -------------------------- */
+      const overlayGuide = document.getElementById("guideView");
+      const btnGuide = document.getElementById("btnGuide");
+      const btnFunctions = document.getElementById("btnFunctions");
+      btnGuide.addEventListener("click", () => {
+        overlayGuide.classList.add("active");
+      });
+      btnFunctions.addEventListener("click", () => {
+        overlayGuide.classList.remove("active");
+      });
+      // (Additional transcribe functionalities would follow here)
     });
-    btnFunctions.addEventListener("click", () => {
-      overlayGuide.classList.remove("active");
-    });
-    
-    // (Additional transcribe functionalities would follow here)
   </script>
 </body>
 </html>

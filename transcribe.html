@@ -13,12 +13,12 @@
       margin: 0;
       padding: 0;
     }
-    /* OpenAI usage hyperlink */
+    /* Style for the OpenAI usage hyperlink */
     #openaiUsageLink {
       position: fixed;
-      top: 30px;
-      right: 400px;
-      font-size: 18px;
+      top: 30px;       
+      right: 400px;    
+      font-size: 18px; 
       text-decoration: underline;
       color: #0077cc;
       z-index: 1000;
@@ -37,20 +37,6 @@
       flex-direction: column;
       gap: 20px;
       position: relative;
-    }
-    /* Language Icon & Dropdown in Sidebar */
-    #languageSelectorTranscribe {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    #languageIconTranscribe {
-      width: 24px;
-      height: 24px;
-    }
-    #lang-select-transcribe {
-      padding: 5px;
-      font-size: 14px;
     }
     .sidebar button {
       font-size: 18px;
@@ -156,9 +142,18 @@
     #guideView.active {
       display: block;
     }
-    /* Language Dropdown in Sidebar (Bottom Left) */
-    #lang-select-transcribe {
-      /* Already used above inside #languageSelectorTranscribe */
+    /* Language Dropdown in Sidebar */
+    #lang-container-transcribe {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #lang-icon-transcribe {
+      width: 28px;
+      height: 28px;
     }
     /* Consent Banner */
     #cmp-banner {
@@ -189,9 +184,9 @@
     <aside class="sidebar">
       <button id="btnFunctions">Functions</button>
       <button id="btnGuide">Guide</button>
-      <!-- Language Icon & Dropdown Container for Transcribe Page -->
-      <div id="languageSelectorTranscribe">
-        <img src="language-icon.png" alt="Language Icon" id="languageIconTranscribe">
+      <!-- Language dropdown at bottom of sidebar -->
+      <div id="lang-container-transcribe">
+        <img src="language-icon.png" alt="Language Icon" id="lang-icon-transcribe">
         <select id="lang-select-transcribe">
           <option value="en">English</option>
           <option value="no">Norsk</option>
@@ -385,7 +380,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
 <ul>
   <li><strong>Inspelning:</strong> Klicka på "Starta inspelning" för att börja spela in. Klicka sedan på "Stoppa inspelning" för att avsluta och ladda upp inspelningen.</li>
   <li><strong>Transkription:</strong> När inspelningen har laddats upp, klicka på "Transkribera" för att omvandla tal till text. Transkriptionen visas högst upp.</li>
-  <li><strong>Notatgenerering:</strong> Efter transkriptionen, klicka på "Generera notat" för att skapa ett notat baserat på transkriptionen och ditt anpassade meddelande. En timer visar hur lång tid notatgenereringen tar, och det genererade notatet visas nedan.</li>
+  <li><strong>Notatgenerering:</strong> Efter inspelningen, klicka på "Generera notat" för att skapa ett notat baserat på inspelningen och ditt anpassade meddelande. En timer visar hur lång tid notatgenereringen tar, och det genererade notatet visas nedan.</li>
   <li><strong>Anpassat meddelande:</strong> Välj ett meddelandefält (1–10) och skriv in ditt anpassade meddelande. Detta sparas automatiskt och kopplas till din API-nyckel.</li>
   <li><strong>Guide:</strong> Använd knapparna "Funktioner" och "Guide" för att växla mellan verktygsgränssnittet och denna guide.</li>
 </ul>

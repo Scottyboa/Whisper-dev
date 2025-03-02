@@ -62,17 +62,42 @@
       margin-bottom: 10px;
       color: #333;
     }
-    textarea {
+    /* Textareas */
+    #transcription {
       width: 100%;
       padding: 12px;
       border: 1px solid #ddd;
       border-radius: 10px;
       font-size: 16px;
       box-sizing: border-box;
-      transition: border-color 0.3s, box-shadow 0.3s;
       margin-bottom: 20px;
       font-family: 'Roboto', sans-serif;
-      resize: vertical;
+      resize: none;
+      min-height: 150px;
+    }
+    #generatedNote {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+      margin-bottom: 20px;
+      font-family: 'Roboto', sans-serif;
+      resize: none;
+      min-height: 150px;
+    }
+    #customPrompt {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+      margin-bottom: 20px;
+      font-family: 'Roboto', sans-serif;
+      resize: none;
+      min-height: 200px; /* Slightly taller minimum for prompt */
     }
     button {
       background-color: #5a9;
@@ -237,6 +262,19 @@
     </p>
   </div>
   <script>
+    // Auto-resize function for textareas
+    function autoResizeTextarea(textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = textarea.scrollHeight + "px";
+    }
+    // Add auto-resize event listeners
+    const transcriptTextarea = document.getElementById("transcription");
+    const noteTextarea = document.getElementById("generatedNote");
+    const promptTextarea = document.getElementById("customPrompt");
+    transcriptTextarea.addEventListener("input", () => autoResizeTextarea(transcriptTextarea));
+    noteTextarea.addEventListener("input", () => autoResizeTextarea(noteTextarea));
+    promptTextarea.addEventListener("input", () => autoResizeTextarea(promptTextarea));
+
     // Transcribe Page: Translation Object
     const transcribeTranslations = {
       en: {
@@ -393,14 +431,14 @@ Klikk "Funksjoner" for å vende tilbake til hovedgrensesnittet.`
       }
     })();
     // Guide Overlay Logic
-    const overlay = document.getElementById("guideView");
+    const overlayGuide = document.getElementById("guideView");
     const btnGuide = document.getElementById("btnGuide");
     const btnFunctions = document.getElementById("btnFunctions");
     btnGuide.addEventListener("click", () => {
-      overlay.classList.add("active");
+      overlayGuide.classList.add("active");
     });
     btnFunctions.addEventListener("click", () => {
-      overlay.classList.remove("active");
+      overlayGuide.classList.remove("active");
     });
     // (Additional transcribe functionalities, e.g., recording, transcription, note generation, would follow here)
   </script>

@@ -713,6 +713,7 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
       
           if (result.session_id) {
             sessionId = result.session_id;
+            console.log("Session ID:", sessionId);  // Added logging here
             document.getElementById("recordIndicator").style.backgroundColor = "green";
             updateStatusMessage("Audio uploaded! Ready for transcription.", "green");
             document.getElementById("transcribeButton").disabled = false;

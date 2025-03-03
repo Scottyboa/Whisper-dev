@@ -13,22 +13,6 @@
       margin: 0;
       padding: 0;
     }
-    /* Mobile-specific overrides */
-    .mobile-view {
-      font-size: 18px;
-      padding: 10px;
-    }
-    .mobile-view .grid-container {
-      display: block;
-      height: auto;
-    }
-    .mobile-view .sidebar,
-    .mobile-view .ad-sidebar {
-      display: none;
-    }
-    .mobile-view .main-content {
-      padding: 10px;
-    }
     /* Style for the OpenAI usage hyperlink */
     #openaiUsageLink {
       position: fixed;
@@ -192,16 +176,6 @@
   </style>
 </head>
 <body>
-  <!-- Automatic Mobile Detection and Apply Mobile-Friendly Layout -->
-  <script>
-    function isMobile() {
-      return /Mobi|Android/i.test(navigator.userAgent);
-    }
-    if (isMobile()) {
-      document.body.classList.add("mobile-view");
-    }
-  </script>
-  
   <!-- OpenAI usage hyperlink -->
   <a id="openaiUsageLink" href="https://platform.openai.com/usage" target="_blank">Cost usage overview</a>
   
@@ -377,7 +351,7 @@ Please click "Functions" to return to the main interface.`
 Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         },
         sv: {
-          pageTitle: "Whisper Transkription",
+          pageTitle: "Transkriptionsverktyg med annonser och guideöverlägg",
           openaiUsageLinkText: "Visa OpenAI användning",
           btnFunctions: "Funktioner",
           btnGuide: "Guide",
@@ -447,6 +421,42 @@ Klicka på "Funktioner" för att återgå till huvudsidan.`
   <li><strong>指南：</strong>使用“功能”和“指南”按钮在工具界面和本指南之间切换。</li>
 </ul>
 点击“功能”返回主界面。`
+        },
+        de: {
+          pageTitle: "Whisper Transkription",
+          openaiUsageLinkText: "OpenAI-Nutzung anzeigen",
+          btnFunctions: "Funktionen",
+          btnGuide: "Guide",
+          recordingAreaTitle: "Aufnahmebereich",
+          recordTimer: "Aufnahmetimer: 0 Sek",
+          uploadTimer: "Upload-Timer: 0 Sek",
+          transcribeTimer: "Transkriptionstimer: 0 Sek",
+          transcriptionPlaceholder: "Das Transkript erscheint hier...",
+          startButton: "Aufnahme starten",
+          stopButton: "Aufnahme stoppen",
+          pauseButton: "Aufnahme pausieren",
+          transcribeButton: "Transkribieren",
+          statusMessage: "Willkommen! Klicken Sie auf 'Aufnahme starten', um zu beginnen.",
+          noteGenerationTitle: "Notizgenerierung",
+          generateNoteButton: "Notiz generieren",
+          noteTimer: "Notizgenerierungstimer: 0 Sek",
+          generatedNotePlaceholder: "Die generierte Notiz erscheint hier...",
+          customPromptTitle: "Benutzerdefinierte Eingabe",
+          promptSlotLabel: "Eingabefeld:",
+          customPromptPlaceholder: "Geben Sie hier Ihre benutzerdefinierte Eingabe ein",
+          adUnitText: "Ihre Anzeige hier",
+          guideHeading: "Guide & Anleitungen",
+          guideText: `Willkommen beim Whisper Transkriptionswerkzeug. Diese Anwendung ermöglicht es medizinischen Fachkräften, Therapeuten und anderen Anwendern, Beratungsgespräche aufzunehmen und zu transkribieren sowie professionelle Notizen mit Hilfe eines KI-gestützten Notizgenerators zu erstellen.
+<br><br>
+<strong>So verwenden Sie das Tool:</strong>
+<ul>
+  <li><strong>Aufnahme:</strong> Klicken Sie auf "Aufnahme starten", um die Aufnahme zu beginnen. Klicken Sie auf "Aufnahme stoppen", um sie zu beenden und hochzuladen.</li>
+  <li><strong>Transkription:</strong> Sobald die Aufnahme hochgeladen ist, klicken Sie auf "Transkribieren", um Sprache in Text umzuwandeln. Das Transkript erscheint im oberen Bereich.</li>
+  <li><strong>Notizgenerierung:</strong> Nach der Transkription klicken Sie auf "Notiz generieren", um basierend auf dem Transkript und Ihrer benutzerdefinierten Eingabe eine Notiz zu erstellen. Ein Timer zeigt die Dauer der Notizgenerierung, und die generierte Notiz erscheint unten.</li>
+  <li><strong>Benutzerdefinierte Eingabe:</strong> Wählen Sie rechts ein Eingabefeld (1–10) aus und geben Sie Ihre benutzerdefinierte Eingabe ein. Diese wird automatisch gespeichert und mit Ihrem API-Schlüssel verknüpft.</li>
+  <li><strong>Guide:</strong> Verwenden Sie die Schaltflächen "Funktionen" und "Guide", um zwischen der funktionsreichen Ansicht und dieser Anleitung zu wechseln.</li>
+</ul>
+Klicken Sie auf "Funktionen", um zur Hauptansicht zurückzukehren.`
         },
         fr: {
           pageTitle: "Transcription Whisper",
@@ -685,41 +695,39 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         clearInterval(recordingTimerInterval);
         updateStatusMessage("Uploading audio... Please wait.", "blue");
       
-        // In case there's leftover data from a final short chunk:
-        if (audioChunks.length > 0) {
-          const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-          const formData = new FormData();
-          formData.append("file", audioBlob, "recorded.mp3");
-          uploadStartTime = Date.now();
-          document.getElementById("uploadTimer").innerText = "Upload Timer: 0 sec";
-          uploadTimerInterval = setInterval(updateUploadTimer, 1000);
+        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+        const formData = new FormData();
+        formData.append("file", audioBlob, "recorded.mp3");
       
-          try {
-            const response = await fetch(`${backendUrl}/upload`, {
-              method: "POST",
-              body: formData
-            });
-            const result = await response.json();
-            clearInterval(uploadTimerInterval);
+        uploadStartTime = Date.now();
+        document.getElementById("uploadTimer").innerText = "Upload Timer: 0 sec";
+        uploadTimerInterval = setInterval(updateUploadTimer, 1000);
       
-            if (result.session_id) {
-              sessionId = result.session_id;
-              console.log("Session ID:", sessionId);
-              document.getElementById("recordIndicator").style.backgroundColor = "green";
-              updateStatusMessage("Audio uploaded! Ready for transcription.", "green");
-              document.getElementById("transcribeButton").disabled = false;
+        try {
+          const response = await fetch(`${backendUrl}/upload`, {
+            method: "POST",
+            body: formData
+          });
+          const result = await response.json();
+          clearInterval(uploadTimerInterval);
       
-              clearTimeout(autoDeleteTimeout);
-              autoDeleteTimeout = setTimeout(() => {
-                sessionId = "";
-                updateStatusMessage("Recording automatically deleted.", "green");
-              }, 900000);
-            } else {
-              updateStatusMessage("Upload error: " + (result.error || "Unknown error"), "red");
-            }
-          } catch (error) {
-            updateStatusMessage("Error uploading file: " + error, "red");
+          if (result.session_id) {
+            sessionId = result.session_id;
+            console.log("Session ID:", sessionId);  // Added logging here
+            document.getElementById("recordIndicator").style.backgroundColor = "green";
+            updateStatusMessage("Audio uploaded! Ready for transcription.", "green");
+            document.getElementById("transcribeButton").disabled = false;
+      
+            clearTimeout(autoDeleteTimeout);
+            autoDeleteTimeout = setTimeout(() => {
+              sessionId = "";
+              updateStatusMessage("Recording automatically deleted.", "green");
+            }, 900000);
+          } else {
+            updateStatusMessage("Upload error: " + (result.error || "Unknown error"), "red");
           }
+        } catch (error) {
+          updateStatusMessage("Error uploading file: " + error, "red");
         }
       
         stopMicrophone();
@@ -729,23 +737,6 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         if (mediaStream) {
           mediaStream.getTracks().forEach(track => track.stop());
           mediaStream = null;
-        }
-      }
-      
-      // Helper function to upload a 5-minute chunk
-      async function uploadChunk(blob) {
-        const formData = new FormData();
-        formData.append("file", blob, "chunk.mp3");
-        try {
-          const response = await fetch(`${backendUrl}/upload`, {
-            method: "POST",
-            body: formData
-          });
-          const result = await response.json();
-          console.log("Chunk uploaded:", result);
-          // Optionally, process the returned session_id or merge results later.
-        } catch (error) {
-          console.error("Chunk upload error:", error);
         }
       }
       
@@ -761,14 +752,13 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
           updateRecordingTimer();
           recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
       
-          // Use 5-minute fragments
-          mediaRecorder.ondataavailable = async event => {
+          mediaRecorder.ondataavailable = event => {
             if (event.data.size > 0) {
-              await uploadChunk(event.data);
+              audioChunks.push(event.data);
             }
           };
           mediaRecorder.onstop = handleStop;
-          mediaRecorder.start(300000); // 300,000 ms = 5 minutes
+          mediaRecorder.start();
       
           document.getElementById("startButton").disabled = true;
           document.getElementById("stopButton").disabled = false;

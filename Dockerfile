@@ -13,8 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code
 COPY . .
 
-# Expose port 5000 for the Flask app
-EXPOSE 5000
+# Expose port 8080 for the Flask app (as expected by fly.toml)
+EXPOSE 8080
 
-# Use Gunicorn to serve the Flask app (assuming your app is defined in app.py and the Flask instance is named 'app')
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+# Use Gunicorn to serve the Flask app, binding to port 8080
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]

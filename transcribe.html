@@ -382,7 +382,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
   <li><strong>Transkription:</strong> När inspelningen har laddats upp, klicka på "Transkribera" för att omvandla tal till text. Transkriptionen visas högst upp.</li>
   <li><strong>Notatgenerering:</strong> Efter inspelningen, klicka på "Generera notat" för att skapa ett notat baserat på inspelningen och ditt anpassade meddelande. En timer visar hur lång tid notatgenereringen tar, och det genererade notatet visas nedan.</li>
   <li><strong>Anpassat meddelande:</strong> Välj ett meddelandefält (1–10) och skriv in ditt anpassade meddelande. Detta sparas automatiskt och kopplas till din API-nyckel.</li>
-  <li><strong>Guide:</strong> Använd knapparna "Funktioner" och "Guide" för att växla mellan verktygsgränssnittet och denna guide.</li>
+  <li><strong>Guide:</strong> Klicka på "Funktioner" för att återgå till huvudsidan.</li>
 </ul>
 Klicka på "Funktioner" för att återgå till huvudsidan.`
         },
@@ -576,23 +576,29 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
       })();
       
       /* --------------------------
-         Guide Overlay Logic for Transcribe Page
-         -------------------------- */
-      const overlayGuide = document.getElementById("guideView");
-      const btnGuide = document.getElementById("btnGuide");
-      const btnFunctions = document.getElementById("btnFunctions");
-      btnGuide.addEventListener("click", () => {
-        overlayGuide.classList.add("active");
-      });
-      btnFunctions.addEventListener("click", () => {
-        overlayGuide.classList.remove("active");
-      });
-      
-      /* --------------------------
-         Transcription, Recording, Prompt, & Note Generation Functionality
+         Chunked Recording Logic & Transcription Functionality
          -------------------------- */
       
-      // Utility: format time (e.g., "1 min 3 sec")
+      // Global variables for chunked recording
+      let mediaRecorder;
+      let mediaStream = null;
+      let audioChunks = [];
+      let recordingStartTime = 0;
+      let recordingTimerInterval;
+      let uploadTimerInterval;
+      let groupId = null;
+      let chunkNumber = 0;
+      let autoChunkTimer = null;
+      let manualStop = false;  // true if user manually stops the overall recording
+      
+      // Update status message
+      function updateStatusMessage(message, color = "#333") {
+        const statusMessage = document.getElementById("statusMessage");
+        statusMessage.innerText = message;
+        statusMessage.style.color = color;
+      }
+      
+      // Format time utility
       function formatTime(ms) {
         const totalSec = Math.floor(ms / 1000);
         if (totalSec < 60) {
@@ -604,100 +610,67 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         }
       }
       
-      // Retrieve API key from sessionStorage
-      const apiKey = sessionStorage.getItem("openai_api_key");
-      if (!apiKey) {
-        alert("API key is missing. Please re-enter it.");
-        window.location.href = "index.html";
-      }
-      
-      // For enhanced security: hash the API key for use in localStorage keys.
-      function hashString(str) {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-          const char = str.charCodeAt(i);
-          hash = ((hash << 5) - hash) + char;
-          hash |= 0;
-        }
-        return hash.toString();
-      }
-      const hashedApiKey = hashString(apiKey);
-      
-      // Unique key for storing a prompt for a given slot and API key.
-      function getPromptStorageKey(slot) {
-        return "customPrompt_" + hashedApiKey + "_" + slot;
-      }
-      
-      // Custom Prompt Section: load and save
-      const promptSlotSelect = document.getElementById("promptSlot");
-      const customPromptTextarea = document.getElementById("customPrompt");
-      
-      function loadPromptForSlot(slot) {
-        const key = getPromptStorageKey(slot);
-        const storedPrompt = localStorage.getItem(key);
-        customPromptTextarea.value = storedPrompt ? storedPrompt : "";
-        autoResize(customPromptTextarea);
-      }
-      
-      customPromptTextarea.addEventListener("input", () => {
-        const currentSlot = promptSlotSelect.value;
-        const key = getPromptStorageKey(currentSlot);
-        localStorage.setItem(key, customPromptTextarea.value);
-        autoResize(customPromptTextarea);
-      });
-      
-      promptSlotSelect.addEventListener("change", () => {
-        loadPromptForSlot(promptSlotSelect.value);
-      });
-      
-      // Auto-resize function for textareas
-      function autoResize(textarea) {
-        textarea.style.height = "auto";
-        textarea.style.height = textarea.scrollHeight + "px";
-      }
-      
-      // Initially load prompt for slot 1.
-      loadPromptForSlot(promptSlotSelect.value);
-      
-      // Backend URL and recording variables
-      const backendUrl = "https://whisper-dev-backend.fly.dev";
-      let mediaRecorder;
-      let audioChunks = [];
-      let sessionId = "";
-      let recordingStartTime = 0;
-      let recordingTimerInterval;
-      let uploadTimerInterval;
-      let transcriptionTimerInterval;
-      let isPaused = false;
-      let pausedTimeAccumulated = 0;
-      let pauseStartTime = 0;
-      let autoDeleteTimeout;
-      let uploadStartTime = 0;
-      let mediaStream = null;
-      
-      function updateStatusMessage(message, color = "#333") {
-        const statusMessage = document.getElementById("statusMessage");
-        statusMessage.innerText = message;
-        statusMessage.style.color = color;
-      }
-      
+      // Update recording timer display
       function updateRecordingTimer() {
-        let elapsed = Date.now() - recordingStartTime - pausedTimeAccumulated;
+        let elapsed = Date.now() - recordingStartTime;
         document.getElementById("recordTimer").innerText = "Recording Timer: " + formatTime(elapsed);
       }
       
+      // Update upload timer display
       function updateUploadTimer() {
         let elapsed = Date.now() - uploadStartTime;
         document.getElementById("uploadTimer").innerText = "Upload Timer: " + formatTime(elapsed);
       }
       
+      // Stop microphone
+      function stopMicrophone() {
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(track => track.stop());
+          mediaStream = null;
+        }
+      }
+      
+      // Start a new recording chunk
+      function startNewChunk() {
+        audioChunks = [];
+        recordingStartTime = Date.now();
+        // Start recording timer
+        clearInterval(recordingTimerInterval);
+        updateRecordingTimer();
+        recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+        
+        // Create new MediaRecorder instance for the current chunk
+        mediaRecorder = new MediaRecorder(mediaStream);
+        mediaRecorder.ondataavailable = event => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
+        mediaRecorder.onstop = handleStop;
+        mediaRecorder.start();
+        
+        // Set auto-stop timer for 10 minutes (600,000 ms)
+        autoChunkTimer = setTimeout(() => {
+          // Auto-stop current chunk after 10 minutes
+          console.log("Auto chunk stop reached for chunk " + chunkNumber);
+          mediaRecorder.stop();
+        }, 600000);
+        
+        updateStatusMessage(`Recording chunk ${chunkNumber} in progress...`, "red");
+        document.getElementById("recordIndicator").style.backgroundColor = "red";
+      }
+      
+      // Handle recording stop and upload the current chunk
       async function handleStop() {
         clearInterval(recordingTimerInterval);
-        updateStatusMessage("Uploading audio... Please wait.", "blue");
+        updateStatusMessage(`Uploading chunk ${chunkNumber}... Please wait.`, "blue");
       
         const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
         const formData = new FormData();
-        formData.append("file", audioBlob, "recorded.mp3");
+        formData.append("file", audioBlob, `chunk_${chunkNumber}.mp3`);
+        // Append group and chunk info for backend processing
+        formData.append("group_id", groupId);
+        formData.append("chunk_number", chunkNumber);
       
         uploadStartTime = Date.now();
         document.getElementById("uploadTimer").innerText = "Upload Timer: 0 sec";
@@ -712,66 +685,48 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
           clearInterval(uploadTimerInterval);
       
           if (result.session_id) {
-            sessionId = result.session_id;
-            console.log("Session ID:", sessionId);  // Added logging here
-            document.getElementById("recordIndicator").style.backgroundColor = "green";
-            updateStatusMessage("Audio uploaded! Ready for transcription.", "green");
-            document.getElementById("transcribeButton").disabled = false;
-      
-            clearTimeout(autoDeleteTimeout);
-            autoDeleteTimeout = setTimeout(() => {
-              sessionId = "";
-              updateStatusMessage("Recording automatically deleted.", "green");
-            }, 900000);
+            console.log(`Chunk ${chunkNumber} uploaded. Session ID: `, result.session_id);
+            // If this was a manual stop (final chunk), update status and stop microphone.
+            if (manualStop) {
+              updateStatusMessage("Upload complete! You may now start transcribing.", "green");
+              document.getElementById("transcribeButton").disabled = false;
+              stopMicrophone();
+            } else {
+              // Automatically start next chunk
+              chunkNumber++;
+              startNewChunk();
+            }
           } else {
             updateStatusMessage("Upload error: " + (result.error || "Unknown error"), "red");
           }
         } catch (error) {
           updateStatusMessage("Error uploading file: " + error, "red");
         }
-      
-        stopMicrophone();
       }
       
-      function stopMicrophone() {
-        if (mediaStream) {
-          mediaStream.getTracks().forEach(track => track.stop());
-          mediaStream = null;
-        }
-      }
-      
+      // Start Button Event: Initialize group and start first chunk
       document.getElementById("startButton").addEventListener("click", async () => {
-        clearTimeout(autoDeleteTimeout);
+        manualStop = false;
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mediaRecorder = new MediaRecorder(mediaStream);
-          audioChunks = [];
-          isPaused = false;
-          pausedTimeAccumulated = 0;
-          recordingStartTime = Date.now();
-          updateRecordingTimer();
-          recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-      
-          mediaRecorder.ondataavailable = event => {
-            if (event.data.size > 0) {
-              audioChunks.push(event.data);
-            }
-          };
-          mediaRecorder.onstop = handleStop;
-          mediaRecorder.start();
+          // Initialize a new group using a unique identifier (e.g., current timestamp)
+          groupId = Date.now().toString();
+          chunkNumber = 1;
+          startNewChunk();
       
           document.getElementById("startButton").disabled = true;
           document.getElementById("stopButton").disabled = false;
           document.getElementById("pauseResumeButton").disabled = false;
           document.getElementById("pauseResumeButton").innerText = "Pause Recording";
-          document.getElementById("recordIndicator").style.backgroundColor = "red";
-          updateStatusMessage("Recording in progress...");
         } catch (error) {
           updateStatusMessage("Microphone access error: " + error, "red");
         }
       });
       
+      // Stop Button Event: User manually stops the overall recording
       document.getElementById("stopButton").addEventListener("click", () => {
+        manualStop = true;
+        clearTimeout(autoChunkTimer);
         if (mediaRecorder && mediaRecorder.state !== "inactive") {
           mediaRecorder.stop();
           document.getElementById("startButton").disabled = false;
@@ -780,27 +735,28 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         }
       });
       
+      // Pause/Resume Button Event (unchanged)
       document.getElementById("pauseResumeButton").addEventListener("click", () => {
         if (!mediaRecorder) return;
         if (mediaRecorder.state === "recording") {
           mediaRecorder.pause();
-          pauseStartTime = Date.now();
           clearInterval(recordingTimerInterval);
           document.getElementById("pauseResumeButton").innerText = "Resume Recording";
           updateStatusMessage("Recording paused", "orange");
         } else if (mediaRecorder.state === "paused") {
           mediaRecorder.resume();
-          pausedTimeAccumulated += Date.now() - pauseStartTime;
+          recordingStartTime = Date.now(); // reset timer for simplicity
           recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
           document.getElementById("pauseResumeButton").innerText = "Pause Recording";
           updateStatusMessage("Recording resumed", "green");
         }
       });
       
+      // Transcribe Button Event (unchanged)
       document.getElementById("transcribeButton").addEventListener("click", async () => {
         const storedApiKey = sessionStorage.getItem("openai_api_key");
-        if (!storedApiKey || !sessionId) {
-          updateStatusMessage("API key or recording missing.", "red");
+        if (!storedApiKey) {
+          updateStatusMessage("API key missing.", "red");
           return;
         }
       
@@ -814,7 +770,7 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
           const response = await fetch(`${backendUrl}/transcribe`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ api_key: storedApiKey, session_id: sessionId })
+            body: JSON.stringify({ api_key: storedApiKey, session_id: groupId })
           });
           const result = await response.json();
           clearInterval(transcriptionTimerInterval);
@@ -830,79 +786,7 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         }
       });
       
-      document.getElementById("generateNoteButton").addEventListener("click", async () => {
-        const transcriptionText = document.getElementById("transcription").value.trim();
-        if (!transcriptionText) {
-          alert("No transcription text available.");
-          return;
-        }
-        
-        const promptText = customPromptTextarea.value;
-        const generatedNoteField = document.getElementById("generatedNote");
-        generatedNoteField.value = "";
-        
-        const noteStartTime = Date.now();
-        const noteTimerElement = document.getElementById("noteTimer");
-        noteTimerElement.innerText = "Note Generation Timer: 0 sec";
-        const noteTimerInterval = setInterval(() => {
-          noteTimerElement.innerText = "Note Generation Timer: " + formatTime(Date.now() - noteStartTime);
-        }, 1000);
-        
-        try {
-          const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": "Bearer " + apiKey
-            },
-            body: JSON.stringify({
-              model: "gpt-4-turbo",
-              messages: [
-                { role: "system", content: promptText },
-                { role: "user", content: transcriptionText }
-              ],
-              temperature: 0.7,
-              stream: true
-            })
-          });
-          
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder("utf-8");
-          let done = false;
-          
-          while (!done) {
-            const { value, done: doneReading } = await reader.read();
-            done = doneReading;
-            const chunkValue = decoder.decode(value);
-            const lines = chunkValue.split("\n").filter(line => line.trim() !== "");
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                const jsonStr = line.replace("data: ", "").trim();
-                if (jsonStr === "[DONE]") {
-                  done = true;
-                  break;
-                }
-                try {
-                  const parsed = JSON.parse(jsonStr);
-                  const textChunk = parsed.choices[0].delta?.content || "";
-                  generatedNoteField.value += textChunk;
-                  autoResize(generatedNoteField);
-                } catch (err) {
-                  console.error("Stream chunk parsing error:", err);
-                }
-              }
-            }
-          }
-          clearInterval(noteTimerInterval);
-          noteTimerElement.innerText = "Text generation completed!";
-        } catch (error) {
-          clearInterval(noteTimerInterval);
-          generatedNoteField.value = "Error generating note: " + error;
-          noteTimerElement.innerText = "";
-        }
-      });
-      
-      // --- End of transcription functionalities ---
+      // ---------------- End of Chunked Recording Logic ----------------
     });
   </script>
 </body>

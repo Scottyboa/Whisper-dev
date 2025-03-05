@@ -9,7 +9,8 @@ window.translations = {
       apiPlaceholder: "Enter API Key here",
       enterButton: "Enter Transcription Tool",
       guideButton: "Guide for setting up API key",
-      adRevenueMessage: "As we do not charge for the use of this website and rely solely on ad revenue, we kindly ask you to consent to personalized ads to help support our service."
+      adRevenueMessage: "As we do not charge for the use of this website and rely solely on ad revenue, we kindly ask you to consent to personalized ads to help support our service.",
+      consentText: "This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking 'Accept', you consent to the use of cookies."
     },
     no: {
       pageTitle: "Whisper Transkripsjon",
@@ -19,7 +20,8 @@ window.translations = {
       apiPlaceholder: "Skriv inn API-nøkkel her",
       enterButton: "Gå til transkripsjonsverktøy",
       guideButton: "Veiledning for oppsett av API-nøkkel",
-      adRevenueMessage: "Siden vi ikke tar betalt for bruk av denne nettsiden og utelukkende er avhengige av annonseinntekter, ber vi deg vennligst om å samtykke til personaliserte annonser for å støtte tjenesten vår."
+      adRevenueMessage: "Siden vi ikke tar betalt for bruk av denne nettsiden og utelukkende er avhengige av annonseinntekter, ber vi deg samtykke til personaliserte annonser for å støtte tjenesten vår.",
+      consentText: "Denne nettsiden er gratis å bruke fordi vi utelukkende er avhengige av annonseinntekter. Vi bruker informasjonskapsler for å tilpasse annonser og forbedre opplevelsen din. Ved å klikke 'Godta', samtykker du til bruken av informasjonskapsler."
     },
     sv: {
       pageTitle: "Whisper Transkription",
@@ -29,7 +31,8 @@ window.translations = {
       apiPlaceholder: "Ange API-nyckel här",
       enterButton: "Gå till transkriptionsverktyget",
       guideButton: "Guide för att ställa in API-nyckeln",
-      adRevenueMessage: "Eftersom vi inte tar betalt för denna webbplats och endast är beroende av annonsintäkter, ber vi dig acceptera personliga annonser för att stödja vår tjänst."
+      adRevenueMessage: "Eftersom vi inte tar betalt för denna webbplats och endast är beroende av annonsintäkter, ber vi dig acceptera personliga annonser för att stödja vår tjänst.",
+      consentText: "Denna webbplats är gratis att använda eftersom vi enbart förlitar oss på annonsintäkter. Vi använder cookies för att anpassa annonser och förbättra din upplevelse. Genom att klicka på 'Acceptera' samtycker du till användningen av cookies."
     },
     zh: {
       pageTitle: "Whisper 转录",
@@ -39,7 +42,8 @@ window.translations = {
       apiPlaceholder: "在此输入 API 密钥",
       enterButton: "进入转录工具",
       guideButton: "设置 API 密钥指南",
-      adRevenueMessage: "由于本网站免费且仅依赖广告收入，我们请求您同意个性化广告以支持我们的服务。"
+      adRevenueMessage: "由于本网站免费且仅依赖广告收入，我们请求您同意个性化广告以支持我们的服务。",
+      consentText: "本网站免费使用，因为我们完全依赖广告收入。我们使用 cookies 来个性化广告并改善您的体验。点击“接受”即表示您同意使用 cookies。"
     },
     de: {
       pageTitle: "Whisper Transkription",
@@ -49,7 +53,8 @@ window.translations = {
       apiPlaceholder: "API-Schlüssel hier eingeben",
       enterButton: "Zum Transkriptionswerkzeug",
       guideButton: "Anleitung zum Einrichten des API-Schlüssels",
-      adRevenueMessage: "Da diese Website kostenlos ist und ausschließlich auf Werbeeinnahmen angewiesen ist, bitten wir Sie, personalisierte Anzeigen zu akzeptieren, um unseren Dienst zu unterstützen."
+      adRevenueMessage: "Da diese Website kostenlos ist und ausschließlich auf Werbeeinnahmen angewiesen ist, bitten wir Sie, personalisierte Anzeigen zu akzeptieren, um unseren Dienst zu unterstützen.",
+      consentText: "Diese Website ist kostenlos, da wir ausschließlich auf Werbeeinnahmen angewiesen sind. Wir verwenden Cookies, um Anzeigen zu personalisieren und Ihr Erlebnis zu verbessern. Mit einem Klick auf 'Akzeptieren' stimmen Sie der Verwendung von Cookies zu."
     },
     fr: {
       pageTitle: "Transcription Whisper",
@@ -59,7 +64,8 @@ window.translations = {
       apiPlaceholder: "Entrez la clé API ici",
       enterButton: "Accéder à l'outil de transcription",
       guideButton: "Guide pour configurer la clé API",
-      adRevenueMessage: "Comme ce site est gratuit et dépend uniquement des revenus publicitaires, nous vous demandons d'accepter les publicités personnalisées pour soutenir notre service."
+      adRevenueMessage: "Comme ce site est gratuit et dépend uniquement des revenus publicitaires, nous vous demandons d'accepter les publicités personnalisées pour soutenir notre service.",
+      consentText: "Ce site est gratuit car nous dépendons uniquement des revenus publicitaires. Nous utilisons des cookies pour personnaliser les annonces et améliorer votre expérience. En cliquant sur 'Accepter', vous consentez à l'utilisation des cookies."
     }
   },
   transcribeTranslations: {
@@ -97,7 +103,8 @@ window.translations = {
   <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
   <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide. The guide appears as an overlay and does not disturb the underlying layout.</li>
 </ul>
-Please click "Functions" to return to the main interface.`
+Please click "Functions" to return to the main interface.`,
+      consentText: "This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking 'Accept', you consent to the use of cookies."
     },
     no: {
       pageTitle: "Transkripsjonsverktøy med annonser og veiledningsoverlegg",
@@ -133,7 +140,8 @@ Please click "Functions" to return to the main interface.`
   <li><strong>Tilpasset melding:</strong> Velg et meldingsfelt (1–10) og skriv inn din tilpassede melding. Dette lagres automatisk og knyttes til din API-nøkkel.</li>
   <li><strong>Guide:</strong> Klikk på "Funksjoner" for å gå tilbake til hovedskjermen.</li>
 </ul>
-Klikk på "Funksjoner" for å gå tilbake til hovedskjermen.`
+Klikk på "Funksjoner" for å gå tilbake til hovedskjermen.`,
+      consentText: "Denne nettsiden er gratis å bruke fordi vi utelukkende er avhengige av annonseinntekter. Vi bruker informasjonskapsler for å tilpasse annonser og forbedre opplevelsen din. Ved å klikke 'Godta', samtykker du til bruken av informasjonskapsler."
     },
     sv: {
       pageTitle: "Transkriptionsverktyg med annonser och guideöverlägg",
@@ -169,10 +177,11 @@ Klikk på "Funksjoner" for å gå tilbake til hovedskjermen.`
   <li><strong>Anpassat meddelande:</strong> Välj ett meddelandefält (1–10) och skriv in ditt anpassade meddelande. Detta sparas automatiskt och kopplas till din API-nyckel.</li>
   <li><strong>Guide:</strong> Klicka på "Funktioner" för att återgå till huvudsidan.</li>
 </ul>
-Klicka på "Funktioner" för att återgå till huvudsidan.`
+Klicka på "Funktioner" för att återgå till huvudsidan.`,
+      consentText: "Denna webbplats är gratis att använda eftersom vi enbart förlitar oss på annonsintäkter. Vi använder cookies för att anpassa annonser och förbättra din upplevelse. Genom att klicka på 'Acceptera' samtycker du till användningen av cookies."
     },
     zh: {
-      pageTitle: "转录工具与广告及指南覆盖",
+      pageTitle: "Whisper 转录",
       openaiUsageLinkText: "查看 OpenAI 使用情况",
       btnFunctions: "功能",
       btnGuide: "指南",
@@ -205,7 +214,8 @@ Klicka på "Funktioner" för att återgå till huvudsidan.`
   <li><strong>自定义提示：</strong>在右侧选择提示槽（1–10）并输入您的自定义提示，该提示会自动保存并与您的 API 密钥关联。</li>
   <li><strong>指南：</strong>使用“功能”和“指南”按钮在工具界面和本指南之间切换。</li>
 </ul>
-点击“功能”返回主界面。`
+点击“功能”返回主界面。`,
+      consentText: "本网站免费使用，因为我们完全依赖广告收入。我们使用 cookies 来个性化广告并改善您的体验。点击“接受”即表示您同意使用 cookies。"
     },
     de: {
       pageTitle: "Whisper Transkription",
@@ -239,9 +249,10 @@ Klicka på "Funktioner" för att återgå till huvudsidan.`
   <li><strong>Transkription:</strong> Sobald die Aufnahme hochgeladen ist, klicken Sie auf "Transkribieren", um Sprache in Text umzuwandeln. Das Transkript erscheint im oberen Bereich.</li>
   <li><strong>Notizgenerierung:</strong> Nach der Transkription klicken Sie auf "Notiz generieren", um basierend auf dem Transkript und Ihrer benutzerdefinierten Eingabe eine Notiz zu erstellen. Ein Timer zeigt die Dauer der Notizgenerierung, und die generierte Notiz erscheint unten.</li>
   <li><strong>Benutzerdefinierte Eingabe:</strong> Wählen Sie rechts ein Eingabefeld (1–10) aus und geben Sie Ihre benutzerdefinierte Eingabe ein. Diese wird automatisch gespeichert und mit Ihrem API-Schlüssel verknüpft.</li>
-  <li><strong>Guide:</strong> Verwenden Sie die Schaltflächen "Funktionen" und "Guide", um zwischen der funktionsreichen Ansicht und dieser Anleitung zu wechseln.</li>
+  <li><strong>Guide:</strong> Klicken Sie auf "Funktionen", um zur Hauptansicht zurückzukehren.</li>
 </ul>
-Klicken Sie auf "Funktionen", um zur Hauptansicht zurückzukehren.`
+Klicken Sie auf "Funktionen", um zur Hauptansicht zurückzukehren.`,
+      consentText: "Diese Website ist kostenlos, da wir ausschließlich auf Werbeeinnahmen angewiesen sind. Wir verwenden Cookies, um Anzeigen zu personalisieren und Ihr Erlebnis zu verbessern. Mit einem Klick auf 'Akzeptieren' stimmen Sie der Verwendung von Cookies zu."
     },
     fr: {
       pageTitle: "Transcription Whisper",
@@ -277,7 +288,8 @@ Klicken Sie auf "Funktionen", um zur Hauptansicht zurückzukehren.`
   <li><strong>Message personnalisé :</strong> Sur la droite, sélectionnez un emplacement de message (1–10) et saisissez votre message personnalisé. Ce message sera sauvegardé automatiquement et associé à votre clé API.</li>
   <li><strong>Guide :</strong> Utilisez les boutons "Fonctions" et "Guide" pour alterner entre l'interface fonctionnelle et ce guide.</li>
 </ul>
-Cliquez sur "Fonctions" pour revenir à l'interface principale.`
+Cliquez sur "Fonctions" pour revenir à l'interface principale.`,
+      consentText: "Ce site est gratuit car nous dépendons uniquement des revenus publicitaires. Nous utilisons des cookies pour personnaliser les annonces et améliorer votre expérience. En cliquant sur 'Accepter', vous consentez à l'utilisation des cookies."
     }
   }
 };

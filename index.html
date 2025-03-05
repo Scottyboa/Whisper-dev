@@ -96,7 +96,7 @@
       font-weight: bold;
       color: #555;
     }
-    /* API Guide Overlay - hidden by default */
+    /* API Guide Overlay – hidden by default */
     #apiKeyGuideOverlay {
       display: none;
       position: fixed;
@@ -208,6 +208,7 @@
       /* --------------------------
          Multi-language & Consent Banner Logic
          -------------------------- */
+      // Load translations from the external file for the index page
       const indexTranslations = window.translations.indexTranslations;
       
       function updateLanguageIndex(lang) {
@@ -219,6 +220,8 @@
         document.getElementById("enterTranscriptionBtn").textContent = indexTranslations[lang].enterButton;
         document.getElementById("openGuideButton").textContent = indexTranslations[lang].guideButton;
         document.getElementById("ad-revenue-message").textContent = indexTranslations[lang].adRevenueMessage;
+        // Update consent text based on language
+        document.getElementById("consent-text").textContent = indexTranslations[lang].consentText;
       }
       
       let currentLang = localStorage.getItem("siteLanguage") || "en";
@@ -274,7 +277,6 @@
         if (getCookie("user_consent") === "accepted") {
           document.getElementById("cmp-banner").style.display = "none";
           loadAdSense();
-          document.getElementById("ad-revenue-message").style.display = "none";
         }
       })();
       

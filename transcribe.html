@@ -255,23 +255,6 @@
       </div>
     </aside>
   </div>
-  <!-- Guide Overlay -->
-  <div id="guideView">
-    <h3 id="guideHeading">Guide & Instructions</h3>
-    <p id="guideText">
-      Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
-      <br><br>
-      <strong>How to Use the Functions:</strong>
-      <ul>
-        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
-        <li><strong>Transcription:</strong> Once your audio is uploaded, click "Transcribe" to convert speech to text. The transcription will appear in the top area.</li>
-        <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcription and custom prompt. A timer shows the duration of note generation, and the generated note appears below.</li>
-        <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
-        <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide. The guide appears as an overlay and does not disturb the underlying layout.</li>
-      </ul>
-      Please click "Functions" to return to the main interface.
-    </p>
-  </div>
   <!-- Consent Banner -->
   <div id="cmp-banner">
     <span id="consent-text">This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking "Accept", you consent to the use of cookies.</span>
@@ -311,6 +294,8 @@
         document.getElementById("adUnit").textContent = transcribeTranslations[lang].adUnitText;
         document.getElementById("guideHeading").textContent = transcribeTranslations[lang].guideHeading;
         document.getElementById("guideText").innerHTML = transcribeTranslations[lang].guideText;
+        // Update consent text so it changes with language selection.
+        document.getElementById("consent-text").textContent = transcribeTranslations[lang].consentText;
       }
       
       let currentLangTranscribe = localStorage.getItem("siteLanguage") || "en";
@@ -385,14 +370,12 @@
       let autoChunkTimer = null;
       let manualStop = false;  // true if user manually stops the overall recording
       
-      // Update status message
       function updateStatusMessage(message, color = "#333") {
         const statusMessage = document.getElementById("statusMessage");
         statusMessage.innerText = message;
         statusMessage.style.color = color;
       }
       
-      // Format time utility
       function formatTime(ms) {
         const totalSec = Math.floor(ms / 1000);
         if (totalSec < 60) {
@@ -404,19 +387,16 @@
         }
       }
       
-      // Update recording timer display
       function updateRecordingTimer() {
         let elapsed = Date.now() - recordingStartTime;
         document.getElementById("recordTimer").innerText = "Recording Timer: " + formatTime(elapsed);
       }
       
-      // Update upload timer display
       function updateUploadTimer() {
         let elapsed = Date.now() - uploadStartTime;
         document.getElementById("uploadTimer").innerText = "Upload Timer: " + formatTime(elapsed);
       }
       
-      // Stop microphone
       function stopMicrophone() {
         if (mediaStream) {
           mediaStream.getTracks().forEach(track => track.stop());
@@ -424,7 +404,6 @@
         }
       }
       
-      // Start a new recording chunk
       function startNewChunk() {
         audioChunks = [];
         recordingStartTime = Date.now();
@@ -450,7 +429,6 @@
         document.getElementById("recordIndicator").style.backgroundColor = "red";
       }
       
-      // Handle recording stop and upload the current chunk
       async function handleStop() {
         clearInterval(recordingTimerInterval);
         updateStatusMessage(`Uploading chunk ${chunkNumber}... Please wait.`, "blue");
@@ -491,7 +469,6 @@
         }
       }
       
-      // Start Button Event: Initialize group and start first chunk
       document.getElementById("startButton").addEventListener("click", async () => {
         manualStop = false;
         try {
@@ -509,7 +486,6 @@
         }
       });
       
-      // Stop Button Event: User manually stops the overall recording
       document.getElementById("stopButton").addEventListener("click", () => {
         manualStop = true;
         clearTimeout(autoChunkTimer);
@@ -521,7 +497,6 @@
         }
       });
       
-      // Pause/Resume Button Event
       document.getElementById("pauseResumeButton").addEventListener("click", () => {
         if (!mediaRecorder) return;
         if (mediaRecorder.state === "recording") {
@@ -538,7 +513,6 @@
         }
       });
       
-      // Transcribe Button Event
       document.getElementById("transcribeButton").addEventListener("click", async () => {
         const storedApiKey = sessionStorage.getItem("openai_api_key");
         if (!storedApiKey) {

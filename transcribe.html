@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title-transcribe">Transcription Tool with Ads and Guide Overlay</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
-  <!-- Include external translations file -->
-  <script src="translations.js"></script>
   <style>
     body {
       font-family: 'Roboto', sans-serif;
@@ -73,10 +71,6 @@
       margin-bottom: 20px;
       font-family: 'Roboto', sans-serif;
       resize: none;
-    }
-    /* Allow vertical resize for the transcription output field */
-    #transcription {
-      resize: vertical;
     }
     #transcription, #generatedNote {
       min-height: 150px;
@@ -255,6 +249,23 @@
       </div>
     </aside>
   </div>
+  <!-- Guide Overlay -->
+  <div id="guideView">
+    <h3 id="guideHeading">Guide & Instructions</h3>
+    <p id="guideText">
+      Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
+      <br><br>
+      <strong>How to Use the Functions:</strong>
+      <ul>
+        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
+        <li><strong>Transcription:</strong> Once your audio is uploaded, click "Transcribe" to convert speech to text. The transcription will appear in the top area.</li>
+        <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcription and custom prompt. A timer shows the duration of note generation, and the generated note appears below.</li>
+        <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
+        <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide. The guide appears as an overlay and does not disturb the underlying layout.</li>
+      </ul>
+      Please click "Functions" to return to the main interface.
+    </p>
+  </div>
   <!-- Consent Banner -->
   <div id="cmp-banner">
     <span id="consent-text">This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking "Accept", you consent to the use of cookies.</span>
@@ -266,8 +277,224 @@
       /* --------------------------
          Multi-language & Consent Banner Logic
          -------------------------- */
-      // Use the external translations from translations.js
-      const transcribeTranslations = window.translations.transcribeTranslations;
+      const transcribeTranslations = {
+        en: {
+          pageTitle: "Transcription Tool with Ads and Guide Overlay",
+          openaiUsageLinkText: "Cost usage overview",
+          btnFunctions: "Functions",
+          btnGuide: "Guide",
+          recordingAreaTitle: "Recording Area",
+          recordTimer: "Recording Timer: 0 sec",
+          uploadTimer: "Upload Timer: 0 sec",
+          transcribeTimer: "Transcription Timer: 0 sec",
+          transcriptionPlaceholder: "Transcription result will appear here...",
+          startButton: "Start Recording",
+          stopButton: "Stop Recording",
+          pauseButton: "Pause Recording",
+          transcribeButton: "Transcribe",
+          statusMessage: "Welcome! Click \"Start Recording\" to begin.",
+          noteGenerationTitle: "Note Generation",
+          generateNoteButton: "Generate Note",
+          noteTimer: "Note Generation Timer: 0 sec",
+          generatedNotePlaceholder: "Generated note will appear here...",
+          customPromptTitle: "Custom Prompt",
+          promptSlotLabel: "Prompt Slot:",
+          customPromptPlaceholder: "Enter custom prompt here",
+          adUnitText: "Your Ad Here",
+          guideHeading: "Guide & Instructions",
+          guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
+<br><br>
+<strong>How to Use the Functions:</strong>
+<ul>
+  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
+  <li><strong>Transcription:</strong> Once your audio is uploaded, click "Transcribe" to convert speech to text. The transcription will appear in the top area.</li>
+  <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcription and custom prompt. A timer shows the duration of note generation, and the generated note appears below.</li>
+  <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
+  <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide. The guide appears as an overlay and does not disturb the underlying layout.</li>
+</ul>
+Please click "Functions" to return to the main interface.`
+        },
+        no: {
+          pageTitle: "Transkripsjonsverktøy med annonser og veiledningsoverlegg",
+          openaiUsageLinkText: "Vis OpenAI bruk",
+          btnFunctions: "Funksjoner",
+          btnGuide: "Veiledning",
+          recordingAreaTitle: "Opptaksområde",
+          recordTimer: "Opptakstimer: 0 sek",
+          uploadTimer: "Opplastningstimer: 0 sek",
+          transcribeTimer: "Transkripsjonstimer: 0 sek",
+          transcriptionPlaceholder: "Transkripsjonsresultatet vises her...",
+          startButton: "Start opptak",
+          stopButton: "Stopp opptak",
+          pauseButton: "Pause opptak",
+          transcribeButton: "Transkriber",
+          statusMessage: "Velkommen! Klikk 'Start opptak' for å begynne.",
+          noteGenerationTitle: "Notatgenerering",
+          generateNoteButton: "Generer notat",
+          noteTimer: "Notatgenereringstimer: 0 sek",
+          generatedNotePlaceholder: "Generert notat vises her...",
+          customPromptTitle: "Tilpasset melding",
+          promptSlotLabel: "Meldingsplass:",
+          customPromptPlaceholder: "Skriv inn tilpasset melding her",
+          adUnitText: "Din annonse her",
+          guideHeading: "Veiledning og Instruksjoner",
+          guideText: `Velkommen til Whisper Transkripsjonsverktøy. Denne applikasjonen lar medisinske fagpersoner, terapeuter og andre utøvere ta opp og transkribere konsultasjoner, samt generere profesjonelle notater ved hjelp av en AI-drevet notatgenerator.
+<br><br>
+<strong>Slik bruker du verktøyet:</strong>
+<ul>
+  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Klikk på "Stopp opptak" for å avslutte og laste opp opptaket.</li>
+  <li><strong>Transkripsjon:</strong> Når opptaket er lastet opp, klikk "Transkriber" for å omforme tale til tekst. Transkripsjonen vises øverst.</li>
+  <li><strong>Notatgenerering:</strong> Etter transkripsjonen, klikk "Generer notat" for å lage et notat basert på transkripsjonen og din tilpassede melding. En timer viser varigheten av notatgenereringen, og det genererte notatet vises nedenfor.</li>
+  <li><strong>Tilpasset melding:</strong> Velg et meldingsfelt (1–10) og skriv inn din tilpassede melding. Meldingen lagres automatisk og knyttes til din API-nøkkel.</li>
+  <li><strong>Veiledning:</strong> Bruk knappene "Funksjoner" og "Veiledning" for å bytte mellom verktøysgrensesnittet og denne veiledningen.</li>
+</ul>
+Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
+        },
+        sv: {
+          pageTitle: "Transkriptionsverktyg med annonser och guideöverlägg",
+          openaiUsageLinkText: "Visa OpenAI användning",
+          btnFunctions: "Funktioner",
+          btnGuide: "Guide",
+          recordingAreaTitle: "Inspelningsområde",
+          recordTimer: "Inspelningstimer: 0 sek",
+          uploadTimer: "Uppladdningstimer: 0 sek",
+          transcribeTimer: "Transkriptionstimer: 0 sek",
+          transcriptionPlaceholder: "Transkriptet visas här...",
+          startButton: "Starta inspelning",
+          stopButton: "Stoppa inspelning",
+          pauseButton: "Pausa inspelning",
+          transcribeButton: "Transkribera",
+          statusMessage: "Välkommen! Klicka på 'Starta inspelning' för att börja.",
+          noteGenerationTitle: "Notatgenerering",
+          generateNoteButton: "Generera notat",
+          noteTimer: "Notatgenereringstimer: 0 sek",
+          generatedNotePlaceholder: "Genererat notat visas här...",
+          customPromptTitle: "Anpassat meddelande",
+          promptSlotLabel: "Meddelandefält:",
+          customPromptPlaceholder: "Ange ditt anpassade meddelande här",
+          adUnitText: "Din annons här",
+          guideHeading: "Guide & Instruktioner",
+          guideText: `Välkommen till Whisper Transkriptionsverktyget. Detta verktyg låter medicinska experter, terapeuter och andra utövare spela in och transkribera konsultationer samt generera professionella noteringar med hjälp av en AI-driven notatgenerator.
+<br><br>
+<strong>Så här använder du verktyget:</strong>
+<ul>
+  <li><strong>Inspelning:</strong> Klicka på "Starta inspelning" för att börja spela in. Klicka sedan på "Stoppa inspelning" för att avsluta och ladda upp inspelningen.</li>
+  <li><strong>Transkription:</strong> När inspelningen har laddats upp, klicka på "Transkribera" för att omvandla tal till text. Transkriptionen visas högst upp.</li>
+  <li><strong>Notatgenerering:</strong> Efter inspelningen, klicka på "Generera notat" för att skapa ett notat baserat på inspelningen och ditt anpassade meddelande. En timer visar hur lång tid notatgenereringen tar, och det genererade notatet visas nedan.</li>
+  <li><strong>Anpassat meddelande:</strong> Välj ett meddelandefält (1–10) och skriv in ditt anpassade meddelande. Detta sparas automatiskt och kopplas till din API-nyckel.</li>
+  <li><strong>Guide:</strong> Klicka på "Funktioner" för att återgå till huvudsidan.</li>
+</ul>
+Klicka på "Funktioner" för att återgå till huvudsidan.`
+        },
+        zh: {
+          pageTitle: "转录工具与广告及指南覆盖",
+          openaiUsageLinkText: "查看 OpenAI 使用情况",
+          btnFunctions: "功能",
+          btnGuide: "指南",
+          recordingAreaTitle: "录音区域",
+          recordTimer: "录音计时器: 0 秒",
+          uploadTimer: "上传计时器: 0 秒",
+          transcribeTimer: "转录计时器: 0 秒",
+          transcriptionPlaceholder: "转录结果将在此显示……",
+          startButton: "开始录音",
+          stopButton: "停止录音",
+          pauseButton: "暂停录音",
+          transcribeButton: "转录",
+          statusMessage: "欢迎！点击“开始录音”开始录音。",
+          noteGenerationTitle: "笔记生成",
+          generateNoteButton: "生成笔记",
+          noteTimer: "笔记生成计时器: 0 秒",
+          generatedNotePlaceholder: "生成的笔记将在此显示……",
+          customPromptTitle: "自定义提示",
+          promptSlotLabel: "提示槽：",
+          customPromptPlaceholder: "在此输入自定义提示",
+          adUnitText: "您的广告在此",
+          guideHeading: "指南与说明",
+          guideText: `欢迎使用 Whisper 转录工具。本工具允许医疗专业人员、治疗师及其他从业者录制并转录咨询内容，同时利用 AI 驱动的笔记生成器生成专业笔记。
+<br><br>
+<strong>如何使用此工具：</strong>
+<ul>
+  <li><strong>录音：</strong>点击“开始录音”开始录音，点击“停止录音”结束并上传录音。</li>
+  <li><strong>转录：</strong>录音上传后，点击“转录”将语音转换为文本，转录结果将在上方显示。</li>
+  <li><strong>笔记生成：</strong>转录完成后，点击“生成笔记”以根据转录内容和自定义提示生成笔记。计时器显示生成笔记所需时间，生成的笔记将在下方显示。</li>
+  <li><strong>自定义提示：</strong>在右侧选择提示槽（1–10）并输入您的自定义提示，该提示会自动保存并与您的 API 密钥关联。</li>
+  <li><strong>指南：</strong>使用“功能”和“指南”按钮在工具界面和本指南之间切换。</li>
+</ul>
+点击“功能”返回主界面。`
+        },
+        de: {
+          pageTitle: "Whisper Transkription",
+          openaiUsageLinkText: "OpenAI-Nutzung anzeigen",
+          btnFunctions: "Funktionen",
+          btnGuide: "Guide",
+          recordingAreaTitle: "Aufnahmebereich",
+          recordTimer: "Aufnahmetimer: 0 Sek",
+          uploadTimer: "Upload-Timer: 0 Sek",
+          transcribeTimer: "Transkriptionstimer: 0 Sek",
+          transcriptionPlaceholder: "Das Transkript erscheint hier...",
+          startButton: "Aufnahme starten",
+          stopButton: "Aufnahme stoppen",
+          pauseButton: "Aufnahme pausieren",
+          transcribeButton: "Transkribieren",
+          statusMessage: "Willkommen! Klicken Sie auf 'Aufnahme starten', um zu beginnen.",
+          noteGenerationTitle: "Notizgenerierung",
+          generateNoteButton: "Notiz generieren",
+          noteTimer: "Notizgenerierungstimer: 0 Sek",
+          generatedNotePlaceholder: "Die generierte Notiz erscheint hier...",
+          customPromptTitle: "Benutzerdefinierte Eingabe",
+          promptSlotLabel: "Eingabefeld:",
+          customPromptPlaceholder: "Geben Sie hier Ihre benutzerdefinierte Eingabe ein",
+          adUnitText: "Ihre Anzeige hier",
+          guideHeading: "Guide & Anleitungen",
+          guideText: `Willkommen beim Whisper Transkriptionswerkzeug. Diese Anwendung ermöglicht es medizinischen Fachkräften, Therapeuten und anderen Anwendern, Beratungsgespräche aufzunehmen und zu transkribieren sowie professionelle Notizen mit Hilfe eines KI-gestützten Notizgenerators zu erstellen.
+<br><br>
+<strong>So verwenden Sie das Tool:</strong>
+<ul>
+  <li><strong>Aufnahme:</strong> Klicken Sie auf "Aufnahme starten", um die Aufnahme zu beginnen. Klicken Sie auf "Aufnahme stoppen", um sie zu beenden und hochzuladen.</li>
+  <li><strong>Transkription:</strong> Sobald die Aufnahme hochgeladen ist, klicken Sie auf "Transkribieren", um Sprache in Text umzuwandeln. Das Transkript erscheint im oberen Bereich.</li>
+  <li><strong>Notizgenerierung:</strong> Nach der Transkription klicken Sie auf "Notiz generieren", um basierend auf dem Transkript und Ihrer benutzerdefinierten Eingabe eine Notiz zu erstellen. Ein Timer zeigt die Dauer der Notizgenerierung, und die generierte Notiz erscheint unten.</li>
+  <li><strong>Benutzerdefinierte Eingabe:</strong> Wählen Sie rechts ein Eingabefeld (1–10) aus und geben Sie Ihre benutzerdefinierte Eingabe ein. Diese wird automatisch gespeichert und mit Ihrem API-Schlüssel verknüpft.</li>
+  <li><strong>Guide:</strong> Verwenden Sie die Schaltflächen "Funktionen" und "Guide", um zwischen der funktionsreichen Ansicht und dieser Anleitung zu wechseln.</li>
+</ul>
+Klicken Sie auf "Funktionen", um zur Hauptansicht zurückzukehren.`
+        },
+        fr: {
+          pageTitle: "Transcription Whisper",
+          openaiUsageLinkText: "Voir l'utilisation OpenAI",
+          btnFunctions: "Fonctions",
+          btnGuide: "Guide",
+          recordingAreaTitle: "Zone d'enregistrement",
+          recordTimer: "Minuterie d'enregistrement : 0 sec",
+          uploadTimer: "Minuterie de chargement : 0 sec",
+          transcribeTimer: "Minuterie de transcription : 0 sec",
+          transcriptionPlaceholder: "Le résultat de la transcription s'affichera ici…",
+          startButton: "Démarrer l'enregistrement",
+          stopButton: "Arrêter l'enregistrement",
+          pauseButton: "Mettre en pause",
+          transcribeButton: "Transcrire",
+          statusMessage: "Bienvenue ! Cliquez sur \"Démarrer l'enregistrement\" pour commencer.",
+          noteGenerationTitle: "Génération de notes",
+          generateNoteButton: "Générer une note",
+          noteTimer: "Minuterie de génération de notes : 0 sec",
+          generatedNotePlaceholder: "La note générée s'affichera ici…",
+          customPromptTitle: "Message personnalisé",
+          promptSlotLabel: "Emplacement du message :",
+          customPromptPlaceholder: "Entrez votre message personnalisé ici",
+          adUnitText: "Votre annonce ici",
+          guideHeading: "Guide & Instructions",
+          guideText: `Bienvenue sur l'outil de transcription Whisper. Cette application permet aux professionnels de la santé, aux thérapeutes et à d'autres praticiens d'enregistrer et de transcrire des consultations, ainsi que de générer des notes professionnelles à l'aide d'un générateur de notes propulsé par l'IA.
+<br><br>
+<strong>Comment utiliser l'outil :</strong>
+<ul>
+  <li><strong>Enregistrement :</strong> Cliquez sur "Démarrer l'enregistrement" pour commencer à enregistrer. Cliquez sur "Arrêter l'enregistrement" pour terminer et télécharger l'enregistrement.</li>
+  <li><strong>Transcription :</strong> Une fois l'enregistrement téléchargé, cliquez sur "Transcrire" pour convertir la parole en texte. La transcription s'affichera dans la partie supérieure.</li>
+  <li><strong>Génération de notes :</strong> Après la transcription, cliquez sur "Générer une note" pour produire une note basée sur la transcription et votre message personnalisé. Une minuterie indiquera la durée de génération, et la note générée s'affichera ci-dessous.</li>
+  <li><strong>Message personnalisé :</strong> Sur la droite, sélectionnez un emplacement de message (1–10) et saisissez votre message personnalisé. Ce message sera sauvegardé automatiquement et associé à votre clé API.</li>
+  <li><strong>Guide :</strong> Utilisez les boutons "Fonctions" et "Guide" pour alterner entre l'interface fonctionnelle et ce guide.</li>
+</ul>
+Cliquez sur "Fonctions" pour revenir à l'interface principale.`
+        }
+      };
       
       function updateLanguageTranscribe(lang) {
         document.getElementById("page-title-transcribe").textContent = transcribeTranslations[lang].pageTitle;
@@ -294,10 +521,7 @@
         document.getElementById("adUnit").textContent = transcribeTranslations[lang].adUnitText;
         document.getElementById("guideHeading").textContent = transcribeTranslations[lang].guideHeading;
         document.getElementById("guideText").innerHTML = transcribeTranslations[lang].guideText;
-        // Update consent text so it changes with language selection.
-        document.getElementById("consent-text").textContent = transcribeTranslations[lang].consentText;
       }
-      
       let currentLangTranscribe = localStorage.getItem("siteLanguage") || "en";
       document.getElementById("lang-select-transcribe").value = currentLangTranscribe;
       updateLanguageTranscribe(currentLangTranscribe);
@@ -370,12 +594,14 @@
       let autoChunkTimer = null;
       let manualStop = false;  // true if user manually stops the overall recording
       
+      // Update status message
       function updateStatusMessage(message, color = "#333") {
         const statusMessage = document.getElementById("statusMessage");
         statusMessage.innerText = message;
         statusMessage.style.color = color;
       }
       
+      // Format time utility
       function formatTime(ms) {
         const totalSec = Math.floor(ms / 1000);
         if (totalSec < 60) {
@@ -387,16 +613,19 @@
         }
       }
       
+      // Update recording timer display
       function updateRecordingTimer() {
         let elapsed = Date.now() - recordingStartTime;
         document.getElementById("recordTimer").innerText = "Recording Timer: " + formatTime(elapsed);
       }
       
+      // Update upload timer display
       function updateUploadTimer() {
         let elapsed = Date.now() - uploadStartTime;
         document.getElementById("uploadTimer").innerText = "Upload Timer: " + formatTime(elapsed);
       }
       
+      // Stop microphone
       function stopMicrophone() {
         if (mediaStream) {
           mediaStream.getTracks().forEach(track => track.stop());
@@ -404,13 +633,16 @@
         }
       }
       
+      // Start a new recording chunk
       function startNewChunk() {
         audioChunks = [];
         recordingStartTime = Date.now();
+        // Start recording timer
         clearInterval(recordingTimerInterval);
         updateRecordingTimer();
         recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
         
+        // Create new MediaRecorder instance for the current chunk
         mediaRecorder = new MediaRecorder(mediaStream);
         mediaRecorder.ondataavailable = event => {
           if (event.data.size > 0) {
@@ -420,7 +652,9 @@
         mediaRecorder.onstop = handleStop;
         mediaRecorder.start();
         
+        // Set auto-stop timer for 10 minutes (600,000 ms)
         autoChunkTimer = setTimeout(() => {
+          // Auto-stop current chunk after 10 minutes
           console.log("Auto chunk stop reached for chunk " + chunkNumber);
           mediaRecorder.stop();
         }, 600000);
@@ -429,6 +663,7 @@
         document.getElementById("recordIndicator").style.backgroundColor = "red";
       }
       
+      // Handle recording stop and upload the current chunk
       async function handleStop() {
         clearInterval(recordingTimerInterval);
         updateStatusMessage(`Uploading chunk ${chunkNumber}... Please wait.`, "blue");
@@ -436,6 +671,7 @@
         const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
         const formData = new FormData();
         formData.append("file", audioBlob, `chunk_${chunkNumber}.mp3`);
+        // Append group and chunk info for backend processing
         formData.append("group_id", groupId);
         formData.append("chunk_number", chunkNumber);
       
@@ -453,11 +689,13 @@
       
           if (result.session_id) {
             console.log(`Chunk ${chunkNumber} uploaded. Session ID: `, result.session_id);
+            // If this was a manual stop (final chunk), update status and stop microphone.
             if (manualStop) {
               updateStatusMessage("Upload complete! You may now start transcribing.", "green");
               document.getElementById("transcribeButton").disabled = false;
               stopMicrophone();
             } else {
+              // Automatically start next chunk
               chunkNumber++;
               startNewChunk();
             }
@@ -469,10 +707,12 @@
         }
       }
       
+      // Start Button Event: Initialize group and start first chunk
       document.getElementById("startButton").addEventListener("click", async () => {
         manualStop = false;
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          // Initialize a new group using a unique identifier (e.g., current timestamp)
           groupId = Date.now().toString();
           chunkNumber = 1;
           startNewChunk();
@@ -486,6 +726,7 @@
         }
       });
       
+      // Stop Button Event: User manually stops the overall recording
       document.getElementById("stopButton").addEventListener("click", () => {
         manualStop = true;
         clearTimeout(autoChunkTimer);
@@ -497,6 +738,7 @@
         }
       });
       
+      // Pause/Resume Button Event (unchanged)
       document.getElementById("pauseResumeButton").addEventListener("click", () => {
         if (!mediaRecorder) return;
         if (mediaRecorder.state === "recording") {
@@ -506,13 +748,14 @@
           updateStatusMessage("Recording paused", "orange");
         } else if (mediaRecorder.state === "paused") {
           mediaRecorder.resume();
-          recordingStartTime = Date.now();
+          recordingStartTime = Date.now(); // reset timer for simplicity
           recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
           document.getElementById("pauseResumeButton").innerText = "Pause Recording";
           updateStatusMessage("Recording resumed", "green");
         }
       });
       
+      // Transcribe Button Event (unchanged)
       document.getElementById("transcribeButton").addEventListener("click", async () => {
         const storedApiKey = sessionStorage.getItem("openai_api_key");
         if (!storedApiKey) {
@@ -546,128 +789,7 @@
         }
       });
       
-      /* --------------------------
-         Custom Prompt and Note Generation Functionality
-         -------------------------- */
-      
-      const promptSlotSelect = document.getElementById("promptSlot");
-      const customPromptTextarea = document.getElementById("customPrompt");
-      
-      function hashString(str) {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-          const char = str.charCodeAt(i);
-          hash = ((hash << 5) - hash) + char;
-          hash |= 0;
-        }
-        return hash.toString();
-      }
-      
-      function getPromptStorageKey(slot) {
-        const apiKey = sessionStorage.getItem("openai_api_key") || "";
-        const hashedApiKey = hashString(apiKey);
-        return "customPrompt_" + hashedApiKey + "_" + slot;
-      }
-      
-      function autoResize(textarea) {
-        textarea.style.height = "auto";
-        textarea.style.height = textarea.scrollHeight + "px";
-      }
-      
-      function loadPromptForSlot(slot) {
-        const key = getPromptStorageKey(slot);
-        const storedPrompt = localStorage.getItem(key);
-        customPromptTextarea.value = storedPrompt ? storedPrompt : "";
-        autoResize(customPromptTextarea);
-      }
-      
-      customPromptTextarea.addEventListener("input", () => {
-        const currentSlot = promptSlotSelect.value;
-        const key = getPromptStorageKey(currentSlot);
-        localStorage.setItem(key, customPromptTextarea.value);
-        autoResize(customPromptTextarea);
-      });
-      
-      promptSlotSelect.addEventListener("change", () => {
-        loadPromptForSlot(promptSlotSelect.value);
-      });
-      
-      loadPromptForSlot(promptSlotSelect.value);
-      
-      document.getElementById("generateNoteButton").addEventListener("click", async () => {
-        const transcriptionText = document.getElementById("transcription").value.trim();
-        if (!transcriptionText) {
-          alert("No transcription text available.");
-          return;
-        }
-        
-        const promptText = customPromptTextarea.value;
-        const generatedNoteField = document.getElementById("generatedNote");
-        generatedNoteField.value = "";
-        
-        const noteStartTime = Date.now();
-        const noteTimerElement = document.getElementById("noteTimer");
-        noteTimerElement.innerText = "Note Generation Timer: 0 sec";
-        const noteTimerInterval = setInterval(() => {
-          noteTimerElement.innerText = "Note Generation Timer: " + formatTime(Date.now() - noteStartTime);
-        }, 1000);
-        
-        const apiKey = sessionStorage.getItem("openai_api_key");
-        try {
-          const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": "Bearer " + apiKey
-            },
-            body: JSON.stringify({
-              model: "gpt-4-turbo",
-              messages: [
-                { role: "system", content: promptText },
-                { role: "user", content: transcriptionText }
-              ],
-              temperature: 0.7,
-              stream: true
-            })
-          });
-          
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder("utf-8");
-          let done = false;
-          
-          while (!done) {
-            const { value, done: doneReading } = await reader.read();
-            done = doneReading;
-            const chunkValue = decoder.decode(value);
-            const lines = chunkValue.split("\n").filter(line => line.trim() !== "");
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                const jsonStr = line.replace("data: ", "").trim();
-                if (jsonStr === "[DONE]") {
-                  done = true;
-                  break;
-                }
-                try {
-                  const parsed = JSON.parse(jsonStr);
-                  const textChunk = parsed.choices[0].delta?.content || "";
-                  generatedNoteField.value += textChunk;
-                  autoResize(generatedNoteField);
-                } catch (err) {
-                  console.error("Stream chunk parsing error:", err);
-                }
-              }
-            }
-          }
-          clearInterval(noteTimerInterval);
-          noteTimerElement.innerText = "Text generation completed!";
-        } catch (error) {
-          clearInterval(noteTimerInterval);
-          generatedNoteField.value = "Error generating note: " + error;
-          noteTimerElement.innerText = "";
-        }
-      });
-      
-      /* ---------------- End of Custom Prompt & Note Generation ---------------- */
+      // ---------------- End of Chunked Recording Logic ----------------
     });
   </script>
 </body>

@@ -262,7 +262,7 @@
       <strong>How to Use the Functions:</strong>
       <ul>
         <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. The recording is now continuous using a 2‑minute timeslice, so chunks are automatically generated and sent for transcription without any gap.</li>
-        <li><strong>Transcription:</strong> As soon as each chunk is finished, it is uploaded and transcribed in the background. After you stop recording, you can click "Transcribe" to fetch the compiled transcription.</li>
+        <li><strong>Transcription:</strong> As soon as each chunk is finished, it is uploaded and transcribed in the background. Once you stop recording, click "Transcribe" to fetch the compiled transcription.</li>
         <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcription and custom prompt.</li>
         <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
         <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
@@ -384,9 +384,9 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
 <ul>
   <li><strong>Inspelning:</strong> Klicka på "Starta inspelning" för att börja. Inspelningen sker kontinuerligt med 2-minuters segment som automatiskt skickas för transkribering.</li>
   <li><strong>Transkription:</strong> När varje segment (eller sista korta segmentet) är klart laddas det upp och transkriberas i bakgrunden. Efter stopp, klicka "Transkribera" för att hämta sammansatt transkription.</li>
-  <li><strong>Notatgenerering:</strong> Klicka på "Generera notat" för att skapa ett notat baserat på transkriptionen och din anpassade meddelande.</li>
+  <li><strong>Notatgenerering:</strong> Klicka på "Generera notat" för att skapa ett notat baserat på inspelningen och ditt anpassade meddelande.</li>
   <li><strong>Anpassat meddelande:</strong> Välj ett fält (1–10) och skriv in ditt meddelande. Detta sparas automatiskt och kopplas till din API-nyckel.</li>
-  <li><strong>Guide:</strong> Använd "Funktioner" och "Guide" för att växla mellan vyerna.</li>
+  <li><strong>Guide:</strong> Klicka på "Funktioner" för att återgå till huvudsidan.</li>
 </ul>
 Klicka på "Funktioner" för att återgå till huvudsidan.`
         },
@@ -621,6 +621,9 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         formData.append("file", blob, `chunk_${chunkNumber}.mp3`);
         formData.append("group_id", groupId);
         formData.append("chunk_number", chunkNumber);
+        // Fix: Append API key from sessionStorage so backend receives it.
+        const apiKey = sessionStorage.getItem("openai_api_key");
+        formData.append("api_key", apiKey);
         
         try {
           const response = await fetch(`${backendUrl}/upload`, {
@@ -629,12 +632,10 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
           });
           const result = await response.json();
           console.log(`Chunk ${chunkNumber} uploaded, session_id: `, result.session_id);
-          // Here the backend is assumed to immediately trigger transcription for this chunk.
         } catch (error) {
           console.error("Error uploading chunk:", error);
         }
         pendingChunks--;
-        // If recording has stopped and all pending chunks are processed, enable transcribe button.
         if (!isRecording && pendingChunks <= 0) {
           document.getElementById("transcribeButton").disabled = false;
         }
@@ -647,7 +648,6 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         }
       }
       
-      // Start continuous recording with a 2-minute timeslice.
       document.getElementById("startButton").addEventListener("click", async () => {
         isRecording = true;
         document.getElementById("transcribeButton").disabled = true;
@@ -666,7 +666,6 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
             updateStatusMessage("Recording started...", "red");
             document.getElementById("recordIndicator").style.backgroundColor = "red";
           };
-          // Start recording continuously with timeslice of 2 minutes (120000 ms)
           mediaRecorder.start(120000);
           
           document.getElementById("startButton").disabled = true;
@@ -678,14 +677,12 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         }
       });
       
-      // Stop recording: stops MediaRecorder and microphone, then updates status.
       document.getElementById("stopButton").addEventListener("click", () => {
         isRecording = false;
         if (mediaRecorder && mediaRecorder.state !== "inactive") {
           mediaRecorder.stop();
         }
         clearInterval(recordingTimerInterval);
-        // Stop microphone tracks.
         if (mediaStream) {
           mediaStream.getTracks().forEach(track => track.stop());
           mediaStream = null;
@@ -696,7 +693,6 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         document.getElementById("pauseResumeButton").disabled = true;
       });
       
-      // Pause/Resume functionality remains similar.
       document.getElementById("pauseResumeButton").addEventListener("click", () => {
         if (!mediaRecorder) return;
         if (mediaRecorder.state === "recording") {
@@ -712,10 +708,6 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
           updateStatusMessage("Recording resumed", "green");
         }
       });
-      
-      /* --------------------------
-         Final Transcription Compilation Fetch
-         -------------------------- */
       
       document.getElementById("transcribeButton").addEventListener("click", async () => {
         updateStatusMessage("Fetching compiled transcription...", "blue");
@@ -738,7 +730,7 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
       });
       
       /* --------------------------
-         Custom Prompt and Note Generation Functionality (unchanged)
+         Custom Prompt and Note Generation Functionality
          -------------------------- */
       
       const promptSlotSelect = document.getElementById("promptSlot");
@@ -785,7 +777,6 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
       
       loadPromptForSlot(promptSlotSelect.value);
       
-      // Note Generation remains unchanged.
       document.getElementById("generateNoteButton").addEventListener("click", async () => {
         const transcriptionText = document.getElementById("transcription").value.trim();
         if (!transcriptionText) {

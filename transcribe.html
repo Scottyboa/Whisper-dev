@@ -583,20 +583,19 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
          Chunked Recording Logic & Transcription Functionality
          -------------------------- */
       
-      // Define the backend URL
+      // Define the backend URL (already defined above in translations section)
       const backendUrl = "https://whisper-dev-backend.fly.dev";
       
-      // Global variables for chunked recording
+      // Global variables for continuous recording with auto-chunking
       let mediaRecorder;
       let mediaStream = null;
-      let audioChunks = [];
+      let chunkNumber = 1;
+      let groupId = null;
       let recordingStartTime = 0;
       let recordingTimerInterval;
       let uploadTimerInterval;
-      let groupId = null;
-      let chunkNumber = 0;
-      let autoChunkTimer = null;
-      let manualStop = false;  // true if user manually stops the overall recording
+      let manualStop = false;
+      let uploadStartTime = 0;
       
       // Update status message
       function updateStatusMessage(message, color = "#333") {
@@ -605,7 +604,7 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         statusMessage.style.color = color;
       }
       
-      // Format time utility
+      // Format time utility remains unchanged
       function formatTime(ms) {
         const totalSec = Math.floor(ms / 1000);
         if (totalSec < 60) {
@@ -637,45 +636,12 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         }
       }
       
-      // Start a new recording chunk
-      function startNewChunk() {
-        audioChunks = [];
-        recordingStartTime = Date.now();
-        // Start recording timer
-        clearInterval(recordingTimerInterval);
-        updateRecordingTimer();
-        recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-        
-        // Create new MediaRecorder instance for the current chunk
-        mediaRecorder = new MediaRecorder(mediaStream);
-        mediaRecorder.ondataavailable = event => {
-          if (event.data.size > 0) {
-            audioChunks.push(event.data);
-          }
-        };
-        mediaRecorder.onstop = handleStop;
-        mediaRecorder.start();
-        
-        // Set auto-stop timer for 10 minutes (600,000 ms)
-        autoChunkTimer = setTimeout(() => {
-          console.log("Auto chunk stop reached for chunk " + chunkNumber);
-          mediaRecorder.stop();
-        }, 600000);
-        
-        updateStatusMessage(`Recording chunk ${chunkNumber} in progress...`, "red");
-        document.getElementById("recordIndicator").style.backgroundColor = "red";
-      }
-      
-      // Handle recording stop and upload the current chunk
-      async function handleStop() {
-        clearInterval(recordingTimerInterval);
-        updateStatusMessage(`Uploading chunk ${chunkNumber}... Please wait.`, "blue");
-      
-        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+      // Function to upload a chunk
+      async function uploadChunk(chunkData, currentChunkNumber) {
         const formData = new FormData();
-        formData.append("file", audioBlob, `chunk_${chunkNumber}.mp3`);
+        formData.append("file", chunkData, `chunk_${currentChunkNumber}.mp3`);
         formData.append("group_id", groupId);
-        formData.append("chunk_number", chunkNumber);
+        formData.append("chunk_number", currentChunkNumber);
       
         uploadStartTime = Date.now();
         document.getElementById("uploadTimer").innerText = "Upload Timer: 0 sec";
@@ -688,34 +654,47 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
           });
           const result = await response.json();
           clearInterval(uploadTimerInterval);
-      
           if (result.session_id) {
-            console.log(`Chunk ${chunkNumber} uploaded. Session ID: `, result.session_id);
-            if (manualStop) {
-              updateStatusMessage("Upload complete! You may now start transcribing.", "green");
-              document.getElementById("transcribeButton").disabled = false;
-              stopMicrophone();
-            } else {
-              chunkNumber++;
-              startNewChunk();
-            }
+            console.log(`Chunk ${currentChunkNumber} uploaded. Session ID: `, result.session_id);
           } else {
             updateStatusMessage("Upload error: " + (result.error || "Unknown error"), "red");
           }
         } catch (error) {
+          clearInterval(uploadTimerInterval);
           updateStatusMessage("Error uploading file: " + error, "red");
         }
       }
       
-      // Start Button Event: Initialize group and start first chunk
+      // Start continuous recording with auto-chunking using the timeslice parameter
       document.getElementById("startButton").addEventListener("click", async () => {
         manualStop = false;
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
           groupId = Date.now().toString();
           chunkNumber = 1;
-          startNewChunk();
+          recordingStartTime = Date.now();
+          clearInterval(recordingTimerInterval);
+          updateRecordingTimer();
+          recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
       
+          mediaRecorder = new MediaRecorder(mediaStream);
+          mediaRecorder.ondataavailable = event => {
+            if (event.data && event.data.size > 0) {
+              // Immediately upload the chunk without interrupting recording
+              uploadChunk(event.data, chunkNumber);
+              chunkNumber++;
+            }
+          };
+          mediaRecorder.onstop = () => {
+            // Optional: handle any remaining data if needed
+          };
+          // Start the recorder with a timeslice of 600,000 ms (10 minutes)
+          mediaRecorder.start(600000);
+      
+          updateStatusMessage(`Recording started...`, "red");
+          document.getElementById("recordIndicator").style.backgroundColor = "red";
+      
+          // Update UI button states
           document.getElementById("startButton").disabled = true;
           document.getElementById("stopButton").disabled = false;
           document.getElementById("pauseResumeButton").disabled = false;
@@ -728,7 +707,6 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
       // Stop Button Event: User manually stops the overall recording
       document.getElementById("stopButton").addEventListener("click", () => {
         manualStop = true;
-        clearTimeout(autoChunkTimer);
         if (mediaRecorder && mediaRecorder.state !== "inactive") {
           mediaRecorder.stop();
           document.getElementById("startButton").disabled = false;
@@ -737,7 +715,7 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         }
       });
       
-      // Pause/Resume Button Event (unchanged)
+      // Pause/Resume Button Event
       document.getElementById("pauseResumeButton").addEventListener("click", () => {
         if (!mediaRecorder) return;
         if (mediaRecorder.state === "recording") {
@@ -912,7 +890,7 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         }
       });
       
-      // ---------------- End of Custom Prompt & Note Generation ----------------
+      // --- End of Custom Prompt & Note Generation Functionality ---
     });
   </script>
 </body>

@@ -494,7 +494,7 @@ Klicken Sie auf "Funktionen", um zur Hauptansicht zurückzukehren.`
   <li><strong>Transcription :</strong> Une fois l'enregistrement téléchargé, cliquez sur "Transcrire" pour convertir la parole en texte. La transcription s'affichera dans la partie supérieure.</li>
   <li><strong>Génération de notes :</strong> Après la transcription, cliquez sur "Générer une note" pour produire une note basée sur la transcription et votre message personnalisé. Une minuterie indiquera la durée de génération, et la note générée s'affichera ci-dessous.</li>
   <li><strong>Message personnalisé :</strong> Sur la droite, sélectionnez un emplacement de message (1–10) et saisissez votre message personnalisé. Ce message sera sauvegardé automatiquement et associé à votre clé API.</li>
-  <li><strong>Guide :</strong> Alternez entre l'interface fonctionnelle et ce guide à l'aide des boutons "Fonctions" et "Guide".</li>
+  <li><strong>Guide :</strong> Utilisez les boutons "Fonctions" et "Guide" pour alterner entre l'interface fonctionnelle et ce guide.</li>
 </ul>
 Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         }
@@ -691,7 +691,6 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
       
           if (result.session_id) {
             console.log(`Chunk ${chunkNumber} uploaded. Session ID: `, result.session_id);
-            groupId = result.session_id; // update session id for subsequent requests
             if (manualStop) {
               updateStatusMessage("Upload complete! You may now start transcribing.", "green");
               document.getElementById("transcribeButton").disabled = false;

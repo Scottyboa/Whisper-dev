@@ -500,6 +500,9 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         }
       };
       
+      // Flag to mark that transcription has been fetched.
+      let transcriptionFetched = false;
+      
       function updateLanguageTranscribe(lang) {
         document.getElementById("page-title-transcribe").textContent = transcribeTranslations[lang].pageTitle;
         document.getElementById("openaiUsageLink").textContent = transcribeTranslations[lang].openaiUsageLinkText;
@@ -526,6 +529,7 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         document.getElementById("guideHeading").textContent = transcribeTranslations[lang].guideHeading;
         document.getElementById("guideText").innerHTML = transcribeTranslations[lang].guideText;
       }
+      
       let currentLangTranscribe = localStorage.getItem("siteLanguage") || "en";
       document.getElementById("lang-select-transcribe").value = currentLangTranscribe;
       updateLanguageTranscribe(currentLangTranscribe);
@@ -636,8 +640,9 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
           console.error("Error uploading chunk:", error);
         }
         pendingChunks--;
-        // When recording has stopped and all pending chunks are done, update status and enable the transcribe button.
-        if (!isRecording && pendingChunks <= 0) {
+        // Only re-enable transcribeButton if recording has stopped,
+        // no pending chunks remain, and transcription hasn't been fetched yet.
+        if (!isRecording && pendingChunks <= 0 && !transcriptionFetched) {
           document.getElementById("transcribeButton").disabled = false;
           updateStatusMessage("Ready to transcribe!", "green");
         }
@@ -652,6 +657,7 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
       
       document.getElementById("startButton").addEventListener("click", async () => {
         isRecording = true;
+        transcriptionFetched = false; // Reset the flag when starting a new recording.
         document.getElementById("transcribeButton").disabled = true;
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -694,8 +700,9 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
         document.getElementById("startButton").disabled = false;
         document.getElementById("stopButton").disabled = true;
         document.getElementById("pauseResumeButton").disabled = true;
-        // If there are no pending chunks, update status immediately.
-        if (pendingChunks <= 0) {
+        // If there are no pending chunks and transcription hasn't been fetched,
+        // enable the transcribe button.
+        if (pendingChunks <= 0 && !transcriptionFetched) {
           document.getElementById("transcribeButton").disabled = false;
           updateStatusMessage("Ready to transcribe!", "green");
         }
@@ -729,7 +736,8 @@ Cliquez sur "Fonctions" pour revenir à l'interface principale.`
           if (result.compiled_transcription) {
             document.getElementById("transcription").value = result.compiled_transcription;
             updateStatusMessage("Transcription complete!", "green");
-            // Disable the transcribe button after fetching the transcription.
+            // Mark that transcription has been fetched and disable the transcribe button.
+            transcriptionFetched = true;
             document.getElementById("transcribeButton").disabled = true;
           } else {
             updateStatusMessage("No transcription available.", "red");

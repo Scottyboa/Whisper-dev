@@ -471,9 +471,9 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       }
       
       // Upload a given chunk (blob) with its chunk number and group id
-      async function uploadChunk(blob, currentChunkNumber) {
+      async function uploadChunk(blob, currentChunkNumber, extension, mimeType) {
         const formData = new FormData();
-        formData.append("file", blob, `chunk_${currentChunkNumber}.mp3`);
+        formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
         formData.append("group_id", groupId);
         formData.append("chunk_number", currentChunkNumber);
         
@@ -512,13 +512,21 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         
         // Create a single MediaRecorder instance for continuous recording
         mediaRecorder = new MediaRecorder(mediaStream);
-        // ondataavailable handler: wrap event.data in a new Blob with type 'audio/mp3'
+        // Save the actual MIME type used
+        let actualMimeType = mediaRecorder.mimeType || 'audio/mp3';
+        // ondataavailable handler: wrap event.data in a new Blob with the actual MIME type
         mediaRecorder.ondataavailable = async (event) => {
           if (event.data.size > 0) {
-            // Force the audio data to be in MP3 format
-            let audioBlob = new Blob([event.data], { type: 'audio/mp3' });
+            // Determine file extension based on the MIME type
+            let extension = 'mp3';
+            if(actualMimeType.indexOf("webm") !== -1) {
+              extension = "webm";
+            } else if(actualMimeType.indexOf("ogg") !== -1) {
+              extension = "ogg";
+            }
+            let audioBlob = new Blob([event.data], { type: actualMimeType });
             updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
-            await uploadChunk(audioBlob, chunkNumber);
+            await uploadChunk(audioBlob, chunkNumber, extension, actualMimeType);
             console.log(`Chunk ${chunkNumber} uploaded.`);
             chunkNumber++;
           }

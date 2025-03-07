@@ -476,18 +476,29 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         formData.append("file", blob, `chunk_${currentChunkNumber}.mp3`);
         formData.append("group_id", groupId);
         formData.append("chunk_number", currentChunkNumber);
+        
+        // Start the upload timer
+        let uploadStartTime = Date.now();
+        document.getElementById("uploadTimer").innerText = "Upload Timer: 0 sec";
+        let uploadTimerInterval = setInterval(() => {
+          let elapsed = Date.now() - uploadStartTime;
+          document.getElementById("uploadTimer").innerText = "Upload Timer: " + formatTime(elapsed);
+        }, 1000);
+        
         try {
           const response = await fetch(`${backendUrl}/upload`, {
             method: "POST",
             body: formData
           });
           const result = await response.json();
+          clearInterval(uploadTimerInterval);
           if (result.session_id) {
             console.log(`Chunk ${currentChunkNumber} uploaded. Session ID: ${result.session_id}`);
           } else {
             updateStatusMessage("Upload error on chunk " + currentChunkNumber + ": " + (result.error || "Unknown error"), "red");
           }
         } catch (error) {
+          clearInterval(uploadTimerInterval);
           updateStatusMessage("Error uploading chunk " + currentChunkNumber + ": " + error, "red");
         }
       }
@@ -501,19 +512,21 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         
         // Create a single MediaRecorder instance for continuous recording
         mediaRecorder = new MediaRecorder(mediaStream);
-        // Every 2 minutes (120000 ms), ondataavailable is fired with the recorded chunk
+        // ondataavailable handler: wrap event.data in a new Blob with type 'audio/mp3'
         mediaRecorder.ondataavailable = async (event) => {
           if (event.data.size > 0) {
+            // Force the audio data to be in MP3 format
+            let audioBlob = new Blob([event.data], { type: 'audio/mp3' });
             updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
-            await uploadChunk(event.data, chunkNumber);
+            await uploadChunk(audioBlob, chunkNumber);
             console.log(`Chunk ${chunkNumber} uploaded.`);
             chunkNumber++;
           }
-        };
-        mediaRecorder.onstop = () => {
-          updateStatusMessage("Recording stopped. Finalizing upload...", "green");
-          stopMicrophone();
-          document.getElementById("transcribeButton").disabled = false;
+          // If recorder is inactive (i.e., final chunk after stop), update the status
+          if (mediaRecorder.state === "inactive") {
+            updateStatusMessage("Upload complete! You may now transcribe.", "green");
+            document.getElementById("transcribeButton").disabled = false;
+          }
         };
         // Start recording with timeslice set to 120000 ms (2 minutes)
         mediaRecorder.start(120000);

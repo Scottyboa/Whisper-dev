@@ -422,22 +422,19 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       })();
       
       /* --------------------------
-         Chunked Recording Logic & Transcription Functionality
+         Continuous Chunked Recording Logic & Transcription Functionality
          -------------------------- */
       
       // Define the backend URL
       const backendUrl = "https://whisper-dev-backend.fly.dev";
       
-      // Global variables for chunked recording
+      // Global variables for continuous recording
       let mediaRecorder;
       let mediaStream = null;
-      let audioChunks = [];
       let recordingStartTime = 0;
       let recordingTimerInterval;
-      let uploadTimerInterval;
       let groupId = null;
-      let chunkNumber = 0;
-      let autoChunkTimer = null;
+      let chunkNumber = 1;
       let manualStop = false;  // true if user manually stops the overall recording
       
       // Update status message
@@ -465,12 +462,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("recordTimer").innerText = "Recording Timer: " + formatTime(elapsed);
       }
       
-      // Update upload timer display
-      function updateUploadTimer() {
-        let elapsed = Date.now() - uploadStartTime;
-        document.getElementById("uploadTimer").innerText = "Upload Timer: " + formatTime(elapsed);
-      }
-      
       // Stop microphone
       function stopMicrophone() {
         if (mediaStream) {
@@ -479,84 +470,65 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // Start a new recording chunk
-      function startNewChunk() {
-        audioChunks = [];
-        recordingStartTime = Date.now();
-        // Start recording timer
-        clearInterval(recordingTimerInterval);
-        updateRecordingTimer();
-        recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-        
-        // Create new MediaRecorder instance for the current chunk
-        mediaRecorder = new MediaRecorder(mediaStream);
-        mediaRecorder.ondataavailable = event => {
-          if (event.data.size > 0) {
-            audioChunks.push(event.data);
-          }
-        };
-        mediaRecorder.onstop = handleStop;
-        mediaRecorder.start();
-        
-        // Set auto-stop timer for 10 minutes (600,000 ms)
-        autoChunkTimer = setTimeout(() => {
-          console.log("Auto chunk stop reached for chunk " + chunkNumber);
-          mediaRecorder.stop();
-        }, 600000);
-        
-        updateStatusMessage(`Recording chunk ${chunkNumber} in progress...`, "red");
-        document.getElementById("recordIndicator").style.backgroundColor = "red";
-      }
-      
-      // Handle recording stop and upload the current chunk
-      async function handleStop() {
-        clearInterval(recordingTimerInterval);
-        updateStatusMessage(`Uploading chunk ${chunkNumber}... Please wait.`, "blue");
-      
-        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+      // Upload a given chunk (blob) with its chunk number and group id
+      async function uploadChunk(blob, currentChunkNumber) {
         const formData = new FormData();
-        formData.append("file", audioBlob, `chunk_${chunkNumber}.mp3`);
+        formData.append("file", blob, `chunk_${currentChunkNumber}.mp3`);
         formData.append("group_id", groupId);
-        formData.append("chunk_number", chunkNumber);
-      
-        uploadStartTime = Date.now();
-        document.getElementById("uploadTimer").innerText = "Upload Timer: 0 sec";
-        uploadTimerInterval = setInterval(updateUploadTimer, 1000);
-      
+        formData.append("chunk_number", currentChunkNumber);
         try {
           const response = await fetch(`${backendUrl}/upload`, {
             method: "POST",
             body: formData
           });
           const result = await response.json();
-          clearInterval(uploadTimerInterval);
-      
           if (result.session_id) {
-            console.log(`Chunk ${chunkNumber} uploaded. Session ID: `, result.session_id);
-            if (manualStop) {
-              updateStatusMessage("Upload complete! You may now start transcribing.", "green");
-              document.getElementById("transcribeButton").disabled = false;
-              stopMicrophone();
-            } else {
-              chunkNumber++;
-              startNewChunk();
-            }
+            console.log(`Chunk ${currentChunkNumber} uploaded. Session ID: ${result.session_id}`);
           } else {
-            updateStatusMessage("Upload error: " + (result.error || "Unknown error"), "red");
+            updateStatusMessage("Upload error on chunk " + currentChunkNumber + ": " + (result.error || "Unknown error"), "red");
           }
         } catch (error) {
-          updateStatusMessage("Error uploading file: " + error, "red");
+          updateStatusMessage("Error uploading chunk " + currentChunkNumber + ": " + error, "red");
         }
       }
       
-      // Start Button Event: Initialize group and start first chunk
+      // Start continuous recording with automatic 2-minute slicing
+      function startContinuousRecording() {
+        recordingStartTime = Date.now();
+        clearInterval(recordingTimerInterval);
+        updateRecordingTimer();
+        recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+        
+        // Create a single MediaRecorder instance for continuous recording
+        mediaRecorder = new MediaRecorder(mediaStream);
+        // Every 2 minutes (120000 ms), ondataavailable is fired with the recorded chunk
+        mediaRecorder.ondataavailable = async (event) => {
+          if (event.data.size > 0) {
+            updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
+            await uploadChunk(event.data, chunkNumber);
+            console.log(`Chunk ${chunkNumber} uploaded.`);
+            chunkNumber++;
+          }
+        };
+        mediaRecorder.onstop = () => {
+          updateStatusMessage("Recording stopped. Finalizing upload...", "green");
+          stopMicrophone();
+          document.getElementById("transcribeButton").disabled = false;
+        };
+        // Start recording with timeslice set to 120000 ms (2 minutes)
+        mediaRecorder.start(120000);
+        updateStatusMessage("Recording started...", "red");
+        document.getElementById("recordIndicator").style.backgroundColor = "red";
+      }
+      
+      // Start Button Event: Initialize group and start continuous recording
       document.getElementById("startButton").addEventListener("click", async () => {
         manualStop = false;
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
           groupId = Date.now().toString();
           chunkNumber = 1;
-          startNewChunk();
+          startContinuousRecording();
       
           document.getElementById("startButton").disabled = true;
           document.getElementById("stopButton").disabled = false;
@@ -570,9 +542,9 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       // Stop Button Event: User manually stops the overall recording
       document.getElementById("stopButton").addEventListener("click", () => {
         manualStop = true;
-        clearTimeout(autoChunkTimer);
         if (mediaRecorder && mediaRecorder.state !== "inactive") {
           mediaRecorder.stop();
+          clearInterval(recordingTimerInterval);
           document.getElementById("startButton").disabled = false;
           document.getElementById("stopButton").disabled = true;
           document.getElementById("pauseResumeButton").disabled = true;
@@ -606,7 +578,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       
         updateStatusMessage("Transcription in progress...", "blue");
         const transcriptionStart = Date.now();
-        transcriptionTimerInterval = setInterval(() => {
+        const transcriptionTimerInterval = setInterval(() => {
           document.getElementById("transcribeTimer").innerText = "Transcription Timer: " + Math.floor((Date.now() - transcriptionStart) / 1000) + " s";
         }, 1000);
       

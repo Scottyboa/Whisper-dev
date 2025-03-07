@@ -422,20 +422,17 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       })();
       
       /* --------------------------
-         Continuous Chunked Recording Logic & Transcription Functionality
+         Dual-Recorder (Ping-Pong) Continuous Recording Logic & Transcription Functionality
          -------------------------- */
       
-      // Define the backend URL
-      const backendUrl = "https://whisper-dev-backend.fly.dev";
-      
-      // Global variables for continuous recording
-      let mediaRecorder;
+      // Global variables for recording
       let mediaStream = null;
       let recordingStartTime = 0;
       let recordingTimerInterval;
       let groupId = null;
       let chunkNumber = 1;
       let manualStop = false;  // true if user manually stops the overall recording
+      let activeRecorder = null;
       
       // Update status message
       function updateStatusMessage(message, color = "#333") {
@@ -503,21 +500,23 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // Start continuous recording with automatic 2-minute slicing
-      function startContinuousRecording() {
+      // Start ping-pong recording: each chunk is recorded by a fresh recorder instance.
+      function startPingPongRecording() {
         recordingStartTime = Date.now();
         clearInterval(recordingTimerInterval);
         updateRecordingTimer();
         recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-        
-        // Create a single MediaRecorder instance for continuous recording
-        mediaRecorder = new MediaRecorder(mediaStream);
-        // Save the actual MIME type used
-        let actualMimeType = mediaRecorder.mimeType || 'audio/mp3';
-        // ondataavailable handler: wrap event.data in a new Blob with the actual MIME type
-        mediaRecorder.ondataavailable = async (event) => {
+        startNewRecorder();
+        updateStatusMessage("Recording started...", "red");
+        document.getElementById("recordIndicator").style.backgroundColor = "red";
+      }
+      
+      // Start a new recorder instance and schedule its stop after 2 minutes.
+      function startNewRecorder() {
+        activeRecorder = new MediaRecorder(mediaStream);
+        activeRecorder.ondataavailable = async (event) => {
           if (event.data.size > 0) {
-            // Determine file extension based on the MIME type
+            let actualMimeType = activeRecorder.mimeType || 'audio/mp3';
             let extension = 'mp3';
             if(actualMimeType.indexOf("webm") !== -1) {
               extension = "webm";
@@ -530,26 +529,34 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
             console.log(`Chunk ${chunkNumber} uploaded.`);
             chunkNumber++;
           }
-          // If recorder is inactive (i.e., final chunk after stop), update the status
-          if (mediaRecorder.state === "inactive") {
+          // When this recorder finishes, if not manually stopped, start a new recorder immediately.
+          if (!manualStop) {
+            startNewRecorder();
+          } else {
             updateStatusMessage("Upload complete! You may now transcribe.", "green");
             document.getElementById("transcribeButton").disabled = false;
           }
         };
-        // Start recording with timeslice set to 120000 ms (2 minutes)
-        mediaRecorder.start(120000);
-        updateStatusMessage("Recording started...", "red");
-        document.getElementById("recordIndicator").style.backgroundColor = "red";
+        activeRecorder.start();
+        // Schedule stopping this recorder after 2 minutes (120000 ms)
+        setTimeout(() => {
+          if (activeRecorder && activeRecorder.state === "recording") {
+            activeRecorder.stop();
+          }
+        }, 120000);
       }
       
-      // Start Button Event: Initialize group and start continuous recording
+      // Define the backend URL
+      const backendUrl = "https://whisper-dev-backend.fly.dev";
+      
+      // Start Button Event: Initialize group and start ping-pong recording
       document.getElementById("startButton").addEventListener("click", async () => {
         manualStop = false;
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
           groupId = Date.now().toString();
           chunkNumber = 1;
-          startContinuousRecording();
+          startPingPongRecording();
       
           document.getElementById("startButton").disabled = true;
           document.getElementById("stopButton").disabled = false;
@@ -563,25 +570,25 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       // Stop Button Event: User manually stops the overall recording
       document.getElementById("stopButton").addEventListener("click", () => {
         manualStop = true;
-        if (mediaRecorder && mediaRecorder.state !== "inactive") {
-          mediaRecorder.stop();
+        if (activeRecorder && activeRecorder.state !== "inactive") {
+          activeRecorder.stop();
           clearInterval(recordingTimerInterval);
-          document.getElementById("startButton").disabled = false;
-          document.getElementById("stopButton").disabled = true;
-          document.getElementById("pauseResumeButton").disabled = true;
         }
+        document.getElementById("startButton").disabled = false;
+        document.getElementById("stopButton").disabled = true;
+        document.getElementById("pauseResumeButton").disabled = true;
       });
       
       // Pause/Resume Button Event
       document.getElementById("pauseResumeButton").addEventListener("click", () => {
-        if (!mediaRecorder) return;
-        if (mediaRecorder.state === "recording") {
-          mediaRecorder.pause();
+        if (!activeRecorder) return;
+        if (activeRecorder.state === "recording") {
+          activeRecorder.pause();
           clearInterval(recordingTimerInterval);
           document.getElementById("pauseResumeButton").innerText = "Resume Recording";
           updateStatusMessage("Recording paused", "orange");
-        } else if (mediaRecorder.state === "paused") {
-          mediaRecorder.resume();
+        } else if (activeRecorder.state === "paused") {
+          activeRecorder.resume();
           recordingStartTime = Date.now();
           recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
           document.getElementById("pauseResumeButton").innerText = "Pause Recording";

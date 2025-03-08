@@ -514,7 +514,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       // Start a new recorder instance and schedule its stop after 2 minutes.
       function startNewRecorder() {
         activeRecorder = new MediaRecorder(mediaStream);
-        activeRecorder.ondataavailable = async (event) => {
+        activeRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             let actualMimeType = activeRecorder.mimeType || 'audio/mp3';
             let extension = 'mp3';
@@ -525,8 +525,15 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
             }
             let audioBlob = new Blob([event.data], { type: actualMimeType });
             updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
-            await uploadChunk(audioBlob, chunkNumber, extension, actualMimeType);
-            console.log(`Chunk ${chunkNumber} uploaded.`);
+            
+            // Fire-and-forget upload: start upload without waiting before starting the next recorder.
+            uploadChunk(audioBlob, chunkNumber, extension, actualMimeType)
+              .then(() => {
+                console.log(`Chunk ${chunkNumber} uploaded.`);
+              })
+              .catch((err) => {
+                console.error(`Upload error for chunk ${chunkNumber}:`, err);
+              });
             chunkNumber++;
           }
           // When this recorder finishes, if not manually stopped, start a new recorder immediately.
@@ -614,7 +621,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           const response = await fetch(`${backendUrl}/transcribe`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ api_key: storedApiKey, session_id: groupId })
+            body: JSON.stringify({ session_id: groupId, api_key: storedApiKey })
           });
           const result = await response.json();
           clearInterval(transcriptionTimerInterval);

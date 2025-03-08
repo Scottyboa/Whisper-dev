@@ -292,7 +292,7 @@
           customPromptPlaceholder: "Enter custom prompt here",
           adUnitText: "Your Ad Here",
           guideHeading: "Guide & Instructions",
-          guideText: Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
+          guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
 <br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
@@ -302,7 +302,7 @@
   <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
   <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide. The guide appears as an overlay and does not disturb the underlying layout.</li>
 </ul>
-Please click "Functions" to return to the main interface.
+Please click "Functions" to return to the main interface.`
         },
         no: {
           pageTitle: "Transkripsjonsverktøy med annonser og veiledningsoverlegg",
@@ -328,7 +328,7 @@ Please click "Functions" to return to the main interface.
           customPromptPlaceholder: "Skriv inn tilpasset melding her",
           adUnitText: "Din annonse her",
           guideHeading: "Veiledning og Instruksjoner",
-          guideText: Velkommen til Whisper Transkripsjonsverktøy. Denne applikasjonen lar medisinske fagpersoner, terapeuter og andre utøvere ta opp og transkribere konsultasjoner, samt generere profesjonelle notater ved hjelp av en AI-drevet notatgenerator.
+          guideText: `Velkommen til Whisper Transkripsjonsverktøy. Denne applikasjonen lar medisinske fagpersoner, terapeuter og andre utøvere ta opp og transkribere konsultasjoner, samt generere profesjonelle notater ved hjelp av en AI-drevet notatgenerator.
 <br><br>
 <strong>Slik bruker du verktøyet:</strong>
 <ul>
@@ -338,7 +338,7 @@ Please click "Functions" to return to the main interface.
   <li><strong>Tilpasset melding:</strong> Velg et meldingsfelt (1–10) og skriv inn din tilpassede melding. Meldingen lagres automatisk og knyttes til din API-nøkkel.</li>
   <li><strong>Veiledning:</strong> Bruk knappene "Funksjoner" og "Veiledning" for å bytte mellom verktøysgrensesnittet og denne veiledningen.</li>
 </ul>
-Klikk "Funksjoner" for å gå tilbake til hovedskjermen.
+Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       };
       
@@ -470,7 +470,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.
       // Upload a given chunk (blob) with its chunk number and group id
       async function uploadChunk(blob, currentChunkNumber, extension, mimeType) {
         const formData = new FormData();
-        formData.append("file", blob, chunk_${currentChunkNumber}.${extension});
+        formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
         formData.append("group_id", groupId);
         formData.append("chunk_number", currentChunkNumber);
         
@@ -483,14 +483,14 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.
         }, 1000);
         
         try {
-          const response = await fetch(${backendUrl}/upload, {
+          const response = await fetch(`${backendUrl}/upload`, {
             method: "POST",
             body: formData
           });
           const result = await response.json();
           clearInterval(uploadTimerInterval);
           if (result.session_id) {
-            console.log(Chunk ${currentChunkNumber} uploaded. Session ID: ${result.session_id});
+            console.log(`Chunk ${currentChunkNumber} uploaded. Session ID: ${result.session_id}`);
           } else {
             updateStatusMessage("Upload error on chunk " + currentChunkNumber + ": " + (result.error || "Unknown error"), "red");
           }
@@ -524,9 +524,9 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.
               extension = "ogg";
             }
             let audioBlob = new Blob([event.data], { type: actualMimeType });
-            updateStatusMessage(Uploading chunk ${chunkNumber}..., "blue");
+            updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
             await uploadChunk(audioBlob, chunkNumber, extension, actualMimeType);
-            console.log(Chunk ${chunkNumber} uploaded.);
+            console.log(`Chunk ${chunkNumber} uploaded.`);
             chunkNumber++;
           }
           // When this recorder finishes, if not manually stopped, start a new recorder immediately.
@@ -611,7 +611,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.
         }, 1000);
       
         try {
-          const response = await fetch(${backendUrl}/transcribe, {
+          const response = await fetch(`${backendUrl}/transcribe`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ api_key: storedApiKey, session_id: groupId })

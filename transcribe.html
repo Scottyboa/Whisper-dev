@@ -467,11 +467,11 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // Upload a given chunk with an optional last chunk marker.
-      async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false) {
+      // Modified uploadChunk to accept a captured group id
+      async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
         const formData = new FormData();
         formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
-        formData.append("group_id", groupId);
+        formData.append("group_id", currentGroup);
         formData.append("chunk_number", currentChunkNumber);
         formData.append("api_key", sessionStorage.getItem("openai_api_key"));
         if (isLast) {
@@ -547,7 +547,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("transcription").value = combinedTranscript.trim();
       }
       
-      // Start ping-pong recording: set timer and start a new recorder instance.
+      // Start recording (timeslice method) with ping-pong timer logic.
       function startPingPongRecording() {
         recordingStartTime = Date.now();
         clearInterval(recordingTimerInterval);
@@ -562,14 +562,15 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       function startNewRecorder() {
         activeRecorder = new MediaRecorder(mediaStream);
         activeRecorder.ondataavailable = (event) => {
-          // For timeslice method, we always process the chunk.
+          // Capture the current groupID in a local variable.
+          const currentGroup = groupId;
           let actualMimeType = activeRecorder.mimeType || 'audio/mp3';
           let extension = (actualMimeType.indexOf("webm") !== -1) ? "webm" : ((actualMimeType.indexOf("ogg") !== -1) ? "ogg" : "mp3");
           let audioBlob = new Blob([event.data], { type: actualMimeType });
           
           if (manualStop) {
             updateStatusMessage(`Uploading final chunk ${chunkNumber}...`, "blue");
-            uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, true)
+            uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, true, currentGroup)
               .then(result => {
                 if (result && result.session_id) {
                   console.log(`Final chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);
@@ -587,7 +588,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
             return;
           }
           updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
-          uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, false)
+          uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, false, currentGroup)
             .then(result => {
               if (result && result.session_id) {
                 console.log(`Chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);

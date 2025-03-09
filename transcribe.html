@@ -421,14 +421,16 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
          Recording & Polling Logic (Timeslice Method)
          -------------------------- */
       
-      // Global variables for recording
+      // Global variables for recording and timer
       let mediaStream = null;
-      let groupId = null;  // Set once at the start of the session
+      let groupId = null;  // Set once at the start of the session and preserved until a new session
       let chunkNumber = 1;
       let manualStop = false;
       let activeRecorder = null;
       let transcriptChunks = {};  // Holds transcript for each chunk
       let pollingIntervals = {};  // Holds polling intervals for each chunk
+      let recordingStartTime = null;
+      let recordingTimerInterval = null;
       
       function updateStatusMessage(message, color = "#333") {
         const statusMessage = document.getElementById("statusMessage");
@@ -436,7 +438,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         statusMessage.style.color = color;
       }
       
-      // Format time utility remains unchanged.
       function formatTime(ms) {
         const totalSec = Math.floor(ms / 1000);
         if (totalSec < 60) {
@@ -445,6 +446,13 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           const minutes = Math.floor(totalSec / 60);
           const seconds = totalSec % 60;
           return minutes + " min" + (seconds > 0 ? " " + seconds + " sec" : "");
+        }
+      }
+      
+      function updateRecordingTimer() {
+        if (recordingStartTime) {
+          const elapsed = Date.now() - recordingStartTime;
+          document.getElementById("recordTimer").innerText = "Recording Timer: " + formatTime(elapsed);
         }
       }
       
@@ -516,9 +524,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
               transcriptChunks[chunkNum] = data.transcript;
               updateTranscriptionOutput();
               clearInterval(pollingIntervals[chunkNum]);
-              if (finalChunkNumber && chunkNum === finalChunkNumber) {
-                updateStatusMessage("Transcription finished!", "green");
-              }
+              // If needed, you could check for the final chunk here.
             } else {
               console.log(`Chunk ${chunkNum} transcript not ready yet.`);
             }
@@ -586,6 +592,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         pollingIntervals = {};
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          recordingStartTime = Date.now();
+          recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
           startNewRecorder();
       
           document.getElementById("startButton").disabled = true;
@@ -607,11 +615,11 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           mediaStream.getTracks().forEach(track => track.stop());
           mediaStream = null;
         }
+        clearInterval(recordingTimerInterval);
         document.getElementById("startButton").disabled = false;
         document.getElementById("stopButton").disabled = true;
         document.getElementById("pauseResumeButton").disabled = true;
-        // Reset groupId for the next new recording session.
-        groupId = null;
+        // Note: We no longer reset groupId here so that pending uploads use the correct session ID.
       });
       
       // Pause/Resume Button: Acts as "Stop current chunk" and then "Resume Recording" for the same session.

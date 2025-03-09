@@ -264,10 +264,10 @@
     <button id="cmp-manage">Manage</button>
   </div>
   <script>
-    // Define backend URL.
+    // Define the backend URL.
     const backendUrl = "https://whisper-dev-backend.fly.dev";
 
-    // Frontend keep-alive.
+    // Start frontend keep-alive.
     function startFrontendKeepAlive() {
       setInterval(() => {
         fetch(`${backendUrl}/frontend-keepalive`, { method: "GET" })
@@ -293,6 +293,7 @@
       const statusMessage = document.getElementById("statusMessage");
       statusMessage.innerText = message;
       statusMessage.style.color = color;
+      console.log("Status:", message);
     }
 
     // Utility: Format time.
@@ -394,7 +395,7 @@
         } else {
           updateStatusMessage("Upload complete!", "green");
           document.getElementById("transcribeButton").disabled = false;
-          // Optionally, close the SSE stream here if desired:
+          // Optionally, close the SSE stream if desired.
           // eventSource.close();
         }
       };
@@ -409,9 +410,15 @@
     // Start the SSE stream for transcription.
     function startSSEStream() {
       transcriptionChunks = {};  // Clear previous chunks.
-      eventSource = new EventSource(`${backendUrl}/transcription_stream?group_id=${groupId}`);
+      const sseUrl = `${backendUrl}/transcription_stream?group_id=${groupId}`;
+      console.log("Starting SSE stream with URL:", sseUrl);
+      eventSource = new EventSource(sseUrl);
+      eventSource.onopen = function(e) {
+        console.log("SSE connection opened.");
+      };
       eventSource.onmessage = function(e) {
         const dataString = e.data.trim();
+        console.log("SSE message received:", dataString);
         if (dataString === "heartbeat") return;  // Ignore heartbeat messages.
         try {
           const data = JSON.parse(dataString);
@@ -506,7 +513,7 @@
       }
     });
 
-    // Multi-language & Consent Banner Logic
+    // Multi-language & Consent Banner Logic.
     const transcribeTranslations = {
       en: {
         pageTitle: "Transcription Tool with Ads and Guide Overlay",

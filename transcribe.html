@@ -485,6 +485,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
         formData.append("group_id", groupId);
         formData.append("chunk_number", currentChunkNumber);
+        // Append the API key from session storage.
+        formData.append("api_key", sessionStorage.getItem("openai_api_key"));
         if (isLast) {
           formData.append("last_chunk", "true");
         }

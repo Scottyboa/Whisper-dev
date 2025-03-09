@@ -435,6 +435,9 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       let transcriptChunks = {};  // Holds transcript for each chunk
       let pollingIntervals = {};  // Holds polling intervals for each chunk
       
+      // Set a minimum size threshold (in bytes) to filter out empty blobs.
+      const MIN_SIZE_THRESHOLD = 1024;
+      
       // Update status message utility
       function updateStatusMessage(message, color = "#333") {
         const statusMessage = document.getElementById("statusMessage");
@@ -564,58 +567,56 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       function startNewRecorder() {
         activeRecorder = new MediaRecorder(mediaStream);
         activeRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            // Final chunk processing: if manualStop is true and we've not processed a final chunk yet.
-            if (manualStop) {
-              if (finalChunkProcessed) {
-                return; // Ignore extra final events.
-              }
-              let actualMimeType = activeRecorder.mimeType || 'audio/mp3';
-              let extension = (actualMimeType.indexOf("webm") !== -1) ? "webm" : ((actualMimeType.indexOf("ogg") !== -1) ? "ogg" : "mp3");
-              let audioBlob = new Blob([event.data], { type: actualMimeType });
-              updateStatusMessage(`Uploading final chunk ${chunkNumber}...`, "blue");
-              uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, true)
-                .then(result => {
-                  if (result && result.session_id) {
-                    console.log(`Final chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);
-                    pollChunkTranscript(chunkNumber);
-                  } else {
-                    console.log(`Final chunk ${chunkNumber} upload did not return a session ID; skipping polling.`);
-                  }
-                })
-                .catch(err => {
-                  console.error(`Upload error for final chunk ${chunkNumber}:`, err);
-                });
-              finalChunkProcessed = true;
-              finalChunkNumber = chunkNumber;
-              updateStatusMessage("Fetching/completing...", "blue");
+          // Ignore very small blobs.
+          if (event.data.size < MIN_SIZE_THRESHOLD) {
+            return;
+          }
+          if (manualStop) {
+            // Process final chunk only once.
+            if (finalChunkProcessed) {
               return;
             }
-            // Normal chunk processing
             let actualMimeType = activeRecorder.mimeType || 'audio/mp3';
             let extension = (actualMimeType.indexOf("webm") !== -1) ? "webm" : ((actualMimeType.indexOf("ogg") !== -1) ? "ogg" : "mp3");
             let audioBlob = new Blob([event.data], { type: actualMimeType });
-            updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
-            uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, false)
+            updateStatusMessage(`Uploading final chunk ${chunkNumber}...`, "blue");
+            uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, true)
               .then(result => {
                 if (result && result.session_id) {
-                  console.log(`Chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);
+                  console.log(`Final chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);
                   pollChunkTranscript(chunkNumber);
                 } else {
-                  console.log(`Chunk ${chunkNumber} upload did not return a session ID; skipping polling.`);
+                  console.log(`Final chunk ${chunkNumber} upload did not return a session ID; skipping polling.`);
                 }
               })
               .catch(err => {
-                console.error(`Upload error for chunk ${chunkNumber}:`, err);
+                console.error(`Upload error for final chunk ${chunkNumber}:`, err);
               });
-            chunkNumber++;
-          }
-          if (!manualStop) {
-            startNewRecorder();
-          } else {
-            finalChunkNumber = chunkNumber - 1;
+            finalChunkProcessed = true;
+            finalChunkNumber = chunkNumber;
             updateStatusMessage("Fetching/completing...", "blue");
+            return;
           }
+          // Normal chunk processing.
+          let actualMimeType = activeRecorder.mimeType || 'audio/mp3';
+          let extension = (actualMimeType.indexOf("webm") !== -1) ? "webm" : ((actualMimeType.indexOf("ogg") !== -1) ? "ogg" : "mp3");
+          let audioBlob = new Blob([event.data], { type: actualMimeType });
+          updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
+          uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, false)
+            .then(result => {
+              if (result && result.session_id) {
+                console.log(`Chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);
+                pollChunkTranscript(chunkNumber);
+              } else {
+                console.log(`Chunk ${chunkNumber} upload did not return a session ID; skipping polling.`);
+              }
+            })
+            .catch(err => {
+              console.error(`Upload error for chunk ${chunkNumber}:`, err);
+            });
+          chunkNumber++;
+          // For normal chunks, start a new recorder instance immediately.
+          startNewRecorder();
         };
         activeRecorder.start();
         setTimeout(() => {

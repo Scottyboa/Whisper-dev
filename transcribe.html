@@ -418,26 +418,30 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       })();
       
       /* --------------------------
-         Recording & Polling Logic (Timeslice Method)
+         Recording & Polling Logic
          -------------------------- */
       
-      // Global variables for recording and timer
+      // Global variables for recording and polling
       let mediaStream = null;
-      let groupId = null;  // Set once at the start of the session and preserved until a new session
+      let recordingStartTime = 0;
+      let recordingTimerInterval;
+      let groupId = null;
       let chunkNumber = 1;
-      let manualStop = false;
+      let manualStop = false;  // True if user manually stops recording
       let activeRecorder = null;
+      let finalChunkNumber = null; // Will be set when recording is stopped
+      let finalChunkProcessed = false; // Ensure only one final chunk is processed
       let transcriptChunks = {};  // Holds transcript for each chunk
       let pollingIntervals = {};  // Holds polling intervals for each chunk
-      let recordingStartTime = null;
-      let recordingTimerInterval = null;
       
+      // Update status message utility
       function updateStatusMessage(message, color = "#333") {
         const statusMessage = document.getElementById("statusMessage");
         statusMessage.innerText = message;
         statusMessage.style.color = color;
       }
       
+      // Format time utility
       function formatTime(ms) {
         const totalSec = Math.floor(ms / 1000);
         if (totalSec < 60) {
@@ -449,21 +453,18 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
+      // Update recording timer display
       function updateRecordingTimer() {
-        if (recordingStartTime) {
-          const elapsed = Date.now() - recordingStartTime;
-          document.getElementById("recordTimer").innerText = "Recording Timer: " + formatTime(elapsed);
-        }
+        let elapsed = Date.now() - recordingStartTime;
+        document.getElementById("recordTimer").innerText = "Recording Timer: " + formatTime(elapsed);
       }
       
-      // Merge transcriptChunks in order and update the transcription textarea.
-      function updateTranscriptionOutput() {
-        let sortedKeys = Object.keys(transcriptChunks).map(Number).sort((a, b) => a - b);
-        let combinedTranscript = "";
-        sortedKeys.forEach(key => {
-          combinedTranscript += transcriptChunks[key] + " ";
-        });
-        document.getElementById("transcription").value = combinedTranscript.trim();
+      // Stop microphone
+      function stopMicrophone() {
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(track => track.stop());
+          mediaStream = null;
+        }
       }
       
       // Upload a given chunk with an optional last chunk marker.
@@ -504,7 +505,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // Polling function to fetch transcript for a specific chunk.
+      // Polling function to fetch transcript for a specific chunk
       function pollChunkTranscript(chunkNum) {
         const pollStartTime = Date.now();
         pollingIntervals[chunkNum] = setInterval(async () => {
@@ -524,7 +525,9 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
               transcriptChunks[chunkNum] = data.transcript;
               updateTranscriptionOutput();
               clearInterval(pollingIntervals[chunkNum]);
-              // If needed, you could check for the final chunk here.
+              if (finalChunkNumber && chunkNum === finalChunkNumber) {
+                updateStatusMessage("Transcription finished!", "green");
+              }
             } else {
               console.log(`Chunk ${chunkNum} transcript not ready yet.`);
             }
@@ -534,10 +537,32 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }, 2000);
       }
       
+      // Merge transcriptChunks in order and update the transcription textarea.
+      function updateTranscriptionOutput() {
+        let sortedKeys = Object.keys(transcriptChunks).map(Number).sort((a, b) => a - b);
+        let combinedTranscript = "";
+        sortedKeys.forEach(key => {
+          combinedTranscript += transcriptChunks[key] + " ";
+        });
+        document.getElementById("transcription").value = combinedTranscript.trim();
+      }
+      
+      // Start ping-pong recording: set timer and start a new recorder instance.
+      function startPingPongRecording() {
+        recordingStartTime = Date.now();
+        clearInterval(recordingTimerInterval);
+        updateRecordingTimer();
+        recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+        startNewRecorder();
+        updateStatusMessage("Recording...", "red");
+        document.getElementById("recordIndicator").style.backgroundColor = "red";
+      }
+      
       // Start a new recorder instance with timeslice functionality.
       function startNewRecorder() {
         activeRecorder = new MediaRecorder(mediaStream);
         activeRecorder.ondataavailable = (event) => {
+          // For timeslice method, we always process the chunk.
           let actualMimeType = activeRecorder.mimeType || 'audio/mp3';
           let extension = (actualMimeType.indexOf("webm") !== -1) ? "webm" : ((actualMimeType.indexOf("ogg") !== -1) ? "ogg" : "mp3");
           let audioBlob = new Blob([event.data], { type: actualMimeType });
@@ -549,27 +574,32 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
                 if (result && result.session_id) {
                   console.log(`Final chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);
                   pollChunkTranscript(chunkNumber);
+                } else {
+                  console.log(`Final chunk ${chunkNumber} upload did not return a session ID; skipping polling.`);
                 }
               })
               .catch(err => {
                 console.error(`Upload error for final chunk ${chunkNumber}:`, err);
               });
-          } else {
-            updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
-            uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, false)
-              .then(result => {
-                if (result && result.session_id) {
-                  console.log(`Chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);
-                  pollChunkTranscript(chunkNumber);
-                } else {
-                  console.log(`Chunk ${chunkNumber} upload did not return a session ID; skipping polling.`);
-                }
-              })
-              .catch(err => {
-                console.error(`Upload error for chunk ${chunkNumber}:`, err);
-              });
-            chunkNumber++;
+            finalChunkProcessed = true;
+            finalChunkNumber = chunkNumber;
+            updateStatusMessage("Fetching/completing...", "blue");
+            return;
           }
+          updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
+          uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, false)
+            .then(result => {
+              if (result && result.session_id) {
+                console.log(`Chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);
+                pollChunkTranscript(chunkNumber);
+              } else {
+                console.log(`Chunk ${chunkNumber} upload did not return a session ID; skipping polling.`);
+              }
+            })
+            .catch(err => {
+              console.error(`Upload error for chunk ${chunkNumber}:`, err);
+            });
+          chunkNumber++;
         };
         
         // Start the recorder with a timeslice of 2 minutes (120000ms).
@@ -580,21 +610,21 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       // Define the backend URL.
       const backendUrl = "https://whisper-dev-backend.fly.dev";
       
-      // Start Button: Initialize session and start recording.
+      // Start Button Event: Initialize session and start recording.
       document.getElementById("startButton").addEventListener("click", async () => {
         manualStop = false;
-        if (!groupId) {
-          groupId = Date.now().toString();
-        }
-        chunkNumber = 1;
+        finalChunkProcessed = false;
         transcriptChunks = {};
         Object.values(pollingIntervals).forEach(interval => clearInterval(interval));
         pollingIntervals = {};
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          recordingStartTime = Date.now();
-          recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-          startNewRecorder();
+          // Generate a new groupID if one isn't set.
+          if (!groupId) {
+            groupId = Date.now().toString();
+          }
+          chunkNumber = 1;
+          startPingPongRecording();
       
           document.getElementById("startButton").disabled = true;
           document.getElementById("stopButton").disabled = false;
@@ -605,33 +635,35 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       });
       
-      // Stop Button: End the entire recording session.
+      // Stop Button Event: User manually stops recording.
       document.getElementById("stopButton").addEventListener("click", () => {
         manualStop = true;
         if (activeRecorder && activeRecorder.state !== "inactive") {
           activeRecorder.stop();
+          clearInterval(recordingTimerInterval);
         }
-        if (mediaStream) {
-          mediaStream.getTracks().forEach(track => track.stop());
-          mediaStream = null;
-        }
-        clearInterval(recordingTimerInterval);
+        stopMicrophone();
         document.getElementById("startButton").disabled = false;
         document.getElementById("stopButton").disabled = true;
         document.getElementById("pauseResumeButton").disabled = true;
-        // Reset groupId so that each new recording gets its own session.
-        groupId = null; 
+        // Reset groupID so that the next recording gets a new session.
+        groupId = null;
       });
       
-      // Pause/Resume Button: Acts as "Stop current chunk" and then "Resume Recording" for the same session.
+      // Pause/Resume Button Event: Acts as "Stop current chunk" and then "Resume Recording" for the same session.
       document.getElementById("pauseResumeButton").addEventListener("click", () => {
         if (!activeRecorder) return;
         if (activeRecorder.state === "recording") {
-          activeRecorder.stop();
+          activeRecorder.pause();
+          clearInterval(recordingTimerInterval);
           document.getElementById("pauseResumeButton").innerText = "Resume Recording";
-        } else if (activeRecorder.state === "inactive") {
-          startNewRecorder();
+          updateStatusMessage("Recording paused", "orange");
+        } else if (activeRecorder.state === "paused") {
+          activeRecorder.resume();
+          recordingStartTime = Date.now();
+          recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
           document.getElementById("pauseResumeButton").innerText = "Pause Recording";
+          updateStatusMessage("Recording resumed", "green");
         }
       });
       

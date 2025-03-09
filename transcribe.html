@@ -479,12 +479,15 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // Upload a given chunk (blob) with its chunk number and group id
-      async function uploadChunk(blob, currentChunkNumber, extension, mimeType) {
+      // Upload a given chunk with an optional last chunk marker
+      async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false) {
         const formData = new FormData();
         formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
         formData.append("group_id", groupId);
         formData.append("chunk_number", currentChunkNumber);
+        if (isLast) {
+          formData.append("last_chunk", "true");
+        }
         
         // Start the upload timer
         let uploadStartTime = Date.now();
@@ -537,9 +540,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
             }
             let audioBlob = new Blob([event.data], { type: actualMimeType });
             updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
-            
-            // Fire-and-forget upload: start upload without waiting before starting the next recorder.
-            uploadChunk(audioBlob, chunkNumber, extension, actualMimeType)
+            // If manualStop is true, mark this chunk as the last chunk.
+            uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, manualStop)
               .then(() => {
                 console.log(`Chunk ${chunkNumber} uploaded.`);
               })
@@ -548,7 +550,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
               });
             chunkNumber++;
           }
-          // When this recorder finishes, if not manually stopped, start a new recorder immediately.
           if (!manualStop) {
             startNewRecorder();
           } else {

@@ -619,7 +619,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("startButton").disabled = false;
         document.getElementById("stopButton").disabled = true;
         document.getElementById("pauseResumeButton").disabled = true;
-        // Note: We no longer reset groupId here so that pending uploads use the correct session ID.
+        // Reset groupId so that each new recording gets its own session.
+        groupId = null; 
       });
       
       // Pause/Resume Button: Acts as "Stop current chunk" and then "Resume Recording" for the same session.

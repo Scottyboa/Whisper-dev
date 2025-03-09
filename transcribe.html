@@ -201,7 +201,7 @@
           <button id="startButton">Start Recording</button>
           <button id="stopButton" disabled>Stop Recording</button>
           <button id="pauseResumeButton" disabled>Pause Recording</button>
-          <!-- The Transcribe button is provided as a fallback -->
+          <!-- Fallback Transcribe button -->
           <button id="transcribeButton" disabled>Transcribe (Fallback)</button>
         </div>
         <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
@@ -248,11 +248,11 @@
       <br><br>
       <strong>How to Use the Functions:</strong>
       <ul>
-        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Use "Stop Recording" to end and upload your recording.</li>
+        <li><strong>Recording:</strong> Click "Start Recording" to capture audio. Use "Stop Recording" to end and upload your recording.</li>
         <li><strong>Transcription:</strong> Transcriptions are streamed live via SSE. If necessary, click "Transcribe (Fallback)" to fetch the final compiled transcript.</li>
-        <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcription and custom prompt.</li>
-        <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
-        <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between views.</li>
+        <li><strong>Note Generation:</strong> Click "Generate Note" to produce a note based on the transcription and your custom prompt.</li>
+        <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved locally and linked to your API key.</li>
+        <li><strong>Guide Toggle:</strong> Use "Functions" and "Guide" buttons to switch between views.</li>
       </ul>
       Please click "Functions" to return to the main interface.
     </p>
@@ -264,10 +264,10 @@
     <button id="cmp-manage">Manage</button>
   </div>
   <script>
-    // Define the backend URL.
+    // Define backend URL.
     const backendUrl = "https://whisper-dev-backend.fly.dev";
 
-    // Frontend Keep-Alive: Send a GET request every 10 seconds.
+    // Frontend keep-alive.
     function startFrontendKeepAlive() {
       setInterval(() => {
         fetch(`${backendUrl}/frontend-keepalive`, { method: "GET" })
@@ -277,7 +277,7 @@
     }
     startFrontendKeepAlive();
 
-    // Global variables for recording and SSE.
+    // Global variables.
     let mediaStream = null;
     let recordingStartTime = 0;
     let recordingTimerInterval;
@@ -286,7 +286,7 @@
     let manualStop = false;
     let activeRecorder = null;
     let eventSource = null;
-    let transcriptionChunks = {}; // To store received transcription chunks.
+    let transcriptionChunks = {}; // To store incoming chunks.
 
     // Utility: Update status message.
     function updateStatusMessage(message, color = "#333") {
@@ -295,7 +295,7 @@
       statusMessage.style.color = color;
     }
 
-    // Utility: Format elapsed time.
+    // Utility: Format time.
     function formatTime(ms) {
       const totalSec = Math.floor(ms / 1000);
       if (totalSec < 60) {
@@ -307,7 +307,7 @@
       }
     }
 
-    // Utility: Update recording timer display.
+    // Update recording timer.
     function updateRecordingTimer() {
       let elapsed = Date.now() - recordingStartTime;
       document.getElementById("recordTimer").innerText = "Recording Timer: " + formatTime(elapsed);
@@ -321,7 +321,7 @@
       }
     }
 
-    // Upload a given chunk with an optional last-chunk marker.
+    // Upload a chunk.
     async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false) {
       const formData = new FormData();
       formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
@@ -355,7 +355,7 @@
       }
     }
 
-    // Start ping-pong recording: each chunk is recorded by a fresh MediaRecorder.
+    // Start ping-pong recording.
     function startPingPongRecording() {
       recordingStartTime = Date.now();
       clearInterval(recordingTimerInterval);
@@ -366,7 +366,7 @@
       document.getElementById("recordIndicator").style.backgroundColor = "red";
     }
 
-    // Start a new recorder instance and schedule its stop after 2 minutes.
+    // Start a new recorder instance.
     function startNewRecorder() {
       activeRecorder = new MediaRecorder(mediaStream);
       activeRecorder.ondataavailable = (event) => {
@@ -394,7 +394,7 @@
         } else {
           updateStatusMessage("Upload complete!", "green");
           document.getElementById("transcribeButton").disabled = false;
-          // Optionally, close the SSE connection here if desired.
+          // Optionally, close the SSE stream here if desired:
           // eventSource.close();
         }
       };
@@ -406,19 +406,19 @@
       }, 120000);
     }
 
-    // Initialize SSE to stream transcription chunks.
+    // Start the SSE stream for transcription.
     function startSSEStream() {
-      // Clear previous transcription chunks.
-      transcriptionChunks = {};
+      transcriptionChunks = {};  // Clear previous chunks.
       eventSource = new EventSource(`${backendUrl}/transcription_stream?group_id=${groupId}`);
       eventSource.onmessage = function(e) {
-        if(e.data === "heartbeat") return;
+        const dataString = e.data.trim();
+        if (dataString === "heartbeat") return;  // Ignore heartbeat messages.
         try {
-          const data = JSON.parse(e.data);
+          const data = JSON.parse(dataString);
           const chunkNum = data.chunk_number;
           const transcript = data.transcript;
           transcriptionChunks[chunkNum] = transcript;
-          // Reassemble the transcription in numerical order.
+          // Reassemble transcript in sorted order.
           const sortedKeys = Object.keys(transcriptionChunks).map(Number).sort((a, b) => a - b);
           let finalTranscript = "";
           sortedKeys.forEach(key => {
@@ -434,7 +434,7 @@
       };
     }
 
-    // Start Button: Initialize media, start recording, and open SSE stream.
+    // Start button event: initialize media, recording, and SSE.
     document.getElementById("startButton").addEventListener("click", async () => {
       manualStop = false;
       try {
@@ -451,7 +451,7 @@
       }
     });
 
-    // Stop Button: Manually stop recording.
+    // Stop button event: manually stop recording.
     document.getElementById("stopButton").addEventListener("click", () => {
       manualStop = true;
       if (activeRecorder && activeRecorder.state !== "inactive") {
@@ -463,7 +463,7 @@
       document.getElementById("pauseResumeButton").disabled = true;
     });
 
-    // Pause/Resume Button: Toggle recording state.
+    // Pause/Resume button event.
     document.getElementById("pauseResumeButton").addEventListener("click", () => {
       if (!activeRecorder) return;
       if (activeRecorder.state === "recording") {
@@ -480,7 +480,7 @@
       }
     });
 
-    // Fallback Transcribe Button: Retrieve the compiled transcript.
+    // Fallback Transcribe button: fetch compiled transcript.
     document.getElementById("transcribeButton").addEventListener("click", async () => {
       const storedApiKey = sessionStorage.getItem("openai_api_key");
       if (!storedApiKey) {
@@ -617,7 +617,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       updateLanguageTranscribe(currentLangTranscribe);
     });
 
-    // Consent Banner & Cookie Management (Transcribe Page)
+    // Consent Banner & Cookie Management.
     function setCookieTranscribe(name, value, days) {
       var expires = "";
       if (days) {
@@ -658,8 +658,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         loadAdSenseTranscribe();
       }
     })();
-
-    // Custom Prompt and Note Generation Functionality
+    
+    // Custom Prompt and Note Generation.
     const promptSlotSelect = document.getElementById("promptSlot");
     const customPromptTextarea = document.getElementById("customPrompt");
     function hashString(str) {
@@ -696,8 +696,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       loadPromptForSlot(promptSlotSelect.value);
     });
     loadPromptForSlot(promptSlotSelect.value);
-
-    // Note Generation Event Listener.
+    
+    // Note Generation.
     document.getElementById("generateNoteButton").addEventListener("click", async () => {
       const transcriptionText = document.getElementById("transcription").value.trim();
       if (!transcriptionText) {

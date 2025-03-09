@@ -619,10 +619,9 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         pollingIntervals = {};
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          // Generate a new groupID if one isn't set.
-          if (!groupId) {
-            groupId = Date.now().toString();
-          }
+          // Always generate a new groupID for a new session.
+          groupId = Date.now().toString();
+          console.log("New groupID set:", groupId);
           chunkNumber = 1;
           startPingPongRecording();
       

@@ -547,7 +547,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("transcription").value = combinedTranscript.trim();
       }
       
-      // Start recording (timeslice method) with ping-pong timer logic.
+      // Start ping-pong recording: set timer and start a new recorder instance.
       function startPingPongRecording() {
         recordingStartTime = Date.now();
         clearInterval(recordingTimerInterval);
@@ -562,7 +562,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       function startNewRecorder() {
         activeRecorder = new MediaRecorder(mediaStream);
         activeRecorder.ondataavailable = (event) => {
-          // Capture the current groupID in a local variable.
+          // Capture the current session id in a local variable.
           const currentGroup = groupId;
           let actualMimeType = activeRecorder.mimeType || 'audio/mp3';
           let extension = (actualMimeType.indexOf("webm") !== -1) ? "webm" : ((actualMimeType.indexOf("ogg") !== -1) ? "ogg" : "mp3");

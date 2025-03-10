@@ -62,7 +62,6 @@
       font-family: 'Roboto', sans-serif;
       resize: none;
     }
-    /* Allow vertical resize for the transcription output field */
     #transcription {
       resize: vertical;
     }
@@ -246,8 +245,8 @@
       <br><br>
       <strong>How to Use the Functions:</strong>
       <ul>
-        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. For testing, the recorder will automatically stop after 10 seconds (mimicking a manual stop). When that happens, the system immediately restarts recording once the chunk upload completes—unless you click "Stop/Complete".</li>
-        <li><strong>Polling Transcription:</strong> Each finalized chunk is uploaded with the same groupID and a chunk number. The system polls the backend for transcripts using this groupID and assembles them in order.</li>
+        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is recorded in chunks using the MediaRecorder timeslice functionality, ensuring each chunk is a valid file by prepending header information from the first chunk.</li>
+        <li><strong>Polling Transcription:</strong> Each chunk is tagged with a groupID and chunk number, uploaded, and processed in a transcription queue on the backend. The frontend polls for each chunk's transcript and assembles them in order.</li>
         <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
         <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
         <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
@@ -294,8 +293,8 @@
 <br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
-  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. For testing, the recorder will automatically stop after 10 seconds (mimicking a manual stop). When that happens, the system immediately restarts recording once the chunk upload completes—unless you click "Stop/Complete".</li>
-  <li><strong>Polling Transcription:</strong> Each finalized chunk is uploaded with the same groupID and a chunk number. The system polls the backend for transcripts using this groupID and assembles them in order.</li>
+  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is recorded in chunks using the MediaRecorder timeslice functionality, ensuring each chunk is a valid file by prepending header information from the first chunk.</li>
+  <li><strong>Polling Transcription:</strong> Each chunk is tagged with a groupID and chunk number, uploaded, and processed in a transcription queue on the backend. The frontend polls for each chunk's transcript and assembles them in order.</li>
   <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
   <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
   <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
@@ -329,8 +328,8 @@ Please click "Functions" to return to the main interface.`
 <br><br>
 <strong>Slik bruker du verktøyet:</strong>
 <ul>
-  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Recorder stopper automatisk etter 10 sekunder (som simulerer et manuelt stopp). Når stop-hendelsen fyres, starter recorder umiddelbart opp igjen etter at chunken er lastet opp—med mindre du klikker "Stopp/Fullfør".</li>
-  <li><strong>Polling Transkripsjon:</strong> Hvert ferdigstilt chunk lastes opp med samme groupID og et chunk-nummer. Systemet spør backend etter transkripsjoner ved bruk av groupID og setter sammen resultatet i rekkefølge.</li>
+  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Lydopptak deles opp i biter med MediaRecorder timeslice, og hver bit gjøres til en gyldig fil ved at headeren fra den første biten legges til.</li>
+  <li><strong>Polling Transkripsjon:</strong> Hver bit merkes med en gruppe-ID og en bit-ID, lastes opp og behandles i en transkripsjonskø på backend. Frontend henter transkripsjoner for hver bit og setter dem sammen i rekkefølge.</li>
   <li><strong>Notatgenerering:</strong> Etter transkripsjonen, klikk "Generer notat" for å lage et notat basert på transkripsjonen og din tilpassede melding.</li>
   <li><strong>Tilpasset melding:</strong> Velg et meldingsfelt (1–10) og skriv inn din tilpassede melding. Meldingen lagres automatisk og knyttes til din API-nøkkel.</li>
   <li><strong>Veiledning:</strong> Bruk knappene "Funksjoner" og "Veiledning" for å bytte mellom verktøysgrensesnittet og denne veiledningen.</li>
@@ -429,7 +428,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       let activeRecorder = null;
       let transcriptChunks = {};
       let pollingIntervals = {};
-      let chunkTimeout = null;
+      let headerBuffer = null;  // Stores header from the first chunk
       
       function updateStatusMessage(message, color = "#333") {
         const statusMessage = document.getElementById("statusMessage");
@@ -533,81 +532,47 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("transcription").value = combinedTranscript.trim();
       }
       
-      // Recording cycle: auto-stop after 10 sec, then upload and restart immediately (unless manually stopped)
-      function startRecordingChunk() {
-        recordingStartTime = Date.now();
-        clearInterval(recordingTimerInterval);
-        updateRecordingTimer();
-        recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-        
-        activeRecorder = new MediaRecorder(mediaStream);
-        
-        // Attach ondataavailable handler and then detach it immediately after processing
-        activeRecorder.ondataavailable = (event) => {
-          // Only process non-empty data.
-          if (!event.data || event.data.size === 0) return;
-          // Detach handler to prevent duplicate processing.
-          activeRecorder.ondataavailable = null;
-          
-          const currentGroup = groupId;
-          let actualMimeType = activeRecorder.mimeType || 'audio/mp3';
-          let extension = (actualMimeType.indexOf("webm") !== -1) ? "webm" : ((actualMimeType.indexOf("ogg") !== -1) ? "ogg" : "mp3");
-          let audioBlob = new Blob([event.data], { type: actualMimeType });
-          
-          if (manualStop) {
-            updateStatusMessage(`Uploading final chunk ${chunkNumber}...`, "blue");
-            uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, true, currentGroup)
-              .then(result => {
-                if (result && result.session_id) {
-                  console.log(`Final chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);
-                  pollChunkTranscript(chunkNumber, currentGroup);
-                } else {
-                  console.log(`Final chunk ${chunkNumber} upload did not return a session ID; skipping polling.`);
-                }
-              })
-              .catch(err => console.error(`Upload error for final chunk ${chunkNumber}:`, err));
-            updateStatusMessage("Fetching/completing...", "blue");
+      // Process each MediaRecorder dataavailable event:
+      function processChunk(event) {
+        if (!event.data || event.data.size === 0) return;
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          const arrayBuffer = reader.result;
+          let completeBuffer;
+          if (chunkNumber === 1) {
+            // For the first chunk, store header (assumed 1024 bytes here) and use the chunk as-is.
+            headerBuffer = arrayBuffer.slice(0, 1024);
+            completeBuffer = arrayBuffer;
           } else {
-            updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
-            uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, false, currentGroup)
-              .then(result => {
-                if (result && result.session_id) {
-                  console.log(`Chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);
-                  pollChunkTranscript(chunkNumber, currentGroup);
-                } else {
-                  console.log(`Chunk ${chunkNumber} upload did not return a session ID; skipping polling.`);
-                }
-                // Restart recording immediately after a successful upload.
-                startRecordingChunk();
-              })
-              .catch(err => {
-                console.error(`Upload error for chunk ${chunkNumber}:`, err);
-                // Optionally restart even on error.
-                startRecordingChunk();
-              });
+            // For subsequent chunks, prepend the stored header.
+            const header = new Uint8Array(headerBuffer);
+            const chunkData = new Uint8Array(arrayBuffer);
+            completeBuffer = new Uint8Array(header.length + chunkData.length);
+            completeBuffer.set(header, 0);
+            completeBuffer.set(chunkData, header.length);
           }
+          const blob = new Blob([completeBuffer], { type: event.data.type });
+          let actualMimeType = event.data.type || "audio/webm";
+          let extension = (actualMimeType.indexOf("webm") !== -1) ? "webm" : "mp3";
+          // Upload this chunk and start polling for its transcript.
+          uploadChunk(blob, chunkNumber, extension, actualMimeType, manualStop, groupId)
+            .then(result => {
+              if (result && result.session_id) {
+                console.log(`Chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);
+                pollChunkTranscript(chunkNumber, groupId);
+              } else {
+                console.log(`Chunk ${chunkNumber} upload did not return a session ID; skipping polling.`);
+              }
+            })
+            .catch(err => console.error(`Upload error for chunk ${chunkNumber}:`, err));
           chunkNumber++;
         };
-        
-        activeRecorder.onstop = () => {
-          console.log('Recorder stopped. Finalization complete.');
-        };
-        
-        activeRecorder.start();
-        console.log("Recorder started. Will auto-stop in 10 seconds.");
-        
-        // Auto-stop the recorder after 10 seconds.
-        chunkTimeout = setTimeout(() => {
-          if (activeRecorder && activeRecorder.state === "recording") {
-            console.log("Auto-stop triggered.");
-            activeRecorder.stop();
-          }
-        }, 10000);
+        reader.readAsArrayBuffer(event.data);
       }
       
+      // Use MediaRecorder timeslice to record continuously in chunks.
       const backendUrl = "https://whisper-dev-backend.fly.dev";
       
-      // Start Button: Begin a new recording session.
       document.getElementById("startButton").addEventListener("click", async () => {
         manualStop = false;
         transcriptChunks = {};
@@ -616,9 +581,19 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
           groupId = Date.now().toString();
-          console.log("New groupID set:", groupId);
           chunkNumber = 1;
-          startRecordingChunk();
+          headerBuffer = null;
+          recordingStartTime = Date.now();
+          updateRecordingTimer();
+          recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+          
+          activeRecorder = new MediaRecorder(mediaStream, { mimeType: "audio/webm;codecs=opus" });
+          activeRecorder.ondataavailable = (event) => {
+            processChunk(event);
+          };
+          // Start recording with a timeslice of 15000 ms (15 seconds)
+          activeRecorder.start(15000);
+          console.log("MediaRecorder started with timeslice of 15 seconds.");
       
           document.getElementById("startButton").disabled = true;
           document.getElementById("stopButton").disabled = false;
@@ -629,13 +604,11 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       });
       
-      // Stop Button: User manually stops recording.
       document.getElementById("stopButton").addEventListener("click", () => {
         manualStop = true;
         if (activeRecorder && activeRecorder.state !== "inactive") {
           activeRecorder.stop();
           clearInterval(recordingTimerInterval);
-          clearTimeout(chunkTimeout);
         }
         stopMicrophone();
         document.getElementById("startButton").disabled = false;
@@ -644,13 +617,11 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         console.log("Recording stopped by user.");
       });
       
-      // Pause/Resume Button: Toggle pause/resume.
       document.getElementById("pauseResumeButton").addEventListener("click", () => {
         if (!activeRecorder) return;
         if (activeRecorder.state === "recording") {
           activeRecorder.pause();
           clearInterval(recordingTimerInterval);
-          clearTimeout(chunkTimeout);
           document.getElementById("pauseResumeButton").innerText = "Resume Recording";
           updateStatusMessage("Recording paused", "orange");
         } else if (activeRecorder.state === "paused") {
@@ -659,12 +630,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
           document.getElementById("pauseResumeButton").innerText = "Pause Recording";
           updateStatusMessage("Recording resumed", "green");
-          // Restart auto-stop timer on resume.
-          chunkTimeout = setTimeout(() => {
-            if (activeRecorder && activeRecorder.state === "recording") {
-              activeRecorder.stop();
-            }
-          }, 10000);
         }
       });
       

@@ -517,7 +517,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           // For multi-channel, we extract each plane and interleave them.
           if (numChannels === 1) {
             let channelData = new Float32Array(numFrames);
-            frame.copyTo(channelData, {});
+            frame.copyTo(channelData, { planeIndex: 0 });
             pcmDataArray.push(channelData);
           } else {
             let channelData = [];

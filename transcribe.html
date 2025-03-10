@@ -246,7 +246,7 @@
       <br><br>
       <strong>How to Use the Functions:</strong>
       <ul>
-        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. The recorder will automatically stop after 10 seconds (for testing). When the stop event fires (mimicking a manual stop), the recorder will wait 3 seconds and then resume recording in the same session—unless you click "Stop/Complete".</li>
+        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. For testing, the recorder will automatically stop after 10 seconds (mimicking a manual stop). When that happens, the system waits 3 seconds before resuming recording—unless you click "Stop/Complete".</li>
         <li><strong>Polling Transcription:</strong> Each finalized chunk is uploaded with the same groupID and a chunk number. The system polls the backend for transcripts using this groupID and assembles them in order.</li>
         <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
         <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
@@ -294,7 +294,7 @@
 <br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
-  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. The recorder will automatically stop after 10 seconds (for testing). When the stop event fires (mimicking a manual stop), the recorder will wait 3 seconds and then resume recording—unless you click "Stop/Complete".</li>
+  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. For testing, the recorder will automatically stop after 10 seconds (mimicking a manual stop). When that happens, the system waits 3 seconds before resuming recording—unless you click "Stop/Complete".</li>
   <li><strong>Polling Transcription:</strong> Each finalized chunk is uploaded with the same groupID and a chunk number. The system polls the backend for transcripts using this groupID and assembles them in order.</li>
   <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
   <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
@@ -329,7 +329,7 @@ Please click "Functions" to return to the main interface.`
 <br><br>
 <strong>Slik bruker du verktøyet:</strong>
 <ul>
-  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Recorder stopper automatisk etter 10 sekunder (for testing). Når stop-hendelsen fyres (som simulerer et manuelt stopp), venter recorder i 3 sekunder før den starter opp igjen—med mindre du klikker "Stopp/Fullfør".</li>
+  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Recorder stopper automatisk etter 10 sekunder (som simulerer et manuelt stopp). Når stop-hendelsen fyres, venter recorder i 3 sekunder før den starter opp igjen—med mindre du klikker "Stopp/Fullfør".</li>
   <li><strong>Polling Transkripsjon:</strong> Hvert ferdigstilt chunk lastes opp med samme groupID og et chunk-nummer. Systemet spør backend etter transkripsjoner ved bruk av groupID og setter sammen resultatet i rekkefølge.</li>
   <li><strong>Notatgenerering:</strong> Etter transkripsjonen, klikk "Generer notat" for å lage et notat basert på transkripsjonen og din tilpassede melding.</li>
   <li><strong>Tilpasset melding:</strong> Velg et meldingsfelt (1–10) og skriv inn din tilpassede melding. Meldingen lagres automatisk og knyttes til din API-nøkkel.</li>
@@ -533,8 +533,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("transcription").value = combinedTranscript.trim();
       }
       
-      // New mechanism: on auto-stop (every 10 sec for testing), mimic a manual stop,
-      // wait 3 sec, then restart recording (same session).
+      // New mechanism: On auto-stop (every 10 sec for testing), mimic a manual stop,
+      // wait 3 sec, then restart recording in the same session.
       function startRecordingChunk() {
         recordingStartTime = Date.now();
         clearInterval(recordingTimerInterval);
@@ -573,32 +573,31 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
                 }
               })
               .catch(err => console.error(`Upload error for chunk ${chunkNumber}:`, err));
-            chunkNumber++;
           }
+          // Increment chunkNumber for every ondataavailable event.
+          chunkNumber++;
         };
         
         activeRecorder.onstop = () => {
           console.log('Recorder stopped. Finalization complete.');
-          // If the stop was automatic (simulated manual stop), do nothing here.
-          // The restart will be handled by our timer's setTimeout.
         };
         
         activeRecorder.start();
         console.log("Recorder started. Waiting for 10 seconds before auto-stop.");
         
-        // Set a timer to mimic a manual stop after 10 seconds (for testing).
+        // Set timer to mimic a manual stop after 10 seconds (for testing).
         chunkTimeout = setTimeout(() => {
           if (activeRecorder && activeRecorder.state === "recording") {
             console.log("Auto-stop triggered. Mimicking manual stop...");
             manualStop = true;
             activeRecorder.stop();
-            // Wait 3 seconds before restarting, mimicking user behavior.
+            // Wait 3 seconds before restarting (mimicking manual behavior)
             setTimeout(() => {
               manualStop = false;
               startRecordingChunk();
-            }, 3000);
+            }, 3000); // Change this 3000 value to adjust the delay.
           }
-        }, 10000);
+        }, 10000); // 10 seconds for testing.
       }
       
       const backendUrl = "https://whisper-dev-backend.fly.dev";

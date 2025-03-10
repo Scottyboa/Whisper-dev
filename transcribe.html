@@ -6,7 +6,7 @@
   <title id="page-title-transcribe">Transcription Tool with Ads and Guide Overlay</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
   <style>
-    /* [Your existing styles remain unchanged] */
+    /* Base Styles */
     body {
       font-family: 'Roboto', sans-serif;
       background-color: #f8f8f8;
@@ -14,31 +14,140 @@
       margin: 0;
       padding: 0;
     }
-    .grid-container { display: grid; grid-template-columns: 250px 1fr 250px; height: 100vh; }
-    .sidebar { background-color: #e0e0e0; padding: 20px; display: flex; flex-direction: column; gap: 20px; position: relative; }
-    .sidebar button { font-size: 18px; padding: 15px; }
-    .main-content { padding: 20px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
-    .recording-area { border-bottom: 1px solid #ddd; padding-bottom: 20px; }
-    .timer { font-size: 18px; margin-bottom: 10px; color: #333; }
+    /* Grid Layout */
+    .grid-container {
+      display: grid;
+      grid-template-columns: 250px 1fr 250px;
+      height: 100vh;
+    }
+    /* Left Sidebar */
+    .sidebar {
+      background-color: #e0e0e0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+    }
+    .sidebar button {
+      font-size: 18px;
+      padding: 15px;
+    }
+    /* Main Content Area */
+    .main-content {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+    /* Recording Area (Top Half) */
+    .recording-area {
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 20px;
+    }
+    .timer {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    /* Auto-resizing Textareas */
     #transcription, #generatedNote, #customPrompt {
-      width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px;
-      font-size: 16px; box-sizing: border-box; margin-bottom: 20px; font-family: 'Roboto', sans-serif; resize: none;
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+      margin-bottom: 20px;
+      font-family: 'Roboto', sans-serif;
+      resize: none;
     }
     #transcription { resize: vertical; }
     #transcription, #generatedNote { min-height: 150px; }
     #customPrompt { min-height: 200px; }
-    button { background-color: #5a9; color: #fff; border: none; border-radius: 10px; padding: 12px 20px; font-size: 16px; cursor: pointer; transition: background-color 0.3s, transform 0.1s; margin: 10px; }
+    button {
+      background-color: #5a9;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.1s;
+      margin: 10px;
+    }
     button:hover { background-color: #489; }
     button:active { transform: scale(0.98); }
-    .bottom-half { display: flex; gap: 20px; flex: 1; }
-    .column { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-    .ad-sidebar { background-color: #e0e0e0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-    #adUnit { width: 100%; height: 200px; background-color: #ddd; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 10px; }
-    #guideView { display: none; position: fixed; top: 10%; left: 10%; width: 80%; height: 80%; background: white; border: 2px solid #ccc; padding: 20px; overflow-y: auto; z-index: 2000; }
+    /* Bottom Half: Two Columns */
+    .bottom-half {
+      display: flex;
+      gap: 20px;
+      flex: 1;
+    }
+    .column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    /* Right Sidebar (Ad Area) */
+    .ad-sidebar {
+      background-color: #e0e0e0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #adUnit {
+      width: 100%;
+      height: 200px;
+      background-color: #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    /* Guide Overlay */
+    #guideView {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      background: white;
+      border: 2px solid #ccc;
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 2000;
+    }
     #guideView.active { display: block; }
-    #lang-container-transcribe { position: absolute; bottom: 20px; left: 20px; display: flex; align-items: center; gap: 8px; }
+    /* Language Dropdown in Sidebar */
+    #lang-container-transcribe {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
     #lang-icon-transcribe { width: 28px; height: 28px; }
-    #cmp-banner { position: fixed; bottom: 0; left: 0; right: 0; background: #f8f8f8; border-top: 1px solid #ccc; padding: 20px; text-align: center; font-size: 16px; z-index: 1000; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
+    /* Consent Banner */
+    #cmp-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #f8f8f8;
+      border-top: 1px solid #ccc;
+      padding: 20px;
+      text-align: center;
+      font-size: 16px;
+      z-index: 1000;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    }
     #cmp-banner button { margin-left: 10px; padding: 8px 16px; }
   </style>
 </head>
@@ -67,8 +176,7 @@
         <h3 id="recordingAreaTitle">Recording Area</h3>
         <div id="recordIndicator" style="width:20px; height:20px; border-radius:50%; background-color:grey; margin:0 auto 10px;"></div>
         <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
-        <div id="uploadTimer" class="timer">Upload Timer: 0 sec</div>
-        <div id="transcribeTimer" class="timer">Transcription Timer: 0 sec</div>
+        <div id="transcribeTimer" class="timer">Completion Timer: 0 sec</div>
         <textarea id="transcription" placeholder="Transcription result will appear here..."></textarea>
         <div>
           <button id="startButton">Start Recording</button>
@@ -119,8 +227,8 @@
       <br><br>
       <strong>How to Use the Functions:</strong>
       <ul>
-        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for 15 seconds before being packaged as a self-contained WAV file.</li>
-        <li><strong>Polling Transcription:</strong> Each chunk is tagged with a groupID and chunk number, uploaded, and processed in a transcription queue on the backend. The frontend polls for each chunk's transcript and assembles them in order. After recording stops, a final poll ensures all available transcripts are displayed.</li>
+        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for 15 seconds before being packaged as a self-contained WAV file. A small overlap of the last 2 seconds is preserved between chunks to help prevent missing data.</li>
+        <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording timer stops and the system waits briefly to process any remaining audio before finishing transcription.</li>
         <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
         <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
         <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
@@ -147,8 +255,7 @@
           btnGuide: "Guide",
           recordingAreaTitle: "Recording Area",
           recordTimer: "Recording Timer: 0 sec",
-          uploadTimer: "Upload Timer: 0 sec",
-          transcribeTimer: "Transcription Timer: 0 sec",
+          transcribeTimer: "Completion Timer: 0 sec",
           transcriptionPlaceholder: "Transcription result will appear here...",
           startButton: "Start Recording",
           stopButton: "Stop/Complete",
@@ -167,8 +274,8 @@
 <br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
-  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for 15 seconds before being packaged as a self-contained WAV file.</li>
-  <li><strong>Polling Transcription:</strong> Each chunk is tagged with a groupID and chunk number, uploaded, and processed in a transcription queue on the backend. The frontend polls for each chunk's transcript and assembles them in order. After recording stops, a final poll ensures all available transcripts are displayed.</li>
+  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for 15 seconds before being packaged as a self-contained WAV file. A 2-second overlap between chunks is maintained.</li>
+  <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops and the system waits briefly to process remaining audio before finishing transcription.</li>
   <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
   <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
   <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
@@ -182,8 +289,7 @@ Please click "Functions" to return to the main interface.`
           btnGuide: "Veiledning",
           recordingAreaTitle: "Opptaksområde",
           recordTimer: "Opptakstimer: 0 sek",
-          uploadTimer: "Opplastningstimer: 0 sek",
-          transcribeTimer: "Transkripsjonstimer: 0 sek",
+          transcribeTimer: "Fullføringstimer: 0 sek",
           transcriptionPlaceholder: "Transkripsjonsresultatet vises her...",
           startButton: "Start opptak",
           stopButton: "Stopp/Fullfør",
@@ -202,8 +308,8 @@ Please click "Functions" to return to the main interface.`
 <br><br>
 <strong>Slik bruker du verktøyet:</strong>
 <ul>
-  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Lydopptak fanges via MediaStreamTrackProcessor (med WebCodecs) og akkumuleres i 15 sekunders biter, som deretter pakkes som gyldige WAV-filer.</li>
-  <li><strong>Polling Transkripsjon:</strong> Hver bit merkes med en gruppe-ID og en bit-ID, lastes opp og behandles i en transkripsjonskø på backend. Frontend henter transkripsjoner for hver bit og setter dem sammen i rekkefølge. Etter at opptaket stoppes, sikrer en siste polling at alle tilgjengelige transkripsjoner vises.</li>
+  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Lydopptak fanges via MediaStreamTrackProcessor (med WebCodecs) og akkumuleres i 15 sekunders biter før de pakkes som gyldige WAV-filer. Det beholdes en 2-sekunders overlapping mellom bitene.</li>
+  <li><strong>Fullføring:</strong> Etter at du klikker "Stopp/Fullfør", avsluttes opptaket og systemet venter kort for å behandle gjenstående lyd før transkripsjonen fullføres.</li>
   <li><strong>Notatgenerering:</strong> Etter transkripsjonen, klikk "Generer notat" for å lage et notat basert på transkripsjonen og din tilpassede melding.</li>
   <li><strong>Tilpasset melding:</strong> Velg et meldingsfelt (1–10) og skriv inn din tilpassede melding. Meldingen lagres automatisk og knyttes til din API-nøkkel.</li>
   <li><strong>Veiledning:</strong> Bruk knappene "Funksjoner" og "Veiledning" for å bytte mellom verktøysgrensesnittet og denne veiledningen.</li>
@@ -219,7 +325,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("btnGuide").textContent = transcribeTranslations[lang].btnGuide;
         document.getElementById("recordingAreaTitle").textContent = transcribeTranslations[lang].recordingAreaTitle;
         document.getElementById("recordTimer").textContent = transcribeTranslations[lang].recordTimer;
-        document.getElementById("uploadTimer").textContent = transcribeTranslations[lang].uploadTimer;
         document.getElementById("transcribeTimer").textContent = transcribeTranslations[lang].transcribeTimer;
         document.getElementById("transcription").setAttribute("placeholder", transcribeTranslations[lang].transcriptionPlaceholder);
         document.getElementById("startButton").textContent = transcribeTranslations[lang].startButton;
@@ -294,7 +399,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
          Recording & Polling Logic Using MediaStreamTrackProcessor & WebCodecs
          -------------------------- */
       let mediaStream = null;
-      let audioReader = null; // Added global variable for the reader.
+      let audioReader = null; // Global reader variable
       let recordingStartTime = 0;
       let recordingTimerInterval;
       let groupId = null;
@@ -381,12 +486,31 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       }
       
       // Process accumulated audio frames into a WAV blob and upload.
+      // Implements a 2-second overlap by retaining the last few frames.
       async function processAudioChunk() {
         if (audioFrames.length === 0) return;
-        const sampleRate = audioFrames[0].sampleRate;
-        const numChannels = audioFrames[0].numberOfChannels;
+        // Determine overlap: retain frames from the end totaling ~2 seconds.
+        let totalOverlap = 0;
+        let overlapIndex = audioFrames.length;
+        for (let i = audioFrames.length - 1; i >= 0; i--) {
+          const duration = audioFrames[i].numberOfFrames / audioFrames[i].sampleRate;
+          totalOverlap += duration;
+          if (totalOverlap >= 2.0) {
+            overlapIndex = i;
+            break;
+          }
+        }
+        let framesToProcess = audioFrames.slice(0, overlapIndex);
+        let framesToKeep = audioFrames.slice(overlapIndex);
+        // If no frames to process, simply return.
+        if (framesToProcess.length === 0) {
+          // In case the entire buffer is less than 2 seconds, do not process.
+          return;
+        }
+        const sampleRate = framesToProcess[0].sampleRate;
+        const numChannels = framesToProcess[0].numberOfChannels;
         let pcmDataArray = [];
-        for (let frame of audioFrames) {
+        for (let frame of framesToProcess) {
           const numFrames = frame.numberOfFrames;
           if (numChannels === 1) {
             let channelData = new Float32Array(numFrames);
@@ -418,7 +542,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
         let pcmInt16 = floatTo16BitPCM(pcmFloat32);
         let wavBlob = encodeWAV(pcmInt16, sampleRate, numChannels);
-        audioFrames = [];
+        // Instead of clearing all frames, retain the overlap for the next chunk.
+        audioFrames = framesToKeep;
         const mimeType = "audio/wav";
         const extension = "wav";
         const currentChunk = chunkNumber;
@@ -435,7 +560,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         chunkNumber++;
       }
       
-      // Upload function (duplicate logging removed)
+      // Upload function (upload timer removed)
       async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
         const formData = new FormData();
         formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
@@ -445,22 +570,14 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         if (isLast) {
           formData.append("last_chunk", "true");
         }
-        let uploadStartTime = Date.now();
-        document.getElementById("uploadTimer").innerText = "Upload Timer: 0 sec";
-        let uploadTimerInterval = setInterval(() => {
-          let elapsed = Date.now() - uploadStartTime;
-          document.getElementById("uploadTimer").innerText = "Upload Timer: " + formatTime(elapsed);
-        }, 1000);
         try {
           const response = await fetch(`${backendUrl}/upload`, {
             method: "POST",
             body: formData
           });
           const result = await response.json();
-          clearInterval(uploadTimerInterval);
           return result;
         } catch (error) {
-          clearInterval(uploadTimerInterval);
           updateStatusMessage("Error uploading chunk " + currentChunkNumber + ": " + error, "red");
           throw error;
         }
@@ -483,6 +600,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
               transcriptChunks[chunkNum] = data.transcript;
               updateTranscriptionOutput();
               clearInterval(pollingIntervals[chunkNum]);
+              // If this is the last chunk, update status to finished.
               if (manualStop && chunkNum === chunkNumber - 1) {
                 updateStatusMessage("Transcription finished!", "green");
               }
@@ -518,6 +636,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         transcriptChunks = {};
         Object.values(pollingIntervals).forEach(interval => clearInterval(interval));
         pollingIntervals = {};
+        updateStatusMessage("Recording...", "green");
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
           groupId = Date.now().toString();
@@ -546,7 +665,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           readLoop();
           
           window.chunkInterval = setInterval(processAudioChunk, CHUNK_DURATION_MS);
-          
           console.log("MediaStreamTrackProcessor started, reading audio frames...");
           
           document.getElementById("startButton").disabled = true;
@@ -559,12 +677,14 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       });
       
       document.getElementById("stopButton").addEventListener("click", async () => {
+        updateStatusMessage("Finishing transcription...", "blue");
         manualStop = true;
         if (window.chunkInterval) {
           clearInterval(window.chunkInterval);
         }
+        clearInterval(recordingTimerInterval);
         stopMicrophone();
-        // Wait briefly to allow any pending frames to be delivered.
+        // Wait briefly to allow any pending frames to arrive.
         await new Promise(resolve => setTimeout(resolve, 500));
         await processAudioChunk();
         finalPollAllChunks();
@@ -587,7 +707,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           recordingStartTime = Date.now();
           recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
           document.getElementById("pauseResumeButton").innerText = "Pause Recording";
-          updateStatusMessage("Recording resumed", "green");
+          updateStatusMessage("Recording...", "green");
         }
       });
       

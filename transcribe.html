@@ -247,7 +247,7 @@
       <strong>How to Use the Functions:</strong>
       <ul>
         <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. The recorder will manually stop every 5 minutes (to ensure the audio file is fully finalized) and then immediately restart for the next segment. Click "Stop/Complete" to end the session and trigger transcript fetching via polling.</li>
-        <li><strong>Polling Transcription:</strong> Each finalized chunk is uploaded with the same groupID and a chunk number. The system polls the backend for transcripts using this groupID and assembles them in order.</li>
+        <li><strong>Polling Transcription:</strong> Each finalized chunk is uploaded with the same groupID (session ID) and a chunk number. The system polls the backend for transcripts using this groupID and assembles them in order.</li>
         <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
         <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
         <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
@@ -505,7 +505,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       function pollChunkTranscript(chunkNum, currentGroup) {
         const pollStartTime = Date.now();
         pollingIntervals[chunkNum] = setInterval(async () => {
-          // Only poll if the group for this polling callback matches the current group.
+          // If the global groupId has changed, stop polling.
           if (groupId !== currentGroup) {
             clearInterval(pollingIntervals[chunkNum]);
             return;
@@ -542,8 +542,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("transcription").value = combinedTranscript.trim();
       }
       
-      // Regular recording approach: manually stop every 5 minutes.
-      let chunkTimeout = null;
+      // Regular recording approach: We manually stop the recorder every 5 minutes.
       function startRegularRecording() {
         recordingStartTime = Date.now();
         clearInterval(recordingTimerInterval);
@@ -552,10 +551,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         
         activeRecorder = new MediaRecorder(mediaStream);
         activeRecorder.ondataavailable = (event) => {
-          // Clear the timeout so we don't get a duplicate stop.
-          clearTimeout(chunkTimeout);
-          
-          const currentGroup = groupId;
+          const currentGroup = groupId;  // capture the current group id
           let actualMimeType = activeRecorder.mimeType || 'audio/mp3';
           let extension = (actualMimeType.indexOf("webm") !== -1) ? "webm" : ((actualMimeType.indexOf("ogg") !== -1) ? "ogg" : "mp3");
           let audioBlob = new Blob([event.data], { type: actualMimeType });
@@ -604,8 +600,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         activeRecorder.start();
         console.log("Recorder started without timeslice");
         
-        // Set a timeout to stop this chunk after 5 minutes (300000ms)
-        chunkTimeout = setTimeout(() => {
+        // Automatically stop the recorder after 5 minutes (300000ms) to finalize this chunk.
+        setTimeout(() => {
           if (activeRecorder && activeRecorder.state === "recording") {
             activeRecorder.stop();
           }
@@ -644,7 +640,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         if (activeRecorder && activeRecorder.state !== "inactive") {
           activeRecorder.stop();
           clearInterval(recordingTimerInterval);
-          clearTimeout(chunkTimeout);
         }
         stopMicrophone();
         document.getElementById("startButton").disabled = false;
@@ -659,7 +654,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         if (activeRecorder.state === "recording") {
           activeRecorder.pause();
           clearInterval(recordingTimerInterval);
-          clearTimeout(chunkTimeout);
           document.getElementById("pauseResumeButton").innerText = "Resume Recording";
           updateStatusMessage("Recording paused", "orange");
         } else if (activeRecorder.state === "paused") {
@@ -668,12 +662,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
           document.getElementById("pauseResumeButton").innerText = "Pause Recording";
           updateStatusMessage("Recording resumed", "green");
-          // Restart the timeout for this resumed chunk:
-          chunkTimeout = setTimeout(() => {
-            if (activeRecorder && activeRecorder.state === "recording") {
-              activeRecorder.stop();
-            }
-          }, 300000);
         }
       });
       

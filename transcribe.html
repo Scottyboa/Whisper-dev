@@ -417,7 +417,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       })();
       
       /* --------------------------
-         Recording & Polling Logic (Using MediaStreamTrackProcessor & WebCodecs)
+         Recording & Polling Logic Using MediaStreamTrackProcessor & WebCodecs
          -------------------------- */
       let mediaStream = null;
       let recordingStartTime = 0;
@@ -428,13 +428,11 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       let transcriptChunks = {};
       let pollingIntervals = {};
       
-      // We'll accumulate raw audio frames (AudioData objects) here.
+      // Array to accumulate AudioData frames.
       let audioFrames = [];
-      
-      // Define the minimum chunk duration in milliseconds (15 sec here)
+      // Define chunk duration (15 seconds)
       const CHUNK_DURATION_MS = 15000;
       
-      // Update status
       function updateStatusMessage(message, color = "#333") {
         const statusMessage = document.getElementById("statusMessage");
         statusMessage.innerText = message;
@@ -503,20 +501,18 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         return new Blob([view], { type: 'audio/wav' });
       }
       
-      // Process accumulated audio frames into a WAV blob and upload as one chunk.
+      // Process accumulated audio frames into a WAV blob and upload.
       async function processAudioChunk() {
         if (audioFrames.length === 0) return;
-        // Use the first frame's info for sampleRate and channels
+        // Use first frame's info for sampleRate and channels.
         const sampleRate = audioFrames[0].sampleRate;
         const numChannels = audioFrames[0].numberOfChannels;
         let pcmDataArray = [];
-        // Process each AudioData frame
         for (let frame of audioFrames) {
           const numFrames = frame.numberOfFrames;
-          // Create a Float32Array to hold the frame's data.
-          // For multi-channel, we extract each plane and interleave them.
           if (numChannels === 1) {
             let channelData = new Float32Array(numFrames);
+            // Pass the required options object with planeIndex.
             frame.copyTo(channelData, { planeIndex: 0 });
             pcmDataArray.push(channelData);
           } else {
@@ -536,7 +532,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           }
           frame.close();
         }
-        // Concatenate all PCM data
         let totalLength = pcmDataArray.reduce((sum, arr) => sum + arr.length, 0);
         let pcmFloat32 = new Float32Array(totalLength);
         let offset = 0;
@@ -544,13 +539,11 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           pcmFloat32.set(arr, offset);
           offset += arr.length;
         }
-        // Convert float32 PCM to int16 PCM
         let pcmInt16 = floatTo16BitPCM(pcmFloat32);
-        // Encode to WAV blob
         let wavBlob = encodeWAV(pcmInt16, sampleRate, numChannels);
-        // Clear accumulated frames
+        // Clear accumulated frames.
         audioFrames = [];
-        // Upload the chunk. We'll use WAV format.
+        // Upload the chunk as a WAV file.
         const mimeType = "audio/wav";
         const extension = "wav";
         uploadChunk(wavBlob, chunkNumber, extension, mimeType, false, groupId)
@@ -566,7 +559,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         chunkNumber++;
       }
       
-      // Upload function remains similar
+      // Upload function (unchanged)
       async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
         const formData = new FormData();
         formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
@@ -640,7 +633,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("transcription").value = combinedTranscript.trim();
       }
       
-      // Final polling after recording stops
+      // Final polling after recording stops.
       function finalPollAllChunks() {
         console.log("Starting final polling for all chunks...");
         for (let i = 1; i < chunkNumber; i++) {
@@ -648,7 +641,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // New Recording Logic Using MediaStreamTrackProcessor
+      // New recording mechanism using MediaStreamTrackProcessor & WebCodecs.
       const backendUrl = "https://whisper-dev-backend.fly.dev";
       
       document.getElementById("startButton").addEventListener("click", async () => {
@@ -665,19 +658,18 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           updateRecordingTimer();
           recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
           
-          // Create a processor for the audio track using WebCodecs
+          // Create a processor for the audio track.
           const track = mediaStream.getAudioTracks()[0];
           const processor = new MediaStreamTrackProcessor({ track: track });
           const reader = processor.readable.getReader();
           
-          // Continuously read AudioData frames and accumulate them
+          // Continuously read AudioData frames and accumulate them.
           function readLoop() {
             reader.read().then(({ done, value }) => {
               if (done) {
                 console.log("Audio track reading complete.");
                 return;
               }
-              // Accumulate each AudioData frame
               audioFrames.push(value);
               readLoop();
             }).catch(err => {
@@ -686,7 +678,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           }
           readLoop();
           
-          // Set up interval timer to process accumulated frames every CHUNK_DURATION_MS (15 sec)
+          // Process accumulated frames every CHUNK_DURATION_MS.
           window.chunkInterval = setInterval(processAudioChunk, CHUNK_DURATION_MS);
           
           console.log("MediaStreamTrackProcessor started, reading audio frames...");
@@ -706,7 +698,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           clearInterval(window.chunkInterval);
         }
         stopMicrophone();
-        // Process any remaining frames
+        // Process any remaining frames.
         processAudioChunk();
         finalPollAllChunks();
         document.getElementById("startButton").disabled = false;
@@ -715,7 +707,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         console.log("Recording stopped by user.");
       });
       
-      // Simple pause/resume by disabling/enabling the audio track.
+      // Simple pause/resume using track.enabled toggle.
       document.getElementById("pauseResumeButton").addEventListener("click", () => {
         if (!mediaStream) return;
         const track = mediaStream.getAudioTracks()[0];

@@ -227,8 +227,8 @@
       <br><br>
       <strong>How to Use the Functions:</strong>
       <ul>
-        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for 15 seconds before being packaged as a self-contained WAV file. A small overlap of the last 2 seconds is preserved between chunks to help prevent missing data.</li>
-        <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording timer stops and the system waits briefly to process any remaining audio before finishing transcription.</li>
+        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file. A 0.5‑second overlap between chunks is maintained to help capture data at the boundaries.</li>
+        <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops and the system waits briefly to process any remaining audio before finishing transcription.</li>
         <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
         <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
         <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
@@ -274,8 +274,8 @@
 <br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
-  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for 15 seconds before being packaged as a self-contained WAV file. A 2-second overlap between chunks is maintained.</li>
-  <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops and the system waits briefly to process remaining audio before finishing transcription.</li>
+  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file. A 0.5‑second overlap between chunks is maintained.</li>
+  <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops and the system waits briefly to process any remaining audio before finishing transcription.</li>
   <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
   <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
   <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
@@ -308,7 +308,7 @@ Please click "Functions" to return to the main interface.`
 <br><br>
 <strong>Slik bruker du verktøyet:</strong>
 <ul>
-  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Lydopptak fanges via MediaStreamTrackProcessor (med WebCodecs) og akkumuleres i 15 sekunders biter før de pakkes som gyldige WAV-filer. Det beholdes en 2-sekunders overlapping mellom bitene.</li>
+  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Lydopptak fanges via MediaStreamTrackProcessor (med WebCodecs) og akkumuleres i opptil 40 sekunders biter før de pakkes som gyldige WAV-filer. Det beholdes en 0,5-sekunders overlapping mellom bitene.</li>
   <li><strong>Fullføring:</strong> Etter at du klikker "Stopp/Fullfør", avsluttes opptaket og systemet venter kort for å behandle gjenstående lyd før transkripsjonen fullføres.</li>
   <li><strong>Notatgenerering:</strong> Etter transkripsjonen, klikk "Generer notat" for å lage et notat basert på transkripsjonen og din tilpassede melding.</li>
   <li><strong>Tilpasset melding:</strong> Velg et meldingsfelt (1–10) og skriv inn din tilpassede melding. Meldingen lagres automatisk og knyttes til din API-nøkkel.</li>
@@ -408,10 +408,13 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       let transcriptChunks = {};
       let pollingIntervals = {};
       
-      // Array to accumulate AudioData frames.
-      let audioFrames = [];
-      // Define chunk duration (15 seconds)
-      const CHUNK_DURATION_MS = 15000;
+      // Dynamic scheduling constants: aim for chunks between 30 and 40 seconds
+      const MIN_CHUNK_DURATION = 30000; // 30 seconds
+      const MAX_CHUNK_DURATION = 40000; // 40 seconds
+      const watchdogThreshold = 1500;    // 1.5 sec with no frame
+      let chunkStartTime = 0;
+      let lastFrameTime = 0;
+      let chunkTimeoutId;
       
       function updateStatusMessage(message, color = "#333") {
         const statusMessage = document.getElementById("statusMessage");
@@ -486,25 +489,22 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       }
       
       // Process accumulated audio frames into a WAV blob and upload.
-      // Implements a 2-second overlap by retaining the last few frames.
+      // Implements a 0.5-second overlap.
       async function processAudioChunk() {
         if (audioFrames.length === 0) return;
-        // Determine overlap: retain frames from the end totaling ~2 seconds.
         let totalOverlap = 0;
         let overlapIndex = audioFrames.length;
         for (let i = audioFrames.length - 1; i >= 0; i--) {
           const duration = audioFrames[i].numberOfFrames / audioFrames[i].sampleRate;
           totalOverlap += duration;
-          if (totalOverlap >= 2.0) {
+          if (totalOverlap >= 0.5) { // 0.5 sec overlap
             overlapIndex = i;
             break;
           }
         }
         let framesToProcess = audioFrames.slice(0, overlapIndex);
         let framesToKeep = audioFrames.slice(overlapIndex);
-        // If no frames to process, simply return.
         if (framesToProcess.length === 0) {
-          // In case the entire buffer is less than 2 seconds, do not process.
           return;
         }
         const sampleRate = framesToProcess[0].sampleRate;
@@ -542,8 +542,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
         let pcmInt16 = floatTo16BitPCM(pcmFloat32);
         let wavBlob = encodeWAV(pcmInt16, sampleRate, numChannels);
-        // Instead of clearing all frames, retain the overlap for the next chunk.
-        audioFrames = framesToKeep;
+        audioFrames = framesToKeep; // Retain overlap frames
         const mimeType = "audio/wav";
         const extension = "wav";
         const currentChunk = chunkNumber;
@@ -600,7 +599,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
               transcriptChunks[chunkNum] = data.transcript;
               updateTranscriptionOutput();
               clearInterval(pollingIntervals[chunkNum]);
-              // If this is the last chunk, update status to finished.
               if (manualStop && chunkNum === chunkNumber - 1) {
                 updateStatusMessage("Transcription finished!", "green");
               }
@@ -629,6 +627,23 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
+      // Dynamic scheduling function for chunk processing using MIN and MAX durations.
+      function scheduleChunk() {
+        const elapsed = Date.now() - chunkStartTime;
+        const timeSinceLast = Date.now() - lastFrameTime;
+        if (elapsed >= MAX_CHUNK_DURATION) {
+          processAudioChunk();
+          chunkStartTime = Date.now();
+          scheduleChunk();
+        } else if (elapsed >= MIN_CHUNK_DURATION && timeSinceLast >= watchdogThreshold) {
+          processAudioChunk();
+          chunkStartTime = Date.now();
+          scheduleChunk();
+        } else {
+          chunkTimeoutId = setTimeout(scheduleChunk, 500);
+        }
+      }
+      
       const backendUrl = "https://whisper-dev-backend.fly.dev";
       
       document.getElementById("startButton").addEventListener("click", async () => {
@@ -645,6 +660,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           recordingStartTime = Date.now();
           updateRecordingTimer();
           recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+          chunkStartTime = Date.now();
+          lastFrameTime = Date.now();
           
           const track = mediaStream.getAudioTracks()[0];
           const processor = new MediaStreamTrackProcessor({ track: track });
@@ -656,6 +673,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
                 console.log("Audio track reading complete.");
                 return;
               }
+              lastFrameTime = Date.now();
               audioFrames.push(value);
               readLoop();
             }).catch(err => {
@@ -663,10 +681,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
             });
           }
           readLoop();
-          
-          window.chunkInterval = setInterval(processAudioChunk, CHUNK_DURATION_MS);
+          scheduleChunk();
           console.log("MediaStreamTrackProcessor started, reading audio frames...");
-          
           document.getElementById("startButton").disabled = true;
           document.getElementById("stopButton").disabled = false;
           document.getElementById("pauseResumeButton").disabled = false;
@@ -679,12 +695,9 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       document.getElementById("stopButton").addEventListener("click", async () => {
         updateStatusMessage("Finishing transcription...", "blue");
         manualStop = true;
-        if (window.chunkInterval) {
-          clearInterval(window.chunkInterval);
-        }
+        clearTimeout(chunkTimeoutId);
         clearInterval(recordingTimerInterval);
         stopMicrophone();
-        // Wait briefly to allow any pending frames to arrive.
         await new Promise(resolve => setTimeout(resolve, 500));
         await processAudioChunk();
         finalPollAllChunks();

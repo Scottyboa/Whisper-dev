@@ -512,7 +512,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           const numFrames = frame.numberOfFrames;
           if (numChannels === 1) {
             let channelData = new Float32Array(numFrames);
-            // Pass the required options object with planeIndex.
             frame.copyTo(channelData, { planeIndex: 0 });
             pcmDataArray.push(channelData);
           } else {
@@ -546,16 +545,18 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         // Upload the chunk as a WAV file.
         const mimeType = "audio/wav";
         const extension = "wav";
-        uploadChunk(wavBlob, chunkNumber, extension, mimeType, false, groupId)
+        // Capture the current chunk number for the asynchronous callback.
+        const currentChunk = chunkNumber;
+        uploadChunk(wavBlob, currentChunk, extension, mimeType, false, groupId)
           .then(result => {
             if (result && result.session_id) {
-              console.log(`Chunk ${chunkNumber} uploaded. Session ID: ${result.session_id}`);
-              pollChunkTranscript(chunkNumber, groupId);
+              console.log(`Chunk ${currentChunk} uploaded. Session ID: ${result.session_id}`);
+              pollChunkTranscript(currentChunk, groupId);
             } else {
-              console.log(`Chunk ${chunkNumber} upload did not return a session ID; skipping polling.`);
+              console.log(`Chunk ${currentChunk} upload did not return a session ID; skipping polling.`);
             }
           })
-          .catch(err => console.error(`Upload error for chunk ${chunkNumber}:`, err));
+          .catch(err => console.error(`Upload error for chunk ${currentChunk}:`, err));
         chunkNumber++;
       }
       
@@ -692,14 +693,14 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       });
       
-      document.getElementById("stopButton").addEventListener("click", () => {
+      document.getElementById("stopButton").addEventListener("click", async () => {
         manualStop = true;
         if (window.chunkInterval) {
           clearInterval(window.chunkInterval);
         }
         stopMicrophone();
-        // Process any remaining frames.
-        processAudioChunk();
+        // Process any remaining frames and wait for upload to finish before final polling.
+        await processAudioChunk();
         finalPollAllChunks();
         document.getElementById("startButton").disabled = false;
         document.getElementById("stopButton").disabled = true;

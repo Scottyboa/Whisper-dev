@@ -6,6 +6,7 @@
   <title id="page-title-transcribe">Transcription Tool with Ads and Guide Overlay</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
   <style>
+    /* [Your existing styles remain unchanged] */
     body {
       font-family: 'Roboto', sans-serif;
       background-color: #f8f8f8;
@@ -13,159 +14,32 @@
       margin: 0;
       padding: 0;
     }
-    /* Grid Layout */
-    .grid-container {
-      display: grid;
-      grid-template-columns: 250px 1fr 250px;
-      height: 100vh;
-    }
-    /* Left Sidebar */
-    .sidebar {
-      background-color: #e0e0e0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      position: relative;
-    }
-    .sidebar button {
-      font-size: 18px;
-      padding: 15px;
-    }
-    /* Main Content Area */
-    .main-content {
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      overflow-y: auto;
-    }
-    /* Recording Area (Top Half) */
-    .recording-area {
-      border-bottom: 1px solid #ddd;
-      padding-bottom: 20px;
-    }
-    .timer {
-      font-size: 18px;
-      margin-bottom: 10px;
-      color: #333;
-    }
-    /* Auto-resizing Textareas */
+    .grid-container { display: grid; grid-template-columns: 250px 1fr 250px; height: 100vh; }
+    .sidebar { background-color: #e0e0e0; padding: 20px; display: flex; flex-direction: column; gap: 20px; position: relative; }
+    .sidebar button { font-size: 18px; padding: 15px; }
+    .main-content { padding: 20px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+    .recording-area { border-bottom: 1px solid #ddd; padding-bottom: 20px; }
+    .timer { font-size: 18px; margin-bottom: 10px; color: #333; }
     #transcription, #generatedNote, #customPrompt {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      font-size: 16px;
-      box-sizing: border-box;
-      margin-bottom: 20px;
-      font-family: 'Roboto', sans-serif;
-      resize: none;
+      width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px;
+      font-size: 16px; box-sizing: border-box; margin-bottom: 20px; font-family: 'Roboto', sans-serif; resize: none;
     }
-    #transcription {
-      resize: vertical;
-    }
-    #transcription, #generatedNote {
-      min-height: 150px;
-    }
-    #customPrompt {
-      min-height: 200px;
-    }
-    button {
-      background-color: #5a9;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 12px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s, transform 0.1s;
-      margin: 10px;
-    }
-    button:hover {
-      background-color: #489;
-    }
-    button:active {
-      transform: scale(0.98);
-    }
-    /* Bottom Half: Two Columns */
-    .bottom-half {
-      display: flex;
-      gap: 20px;
-      flex: 1;
-    }
-    .column {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    /* Right Sidebar (Ad Area) */
-    .ad-sidebar {
-      background-color: #e0e0e0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #adUnit {
-      width: 100%;
-      height: 200px;
-      background-color: #ddd;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      margin-bottom: 10px;
-    }
-    /* Guide Overlay */
-    #guideView {
-      display: none;
-      position: fixed;
-      top: 10%;
-      left: 10%;
-      width: 80%;
-      height: 80%;
-      background: white;
-      border: 2px solid #ccc;
-      padding: 20px;
-      overflow-y: auto;
-      z-index: 2000;
-    }
-    #guideView.active {
-      display: block;
-    }
-    /* Language Dropdown in Sidebar */
-    #lang-container-transcribe {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    #lang-icon-transcribe {
-      width: 28px;
-      height: 28px;
-    }
-    /* Consent Banner */
-    #cmp-banner {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #f8f8f8;
-      border-top: 1px solid #ccc;
-      padding: 20px;
-      text-align: center;
-      font-size: 16px;
-      z-index: 1000;
-      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-    }
-    #cmp-banner button {
-      margin-left: 10px;
-      padding: 8px 16px;
-    }
+    #transcription { resize: vertical; }
+    #transcription, #generatedNote { min-height: 150px; }
+    #customPrompt { min-height: 200px; }
+    button { background-color: #5a9; color: #fff; border: none; border-radius: 10px; padding: 12px 20px; font-size: 16px; cursor: pointer; transition: background-color 0.3s, transform 0.1s; margin: 10px; }
+    button:hover { background-color: #489; }
+    button:active { transform: scale(0.98); }
+    .bottom-half { display: flex; gap: 20px; flex: 1; }
+    .column { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .ad-sidebar { background-color: #e0e0e0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+    #adUnit { width: 100%; height: 200px; background-color: #ddd; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 10px; }
+    #guideView { display: none; position: fixed; top: 10%; left: 10%; width: 80%; height: 80%; background: white; border: 2px solid #ccc; padding: 20px; overflow-y: auto; z-index: 2000; }
+    #guideView.active { display: block; }
+    #lang-container-transcribe { position: absolute; bottom: 20px; left: 20px; display: flex; align-items: center; gap: 8px; }
+    #lang-icon-transcribe { width: 28px; height: 28px; }
+    #cmp-banner { position: fixed; bottom: 0; left: 0; right: 0; background: #f8f8f8; border-top: 1px solid #ccc; padding: 20px; text-align: center; font-size: 16px; z-index: 1000; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
+    #cmp-banner button { margin-left: 10px; padding: 8px 16px; }
   </style>
 </head>
 <body>
@@ -420,6 +294,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
          Recording & Polling Logic Using MediaStreamTrackProcessor & WebCodecs
          -------------------------- */
       let mediaStream = null;
+      let audioReader = null; // Added global variable for the reader.
       let recordingStartTime = 0;
       let recordingTimerInterval;
       let groupId = null;
@@ -459,6 +334,10 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         if (mediaStream) {
           mediaStream.getTracks().forEach(track => track.stop());
           mediaStream = null;
+        }
+        if (audioReader) {
+          audioReader.cancel();
+          audioReader = null;
         }
       }
       
@@ -504,7 +383,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       // Process accumulated audio frames into a WAV blob and upload.
       async function processAudioChunk() {
         if (audioFrames.length === 0) return;
-        // Use first frame's info for sampleRate and channels.
         const sampleRate = audioFrames[0].sampleRate;
         const numChannels = audioFrames[0].numberOfChannels;
         let pcmDataArray = [];
@@ -540,12 +418,9 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
         let pcmInt16 = floatTo16BitPCM(pcmFloat32);
         let wavBlob = encodeWAV(pcmInt16, sampleRate, numChannels);
-        // Clear accumulated frames.
         audioFrames = [];
-        // Upload the chunk as a WAV file.
         const mimeType = "audio/wav";
         const extension = "wav";
-        // Capture the current chunk number for the asynchronous callback.
         const currentChunk = chunkNumber;
         uploadChunk(wavBlob, currentChunk, extension, mimeType, false, groupId)
           .then(result => {
@@ -560,7 +435,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         chunkNumber++;
       }
       
-      // Upload function (unchanged)
+      // Upload function (duplicate logging removed)
       async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
         const formData = new FormData();
         formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
@@ -583,11 +458,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           });
           const result = await response.json();
           clearInterval(uploadTimerInterval);
-          if (result.session_id) {
-            console.log(`Chunk ${currentChunkNumber} uploaded. Session ID: ${result.session_id}`);
-          } else {
-            updateStatusMessage("Upload error on chunk " + currentChunkNumber + ": " + (result.error || "Unknown error"), "red");
-          }
           return result;
         } catch (error) {
           clearInterval(uploadTimerInterval);
@@ -634,7 +504,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("transcription").value = combinedTranscript.trim();
       }
       
-      // Final polling after recording stops.
       function finalPollAllChunks() {
         console.log("Starting final polling for all chunks...");
         for (let i = 1; i < chunkNumber; i++) {
@@ -642,7 +511,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // New recording mechanism using MediaStreamTrackProcessor & WebCodecs.
       const backendUrl = "https://whisper-dev-backend.fly.dev";
       
       document.getElementById("startButton").addEventListener("click", async () => {
@@ -659,14 +527,12 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           updateRecordingTimer();
           recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
           
-          // Create a processor for the audio track.
           const track = mediaStream.getAudioTracks()[0];
           const processor = new MediaStreamTrackProcessor({ track: track });
-          const reader = processor.readable.getReader();
+          audioReader = processor.readable.getReader();
           
-          // Continuously read AudioData frames and accumulate them.
           function readLoop() {
-            reader.read().then(({ done, value }) => {
+            audioReader.read().then(({ done, value }) => {
               if (done) {
                 console.log("Audio track reading complete.");
                 return;
@@ -679,7 +545,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           }
           readLoop();
           
-          // Process accumulated frames every CHUNK_DURATION_MS.
           window.chunkInterval = setInterval(processAudioChunk, CHUNK_DURATION_MS);
           
           console.log("MediaStreamTrackProcessor started, reading audio frames...");
@@ -699,7 +564,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           clearInterval(window.chunkInterval);
         }
         stopMicrophone();
-        // Process any remaining frames and wait for upload to finish before final polling.
+        // Wait briefly to allow any pending frames to be delivered.
+        await new Promise(resolve => setTimeout(resolve, 500));
         await processAudioChunk();
         finalPollAllChunks();
         document.getElementById("startButton").disabled = false;
@@ -708,7 +574,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         console.log("Recording stopped by user.");
       });
       
-      // Simple pause/resume using track.enabled toggle.
       document.getElementById("pauseResumeButton").addEventListener("click", () => {
         if (!mediaStream) return;
         const track = mediaStream.getAudioTracks()[0];
@@ -773,7 +638,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       
       loadPromptForSlot(promptSlotSelect.value);
       
-      // Note Generation: Generate note based on transcript and custom prompt.
       document.getElementById("generateNoteButton").addEventListener("click", async () => {
         const transcriptionText = document.getElementById("transcription").value.trim();
         if (!transcriptionText) {
@@ -842,7 +706,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       });
       
-      // ---------------- End of Custom Prompt & Note Generation ----------------
     });
   </script>
 </body>

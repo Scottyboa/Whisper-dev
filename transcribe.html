@@ -246,8 +246,8 @@
       <br><br>
       <strong>How to Use the Functions:</strong>
       <ul>
-        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Click "Stop/Complete" to end recording and trigger transcript fetching via polling.</li>
-        <li><strong>Polling Transcription:</strong> As each chunk is uploaded, the system automatically polls the backend until its transcript is ready and then merges them in order.</li>
+        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. The recorder will automatically stop every 5 minutes to finalize the chunk and then restart for the next segment. Click "Stop/Complete" to end the session and trigger transcript fetching via polling.</li>
+        <li><strong>Polling Transcription:</strong> As each chunk is finalized and uploaded, the system automatically polls the backend until its transcript is ready and then merges them in order.</li>
         <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
         <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
         <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide. The guide appears as an overlay and does not disturb the underlying layout.</li>
@@ -294,8 +294,8 @@
 <br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
-  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Click "Stop/Complete" to end recording and trigger transcript fetching via polling.</li>
-  <li><strong>Polling Transcription:</strong> As each chunk is uploaded, the system automatically polls the backend until its transcript is ready and then merges them in order.</li>
+  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. The recorder will automatically stop every 5 minutes to finalize the chunk and then restart for the next segment. Click "Stop/Complete" to end the session and trigger transcript fetching via polling.</li>
+  <li><strong>Polling Transcription:</strong> As each chunk is finalized and uploaded, the system automatically polls the backend until its transcript is ready and then merges them in order.</li>
   <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
   <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
   <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide. The guide appears as an overlay and does not disturb the underlying layout.</li>
@@ -329,8 +329,8 @@ Please click "Functions" to return to the main interface.`
 <br><br>
 <strong>Slik bruker du verktøyet:</strong>
 <ul>
-  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Klikk på "Stopp/Fullfør" for å avslutte opptaket og hente transkripsjonen via polling.</li>
-  <li><strong>Polling Transkripsjon:</strong> Når hver lydchunk er lastet opp, henter systemet automatisk transkripsjonen til chunket og setter sammen resultatet i rekkefølge.</li>
+  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Recorder stopper automatisk etter 5 minutter for å sikre at hver lydfil er korrekt avsluttet. Klikk på "Stopp/Fullfør" for å avslutte opptaket og hente transkripsjonen via polling.</li>
+  <li><strong>Polling Transkripsjon:</strong> Når hver lydchunk er ferdig og lastet opp, henter systemet automatisk transkripsjonen til chunket og setter sammen resultatet i rekkefølge.</li>
   <li><strong>Notatgenerering:</strong> Etter transkripsjonen, klikk "Generer notat" for å lage et notat basert på transkripsjonen og din tilpassede melding.</li>
   <li><strong>Tilpasset melding:</strong> Velg et meldingsfelt (1–10) og skriv inn din tilpassede melding. Meldingen lagres automatisk og knyttes til din API-nøkkel.</li>
   <li><strong>Veiledning:</strong> Bruk knappene "Funksjoner" og "Veiledning" for å bytte mellom verktøysgrensesnittet og denne veiledningen.</li>
@@ -463,7 +463,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // Modified uploadChunk to use a captured group ID.
+      // Modified uploadChunk that uses a captured group ID.
       async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
         const formData = new FormData();
         formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
@@ -541,20 +541,16 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("transcription").value = combinedTranscript.trim();
       }
       
-      function startPingPongRecording() {
+      // Regular recording approach: We start the recorder without timeslice and manually stop after 5 minutes.
+      function startRegularRecording() {
         recordingStartTime = Date.now();
         clearInterval(recordingTimerInterval);
         updateRecordingTimer();
         recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-        startNewRecorder();
-        updateStatusMessage("Recording...", "red");
-        document.getElementById("recordIndicator").style.backgroundColor = "red";
-      }
-      
-      function startNewRecorder() {
         activeRecorder = new MediaRecorder(mediaStream);
+        
         activeRecorder.ondataavailable = (event) => {
-          // Capture the current group ID in a local variable.
+          // Capture the current group ID.
           const currentGroup = groupId;
           let actualMimeType = activeRecorder.mimeType || 'audio/mp3';
           let extension = (actualMimeType.indexOf("webm") !== -1) ? "webm" : ((actualMimeType.indexOf("ogg") !== -1) ? "ogg" : "mp3");
@@ -579,6 +575,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
             updateStatusMessage("Fetching/completing...", "blue");
             return;
           }
+          
           updateStatusMessage(`Uploading chunk ${chunkNumber}...`, "blue");
           uploadChunk(audioBlob, chunkNumber, extension, actualMimeType, false, currentGroup)
             .then(result => {
@@ -593,11 +590,23 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
               console.error(`Upload error for chunk ${chunkNumber}:`, err);
             });
           chunkNumber++;
+          
+          // If not manually stopped, start a new recording for the next chunk.
+          if (!manualStop) {
+            startRegularRecording();
+          }
         };
         
-        // Start the recorder with a timeslice of 2 minutes (120000ms).
-        activeRecorder.start(120000);
-        console.log("Recorder started with timeslice 2 minutes");
+        // Start recorder without timeslice.
+        activeRecorder.start();
+        console.log("Recorder started without timeslice");
+        
+        // Automatically stop the recorder after 5 minutes (300000ms) to finalize this chunk.
+        setTimeout(() => {
+          if (activeRecorder && activeRecorder.state === "recording") {
+            activeRecorder.stop();
+          }
+        }, 300000);
       }
       
       const backendUrl = "https://whisper-dev-backend.fly.dev";
@@ -615,7 +624,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           groupId = Date.now().toString();
           console.log("New groupID set:", groupId);
           chunkNumber = 1;
-          startPingPongRecording();
+          startRegularRecording();
       
           document.getElementById("startButton").disabled = true;
           document.getElementById("stopButton").disabled = false;
@@ -626,7 +635,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       });
       
-      // Stop Button Event: Delay resetting groupId to let final events use it.
+      // Stop Button Event: User manually stops recording.
       document.getElementById("stopButton").addEventListener("click", () => {
         manualStop = true;
         if (activeRecorder && activeRecorder.state !== "inactive") {
@@ -637,11 +646,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("startButton").disabled = false;
         document.getElementById("stopButton").disabled = true;
         document.getElementById("pauseResumeButton").disabled = true;
-        // Delay resetting groupId by 5 seconds.
-        setTimeout(() => {
-          groupId = null;
-          console.log("groupId reset after stop");
-        }, 5000);
+        // We do not reset groupId here since a new session will generate a new groupId.
+        console.log("Recording stopped by user.");
       });
       
       // Pause/Resume Button Event

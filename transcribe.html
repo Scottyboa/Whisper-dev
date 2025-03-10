@@ -178,7 +178,7 @@
     <aside class="sidebar">
       <button id="btnFunctions">Functions</button>
       <button id="btnGuide">Guide</button>
-      <!-- Language dropdown at bottom of sidebar -->
+      <!-- Language dropdown -->
       <div id="lang-container-transcribe">
         <img src="language-icon.png" alt="Language Icon" id="lang-icon-transcribe">
         <select id="lang-select-transcribe">
@@ -189,7 +189,7 @@
     </aside>
     <!-- Main Content -->
     <main class="main-content">
-      <!-- Top Half: Recording Area -->
+      <!-- Recording Area -->
       <div class="recording-area">
         <h3 id="recordingAreaTitle">Recording Area</h3>
         <div id="recordIndicator" style="width:20px; height:20px; border-radius:50%; background-color:grey; margin:0 auto 10px;"></div>
@@ -204,7 +204,7 @@
         </div>
         <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
       </div>
-      <!-- Bottom Half: Note Generation and Custom Prompt -->
+      <!-- Note Generation & Custom Prompt -->
       <div class="bottom-half">
         <div class="column">
           <h3 id="noteGenerationTitle">Note Generation</h3>
@@ -434,14 +434,12 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       let transcriptChunks = {};  // Holds transcript for each chunk
       let pollingIntervals = {};  // Holds polling intervals for each chunk
       
-      // Update status message utility
       function updateStatusMessage(message, color = "#333") {
         const statusMessage = document.getElementById("statusMessage");
         statusMessage.innerText = message;
         statusMessage.style.color = color;
       }
       
-      // Format time utility
       function formatTime(ms) {
         const totalSec = Math.floor(ms / 1000);
         if (totalSec < 60) {
@@ -453,13 +451,11 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // Update recording timer display
       function updateRecordingTimer() {
         let elapsed = Date.now() - recordingStartTime;
         document.getElementById("recordTimer").innerText = "Recording Timer: " + formatTime(elapsed);
       }
       
-      // Stop microphone
       function stopMicrophone() {
         if (mediaStream) {
           mediaStream.getTracks().forEach(track => track.stop());
@@ -467,7 +463,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // Modified uploadChunk to accept a captured group id
+      // Modified uploadChunk to use a captured group ID.
       async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
         const formData = new FormData();
         formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
@@ -505,7 +501,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // Polling function to fetch transcript for a specific chunk
       function pollChunkTranscript(chunkNum) {
         const pollStartTime = Date.now();
         pollingIntervals[chunkNum] = setInterval(async () => {
@@ -537,7 +532,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }, 2000);
       }
       
-      // Merge transcriptChunks in order and update the transcription textarea.
       function updateTranscriptionOutput() {
         let sortedKeys = Object.keys(transcriptChunks).map(Number).sort((a, b) => a - b);
         let combinedTranscript = "";
@@ -547,7 +541,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("transcription").value = combinedTranscript.trim();
       }
       
-      // Start ping-pong recording: set timer and start a new recorder instance.
       function startPingPongRecording() {
         recordingStartTime = Date.now();
         clearInterval(recordingTimerInterval);
@@ -558,11 +551,10 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("recordIndicator").style.backgroundColor = "red";
       }
       
-      // Start a new recorder instance with timeslice functionality.
       function startNewRecorder() {
         activeRecorder = new MediaRecorder(mediaStream);
         activeRecorder.ondataavailable = (event) => {
-          // Capture the current session id in a local variable.
+          // Capture the current group ID in a local variable.
           const currentGroup = groupId;
           let actualMimeType = activeRecorder.mimeType || 'audio/mp3';
           let extension = (actualMimeType.indexOf("webm") !== -1) ? "webm" : ((actualMimeType.indexOf("ogg") !== -1) ? "ogg" : "mp3");
@@ -608,10 +600,9 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         console.log("Recorder started with timeslice 2 minutes");
       }
       
-      // Define the backend URL.
       const backendUrl = "https://whisper-dev-backend.fly.dev";
       
-      // Start Button Event: Initialize session and start recording.
+      // Start Button Event: Always generate a new groupID.
       document.getElementById("startButton").addEventListener("click", async () => {
         manualStop = false;
         finalChunkProcessed = false;
@@ -635,7 +626,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       });
       
-      // Stop Button Event: User manually stops recording.
+      // Stop Button Event: Delay resetting groupId to let final events use it.
       document.getElementById("stopButton").addEventListener("click", () => {
         manualStop = true;
         if (activeRecorder && activeRecorder.state !== "inactive") {
@@ -646,11 +637,14 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("startButton").disabled = false;
         document.getElementById("stopButton").disabled = true;
         document.getElementById("pauseResumeButton").disabled = true;
-        // Reset groupID so that the next recording gets a new session.
-        groupId = null;
+        // Delay resetting groupId by 5 seconds.
+        setTimeout(() => {
+          groupId = null;
+          console.log("groupId reset after stop");
+        }, 5000);
       });
       
-      // Pause/Resume Button Event: Acts as "Stop current chunk" and then "Resume Recording" for the same session.
+      // Pause/Resume Button Event
       document.getElementById("pauseResumeButton").addEventListener("click", () => {
         if (!activeRecorder) return;
         if (activeRecorder.state === "recording") {

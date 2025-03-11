@@ -66,6 +66,7 @@
     #transcription { resize: vertical; }
     #transcription, #generatedNote { min-height: 150px; }
     #customPrompt { min-height: 200px; }
+    /* Button Styles */
     button {
       background-color: #5a9;
       color: #fff;
@@ -79,6 +80,34 @@
     }
     button:hover { background-color: #489; }
     button:active { transform: scale(0.98); }
+    
+    /* Custom style for disabled buttons with !important directives */
+    button:disabled {
+      background-color: #ccc !important;
+      color: #666 !important;
+      cursor: not-allowed !important;
+      opacity: 0.6 !important;
+      transition: none !important;
+      transform: none !important;
+    }
+    /* Cost Usage Overview Hyperlink Styling */
+    #openaiUsageLink {
+      position: absolute;
+      top: 10px;
+      right: 270px; /* 250px for the ads area + 20px margin */
+      font-size: 20px;
+      color: #333;
+      text-decoration: none;
+    }
+    /* Animation for Recording Indicator */
+    @keyframes pulseRed {
+      0% { background-color: #ff4d4d; }
+      50% { background-color: #cc0000; }
+      100% { background-color: #ff4d4d; }
+    }
+    .recording {
+      animation: pulseRed 1s infinite;
+    }
     /* Bottom Half: Two Columns */
     .bottom-half {
       display: flex;
@@ -152,7 +181,7 @@
   </style>
 </head>
 <body>
-  <!-- OpenAI usage hyperlink -->
+  <!-- Cost Usage Overview Hyperlink -->
   <a id="openaiUsageLink" href="https://platform.openai.com/usage" target="_blank">Cost usage overview</a>
   
   <div class="grid-container">
@@ -228,7 +257,7 @@
       <strong>How to Use the Functions:</strong>
       <ul>
         <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file. A 0.5‑second overlap between chunks is maintained.</li>
-        <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. A final capture delay of 2 seconds collects any remaining audio before processing the final chunk. The Completion Timer then ticks until the full transcript is received.</li>
+        <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. A 2‑second final capture period collects any remaining audio before processing the final chunk. The Completion Timer then ticks until the full transcript is received.</li>
         <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
         <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
         <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
@@ -561,7 +590,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         chunkNumber++;
       }
       
-      // Upload function (upload timer removed)
+      // Upload function with API error status message
       async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
         const formData = new FormData();
         formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
@@ -576,6 +605,10 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
             method: "POST",
             body: formData
           });
+          if (!response.ok) {
+            updateStatusMessage("API error: " + response.statusText, "red");
+            throw new Error("API error: " + response.statusText);
+          }
           const result = await response.json();
           return result;
         } catch (error) {
@@ -693,6 +726,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           document.getElementById("stopButton").disabled = false;
           document.getElementById("pauseResumeButton").disabled = false;
           document.getElementById("pauseResumeButton").innerText = "Pause Recording";
+          // Add pulsing animation to the recording indicator
+          document.getElementById("recordIndicator").classList.add("recording");
         } catch (error) {
           updateStatusMessage("Microphone access error: " + error, "red");
         }
@@ -708,6 +743,9 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         // Reset scheduling variables to avoid interference with next recording
         chunkStartTime = 0;
         lastFrameTime = 0;
+        // Remove pulsing animation and set indicator to grey
+        document.getElementById("recordIndicator").classList.remove("recording");
+        document.getElementById("recordIndicator").style.backgroundColor = "grey";
         // Final capture delay of 2 seconds
         await new Promise(resolve => setTimeout(resolve, 2000));
         await processAudioChunk();
@@ -820,6 +858,10 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
               stream: true
             })
           });
+          if (!response.ok) {
+             updateStatusMessage("API error during note generation: " + response.statusText, "red");
+             throw new Error("API error during note generation: " + response.statusText);
+          }
           const reader = response.body.getReader();
           const decoder = new TextDecoder("utf-8");
           let done = false;
@@ -852,6 +894,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           clearInterval(noteTimerInterval);
           generatedNoteField.value = "Error generating note: " + error;
           noteTimerElement.innerText = "";
+          updateStatusMessage("Error generating note: " + error, "red");
         }
       });
       

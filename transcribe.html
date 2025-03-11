@@ -1,175 +1,258 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Transcription Tool with Ads and Guide Overlay</title>
-  <!-- Bootswatch Cosmo Theme (Bootstrap 5) -->
-  <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/cosmo/bootstrap.min.css" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title-transcribe">Transcription Tool with Ads and Guide Overlay</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
   <style>
-    /* Custom Styles on Top of Bootstrap */
-    
-    /* Position the Cost Usage Overview link near the top right */
-    #openaiUsageLink {
-      position: absolute;
-      top: 10px;
-      right: 20px;
-      font-size: 20px;
-      text-decoration: none;
+    /* Base Styles */
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f8f8f8;
+      color: #333;
+      margin: 0;
+      padding: 0;
     }
-    
-    /* Recording indicator animation */
-    @keyframes pulseRed {
-      0% { background-color: #ff4d4d; }
-      50% { background-color: #cc0000; }
-      100% { background-color: #ff4d4d; }
+    /* Grid Layout */
+    .grid-container {
+      display: grid;
+      grid-template-columns: 250px 1fr 250px;
+      height: 100vh;
     }
-    .recording {
-      animation: pulseRed 1s infinite;
+    /* Left Sidebar */
+    .sidebar {
+      background-color: #e0e0e0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
     }
-    
-    /* Optional: Override Bootstrap disabled button appearance if needed */
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    .sidebar button {
+      font-size: 18px;
+      padding: 15px;
     }
-    
-    /* Sidebar custom styling */
-    .sidebar, .ad-sidebar {
-      background-color: #e9ecef;
-      padding: 1rem;
-      border-radius: 0.25rem;
+    /* Main Content Area */
+    .main-content {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
     }
-    
-    /* Recording area styling */
+    /* Recording Area (Top Half) */
     .recording-area {
-      padding: 1rem;
-      border: 1px solid #dee2e6;
-      border-radius: 0.25rem;
-      margin-bottom: 1rem;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 20px;
     }
+    .timer {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    /* Auto-resizing Textareas */
+    #transcription, #generatedNote, #customPrompt {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      box-sizing: border-box;
+      margin-bottom: 20px;
+      font-family: 'Roboto', sans-serif;
+      resize: none;
+    }
+    #transcription { resize: vertical; }
+    #transcription, #generatedNote { min-height: 150px; }
+    #customPrompt { min-height: 200px; }
+    /* Button Styles */
+    button {
+      background-color: #5a9;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.1s;
+      margin: 10px;
+    }
+    button:hover { background-color: #489; }
+    button:active { transform: scale(0.98); }
     
-    /* Status message styling */
-    .status-message {
-      margin-top: 1rem;
-      font-size: 1.2rem;
+    /* Custom style for disabled buttons */
+    button:disabled {
+      background-color: #ccc; /* Custom gray background */
+      color: #666;           /* Muted text color */
+      cursor: not-allowed;   /* Indicates the button is not clickable */
+      opacity: 0.6;          /* Visibly dimmed */
+      transition: none;      /* No animations */
+      transform: none;
     }
+    /* Bottom Half: Two Columns */
+    .bottom-half {
+      display: flex;
+      gap: 20px;
+      flex: 1;
+    }
+    .column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    /* Right Sidebar (Ad Area) */
+    .ad-sidebar {
+      background-color: #e0e0e0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #adUnit {
+      width: 100%;
+      height: 200px;
+      background-color: #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    /* Guide Overlay */
+    #guideView {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      background: white;
+      border: 2px solid #ccc;
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 2000;
+    }
+    #guideView.active { display: block; }
+    /* Language Dropdown in Sidebar */
+    #lang-container-transcribe {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #lang-icon-transcribe { width: 28px; height: 28px; }
+    /* Consent Banner */
+    #cmp-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #f8f8f8;
+      border-top: 1px solid #ccc;
+      padding: 20px;
+      text-align: center;
+      font-size: 16px;
+      z-index: 1000;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    }
+    #cmp-banner button { margin-left: 10px; padding: 8px 16px; }
   </style>
 </head>
-<body class="position-relative">
-  <!-- Cost Usage Overview Hyperlink -->
-  <a id="openaiUsageLink" href="https://platform.openai.com/usage" target="_blank" class="btn btn-outline-secondary">
-    Cost usage overview
-  </a>
-
-  <div class="container-fluid mt-5">
-    <div class="row">
-      <!-- Left Sidebar -->
-      <div class="col-md-3 mb-3">
-        <div class="sidebar">
-          <button id="btnFunctions" class="btn btn-primary w-100 mb-3">Functions</button>
-          <button id="btnGuide" class="btn btn-primary w-100">Guide</button>
-          <div id="lang-container-transcribe" class="mt-3">
-            <img src="language-icon.png" alt="Language Icon" id="lang-icon-transcribe" style="width:28px; height:28px;" />
-            <select id="lang-select-transcribe" class="form-select d-inline-block w-auto ms-2">
-              <option value="en">English</option>
-              <option value="no">Norsk</option>
-            </select>
-          </div>
+<body>
+  <!-- OpenAI usage hyperlink -->
+  <a id="openaiUsageLink" href="https://platform.openai.com/usage" target="_blank">Cost usage overview</a>
+  
+  <div class="grid-container">
+    <!-- Left Sidebar -->
+    <aside class="sidebar">
+      <button id="btnFunctions">Functions</button>
+      <button id="btnGuide">Guide</button>
+      <!-- Language dropdown -->
+      <div id="lang-container-transcribe">
+        <img src="language-icon.png" alt="Language Icon" id="lang-icon-transcribe">
+        <select id="lang-select-transcribe">
+          <option value="en">English</option>
+          <option value="no">Norsk</option>
+        </select>
+      </div>
+    </aside>
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Recording Area -->
+      <div class="recording-area">
+        <h3 id="recordingAreaTitle">Recording Area</h3>
+        <div id="recordIndicator" style="width:20px; height:20px; border-radius:50%; background-color:grey; margin:0 auto 10px;"></div>
+        <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
+        <div id="transcribeTimer" class="timer">Completion Timer: 0 sec</div>
+        <textarea id="transcription" placeholder="Transcription result will appear here..."></textarea>
+        <div>
+          <button id="startButton">Start Recording</button>
+          <button id="stopButton" disabled>Stop/Complete</button>
+          <button id="pauseResumeButton" disabled>Pause Recording</button>
+        </div>
+        <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
+      </div>
+      <!-- Note Generation & Custom Prompt -->
+      <div class="bottom-half">
+        <div class="column">
+          <h3 id="noteGenerationTitle">Note Generation</h3>
+          <button id="generateNoteButton">Generate Note</button>
+          <div id="noteTimer" class="timer">Note Generation Timer: 0 sec</div>
+          <textarea id="generatedNote" readonly placeholder="Generated note will appear here..."></textarea>
+        </div>
+        <div class="column">
+          <h3 id="customPromptTitle">Custom Prompt</h3>
+          <label for="promptSlot" id="promptSlotLabel">Prompt Slot:</label>
+          <select id="promptSlot">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+          </select>
+          <textarea id="customPrompt" placeholder="Enter custom prompt here" rows="1"></textarea>
         </div>
       </div>
-      <!-- Main Content -->
-      <div class="col-md-6 mb-3">
-        <div class="recording-area">
-          <h3 id="recordingAreaTitle">Recording Area</h3>
-          <div id="recordIndicator" style="width:20px; height:20px; border-radius:50%; background-color:grey; margin:0 auto 10px;"></div>
-          <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
-          <div id="transcribeTimer" class="timer">Completion Timer: 0 sec</div>
-          <textarea id="transcription" class="form-control mb-3" placeholder="Transcription result will appear here..."></textarea>
-          <div class="d-flex justify-content-between">
-            <button id="startButton" class="btn btn-success">Start Recording</button>
-            <button id="stopButton" class="btn btn-danger" disabled>Stop/Complete</button>
-            <button id="pauseResumeButton" class="btn btn-warning" disabled>Pause Recording</button>
-          </div>
-          <div id="statusMessage" class="status-message">Welcome! Click "Start Recording" to begin.</div>
-        </div>
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <h3 id="noteGenerationTitle">Note Generation</h3>
-            <button id="generateNoteButton" class="btn btn-primary mb-3">Generate Note</button>
-            <div id="noteTimer" class="timer">Note Generation Timer: 0 sec</div>
-            <textarea id="generatedNote" class="form-control" readonly placeholder="Generated note will appear here..."></textarea>
-          </div>
-          <div class="col-md-6 mb-3">
-            <h3 id="customPromptTitle">Custom Prompt</h3>
-            <label for="promptSlot" id="promptSlotLabel">Prompt Slot:</label>
-            <select id="promptSlot" class="form-select mb-3 d-inline-block w-auto">
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-              <option value="9">9</option>
-              <option value="10">10</option>
-            </select>
-            <textarea id="customPrompt" class="form-control" placeholder="Enter custom prompt here" rows="3"></textarea>
-          </div>
-        </div>
+    </main>
+    <!-- Right Sidebar (Ad Area) -->
+    <aside class="ad-sidebar">
+      <div id="adArea">
+        <div id="adUnit">Your Ad Here</div>
       </div>
-      <!-- Right Sidebar (Ad Area) -->
-      <div class="col-md-3 mb-3">
-        <div class="ad-sidebar">
-          <div id="adArea">
-            <div id="adUnit" class="d-flex align-items-center justify-content-center" style="height:200px;">
-              Your Ad Here
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </aside>
   </div>
-
-  <!-- Guide Overlay (Using Bootstrap Modal) -->
-  <div id="guideView" class="modal" tabindex="-1" style="display:none;">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3 id="guideHeading" class="modal-title">Guide & Instructions</h3>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <p id="guideText">
-            Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
-            <br /><br />
-            <strong>How to Use the Functions:</strong>
-            <ul>
-              <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file. A 0.5‑second overlap between chunks is maintained.</li>
-              <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. A 2‑second final capture period collects any remaining audio before processing the final chunk. The Completion Timer then ticks until the full transcript is received.</li>
-              <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
-              <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
-              <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
-            </ul>
-            Please click "Functions" to return to the main interface.
-          </p>
-        </div>
-      </div>
-    </div>
+  <!-- Guide Overlay -->
+  <div id="guideView">
+    <h3 id="guideHeading">Guide & Instructions</h3>
+    <p id="guideText">
+      Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
+      <br><br>
+      <strong>How to Use the Functions:</strong>
+      <ul>
+        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file. A 0.5‑second overlap between chunks is maintained.</li>
+        <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. A 2‑second final capture period collects any remaining audio before processing the final chunk. The Completion Timer then ticks until the full transcript is received.</li>
+        <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
+        <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
+        <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
+      </ul>
+      Please click "Functions" to return to the main interface.
+    </p>
   </div>
-
   <!-- Consent Banner -->
-  <div id="cmp-banner" class="alert alert-secondary fixed-bottom mb-0 text-center" role="alert">
-    <span id="consent-text">
-      This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking "Accept", you consent to the use of cookies.
-    </span>
-    <button id="cmp-accept" class="btn btn-primary ms-2">Accept</button>
-    <button id="cmp-manage" class="btn btn-outline-primary ms-2">Manage</button>
+  <div id="cmp-banner">
+    <span id="consent-text">This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking "Accept", you consent to the use of cookies.</span>
+    <button id="cmp-accept">Accept</button>
+    <button id="cmp-manage">Manage</button>
   </div>
-
-  <!-- Bootstrap Bundle with Popper -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       /* --------------------------
@@ -270,7 +353,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         document.getElementById("guideHeading").textContent = transcribeTranslations[lang].guideHeading;
         document.getElementById("guideText").innerHTML = transcribeTranslations[lang].guideText;
       }
-      
       let currentLangTranscribe = localStorage.getItem("siteLanguage") || "en";
       document.getElementById("lang-select-transcribe").value = currentLangTranscribe;
       updateLanguageTranscribe(currentLangTranscribe);
@@ -490,7 +572,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         chunkNumber++;
       }
       
-      // Upload function with API error status message
+      // Upload function (upload timer removed)
       async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
         const formData = new FormData();
         formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
@@ -505,10 +587,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
             method: "POST",
             body: formData
           });
-          if (!response.ok) {
-            updateStatusMessage("API error: " + response.statusText, "red");
-            throw new Error("API error: " + response.statusText);
-          }
           const result = await response.json();
           return result;
         } catch (error) {
@@ -626,8 +704,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           document.getElementById("stopButton").disabled = false;
           document.getElementById("pauseResumeButton").disabled = false;
           document.getElementById("pauseResumeButton").innerText = "Pause Recording";
-          // Add pulsing animation to the recording indicator
-          document.getElementById("recordIndicator").classList.add("recording");
         } catch (error) {
           updateStatusMessage("Microphone access error: " + error, "red");
         }
@@ -643,9 +719,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         // Reset scheduling variables to avoid interference with next recording
         chunkStartTime = 0;
         lastFrameTime = 0;
-        // Remove pulsing animation and set indicator to grey
-        document.getElementById("recordIndicator").classList.remove("recording");
-        document.getElementById("recordIndicator").style.backgroundColor = "grey";
         // Final capture delay of 2 seconds
         await new Promise(resolve => setTimeout(resolve, 2000));
         await processAudioChunk();
@@ -758,10 +831,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
               stream: true
             })
           });
-          if (!response.ok) {
-             updateStatusMessage("API error during note generation: " + response.statusText, "red");
-             throw new Error("API error during note generation: " + response.statusText);
-          }
           const reader = response.body.getReader();
           const decoder = new TextDecoder("utf-8");
           let done = false;
@@ -794,7 +863,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           clearInterval(noteTimerInterval);
           generatedNoteField.value = "Error generating note: " + error;
           noteTimerElement.innerText = "";
-          updateStatusMessage("Error generating note: " + error, "red");
         }
       });
       

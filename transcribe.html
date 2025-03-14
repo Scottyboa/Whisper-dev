@@ -617,7 +617,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // Finalize stop: start the completion timer and update UI.
+      // Finalize stop: update UI and start completion timer.
       function finalizeStop() {
         completionStartTime = Date.now();
         completionTimerInterval = setInterval(() => {
@@ -662,6 +662,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }, 3000);
       }
       
+      // Update transcription output and stop completion timer if all transcripts are fetched.
       function updateTranscriptionOutput() {
         let sortedKeys = Object.keys(transcriptChunks).map(Number).sort((a, b) => a - b);
         let combinedTranscript = "";
@@ -669,6 +670,13 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           combinedTranscript += transcriptChunks[key] + " ";
         });
         document.getElementById("transcription").value = combinedTranscript.trim();
+        // Check if all expected transcripts have been fetched.
+        // Assuming chunkNumber was incremented after each chunk upload,
+        // the expected count is (chunkNumber - 1).
+        if (manualStop && Object.keys(transcriptChunks).length >= (chunkNumber - 1)) {
+          clearInterval(completionTimerInterval);
+          updateStatusMessage("Transcription finished!", "green");
+        }
       }
       
       // Dynamic scheduling function for auto-slicing.
@@ -743,6 +751,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         stopMicrophone();
         chunkStartTime = 0;
         lastFrameTime = 0;
+        // Small delay to allow any scheduled processing to start.
         await new Promise(resolve => setTimeout(resolve, 200));
         if (chunkProcessingLock) {
           pendingStop = true;

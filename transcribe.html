@@ -500,6 +500,46 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         return new Blob([view], { type: 'audio/wav' });
       }
       
+      // Upload function with retry mechanism.
+      async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
+        const formData = new FormData();
+        formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
+        formData.append("group_id", currentGroup);
+        formData.append("chunk_number", currentChunkNumber);
+        formData.append("api_key", sessionStorage.getItem("openai_api_key"));
+        if (isLast) {
+          formData.append("last_chunk", "true");
+        }
+        
+        let attempts = 0;
+        const retryDelay = 4000; // 4 seconds
+        const maxRetryTime = 60000; // 1 minute
+        const startTime = Date.now();
+        while (true) {
+          try {
+            const response = await fetch(`${backendUrl}/upload`, {
+              method: "POST",
+              body: formData
+            });
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`Server responded with status ${response.status}: ${errorText}`);
+            }
+            const result = await response.json();
+            return result;
+          } catch (error) {
+            attempts++;
+            if (Date.now() - startTime >= maxRetryTime) {
+              updateStatusMessage("Failed to upload chunk " + currentChunkNumber + " after maximum retry time", "red");
+              throw new Error("Maximum retry time exceeded for chunk " + currentChunkNumber);
+            }
+            updateStatusMessage("Error uploading chunk " + currentChunkNumber + " (Attempt " + attempts + "): " + error, "red");
+            console.error(`Upload error for chunk ${currentChunkNumber} on attempt ${attempts}:`, error);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+          }
+        }
+      }
+      
       // Process accumulated audio frames into a WAV blob and upload.
       // Simplified: process all captured audio frames without overlap trimming.
       async function processAudioChunk(force = false) {
@@ -561,12 +601,10 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       function pollChunkTranscript(chunkNum, currentGroup) {
         const pollStart = Date.now();
         pollingIntervals[chunkNum] = setInterval(async () => {
-          // If session has changed, clear the interval.
           if (groupId !== currentGroup) {
             clearInterval(pollingIntervals[chunkNum]);
             return;
           }
-          // Check if 1 minute has elapsed.
           if (Date.now() - pollStart > 60000) {
             console.log(`Polling timeout for chunk ${chunkNum}`);
             clearInterval(pollingIntervals[chunkNum]);
@@ -632,17 +670,13 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       const backendUrl = "https://whisper-dev-backend.fly.dev";
       
       document.getElementById("startButton").addEventListener("click", async () => {
-        // Clear previous transcript data and polling intervals for a new session.
         transcriptChunks = {};
         Object.values(pollingIntervals).forEach(interval => clearInterval(interval));
         pollingIntervals = {};
         document.getElementById("transcription").value = "";
-        
-        // Reset scheduling variables
         chunkStartTime = Date.now();
         lastFrameTime = Date.now();
         clearTimeout(chunkTimeoutId);
-        
         manualStop = false;
         updateStatusMessage("Recording...", "green");
         try {
@@ -686,18 +720,13 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       document.getElementById("stopButton").addEventListener("click", async () => {
         updateStatusMessage("Finishing transcription...", "blue");
         manualStop = true;
-        // Clear dynamic scheduler and recording timer
         clearTimeout(chunkTimeoutId);
         clearInterval(recordingTimerInterval);
         stopMicrophone();
-        // Reset scheduling variables to avoid interference with next recording
         chunkStartTime = 0;
         lastFrameTime = 0;
-        // Final capture delay of 2 seconds
         await new Promise(resolve => setTimeout(resolve, 2000));
-        // Force processing of all remaining frames regardless of duration
         await processAudioChunk(true);
-        // Start the completion timer until the final transcript is received.
         completionStartTime = Date.now();
         completionTimerInterval = setInterval(() => {
           document.getElementById("transcribeTimer").innerText = "Completion Timer: " + formatTime(Date.now() - completionStartTime);

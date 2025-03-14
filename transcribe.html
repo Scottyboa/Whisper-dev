@@ -428,6 +428,10 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       let lastFrameTime = 0;
       let chunkTimeoutId;
       
+      // Locking mechanism variables
+      let chunkProcessingLock = false;
+      let pendingStop = false;
+      
       function updateStatusMessage(message, color = "#333") {
         const statusMessage = document.getElementById("statusMessage");
         statusMessage.innerText = message;
@@ -500,49 +504,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         return new Blob([view], { type: 'audio/wav' });
       }
       
-      // Upload function with retry mechanism.
-      async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
-        const formData = new FormData();
-        formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
-        formData.append("group_id", currentGroup);
-        formData.append("chunk_number", currentChunkNumber);
-        formData.append("api_key", sessionStorage.getItem("openai_api_key"));
-        if (isLast) {
-          formData.append("last_chunk", "true");
-        }
-        
-        let attempts = 0;
-        const retryDelay = 4000; // 4 seconds
-        const maxRetryTime = 60000; // 1 minute
-        const startTime = Date.now();
-        while (true) {
-          try {
-            const response = await fetch(`${backendUrl}/upload`, {
-              method: "POST",
-              body: formData
-            });
-            if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(`Server responded with status ${response.status}: ${errorText}`);
-            }
-            const result = await response.json();
-            return result;
-          } catch (error) {
-            attempts++;
-            if (Date.now() - startTime >= maxRetryTime) {
-              updateStatusMessage("Failed to upload chunk " + currentChunkNumber + " after maximum retry time", "red");
-              throw new Error("Maximum retry time exceeded for chunk " + currentChunkNumber);
-            }
-            updateStatusMessage("Error uploading chunk " + currentChunkNumber + " (Attempt " + attempts + "): " + error, "red");
-            console.error(`Upload error for chunk ${currentChunkNumber} on attempt ${attempts}:`, error);
-            await new Promise(resolve => setTimeout(resolve, retryDelay));
-          }
-        }
-      }
-      
-      // Process accumulated audio frames into a WAV blob and upload.
-      // Simplified: process all captured audio frames without overlap trimming.
-      async function processAudioChunk(force = false) {
+      // Internal chunk processing function (does the actual work)
+      async function processAudioChunkInternal(force = false) {
         if (audioFrames.length === 0) return;
         let framesToProcess = audioFrames;
         audioFrames = []; // Clear the buffer after processing
@@ -597,7 +560,36 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         chunkNumber++;
       }
       
-      // New pollChunkTranscript with 3 sec interval, 1 minute timeout, and stop on success.
+      // Lock-protected wrapper for chunk processing.
+      async function safeProcessAudioChunk(force = false) {
+        if (chunkProcessingLock) {
+          // If a process is already running, skip (for scheduled auto-slicing).
+          return;
+        }
+        chunkProcessingLock = true;
+        await processAudioChunkInternal(force);
+        chunkProcessingLock = false;
+        // If a manual stop was requested while processing, finalize the stop.
+        if (pendingStop) {
+          pendingStop = false;
+          finalizeStop();
+        }
+      }
+      
+      // Finalize stop: start completion timer, poll remaining chunks, disable further slicing.
+      function finalizeStop() {
+        completionStartTime = Date.now();
+        completionTimerInterval = setInterval(() => {
+          document.getElementById("transcribeTimer").innerText = "Completion Timer: " + formatTime(Date.now() - completionStartTime);
+        }, 1000);
+        finalPollAllChunks();
+        document.getElementById("startButton").disabled = false;
+        document.getElementById("stopButton").disabled = true;
+        document.getElementById("pauseResumeButton").disabled = true;
+        console.log("Recording stopped by user.");
+      }
+      
+      // New pollChunkTranscript with 3 sec interval, 1 minute timeout.
       function pollChunkTranscript(chunkNum, currentGroup) {
         const pollStart = Date.now();
         pollingIntervals[chunkNum] = setInterval(async () => {
@@ -650,16 +642,14 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         }
       }
       
-      // Dynamic scheduling function for chunk processing using MIN and MAX durations.
+      // Dynamic scheduling function for auto-slicing.
       function scheduleChunk() {
+        // If manual stop has been triggered, do not schedule further processing.
+        if (manualStop) return;
         const elapsed = Date.now() - chunkStartTime;
         const timeSinceLast = Date.now() - lastFrameTime;
-        if (elapsed >= MAX_CHUNK_DURATION) {
-          processAudioChunk();
-          chunkStartTime = Date.now();
-          scheduleChunk();
-        } else if (elapsed >= MIN_CHUNK_DURATION && timeSinceLast >= watchdogThreshold) {
-          processAudioChunk();
+        if (elapsed >= MAX_CHUNK_DURATION || (elapsed >= MIN_CHUNK_DURATION && timeSinceLast >= watchdogThreshold)) {
+          safeProcessAudioChunk();
           chunkStartTime = Date.now();
           scheduleChunk();
         } else {
@@ -670,6 +660,7 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       const backendUrl = "https://whisper-dev-backend.fly.dev";
       
       document.getElementById("startButton").addEventListener("click", async () => {
+        // Reset state for a new session.
         transcriptChunks = {};
         Object.values(pollingIntervals).forEach(interval => clearInterval(interval));
         pollingIntervals = {};
@@ -725,17 +716,15 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
         stopMicrophone();
         chunkStartTime = 0;
         lastFrameTime = 0;
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        await processAudioChunk(true);
-        completionStartTime = Date.now();
-        completionTimerInterval = setInterval(() => {
-          document.getElementById("transcribeTimer").innerText = "Completion Timer: " + formatTime(Date.now() - completionStartTime);
-        }, 1000);
-        finalPollAllChunks();
-        document.getElementById("startButton").disabled = false;
-        document.getElementById("stopButton").disabled = true;
-        document.getElementById("pauseResumeButton").disabled = true;
-        console.log("Recording stopped by user.");
+        // Small delay to allow any scheduled processing to start.
+        await new Promise(resolve => setTimeout(resolve, 200));
+        if (chunkProcessingLock) {
+          // If a slice is already processing, mark that manual stop is pending.
+          pendingStop = true;
+        } else {
+          await safeProcessAudioChunk(true);
+          finalizeStop();
+        }
       });
       
       document.getElementById("pauseResumeButton").addEventListener("click", () => {

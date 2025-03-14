@@ -237,8 +237,8 @@
       <br><br>
       <strong>How to Use the Functions:</strong>
       <ul>
-        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file. A 0.5‑second overlap between chunks is maintained.</li>
-        <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. A 2‑second final capture period collects any remaining audio before processing the final chunk. The Completion Timer then ticks until the full transcript is received.</li>
+        <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file.</li>
+        <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. A 2-second final capture period collects any remaining audio before processing the final chunk. The Completion Timer then ticks until the full transcript is received.</li>
         <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
         <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
         <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
@@ -284,8 +284,8 @@
 <br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
-  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file. A 0.5‑second overlap between chunks is maintained.</li>
-  <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. A 2‑second final capture period collects any remaining audio before processing the final chunk. The Completion Timer then ticks until the full transcript is received.</li>
+  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file.</li>
+  <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. A 2-second final capture period collects any remaining audio before processing the final chunk. The Completion Timer then ticks until the full transcript is received.</li>
   <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
   <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
   <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
@@ -318,7 +318,7 @@ Please click "Functions" to return to the main interface.`
 <br><br>
 <strong>Slik bruker du verktøyet:</strong>
 <ul>
-  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Lydopptak fanges via MediaStreamTrackProcessor (med WebCodecs) og akkumuleres i opptil 40 sekunders biter før de pakkes som gyldige WAV-filer. Det beholdes en 0,5-sekunders overlapping mellom bitene.</li>
+  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Lydopptak fanges via MediaStreamTrackProcessor (med WebCodecs) og akkumuleres i opptil 40 sekunders biter før de pakkes som gyldige WAV-filer.</li>
   <li><strong>Fullføring:</strong> Etter at du klikker "Stopp/Fullfør", avsluttes opptaket. En 2-sekunders sluttfase fanger opp resterende lyd, og deretter tickes fullføringstimeren til transkripsjonen er ferdig.</li>
   <li><strong>Notatgenerering:</strong> Etter transkripsjonen, klikk "Generer notat" for å lage et notat basert på transkripsjonen og din tilpassede melding.</li>
   <li><strong>Tilpasset melding:</strong> Velg et meldingsfelt (1–10) og skriv inn din tilpassede melding. Meldingen lagres automatisk og knyttes til din API-nøkkel.</li>
@@ -420,9 +420,9 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       let transcriptChunks = {};
       let pollingIntervals = {};
       
-      // Dynamic scheduling constants: aim for chunks between 27 and 33 seconds
-      const MIN_CHUNK_DURATION = 30000; // 27 seconds
-      const MAX_CHUNK_DURATION = 30000; // 33 seconds
+      // Dynamic scheduling constants: aim for chunks of 30 seconds
+      const MIN_CHUNK_DURATION = 30000; 
+      const MAX_CHUNK_DURATION = 30000; 
       const watchdogThreshold = 1500;    // 1.5 sec with no frame
       let chunkStartTime = 0;
       let lastFrameTime = 0;
@@ -501,29 +501,11 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
       }
       
       // Process accumulated audio frames into a WAV blob and upload.
-      // Implements a 0.5-second overlap.
+      // Simplified: process all captured audio frames without overlap trimming.
       async function processAudioChunk(force = false) {
         if (audioFrames.length === 0) return;
-        let framesToProcess;
-        if (force) {
-          // Process all frames regardless of duration
-          framesToProcess = audioFrames;
-          audioFrames = [];
-        } else {
-          let totalOverlap = 0;
-          let overlapIndex = audioFrames.length;
-          for (let i = audioFrames.length - 1; i >= 0; i--) {
-            const duration = audioFrames[i].numberOfFrames / audioFrames[i].sampleRate;
-            totalOverlap += duration;
-            if (totalOverlap >= 0.5) { // 0.5 sec overlap
-              overlapIndex = i;
-              break;
-            }
-          }
-          framesToProcess = audioFrames.slice(0, overlapIndex);
-          audioFrames = audioFrames.slice(overlapIndex); // retain overlap frames
-          if (framesToProcess.length === 0) return;
-        }
+        let framesToProcess = audioFrames;
+        audioFrames = []; // Clear the buffer after processing
         const sampleRate = framesToProcess[0].sampleRate;
         const numChannels = framesToProcess[0].numberOfChannels;
         let pcmDataArray = [];
@@ -573,46 +555,6 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
           })
           .catch(err => console.error(`Upload error for chunk ${currentChunk}:`, err));
         chunkNumber++;
-      }
-      
-      // Updated upload function with retry mechanism and maximum retry time of 1 minute.
-      async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
-        const formData = new FormData();
-        formData.append("file", blob, `chunk_${currentChunkNumber}.${extension}`);
-        formData.append("group_id", currentGroup);
-        formData.append("chunk_number", currentChunkNumber);
-        formData.append("api_key", sessionStorage.getItem("openai_api_key"));
-        if (isLast) {
-          formData.append("last_chunk", "true");
-        }
-        
-        let attempts = 0;
-        const retryDelay = 4000; // 4 seconds
-        const maxRetryTime = 60000; // 1 minute in milliseconds
-        const startTime = Date.now();
-        while (true) {
-          try {
-            const response = await fetch(`${backendUrl}/upload`, {
-              method: "POST",
-              body: formData
-            });
-            if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(`Server responded with status ${response.status}: ${errorText}`);
-            }
-            const result = await response.json();
-            return result; // Successful upload; exit retry loop.
-          } catch (error) {
-            attempts++;
-            if (Date.now() - startTime >= maxRetryTime) {
-              updateStatusMessage("Failed to upload chunk " + currentChunkNumber + " after maximum retry time", "red");
-              throw new Error("Maximum retry time exceeded for chunk " + currentChunkNumber);
-            }
-            updateStatusMessage("Error uploading chunk " + currentChunkNumber + " (Attempt " + attempts + "): " + error, "red");
-            console.error(`Upload error for chunk ${currentChunkNumber} on attempt ${attempts}:`, error);
-            await new Promise(resolve => setTimeout(resolve, retryDelay));
-          }
-        }
       }
       
       // New pollChunkTranscript with 3 sec interval, 1 minute timeout, and stop on success.

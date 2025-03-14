@@ -34,7 +34,6 @@
       font-size: 20px;
       margin-top: 10px;
     }
-
     /* Language Icon & Dropdown */
     #lang-container {
       position: absolute;
@@ -42,10 +41,10 @@
       right: 10px;
       display: flex;
       align-items: center;
-      z-index: 1000; /* Added z-index */
+      z-index: 1000;
     }
     #lang-container img {
-      width: 28px;  /* Reduced size */
+      width: 28px;
       height: 28px;
       margin-right: 5px;
     }
@@ -53,7 +52,6 @@
       padding: 5px;
       font-size: 14px;
     }
-
     .container {
       max-width: 800px;
       margin: 40px auto;
@@ -97,7 +95,6 @@
       font-weight: bold;
       color: #555;
     }
-
     /* Consent Banner */
     #cmp-banner {
       position: fixed;
@@ -116,7 +113,6 @@
       margin-left: 10px;
       padding: 8px 16px;
     }
-
     /* API Guide Overlay */
     #apiKeyGuideOverlay {
       display: none;
@@ -159,12 +155,10 @@
       <option value="no">Norsk</option>
     </select>
   </div>
-
   <header>
     <h1 id="header-title">Whisper Transcription</h1>
     <p id="header-subtitle">Convert speech to text for professional consultations</p>
   </header>
-
   <div class="container">
     <p id="start-text">To get started, please enter your OpenAI API key:</p>
     <input type="text" id="apiKeyInput" placeholder="Enter API Key here" autocomplete="off">
@@ -176,7 +170,6 @@
       As we do not charge for the use of this website and rely solely on ad revenue, we kindly ask you to consent to personalized ads to help support our service.
     </p>
   </div>
-
   <!-- API Guide Overlay -->
   <div id="apiKeyGuideOverlay">
     <div id="apiKeyGuideModal">
@@ -198,143 +191,13 @@
       <button id="closeGuideBtn" style="background:red; color:#fff; padding:10px 20px; border:none; border-radius:10px; cursor:pointer; margin-top:20px;">Close</button>
     </div>
   </div>
-
   <!-- Consent Banner -->
   <div id="cmp-banner">
     <span id="consent-text">This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking "Accept", you consent to the use of cookies.</span>
     <button id="cmp-accept">Accept</button>
     <button id="cmp-manage">Manage</button>
   </div>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      /* --------------------------
-         Translation Objects for Index Page (Only English and Norwegian)
-         -------------------------- */
-      const indexTranslations = {
-        en: {
-          pageTitle: "Whisper Transcription",
-          headerTitle: "Whisper Transcription",
-          headerSubtitle: "Convert speech to text for professional consultations",
-          startText: "To get started, please enter your OpenAI API key:",
-          apiPlaceholder: "Enter API Key here",
-          enterButton: "Enter Transcription Tool",
-          guideButton: "Guide for setting up API key",
-          adRevenueMessage: "As we do not charge for the use of this website and rely solely on ad revenue, we kindly ask you to consent to personalized ads to help support our service."
-        },
-        no: {
-          pageTitle: "Whisper Transkripsjon",
-          headerTitle: "Whisper Transkripsjon",
-          headerSubtitle: "Konverter tale til tekst for profesjonelle konsultasjoner",
-          startText: "For å komme i gang, vennligst skriv inn din OpenAI API-nøkkel:",
-          apiPlaceholder: "Skriv inn API-nøkkel her",
-          enterButton: "Gå til transkripsjonsverktøy",
-          guideButton: "Veiledning for oppsett av API-nøkkel",
-          adRevenueMessage: "Siden vi ikke tar betalt for bruk av denne nettsiden og utelukkende er avhengige av annonseinntekter, ber vi deg vennligst om å samtykke til personaliserte annonser for å støtte tjenesten vår."
-        }
-      };
-
-      /* --------------------------
-         Update Index Page Language
-         -------------------------- */
-      function updateLanguageIndex(lang) {
-        document.getElementById("page-title").textContent = indexTranslations[lang].pageTitle;
-        document.getElementById("header-title").textContent = indexTranslations[lang].headerTitle;
-        document.getElementById("header-subtitle").textContent = indexTranslations[lang].headerSubtitle;
-        document.getElementById("start-text").textContent = indexTranslations[lang].startText;
-        document.getElementById("apiKeyInput").setAttribute("placeholder", indexTranslations[lang].apiPlaceholder);
-        document.getElementById("enterTranscriptionBtn").textContent = indexTranslations[lang].enterButton;
-        document.getElementById("openGuideButton").textContent = indexTranslations[lang].guideButton;
-        document.getElementById("ad-revenue-message").textContent = indexTranslations[lang].adRevenueMessage;
-      }
-
-      let currentLang = localStorage.getItem("siteLanguage") || "en";
-      document.getElementById("lang-select").value = currentLang;
-      updateLanguageIndex(currentLang);
-
-      document.getElementById("lang-select").addEventListener("change", function() {
-        currentLang = this.value;
-        localStorage.setItem("siteLanguage", currentLang);
-        updateLanguageIndex(currentLang);
-      });
-
-      /* --------------------------
-         Consent Banner & Cookie Management (Index Page)
-         -------------------------- */
-      function setCookie(name, value, days) {
-        var expires = "";
-        if (days) {
-          var date = new Date();
-          date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-          expires = "; expires=" + date.toUTCString();
-        }
-        document.cookie = name + "=" + (value || "") + expires + "; path=/";
-      }
-      function getCookie(name) {
-        var nameEQ = name + "=";
-        var ca = document.cookie.split(';');
-        for (var i = 0; i < ca.length; i++) {
-          var c = ca[i];
-          while (c.charAt(0) === ' ') c = c.substring(1);
-          if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
-        }
-        return null;
-      }
-      function loadAdSense() {
-        var script = document.createElement('script');
-        script.async = true;
-        script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
-        document.head.appendChild(script);
-        (adsbygoogle = window.adsbygoogle || []).push({});
-      }
-
-      document.getElementById("cmp-accept").addEventListener("click", function() {
-        setCookie("user_consent", "accepted", 365);
-        document.getElementById("cmp-banner").style.display = "none";
-        loadAdSense();
-      });
-
-      document.getElementById("cmp-manage").addEventListener("click", function() {
-        alert("Here you can manage your cookie and ad preferences.");
-      });
-
-      (function() {
-        if (getCookie("user_consent") === "accepted") {
-          document.getElementById("cmp-banner").style.display = "none";
-          loadAdSense();
-          document.getElementById("ad-revenue-message").style.display = "none";
-        }
-      })();
-
-      /* --------------------------
-         API Key & Guide Logic (Index Page)
-         -------------------------- */
-      const overlayIndex = document.getElementById("apiKeyGuideOverlay");
-      const closeGuideIndex = document.getElementById("closeGuideBtn");
-      const openGuideButton = document.getElementById("openGuideButton");
-      const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");
-      const apiKeyInput = document.getElementById("apiKeyInput");
-
-      openGuideButton.addEventListener("click", () => {
-        overlayIndex.style.display = "flex";
-        overlayIndex.style.flexDirection = "column";
-        overlayIndex.style.alignItems = "center";
-      });
-
-      closeGuideIndex.addEventListener("click", () => {
-        overlayIndex.style.display = "none";
-      });
-
-      enterTranscriptionBtn.addEventListener("click", () => {
-        const apiKey = apiKeyInput.value.trim();
-        if (apiKey) {
-          sessionStorage.setItem("openai_api_key", apiKey);
-          window.location.href = "transcribe.html";
-        } else {
-          alert("Please enter a valid API key.");
-        }
-      });
-    });
-  </script>
+  <!-- Import main-index.js to initialize language, guide overlay, and consent banner -->
+  <script type="module" src="./js/main-index.js"></script>
 </body>
 </html>

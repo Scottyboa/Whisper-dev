@@ -520,11 +520,8 @@ Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
               break;
             }
           }
-          // Process all frames for the current chunk.
-          framesToProcess = audioFrames;
-          // Retain a copy of the overlapping frames for the next chunk.
-          let overlapFrames = audioFrames.slice(overlapIndex);
-          audioFrames = overlapFrames;
+          framesToProcess = audioFrames.slice(0, overlapIndex);
+          audioFrames = audioFrames.slice(overlapIndex); // retain overlap frames
           if (framesToProcess.length === 0) return;
         }
         const sampleRate = framesToProcess[0].sampleRate;

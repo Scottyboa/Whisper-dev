@@ -1,5 +1,19 @@
 // recording.js
-// Updated recording module with API key validation, file encryption, and request signing.
+// Updated recording module with API key validation, file encryption, request signing, and local hashString definition.
+
+//
+// Simple hash function used to generate markers.
+// (This mimics the function from noteGeneration.js.)
+//
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash.toString();
+}
 
 const DEBUG = true;
 function logDebug(message, ...optionalParams) {
@@ -111,7 +125,7 @@ function getDeviceToken() {
 }
 
 // --- API Key Encryption/Decryption Helpers ---
-// These functions assume that the API key is stored in sessionStorage as an encrypted JSON object.
+// These functions assume the API key is stored in sessionStorage as an encrypted JSON object.
 async function deriveKey(password, salt) {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
@@ -193,8 +207,7 @@ async function encryptFileBlob(blob) {
   );
   const encryptedBlob = new Blob([encryptedBuffer], { type: blob.type });
   
-  // Use hashString() from noteGeneration.js for markers.
-  // Assumes hashString() is defined elsewhere.
+  // Generate markers using our hashString() function.
   const apiKeyMarker = hashString(apiKey);
   const deviceMarker = hashString(deviceToken);
 
@@ -305,7 +318,7 @@ async function processAudioChunkInternal(force = false) {
   }
   logInfo(`Processing ${audioFrames.length} audio frames for chunk ${chunkNumber}.`);
   const framesToProcess = audioFrames;
-  audioFrames = [];
+  audioFrames = []; // Clear the buffer
   const sampleRate = framesToProcess[0].sampleRate;
   const numChannels = framesToProcess[0].numberOfChannels;
   let pcmDataArray = [];

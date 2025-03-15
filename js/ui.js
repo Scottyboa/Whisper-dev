@@ -29,11 +29,8 @@ function loadAdSense() {
   const script = document.createElement("script");
   script.async = true;
   script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
-  script.onload = function() {
-    window.adsbygoogle = window.adsbygoogle || [];
-    window.adsbygoogle.push({});
-  };
   document.head.appendChild(script);
+  (adsbygoogle = window.adsbygoogle || []).push({});
 }
 
 // Initializes the consent banner: attaches event listeners and checks cookie status.
@@ -47,11 +44,11 @@ function initConsentBanner() {
       setCookie("user_consent", "accepted", 365);
       if (cmpBanner) cmpBanner.style.display = "none";
       loadAdSense();
-      // Optionally hide any ad revenue messages if present.
       const adRevenueMessage = document.getElementById("ad-revenue-message");
       if (adRevenueMessage) {
         adRevenueMessage.style.display = "none";
       }
+      console.log("Consent accepted: AdSense loaded and banner hidden.");
     });
   }
 
@@ -61,7 +58,6 @@ function initConsentBanner() {
     });
   }
 
-  // On page load, if the user already consented, hide the banner and load ads.
   if (getCookie("user_consent") === "accepted") {
     if (cmpBanner) cmpBanner.style.display = "none";
     loadAdSense();
@@ -69,12 +65,13 @@ function initConsentBanner() {
     if (adRevenueMessage) {
       adRevenueMessage.style.display = "none";
     }
+    console.log("Consent already accepted: Banner hidden and AdSense loaded.");
   }
 }
 
 // === Guide Overlay (Index Page) ===
 
-// Initializes the API key guide overlay on the index page.
+// Initializes the API key guide overlay and the enter button event listener.
 function initGuideOverlay() {
   const overlay = document.getElementById("apiKeyGuideOverlay");
   const closeGuide = document.getElementById("closeGuideBtn");
@@ -82,30 +79,43 @@ function initGuideOverlay() {
   const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");
   const apiKeyInput = document.getElementById("apiKeyInput");
 
+  // Check if overlay and openGuideButton exist
   if (openGuideButton && overlay) {
     openGuideButton.addEventListener("click", () => {
       overlay.style.display = "flex";
       overlay.style.flexDirection = "column";
       overlay.style.alignItems = "center";
+      console.log("Guide overlay opened.");
     });
+  } else {
+    console.error("Guide overlay or openGuideButton element missing.");
   }
 
   if (closeGuide && overlay) {
     closeGuide.addEventListener("click", () => {
       overlay.style.display = "none";
+      console.log("Guide overlay closed.");
     });
+  } else {
+    console.error("Close guide button element missing.");
   }
 
+  // Attach event listener to enter button.
   if (enterTranscriptionBtn && apiKeyInput) {
     enterTranscriptionBtn.addEventListener("click", () => {
+      console.log("Enter button clicked.");
       const apiKey = apiKeyInput.value.trim();
       if (apiKey) {
+        console.log("API key entered:", apiKey);
         sessionStorage.setItem("openai_api_key", apiKey);
         window.location.href = "transcribe.html";
       } else {
+        console.log("No valid API key entered.");
         alert("Please enter a valid API key.");
       }
     });
+  } else {
+    console.error("Enter button or API key input element missing.");
   }
 }
 

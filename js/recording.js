@@ -390,7 +390,7 @@ function initRecording() {
           }
           lastFrameTime = Date.now();
           audioFrames.push(value);
-          logDebug("Audio frame received.", { framesInBuffer: audioFrames.length });
+          // Removed per-frame logging to avoid log flooding.
           readLoop();
         }).catch(err => {
           logError("Error reading audio frames", err);

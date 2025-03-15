@@ -1,5 +1,5 @@
 // recording.js
-// Updated recording module with API key validation, file encryption, request signing, and local hashString definition.
+// Updated recording module with API key validation, file encryption, request signing, and sending device_token.
 
 //
 // Simple hash function used to generate markers.
@@ -125,7 +125,7 @@ function getDeviceToken() {
 }
 
 // --- API Key Encryption/Decryption Helpers ---
-// These functions assume the API key is stored in sessionStorage as an encrypted JSON object.
+// These functions assume that the API key is stored in sessionStorage as an encrypted JSON object.
 async function deriveKey(password, salt) {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
@@ -248,7 +248,7 @@ async function signUploadRequest(groupId, chunkNumber) {
   return await computeHMAC(message, secret);
 }
 
-// --- Upload Chunk Function (with Encryption and Request Signing) ---
+// --- Upload Chunk Function (with Encryption, Request Signing, and sending device_token) ---
 async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
   let encryptionResult;
   try {
@@ -276,6 +276,8 @@ async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast
   formData.append("salt", encryptionResult.salt);
   formData.append("api_key_marker", encryptionResult.apiKeyMarker);
   formData.append("device_marker", encryptionResult.deviceMarker);
+  // Now send the device_token
+  formData.append("device_token", getDeviceToken());
   formData.append("signature", signature);
   if (isLast) {
     formData.append("last_chunk", "true");

@@ -1,7 +1,6 @@
 // recording.js
 // Updated recording module with API key validation, file encryption, and request signing.
 
-// --- Global Debug and Logging ---
 const DEBUG = true;
 function logDebug(message, ...optionalParams) {
   if (DEBUG) {
@@ -15,13 +14,11 @@ function logError(message, ...optionalParams) {
   console.error(new Date().toISOString(), "[ERROR]", message, ...optionalParams);
 }
 
-// --- Scheduling and Backend Constants ---
 const MIN_CHUNK_DURATION = 30000; // 30 seconds
 const MAX_CHUNK_DURATION = 30000; // 30 seconds
 const watchdogThreshold = 1500;   // 1.5 seconds with no frame
 const backendUrl = "https://whisper-dev-backend.fly.dev";
 
-// --- Recording State Variables ---
 let mediaStream = null;
 let audioReader = null;
 let recordingStartTime = 0;
@@ -114,7 +111,7 @@ function getDeviceToken() {
 }
 
 // --- API Key Encryption/Decryption Helpers ---
-// (Assumes the API key was encrypted on entry; here we only need to decrypt it.)
+// These functions assume that the API key is stored in sessionStorage as an encrypted JSON object.
 async function deriveKey(password, salt) {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
@@ -142,7 +139,6 @@ async function decryptAPIKey(encryptedData) {
   // encryptedData is an object: { ciphertext, iv, salt } (all Base64-encoded)
   const { ciphertext, iv, salt } = encryptedData;
   const deviceToken = getDeviceToken();
-  const encoder = new TextEncoder();
   const key = await deriveKey(deviceToken, base64ToArrayBuffer(salt));
   const decryptedBuffer = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: base64ToArrayBuffer(iv) },
@@ -197,8 +193,8 @@ async function encryptFileBlob(blob) {
   );
   const encryptedBlob = new Blob([encryptedBuffer], { type: blob.type });
   
-  // Use the existing hashString() from noteGeneration.js for markers.
-  // It must be defined in noteGeneration.js; here we assume it's available.
+  // Use hashString() from noteGeneration.js for markers.
+  // Assumes hashString() is defined elsewhere.
   const apiKeyMarker = hashString(apiKey);
   const deviceMarker = hashString(deviceToken);
 
@@ -241,7 +237,6 @@ async function signUploadRequest(groupId, chunkNumber) {
 
 // --- Upload Chunk Function (with Encryption and Request Signing) ---
 async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast = false, currentGroup) {
-  // Encrypt the blob.
   let encryptionResult;
   try {
     encryptionResult = await encryptFileBlob(blob);
@@ -251,7 +246,6 @@ async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast
   }
   const encryptedBlob = encryptionResult.encryptedBlob;
 
-  // Compute signature.
   let signature;
   try {
     signature = await signUploadRequest(currentGroup, currentChunkNumber);
@@ -265,19 +259,15 @@ async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast
   formData.append("group_id", currentGroup);
   formData.append("chunk_number", currentChunkNumber);
   formData.append("api_key", await getDecryptedAPIKey());
-  // Append encryption metadata.
   formData.append("iv", encryptionResult.iv);
   formData.append("salt", encryptionResult.salt);
   formData.append("api_key_marker", encryptionResult.apiKeyMarker);
   formData.append("device_marker", encryptionResult.deviceMarker);
-  // Append the computed signature.
   formData.append("signature", signature);
-  // Include last_chunk flag if needed.
   if (isLast) {
     formData.append("last_chunk", "true");
   }
   
-  // Upload retry logic.
   let attempts = 0;
   const retryDelay = 4000; // 4 seconds
   const maxRetryTime = 60000; // 1 minute
@@ -315,7 +305,7 @@ async function processAudioChunkInternal(force = false) {
   }
   logInfo(`Processing ${audioFrames.length} audio frames for chunk ${chunkNumber}.`);
   const framesToProcess = audioFrames;
-  audioFrames = []; // Clear the buffer
+  audioFrames = [];
   const sampleRate = framesToProcess[0].sampleRate;
   const numChannels = framesToProcess[0].numberOfChannels;
   let pcmDataArray = [];
@@ -349,7 +339,6 @@ async function processAudioChunkInternal(force = false) {
     pcmFloat32.set(arr, offset);
     offset += arr.length;
   }
-  // Convert Float32 to 16-bit PCM and encode as WAV.
   const pcmInt16 = floatTo16BitPCM(pcmFloat32);
   const wavBlob = encodeWAV(pcmInt16, sampleRate, numChannels);
   const mimeType = "audio/wav";
@@ -455,7 +444,6 @@ function updateTranscriptionOutput() {
   }
 }
 
-// Helper: Convert Float32 to 16-bit PCM.
 function floatTo16BitPCM(input) {
   const output = new Int16Array(input.length);
   for (let i = 0; i < input.length; i++) {
@@ -465,7 +453,6 @@ function floatTo16BitPCM(input) {
   return output;
 }
 
-// Helper: Encode WAV file.
 function encodeWAV(samples, sampleRate, numChannels) {
   const buffer = new ArrayBuffer(44 + samples.length * 2);
   const view = new DataView(buffer);
@@ -494,7 +481,6 @@ function encodeWAV(samples, sampleRate, numChannels) {
   return new Blob([view], { type: 'audio/wav' });
 }
 
-// --- Scheduler ---
 function scheduleChunk() {
   if (manualStop || recordingPaused) {
     logDebug("Scheduler suspended due to manual stop or pause.");
@@ -512,7 +498,6 @@ function scheduleChunk() {
   }
 }
 
-// --- Reset Recording State ---
 function resetRecordingState() {
   Object.values(pollingIntervals).forEach(interval => clearInterval(interval));
   pollingIntervals = {};
@@ -529,7 +514,6 @@ function resetRecordingState() {
   chunkNumber = 1;
 }
 
-// --- Event Listeners ---
 function initRecording() {
   const startButton = document.getElementById("startButton");
   const stopButton = document.getElementById("stopButton");
@@ -537,13 +521,12 @@ function initRecording() {
   if (!startButton || !stopButton || !pauseResumeButton) return;
 
   startButton.addEventListener("click", async () => {
-    // Validate API key presence (must start with "sk-").
-    const apiKeyCandidate = sessionStorage.getItem("openai_api_key");
-    if (!apiKeyCandidate || !apiKeyCandidate.startsWith("sk-")) {
+    // Retrieve and decrypt the API key before starting.
+    const decryptedApiKey = await getDecryptedAPIKey();
+    if (!decryptedApiKey || !decryptedApiKey.startsWith("sk-")) {
       alert("Please enter a valid OpenAI API key before starting the recording.");
       return;
     }
-    // Reset state for new recording.
     resetRecordingState();
     const transcriptionElem = document.getElementById("transcription");
     if (transcriptionElem) transcriptionElem.value = "";

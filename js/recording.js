@@ -27,6 +27,7 @@ let chunkTimeoutId;
 let chunkProcessingLock = false;
 let pendingStop = false;
 let finalChunkProcessed = false;  // NEW FLAG to prevent duplicate final chunk processing
+let recordingPaused = false;      // NEW FLAG to indicate pause state
 let audioFrames = []; // Buffer for audio frames
 
 // --- Utility Functions ---
@@ -296,7 +297,8 @@ function updateTranscriptionOutput() {
 
 // Automatically schedule processing of audio chunks
 function scheduleChunk() {
-  if (manualStop) return;
+  // If paused or stopped, don't continue scheduling.
+  if (manualStop || recordingPaused) return;
   const elapsed = Date.now() - chunkStartTime;
   const timeSinceLast = Date.now() - lastFrameTime;
   if (elapsed >= MAX_CHUNK_DURATION || (elapsed >= MIN_CHUNK_DURATION && timeSinceLast >= watchdogThreshold)) {
@@ -327,7 +329,8 @@ function initRecording() {
     lastFrameTime = Date.now();
     clearTimeout(chunkTimeoutId);
     manualStop = false;
-    finalChunkProcessed = false;  // Reset the final chunk flag at start
+    finalChunkProcessed = false;  // Reset final chunk flag at start
+    recordingPaused = false;      // Reset pause flag
     updateStatusMessage("Recording...", "green");
     try {
       mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -367,6 +370,31 @@ function initRecording() {
     }
   });
 
+  pauseResumeButton.addEventListener("click", () => {
+    if (!mediaStream) return;
+    const track = mediaStream.getAudioTracks()[0];
+    if (track.enabled) {
+      // Pause the recording: disable the track and suspend the scheduler.
+      track.enabled = false;
+      recordingPaused = true;
+      clearInterval(recordingTimerInterval);
+      clearTimeout(chunkTimeoutId);
+      pauseResumeButton.innerText = "Resume Recording";
+      updateStatusMessage("Recording paused", "orange");
+    } else {
+      // Resume the recording: re-enable the track and restart the scheduler.
+      track.enabled = true;
+      recordingPaused = false;
+      recordingStartTime = Date.now();
+      recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+      pauseResumeButton.innerText = "Pause Recording";
+      updateStatusMessage("Recording...", "green");
+      // Reset the chunk timer and resume scheduling.
+      chunkStartTime = Date.now();
+      scheduleChunk();
+    }
+  });
+
   stopButton.addEventListener("click", async () => {
     updateStatusMessage("Finishing transcription...", "blue");
     manualStop = true;
@@ -384,23 +412,6 @@ function initRecording() {
       // Mark that the final chunk has been processed to avoid duplicates.
       finalChunkProcessed = true;
       finalizeStop();
-    }
-  });
-
-  pauseResumeButton.addEventListener("click", () => {
-    if (!mediaStream) return;
-    const track = mediaStream.getAudioTracks()[0];
-    if (track.enabled) {
-      track.enabled = false;
-      clearInterval(recordingTimerInterval);
-      pauseResumeButton.innerText = "Resume Recording";
-      updateStatusMessage("Recording paused", "orange");
-    } else {
-      track.enabled = true;
-      recordingStartTime = Date.now();
-      recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-      pauseResumeButton.innerText = "Pause Recording";
-      updateStatusMessage("Recording...", "green");
     }
   });
 }

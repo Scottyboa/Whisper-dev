@@ -26,6 +26,7 @@ let chunkTimeoutId;
 
 let chunkProcessingLock = false;
 let pendingStop = false;
+let finalChunkProcessed = false;  // NEW FLAG to prevent duplicate final chunk processing
 let audioFrames = []; // Buffer for audio frames
 
 // --- Utility Functions ---
@@ -213,6 +214,8 @@ async function processAudioChunkInternal(force = false) {
 
 // Wrapper to ensure one chunk is processed at a time
 async function safeProcessAudioChunk(force = false) {
+  // Prevent processing final chunk twice when manual stop is active.
+  if (manualStop && finalChunkProcessed) return;
   if (chunkProcessingLock) return;
   chunkProcessingLock = true;
   await processAudioChunkInternal(force);
@@ -324,6 +327,7 @@ function initRecording() {
     lastFrameTime = Date.now();
     clearTimeout(chunkTimeoutId);
     manualStop = false;
+    finalChunkProcessed = false;  // Reset the final chunk flag at start
     updateStatusMessage("Recording...", "green");
     try {
       mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -377,6 +381,8 @@ function initRecording() {
       pendingStop = true;
     } else {
       await safeProcessAudioChunk(true);
+      // Mark that the final chunk has been processed to avoid duplicates.
+      finalChunkProcessed = true;
       finalizeStop();
     }
   });

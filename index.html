@@ -43,13 +43,11 @@
       align-items: center;
       z-index: 1000;
     }
-    /* Increased language icon size */
     #lang-container img {
       width: 36px;
       height: 36px;
       margin-right: 8px;
     }
-    /* Increased font size for language select */
     #lang-select {
       padding: 5px;
       font-size: 18px;
@@ -186,20 +184,9 @@
   <div id="apiKeyGuideOverlay">
     <div id="apiKeyGuideModal">
       <h2 id="guide-heading">How to Set Up Your OpenAI API Key</h2>
-      <p id="guide-p1"><strong>What is Whisper Transcription?</strong><br>
-      Whisper Transcription is an AI tool that converts speech to text using the advanced OpenAI Whisper model. It quickly produces high-quality transcripts from speech recorded via a microphone. In addition, you can convert these transcripts into professional consultation notes using personalized prompts—prompts that are saved locally on your device so they remain available each time you log in from the same computer with your personal API key.</p>
-      <p id="guide-p2"><strong>How Does It Work?</strong><br>
-      To perform these tasks, the service uses powerful processing resources via the OpenAI servers. This means you don’t need a high-end local machine; you simply “lend” the necessary processing power by connecting your OpenAI API key. Your API key links to your OpenAI profile and wallet, which must be funded (in USD) to cover usage costs.</p>
-      <p id="guide-p3"><strong>Cost Breakdown:</strong><br><strong>Transcription Costs:</strong> The OpenAI Whisper model charges only <strong>$0.006 per minute</strong> for transcription. For example, if you perform transcriptions on 20 fifteen‑minute conversations, 4 days a week, for one month—that is 320 conversations total (20×4×4) with each lasting 15 minutes, the total transcription cost would be approximately:<br><strong>320 × 15 × $0.006 ≈ $28.80</strong> (which will be dynamically converted to NOK based on the current exchange rate).</p>
-      <p id="guide-p4"><strong>Note Generation Costs:</strong><br>
-      If you also use the website for note generation on all 320 consultations, this would add an additional estimated cost of about <strong>110 NOK</strong> (also converted to USD accordingly). Unlike competitors such as Noteless (around 900 NOK for 60 consultations) or Medbrics (up to 1750 NOK for unlimited consultations), you only pay per unit of work. We, however, do not charge you directly—usage costs are deducted from your OpenAI wallet.</p>
-      <p id="guide-p5"><strong>Obtaining Your OpenAI API Key:</strong><br>
-      1. Log into your OpenAI account at <a href="https://platform.openai.com/" target="_blank">https://platform.openai.com/</a> using your credentials.<br>
-      2. Navigate to your account dashboard and click on your profile icon to find the “API Keys” or “Manage API keys” section.<br>
-      3. Click the “Create new key” button to generate your unique API key. Tip: Copy and save this key in a text file on your computer for easy access, as you can only view the key once on the OpenAI webpage. (If you lose it, you can always generate another key – the new key will be linked to your existing OpenAI wallet.)<br>
-      4. Fund your OpenAI wallet (in USD) to cover usage charges for transcription and note generation.</p>
-      <p id="guide-p6"><strong>Why Choose Whisper Transcription?</strong><br>
-      We believe in offering high-quality transcription and note-generation services without the heavy price tag imposed by other companies. Although usage costs are deducted from your OpenAI wallet, you are not charged directly by us—our service is funded entirely by ad revenue, providing you access to the same powerful AI models that competitors use at a fraction of their cost.</p>
+      <p id="guide-p1">
+        Whisper Transcription is an AI tool that converts speech to text using the advanced OpenAI Whisper model. Your API key links to your OpenAI profile and wallet. Please store it securely—this tool encrypts your API key automatically so that it’s not stored in plaintext.
+      </p>
       <button id="closeGuideBtn" style="background:red; color:#fff; padding:10px 20px; border:none; border-radius:10px; cursor:pointer; margin-top:20px;">Close</button>
     </div>
   </div>
@@ -213,9 +200,9 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      /* --------------------------
-         Translation Objects for Index Page (English, Norwegian, Swedish, German, French, Italian)
-         -------------------------- */
+      // ----------------------------
+      // Language Translations
+      // ----------------------------
       const indexTranslations = {
         en: {
           pageTitle: "Whisper Transcription",
@@ -240,7 +227,7 @@
         sv: {
           pageTitle: "Whisper Transkription",
           headerTitle: "Whisper Transkription",
-          headerSubtitle: "Omvandla tal till text för professionella konsultationer",
+          headerSubtitle: "Omvandla tal till text för profesjonella konsultationer",
           startText: "För att komma igång, vänligen ange din OpenAI API-nyckel:",
           apiPlaceholder: "Ange API-nyckel här",
           enterButton: "Gå till transkriptionverktyget",
@@ -279,9 +266,6 @@
         }
       };
 
-      /* --------------------------
-         Update Index Page Language
-         -------------------------- */
       function updateLanguageIndex(lang) {
         document.getElementById("page-title").textContent = indexTranslations[lang].pageTitle;
         document.getElementById("header-title").textContent = indexTranslations[lang].headerTitle;
@@ -307,60 +291,123 @@
         console.error("Element with id 'lang-select' not found.");
       }
 
-      /* --------------------------
-         Consent Banner & Cookie Management (Index Page)
-         -------------------------- */
+      // ----------------------------
+      // Consent Banner & Cookie Management
+      // ----------------------------
       function setCookie(name, value, days) {
-        var expires = "";
+        let expires = "";
         if (days) {
-          var date = new Date();
-          date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+          const date = new Date();
+          date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
           expires = "; expires=" + date.toUTCString();
         }
         document.cookie = name + "=" + (value || "") + expires + "; path=/";
       }
       function getCookie(name) {
-        var nameEQ = name + "=";
-        var ca = document.cookie.split(';');
-        for (var i = 0; i < ca.length; i++) {
-          var c = ca[i];
-          while (c.charAt(0) === ' ') c = c.substring(1);
+        const nameEQ = name + "=";
+        const ca = document.cookie.split(";");
+        for (let c of ca) {
+          c = c.trim();
           if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
         }
         return null;
       }
       function loadAdSense() {
-        var script = document.createElement('script');
+        const script = document.createElement("script");
         script.async = true;
         script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
-        script.onload = function() {
-          window.adsbygoogle = window.adsbygoogle || [];
-          window.adsbygoogle.push({});
-        };
         document.head.appendChild(script);
+        (adsbygoogle = window.adsbygoogle || []).push({});
       }
-
       document.getElementById("cmp-accept").addEventListener("click", function() {
         setCookie("user_consent", "accepted", 365);
         document.getElementById("cmp-banner").style.display = "none";
         loadAdSense();
       });
-
       document.getElementById("cmp-manage").addEventListener("click", function() {
         alert("Here you can manage your cookie and ad preferences.");
       });
+      if (getCookie("user_consent") === "accepted") {
+        document.getElementById("cmp-banner").style.display = "none";
+        loadAdSense();
+        document.getElementById("ad-revenue-message").style.display = "none";
+      }
 
-      (function() {
-        if (getCookie("user_consent") === "accepted") {
-          document.getElementById("cmp-banner").style.display = "none";
-          loadAdSense();
-          document.getElementById("ad-revenue-message").style.display = "none";
+      // ----------------------------
+      // Encryption Helper Functions for API Key Storage
+      // ----------------------------
+      function arrayBufferToBase64(buffer) {
+        let binary = "";
+        const bytes = new Uint8Array(buffer);
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
         }
-      })();
+        return window.btoa(binary);
+      }
+      function base64ToArrayBuffer(base64) {
+        const binary = window.atob(base64);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes;
+      }
+      function getDeviceToken() {
+        let token = localStorage.getItem("device_token");
+        if (!token) {
+          token = crypto.randomUUID();
+          localStorage.setItem("device_token", token);
+        }
+        return token;
+      }
+      async function deriveKey(password, salt) {
+        const encoder = new TextEncoder();
+        const keyMaterial = await crypto.subtle.importKey(
+          "raw",
+          encoder.encode(password),
+          "PBKDF2",
+          false,
+          ["deriveKey"]
+        );
+        return crypto.subtle.deriveKey(
+          {
+            name: "PBKDF2",
+            salt: salt,
+            iterations: 100000,
+            hash: "SHA-256"
+          },
+          keyMaterial,
+          { name: "AES-GCM", length: 256 },
+          false,
+          ["encrypt", "decrypt"]
+        );
+      }
+      async function encryptAPIKey(apiKey) {
+        const deviceToken = getDeviceToken();
+        const encoder = new TextEncoder();
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const key = await deriveKey(deviceToken, salt);
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const ciphertextBuffer = await crypto.subtle.encrypt(
+          { name: "AES-GCM", iv: iv },
+          key,
+          encoder.encode(apiKey)
+        );
+        return {
+          ciphertext: arrayBufferToBase64(ciphertextBuffer),
+          iv: arrayBufferToBase64(iv),
+          salt: arrayBufferToBase64(salt)
+        };
+      }
+      async function storeEncryptedAPIKey(apiKey) {
+        const encrypted = await encryptAPIKey(apiKey);
+        sessionStorage.setItem("encrypted_api_key", JSON.stringify(encrypted));
+      }
 
-      /* --------------------------
-         API Key & Guide Logic (Index Page)
-         -------------------------- */
+      // ----------------------------
+      // API Key and Guide Logic
+      // ----------------------------
       const overlayIndex = document.getElementById("apiKeyGuideOverlay");
       const closeGuideIndex = document.getElementById("closeGuideBtn");
       const openGuideButton = document.getElementById("openGuideButton");
@@ -380,10 +427,10 @@
         });
       }
       if (enterTranscriptionBtn && apiKeyInput) {
-        enterTranscriptionBtn.addEventListener("click", () => {
+        enterTranscriptionBtn.addEventListener("click", async () => {
           const apiKey = apiKeyInput.value.trim();
           if (apiKey) {
-            sessionStorage.setItem("openai_api_key", apiKey);
+            await storeEncryptedAPIKey(apiKey);
             window.location.href = "transcribe.html";
           } else {
             alert("Please enter a valid API key.");

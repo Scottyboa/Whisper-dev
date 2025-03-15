@@ -29,8 +29,11 @@ function loadAdSense() {
   const script = document.createElement("script");
   script.async = true;
   script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+  script.onload = function() {
+    window.adsbygoogle = window.adsbygoogle || [];
+    window.adsbygoogle.push({});
+  };
   document.head.appendChild(script);
-  (adsbygoogle = window.adsbygoogle || []).push({});
 }
 
 // Initializes the consent banner: attaches event listeners and checks cookie status.

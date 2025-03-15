@@ -47,6 +47,31 @@ let finalChunkProcessed = false;  // Prevent duplicate final chunk processing
 let recordingPaused = false;      // Indicates if recording is paused
 let audioFrames = []; // Buffer for audio frames
 
+// --- Reset Function ---
+// This function clears any leftover timers, intervals, and state so that each new recording starts fresh.
+function resetRecordingState() {
+  // Clear polling intervals
+  Object.values(pollingIntervals).forEach(interval => clearInterval(interval));
+  pollingIntervals = {};
+
+  // Clear scheduler timeouts and recording timers
+  clearTimeout(chunkTimeoutId);
+  clearInterval(recordingTimerInterval);
+
+  // Reset state variables
+  transcriptChunks = {};
+  audioFrames = [];
+  chunkStartTime = Date.now();
+  lastFrameTime = Date.now();
+  manualStop = false;
+  finalChunkProcessed = false;
+  recordingPaused = false;
+
+  // Generate a new group id and reset chunk numbering
+  groupId = Date.now().toString();
+  chunkNumber = 1;
+}
+
 // --- Utility Functions ---
 
 // Update status message in the UI (expects an element with id "statusMessage")
@@ -356,24 +381,14 @@ function initRecording() {
 
   startButton.addEventListener("click", async () => {
     // Reset state for new recording
-    transcriptChunks = {};
-    Object.values(pollingIntervals).forEach(interval => clearInterval(interval));
-    pollingIntervals = {};
+    resetRecordingState();
     const transcriptionElem = document.getElementById("transcription");
     if (transcriptionElem) transcriptionElem.value = "";
-    chunkStartTime = Date.now();
-    lastFrameTime = Date.now();
-    clearTimeout(chunkTimeoutId);
-    manualStop = false;
-    finalChunkProcessed = false;  // Reset final chunk flag at start
-    recordingPaused = false;      // Reset pause flag
+    
     updateStatusMessage("Recording...", "green");
     logInfo("Recording started.");
     try {
       mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      groupId = Date.now().toString();
-      chunkNumber = 1;
-      audioFrames = [];
       recordingStartTime = Date.now();
       recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
       
@@ -390,7 +405,6 @@ function initRecording() {
           }
           lastFrameTime = Date.now();
           audioFrames.push(value);
-          // Removed per-frame logging to avoid log flooding.
           readLoop();
         }).catch(err => {
           logError("Error reading audio frames", err);

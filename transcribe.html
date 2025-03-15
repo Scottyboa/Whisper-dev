@@ -51,6 +51,19 @@
       margin-bottom: 10px;
       color: #333;
     }
+    /* Styling for the Cost Usage Overview Link */
+    #openaiUsageLink {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+      display: block;
+      margin: 0 auto 10px;
+      text-decoration: none;
+      color: #5a9;
+    }
+    #openaiUsageLink:hover {
+      color: #489;
+    }
     /* Auto-resizing Textareas */
     #transcription, #generatedNote, #customPrompt {
       width: 100%;
@@ -143,7 +156,13 @@
       align-items: center;
       gap: 8px;
     }
-    #lang-icon-transcribe { width: 28px; height: 28px; }
+    /* Increased size for language icon */
+    #lang-icon-transcribe { width: 36px; height: 36px; }
+    /* Increased font-size for language select */
+    #lang-select-transcribe {
+      font-size: 18px;
+      padding: 4px;
+    }
     /* Consent Banner */
     #cmp-banner {
       position: fixed;
@@ -162,9 +181,6 @@
   </style>
 </head>
 <body>
-  <!-- OpenAI usage hyperlink -->
-  <a id="openaiUsageLink" href="https://platform.openai.com/usage" target="_blank">Cost usage overview</a>
-  
   <div class="grid-container">
     <!-- Left Sidebar -->
     <aside class="sidebar">
@@ -188,7 +204,8 @@
       <!-- Recording Area -->
       <div class="recording-area">
         <h3 id="recordingAreaTitle">Recording Area</h3>
-        <div id="recordIndicator" style="width:20px; height:20px; border-radius:50%; background-color:grey; margin:0 auto 10px;"></div>
+        <!-- Moved the cost usage overview hyperlink here -->
+        <a id="openaiUsageLink" href="https://platform.openai.com/usage" target="_blank">Cost usage overview</a>
         <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
         <div id="transcribeTimer" class="timer">Completion Timer: 0 sec</div>
         <textarea id="transcription" placeholder="Transcription result will appear here..."></textarea>

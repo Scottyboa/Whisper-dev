@@ -1,6 +1,23 @@
 // recording.js
 // Module for recording audio, processing chunks, and uploading them via the backend.
 
+// Global debug flag and logging functions
+const DEBUG = true;
+
+function logDebug(message, ...optionalParams) {
+  if (DEBUG) {
+    console.debug(new Date().toISOString(), "[DEBUG]", message, ...optionalParams);
+  }
+}
+
+function logInfo(message, ...optionalParams) {
+  console.info(new Date().toISOString(), "[INFO]", message, ...optionalParams);
+}
+
+function logError(message, ...optionalParams) {
+  console.error(new Date().toISOString(), "[ERROR]", message, ...optionalParams);
+}
+
 // Scheduling and backend constants
 const MIN_CHUNK_DURATION = 30000; // 30 seconds
 const MAX_CHUNK_DURATION = 30000; // 30 seconds
@@ -26,8 +43,8 @@ let chunkTimeoutId;
 
 let chunkProcessingLock = false;
 let pendingStop = false;
-let finalChunkProcessed = false;  // NEW FLAG to prevent duplicate final chunk processing
-let recordingPaused = false;      // NEW FLAG to indicate pause state
+let finalChunkProcessed = false;  // Prevent duplicate final chunk processing
+let recordingPaused = false;      // Indicates if recording is paused
 let audioFrames = []; // Buffer for audio frames
 
 // --- Utility Functions ---
@@ -67,6 +84,7 @@ function stopMicrophone() {
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
     mediaStream = null;
+    logInfo("Microphone stopped.");
   }
   if (audioReader) {
     audioReader.cancel();
@@ -142,15 +160,15 @@ async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast
         throw new Error(`Server responded with status ${response.status}: ${errorText}`);
       }
       const result = await response.json();
+      logInfo(`Upload successful for chunk ${currentChunkNumber}`, { session_id: result.session_id });
       return result;
     } catch (error) {
       attempts++;
+      logError(`Upload error for chunk ${currentChunkNumber} on attempt ${attempts}`, error);
       if (Date.now() - startTime >= maxRetryTime) {
         updateStatusMessage("Failed to upload chunk " + currentChunkNumber + " after maximum retry time", "red");
         throw new Error("Maximum retry time exceeded for chunk " + currentChunkNumber);
       }
-      updateStatusMessage("Error uploading chunk " + currentChunkNumber + " (Attempt " + attempts + "): " + error, "red");
-      console.error(`Upload error for chunk ${currentChunkNumber} on attempt ${attempts}:`, error);
       await new Promise(resolve => setTimeout(resolve, retryDelay));
     }
   }
@@ -158,7 +176,11 @@ async function uploadChunk(blob, currentChunkNumber, extension, mimeType, isLast
 
 // Process accumulated audio frames into a WAV blob and upload it
 async function processAudioChunkInternal(force = false) {
-  if (audioFrames.length === 0) return;
+  if (audioFrames.length === 0) {
+    logDebug("No audio frames to process.");
+    return;
+  }
+  logInfo(`Processing ${audioFrames.length} audio frames for chunk ${chunkNumber}.`);
   const framesToProcess = audioFrames;
   audioFrames = []; // Clear the buffer
   const sampleRate = framesToProcess[0].sampleRate;
@@ -199,25 +221,32 @@ async function processAudioChunkInternal(force = false) {
   const mimeType = "audio/wav";
   const extension = "wav";
   const currentChunk = chunkNumber;
+  logInfo(`Uploading chunk ${currentChunk}`);
   // Upload the chunk and start polling for its transcript
   uploadChunk(wavBlob, currentChunk, extension, mimeType, force, groupId)
     .then(result => {
       if (result && result.session_id) {
-        console.log(`Chunk ${currentChunk} uploaded. Session ID: ${result.session_id}`);
+        logInfo(`Chunk ${currentChunk} uploaded successfully. Starting polling.`);
         pollChunkTranscript(currentChunk, groupId);
       } else {
-        console.log(`Chunk ${currentChunk} upload did not return a session ID; skipping polling.`);
+        logInfo(`Chunk ${currentChunk} upload did not return a session ID; skipping polling.`);
       }
     })
-    .catch(err => console.error(`Upload error for chunk ${currentChunk}:`, err));
+    .catch(err => logError(`Upload error for chunk ${currentChunk}`, err));
   chunkNumber++;
 }
 
 // Wrapper to ensure one chunk is processed at a time
 async function safeProcessAudioChunk(force = false) {
   // Prevent processing final chunk twice when manual stop is active.
-  if (manualStop && finalChunkProcessed) return;
-  if (chunkProcessingLock) return;
+  if (manualStop && finalChunkProcessed) {
+    logDebug("Final chunk already processed; skipping safeProcessAudioChunk.");
+    return;
+  }
+  if (chunkProcessingLock) {
+    logDebug("Chunk processing is locked; skipping safeProcessAudioChunk.");
+    return;
+  }
   chunkProcessingLock = true;
   await processAudioChunkInternal(force);
   chunkProcessingLock = false;
@@ -242,7 +271,7 @@ function finalizeStop() {
   if (startButton) startButton.disabled = false;
   if (stopButton) stopButton.disabled = true;
   if (pauseResumeButton) pauseResumeButton.disabled = true;
-  console.log("Recording stopped by user.");
+  logInfo("Recording stopped by user. Finalizing transcription.");
 }
 
 // Poll for a transcript of an uploaded chunk
@@ -251,10 +280,11 @@ function pollChunkTranscript(chunkNum, currentGroup) {
   pollingIntervals[chunkNum] = setInterval(async () => {
     if (groupId !== currentGroup) {
       clearInterval(pollingIntervals[chunkNum]);
+      logDebug(`Polling stopped for chunk ${chunkNum} due to session change.`);
       return;
     }
     if (Date.now() - pollStart > 60000) {
-      console.log(`Polling timeout for chunk ${chunkNum}`);
+      logInfo(`Polling timeout for chunk ${chunkNum}`);
       clearInterval(pollingIntervals[chunkNum]);
       return;
     }
@@ -269,11 +299,12 @@ function pollChunkTranscript(chunkNum, currentGroup) {
         transcriptChunks[chunkNum] = data.transcript;
         updateTranscriptionOutput();
         clearInterval(pollingIntervals[chunkNum]);
+        logInfo(`Transcript received for chunk ${chunkNum}`);
       } else {
-        console.log(`Chunk ${chunkNum} transcript not ready yet.`);
+        logDebug(`Chunk ${chunkNum} transcript not ready yet.`);
       }
     } catch (err) {
-      console.error(`Error polling for chunk ${chunkNum}:`, err);
+      logError(`Error polling for chunk ${chunkNum}`, err);
     }
   }, 3000);
 }
@@ -292,16 +323,21 @@ function updateTranscriptionOutput() {
   if (manualStop && Object.keys(transcriptChunks).length >= (chunkNumber - 1)) {
     clearInterval(completionTimerInterval);
     updateStatusMessage("Transcription finished!", "green");
+    logInfo("Transcription complete.");
   }
 }
 
 // Automatically schedule processing of audio chunks
 function scheduleChunk() {
   // If paused or stopped, don't continue scheduling.
-  if (manualStop || recordingPaused) return;
+  if (manualStop || recordingPaused) {
+    logDebug("Scheduler suspended due to manual stop or pause.");
+    return;
+  }
   const elapsed = Date.now() - chunkStartTime;
   const timeSinceLast = Date.now() - lastFrameTime;
   if (elapsed >= MAX_CHUNK_DURATION || (elapsed >= MIN_CHUNK_DURATION && timeSinceLast >= watchdogThreshold)) {
+    logInfo("Scheduling condition met; processing chunk.");
     safeProcessAudioChunk();
     chunkStartTime = Date.now();
     scheduleChunk();
@@ -332,6 +368,7 @@ function initRecording() {
     finalChunkProcessed = false;  // Reset final chunk flag at start
     recordingPaused = false;      // Reset pause flag
     updateStatusMessage("Recording...", "green");
+    logInfo("Recording started.");
     try {
       mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       groupId = Date.now().toString();
@@ -348,25 +385,27 @@ function initRecording() {
       function readLoop() {
         audioReader.read().then(({ done, value }) => {
           if (done) {
-            console.log("Audio track reading complete.");
+            logInfo("Audio track reading complete.");
             return;
           }
           lastFrameTime = Date.now();
           audioFrames.push(value);
+          logDebug("Audio frame received.", { framesInBuffer: audioFrames.length });
           readLoop();
         }).catch(err => {
-          console.error("Error reading audio frames:", err);
+          logError("Error reading audio frames", err);
         });
       }
       readLoop();
       scheduleChunk();
-      console.log("MediaStreamTrackProcessor started, reading audio frames...");
+      logInfo("MediaStreamTrackProcessor started, reading audio frames.");
       startButton.disabled = true;
       stopButton.disabled = false;
       pauseResumeButton.disabled = false;
       pauseResumeButton.innerText = "Pause Recording";
     } catch (error) {
       updateStatusMessage("Microphone access error: " + error, "red");
+      logError("Microphone access error", error);
     }
   });
 
@@ -381,6 +420,7 @@ function initRecording() {
       clearTimeout(chunkTimeoutId);
       pauseResumeButton.innerText = "Resume Recording";
       updateStatusMessage("Recording paused", "orange");
+      logInfo("Recording paused.");
     } else {
       // Resume the recording: re-enable the track and restart the scheduler.
       track.enabled = true;
@@ -392,6 +432,7 @@ function initRecording() {
       // Reset the chunk timer and resume scheduling.
       chunkStartTime = Date.now();
       scheduleChunk();
+      logInfo("Recording resumed.");
     }
   });
 
@@ -407,11 +448,13 @@ function initRecording() {
     await new Promise(resolve => setTimeout(resolve, 200));
     if (chunkProcessingLock) {
       pendingStop = true;
+      logDebug("Chunk processing locked at stop; setting pendingStop.");
     } else {
       await safeProcessAudioChunk(true);
       // Mark that the final chunk has been processed to avoid duplicates.
       finalChunkProcessed = true;
       finalizeStop();
+      logInfo("Stop button processed; final chunk handled.");
     }
   });
 }

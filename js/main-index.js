@@ -1,6 +1,6 @@
 // main-index.js
 
-import { initIndexLanguage } from './language.js';
+import { initIndexLanguage } from './languageLoaderUsage.js';
 import { initConsentBanner, initGuideOverlay } from './ui.js';
 
 document.addEventListener('DOMContentLoaded', () => {

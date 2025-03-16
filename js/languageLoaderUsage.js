@@ -34,7 +34,38 @@ function updateIndexUI(trans) {
   document.getElementById("openSecurityButton").textContent = trans.securityButton;
   document.getElementById("openAboutButton").textContent = trans.aboutButton;
   document.getElementById("ad-revenue-message").textContent = trans.adRevenueMessage;
-  // Update other elements like modal headings/texts as needed...
+  
+  // Update Security Modal
+  const secHeading = document.getElementById("securityModalHeading");
+  const secText = document.getElementById("securityModalText");
+  if (secHeading) secHeading.textContent = trans.securityModalHeading;
+  if (secText) secText.innerHTML = trans.securityModalText;
+
+  // Update About Modal
+  const aboutHeading = document.getElementById("aboutModalHeading");
+  const aboutText = document.getElementById("aboutModalText");
+  if (aboutHeading) aboutHeading.textContent = trans.aboutModalHeading;
+  if (aboutText) aboutText.innerHTML = trans.aboutModalText;
+
+  // Update API Guide Modal (assuming these IDs are used in your index page)
+  const guideHeading = document.getElementById("guide-heading");
+  const guideText = document.getElementById("guide-p1");
+  if (guideHeading) guideHeading.textContent = trans.guideModalHeading;
+  if (guideText) guideText.innerHTML = trans.guideModalText;
+  
+  // Update Price Button and Price Modal
+  const priceBtn = document.getElementById("openPriceButton");
+  if (priceBtn) {
+    priceBtn.textContent = trans.priceButton;
+  }
+  const priceModalHeading = document.getElementById("priceModalHeading");
+  const priceModalText = document.getElementById("priceModalText");
+  if (priceModalHeading) {
+    priceModalHeading.textContent = trans.priceModalHeading;
+  }
+  if (priceModalText) {
+    priceModalText.innerHTML = trans.priceModalText;
+  }
 }
 
 // For the transcribe page

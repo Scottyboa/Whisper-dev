@@ -258,7 +258,7 @@ Klikk på "Funksjoner" for å gå tilbake til hovedskjermen.`
   <li><strong>Inspelning:</strong> Klicka på "Starta inspelning" för att börja spela in. Ljud fångas med MediaStreamTrackProcessor (via WebCodecs) och ackumuleras i upp till 40 sekunder innan det paketeras som en komplett WAV-fil.</li>
   <li><strong>Avslutning:</strong> Efter att du klickat på "Stoppa/Avsluta" stoppas inspelningen. En sista 2-sekunders period samlar upp eventuellt kvarvarande ljud innan den slutgiltiga delen behandlas. Avslutningstimern fortsätter tills hela transkriptionen är mottagen.</li>
   <li><strong>Noteringsgenerering:</strong> Efter transkriberingen, klicka på "Generera anteckning" för att skapa en anteckning baserad på ditt transkript och din anpassade uppmaning.</li>
-  <li><strong>Anpassad uppmaning:</strong> Välj en uppmaningsplats (1–10) och ange din anpassade uppmaning. Uppmaningen sparas automatiskt och kopplas till din API-nyckel.</li>
+  <li><strong>Anpassad uppmaning:</strong> Välj ett uppmaningsfält (1–10) och ange din anpassade uppmaning. Uppmaningen sparas automatiskt och kopplas till din API-nyckel.</li>
   <li><strong>Guide:</strong> Använd knapparna "Funktioner" och "Guide" för att alternera mellan huvudgränssnittet och denna guide.</li>
 </ul>
 Klicka på "Funktioner" för att återgå till huvudgränssnittet.`
@@ -295,49 +295,117 @@ Klicka på "Funktioner" för att återgå till huvudgränssnittet.`
   <li><strong>Anleitung:</strong> Verwenden Sie die Schaltflächen "Funktionen" und "Anleitung", um zwischen der Hauptansicht und dieser Anleitung zu wechseln.</li>
 </ul>
 Bitte klicken Sie auf "Funktionen", um zur Hauptoberfläche zurückzukehren.`
+  },
+  fr: {
+    pageTitle: "Transcription Médicale Sécurisée",
+    openaiUsageLinkText: "Vue d'ensemble de l'utilisation d'OpenAI",
+    btnFunctions: "Fonctions",
+    btnGuide: "Guide",
+    recordingAreaTitle: "Zone d'enregistrement",
+    recordTimer: "Minuteur d'enregistrement : 0 sec",
+    transcribeTimer: "Minuteur de finalisation : 0 sec",
+    transcriptionPlaceholder: "Le résultat de la transcription apparaîtra ici...",
+    startButton: "Démarrer l'enregistrement",
+    stopButton: "Arrêter/Terminer",
+    pauseButton: "Suspendre l'enregistrement",
+    statusMessage: "Bienvenue ! Cliquez sur \"Démarrer l'enregistrement\" pour commencer.",
+    noteGenerationTitle: "Génération de notes",
+    generateNoteButton: "Générer une note",
+    noteTimer: "Minuteur de génération de note : 0 sec",
+    generatedNotePlaceholder: "La note générée apparaîtra ici...",
+    customPromptTitle: "Invite personnalisée",
+    promptSlotLabel: "Emplacement de l'invite :",
+    customPromptPlaceholder: "Entrez l'invite personnalisée ici",
+    adUnitText: "Votre annonce ici",
+    guideHeading: "Guide et instructions",
+    guideText: `Bienvenue dans l'outil de transcription Whisper. Cette application permet aux professionnels de la santé, aux thérapeutes et à d'autres praticiens d'enregistrer et de transcrire des consultations, ainsi que de générer des notes professionnelles grâce à un générateur de notes alimenté par l'IA.<br><br>
+<strong>Comment utiliser les fonctions :</strong>
+<ul>
+  <li><strong>Enregistrement :</strong> Cliquez sur "Démarrer l'enregistrement" pour commencer à capturer l'audio. L'audio est capturé via MediaStreamTrackProcessor (avec WebCodecs) et accumulé pendant jusqu'à 40 secondes avant d'être emballé dans un fichier WAV autonome.</li>
+  <li><strong>Finalisation :</strong> Après avoir cliqué sur "Arrêter/Terminer", l'enregistrement s'arrête. Une période finale de 2 minutes recueille tout audio restant avant que le dernier segment soit traité. Le minuteur de finalisation se déclenche jusqu'à ce que la transcription complète soit reçue.</li>
+  <li><strong>Génération de notes :</strong> Après la transcription, cliquez sur "Générer une note" pour produire une note basée sur votre transcription et votre invite personnalisée.</li>
+  <li><strong>Invite personnalisée :</strong> Sur la droite, sélectionnez un emplacement d'invite (1–10) et saisissez votre invite personnalisée. Celle-ci est enregistrée automatiquement et liée à votre clé API.</li>
+  <li><strong>Guide :</strong> Utilisez les boutons "Fonctions" et "Guide" pour alterner entre l'interface principale et ce guide.</li>
+</ul>
+Veuillez cliquer sur "Fonctions" pour revenir à l'interface principale.`
+  },
+  it: {
+    pageTitle: "Trascrizione Medica Sicura",
+    openaiUsageLinkText: "Panoramica dell'utilizzo di OpenAI",
+    btnFunctions: "Funzioni",
+    btnGuide: "Guida",
+    recordingAreaTitle: "Area di registrazione",
+    recordTimer: "Timer di registrazione: 0 sec",
+    transcribeTimer: "Timer di completamento: 0 sec",
+    transcriptionPlaceholder: "Il risultato della trascrizione apparirà qui...",
+    startButton: "Avvia registrazione",
+    stopButton: "Ferma/Completa",
+    pauseButton: "Pausa registrazione",
+    statusMessage: "Benvenuto! Clicca su \"Avvia registrazione\" per iniziare.",
+    noteGenerationTitle: "Generazione di note",
+    generateNoteButton: "Genera nota",
+    noteTimer: "Timer generazione note: 0 sec",
+    generatedNotePlaceholder: "La nota generata apparirà qui...",
+    customPromptTitle: "Prompt personalizzato",
+    promptSlotLabel: "Slot per il prompt:",
+    customPromptPlaceholder: "Inserisci il prompt personalizzato qui",
+    adUnitText: "Il tuo annuncio qui",
+    guideHeading: "Guida e istruzioni",
+    guideText: `Benvenuto nello strumento di trascrizione Whisper. Questa applicazione consente ai professionisti del settore medico, ai terapeuti e ad altri operatori di registrare e trascrivere consulti, nonché di generare note professionali utilizzando un generatore di note basato sull'IA.<br><br>
+<strong>Come utilizzare le funzioni:</strong>
+<ul>
+  <li><strong>Registrazione:</strong> Clicca su "Avvia registrazione" per iniziare a catturare l'audio. L'audio viene catturato tramite MediaStreamTrackProcessor (con WebCodecs) e accumulato per fino a 40 secondi prima di essere confezionato in un file WAV autonomo.</li>
+  <li><strong>Completamento:</strong> Dopo aver cliccato su "Ferma/Completa", la registrazione si interrompe. Un periodo finale di 2 secondi raccoglie eventuali tracce residue prima dell'elaborazione finale. Il timer di completamento continua fino a quando la trascrizione completa non viene ricevuta.</li>
+  <li><strong>Generazione di note:</strong> Dopo la trascrizione, clicca su "Genera nota" per creare una nota basata sulla trascrizione e sul prompt personalizzato.</li>
+  <li><strong>Prompt personalizzato:</strong> A destra, seleziona uno slot (1–10) e inserisci il tuo prompt personalizzato. Il prompt verrà salvato automaticamente e collegato alla tua chiave API.</li>
+  <li><strong>Guida:</strong> Utilizza i pulsanti "Funzioni" e "Guida" per passare dall'interfaccia funzionale a questa guida.</li>
+</ul>
+Clicca su "Funzioni" per tornare all'interfaccia principale.`
   }
 };
 
 function updateLanguageIndex(lang) {
-  document.getElementById("page-title").textContent = indexTranslations[lang].pageTitle;
-  document.getElementById("header-title").textContent = indexTranslations[lang].headerTitle;
-  document.getElementById("header-subtitle").textContent = indexTranslations[lang].headerSubtitle;
-  document.getElementById("start-text").textContent = indexTranslations[lang].startText;
-  document.getElementById("apiKeyInput").setAttribute("placeholder", indexTranslations[lang].apiPlaceholder);
-  document.getElementById("enterTranscriptionBtn").textContent = indexTranslations[lang].enterButton;
-  document.getElementById("openGuideButton").textContent = indexTranslations[lang].guideButton;
-  document.getElementById("openSecurityButton").textContent = indexTranslations[lang].securityButton;
-  document.getElementById("openAboutButton").textContent = indexTranslations[lang].aboutButton;
-  document.getElementById("ad-revenue-message").textContent = indexTranslations[lang].adRevenueMessage;
-  document.getElementById("securityModalHeading").textContent = indexTranslations[lang].securityModalHeading;
-  document.getElementById("securityModalText").innerHTML = indexTranslations[lang].securityModalText;
-  document.getElementById("aboutModalHeading").textContent = indexTranslations[lang].aboutModalHeading;
-  document.getElementById("aboutModalText").innerHTML = indexTranslations[lang].aboutModalText;
+  const trans = indexTranslations[lang] || indexTranslations["en"];
+  document.getElementById("page-title").textContent = trans.pageTitle;
+  document.getElementById("header-title").textContent = trans.headerTitle;
+  document.getElementById("header-subtitle").textContent = trans.headerSubtitle;
+  document.getElementById("start-text").textContent = trans.startText;
+  document.getElementById("apiKeyInput").setAttribute("placeholder", trans.apiPlaceholder);
+  document.getElementById("enterTranscriptionBtn").textContent = trans.enterButton;
+  document.getElementById("openGuideButton").textContent = trans.guideButton;
+  document.getElementById("openSecurityButton").textContent = trans.securityButton;
+  document.getElementById("openAboutButton").textContent = trans.aboutButton;
+  document.getElementById("ad-revenue-message").textContent = trans.adRevenueMessage;
+  document.getElementById("securityModalHeading").textContent = trans.securityModalHeading;
+  document.getElementById("securityModalText").innerHTML = trans.securityModalText;
+  document.getElementById("aboutModalHeading").textContent = trans.aboutModalHeading;
+  document.getElementById("aboutModalText").innerHTML = trans.aboutModalText;
 }
 
 function updateLanguageTranscribe(lang) {
-  document.getElementById("page-title-transcribe").textContent = transcribeTranslations[lang].pageTitle;
-  document.getElementById("openaiUsageLink").textContent = transcribeTranslations[lang].openaiUsageLinkText;
-  document.getElementById("btnFunctions").textContent = transcribeTranslations[lang].btnFunctions;
-  document.getElementById("btnGuide").textContent = transcribeTranslations[lang].btnGuide;
-  document.getElementById("recordingAreaTitle").textContent = transcribeTranslations[lang].recordingAreaTitle;
-  document.getElementById("recordTimer").textContent = transcribeTranslations[lang].recordTimer;
-  document.getElementById("transcribeTimer").textContent = transcribeTranslations[lang].transcribeTimer;
-  document.getElementById("transcription").setAttribute("placeholder", transcribeTranslations[lang].transcriptionPlaceholder);
-  document.getElementById("startButton").textContent = transcribeTranslations[lang].startButton;
-  document.getElementById("stopButton").textContent = transcribeTranslations[lang].stopButton;
-  document.getElementById("pauseResumeButton").textContent = transcribeTranslations[lang].pauseButton;
-  document.getElementById("statusMessage").textContent = transcribeTranslations[lang].statusMessage;
-  document.getElementById("noteGenerationTitle").textContent = transcribeTranslations[lang].noteGenerationTitle;
-  document.getElementById("generateNoteButton").textContent = transcribeTranslations[lang].generateNoteButton;
-  document.getElementById("noteTimer").textContent = transcribeTranslations[lang].noteTimer;
-  document.getElementById("generatedNote").setAttribute("placeholder", transcribeTranslations[lang].generatedNotePlaceholder);
-  document.getElementById("customPromptTitle").textContent = transcribeTranslations[lang].customPromptTitle;
-  document.getElementById("promptSlotLabel").textContent = transcribeTranslations[lang].promptSlotLabel;
-  document.getElementById("customPrompt").setAttribute("placeholder", transcribeTranslations[lang].customPromptPlaceholder);
-  document.getElementById("adUnit").textContent = transcribeTranslations[lang].adUnitText;
-  document.getElementById("guideHeading").textContent = transcribeTranslations[lang].guideHeading;
-  document.getElementById("guideText").innerHTML = transcribeTranslations[lang].guideText;
+  const trans = transcribeTranslations[lang] || transcribeTranslations["en"];
+  document.getElementById("page-title-transcribe").textContent = trans.pageTitle;
+  document.getElementById("openaiUsageLink").textContent = trans.openaiUsageLinkText;
+  document.getElementById("btnFunctions").textContent = trans.btnFunctions;
+  document.getElementById("btnGuide").textContent = trans.btnGuide;
+  document.getElementById("recordingAreaTitle").textContent = trans.recordingAreaTitle;
+  document.getElementById("recordTimer").textContent = trans.recordTimer;
+  document.getElementById("transcribeTimer").textContent = trans.transcribeTimer;
+  document.getElementById("transcription").setAttribute("placeholder", trans.transcriptionPlaceholder);
+  document.getElementById("startButton").textContent = trans.startButton;
+  document.getElementById("stopButton").textContent = trans.stopButton;
+  document.getElementById("pauseResumeButton").textContent = trans.pauseButton;
+  document.getElementById("statusMessage").textContent = trans.statusMessage;
+  document.getElementById("noteGenerationTitle").textContent = trans.noteGenerationTitle;
+  document.getElementById("generateNoteButton").textContent = trans.generateNoteButton;
+  document.getElementById("noteTimer").textContent = trans.noteTimer;
+  document.getElementById("generatedNote").setAttribute("placeholder", trans.generatedNotePlaceholder);
+  document.getElementById("customPromptTitle").textContent = trans.customPromptTitle;
+  document.getElementById("promptSlotLabel").textContent = trans.promptSlotLabel;
+  document.getElementById("customPrompt").setAttribute("placeholder", trans.customPromptPlaceholder);
+  document.getElementById("adUnit").textContent = trans.adUnitText;
+  document.getElementById("guideHeading").textContent = trans.guideHeading;
+  document.getElementById("guideText").innerHTML = trans.guideText;
 }
 
 function initIndexLanguage() {

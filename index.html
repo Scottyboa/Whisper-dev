@@ -184,7 +184,8 @@
     <br>
     <div class="button-group">
       <button id="openSecurityButton">Security</button>
-      <button id="openGuideButton">API Guide</button>
+      <button id="openGuideButton">API guide - How to use</button>
+      <button id="openPriceButton">Price</button>
       <button id="openAboutButton">About</button>
     </div>
     <p class="ad-revenue-message" id="ad-revenue-message">
@@ -195,11 +196,22 @@
   <!-- API Guide Modal Overlay -->
   <div id="apiKeyGuideOverlay" class="modal-overlay">
     <div id="apiKeyGuideModal" class="modal-content">
-      <h2 id="guide-heading">How to Set Up Your OpenAI API Key</h2>
-      <p id="guide-p1">
-        Whisper Transcription is an AI tool that converts speech to text using the advanced OpenAI Whisper model. Your API key links to your OpenAI profile and wallet. Please store it securely—this tool encrypts your API key automatically so that it’s not stored in plaintext.
-      </p>
+      <h2 id="guide-heading">How to Set Up Your OpenAI API for Whisper Clinical Transcription</h2>
+      <div id="guide-p1">
+        <!-- The API guide content will be populated by language.js -->
+      </div>
       <button id="closeGuideBtn" class="closeModalButton">Close</button>
+    </div>
+  </div>
+
+  <!-- Price Modal Overlay -->
+  <div id="priceModalOverlay" class="modal-overlay">
+    <div id="priceModal" class="modal-content">
+      <h2 id="priceModalHeading">Cost Information for Whisper Clinical Transcription</h2>
+      <div id="priceModalText">
+        <!-- The cost information content will be populated by language.js -->
+      </div>
+      <button id="closePriceModalButton" class="closeModalButton">Close</button>
     </div>
   </div>
 
@@ -316,6 +328,22 @@
       if (closeGuideBtn && apiOverlay) {
         closeGuideBtn.addEventListener("click", () => {
           apiOverlay.style.display = "none";
+        });
+      }
+      // Price Modal
+      const priceOverlay = document.getElementById("priceModalOverlay");
+      const openPriceButton = document.getElementById("openPriceButton");
+      const closePriceBtn = document.getElementById("closePriceModalButton");
+      if (openPriceButton && priceOverlay) {
+        openPriceButton.addEventListener("click", () => {
+          priceOverlay.style.display = "flex";
+          priceOverlay.style.flexDirection = "column";
+          priceOverlay.style.alignItems = "center";
+        });
+      }
+      if (closePriceBtn && priceOverlay) {
+        closePriceBtn.addEventListener("click", () => {
+          priceOverlay.style.display = "none";
         });
       }
       // Security Modal

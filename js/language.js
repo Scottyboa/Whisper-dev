@@ -1,8 +1,8 @@
 const indexTranslations = {
   en: {
-    pageTitle: "Secure Medical Transcription",
-    headerTitle: "Secure Medical Transcription",
-    headerSubtitle: "Advanced AI-Powered Speech-to-Text & Clinical Note Generation for Patient-Doctor Consultations",
+    pageTitle: "Whisper Clinical Transcription",
+    headerTitle: "Whisper Clinical Transcription",
+    headerSubtitle: "Advanced AI-Powered Speech-to-Text and Note Generation for Healthcare Consultations",
     startText: "To get started, please enter your OpenAI API key:",
     apiPlaceholder: "Enter API Key here",
     enterButton: "Enter Transcription Tool",
@@ -27,9 +27,9 @@ The only request is to accept ads, which help cover backend server costs. As usa
 At the end of the day, this is just one doctor’s effort to create a fair and affordable tool for colleagues. If this platform helps others avoid being overcharged for something that should be accessible, then that is a success.`
   },
   no: {
-    pageTitle: "Sikker Medisinsk Transkripsjon",
-    headerTitle: "Sikker Medisinsk Transkripsjon",
-    headerSubtitle: "Avansert AI-drevet tale-til-tekst og klinisk notatgenerering for pasient-leger konsultasjoner",
+    pageTitle: "Whisper Klinisk Transkripsjon",
+    headerTitle: "Whisper Klinisk Transkripsjon",
+    headerSubtitle: "Avansert AI-drevet tale-til-tekst og notatgenerering for helsekonsultasjoner",
     startText: "For å komme i gang, vennligst skriv inn din OpenAI API-nøkkel:",
     apiPlaceholder: "Skriv inn API-nøkkel her",
     enterButton: "Gå til transkripsjonsverktøy",
@@ -49,14 +49,13 @@ Vær trygg på at strenge sikkerhetstiltak sikrer at all pasientrelatert data fo
 Da jeg først hørte om selskaper som tilbyr tale-til-tekst-tjenester for medisinske konsultasjoner i Norge, var entusiasmen stor. Kollegers og online anmeldelser roste disse tjenestene for betydelige forbedringer i effektivitet og arbeidsflyt. Men ved nærmere ettersyn ble jeg overrasket over de høye prisene disse selskapene tar, spesielt når den faktiske kostnaden for teknologien er en brøkdel av disse prisene.<br><br>
 Motivert av denne innsikten utviklet jeg først en personlig tale-til-tekst-løsning, noe som reduserte mine daglige transkripsjonskostnader til omtrent $1.6 per dag for ca. 20 pasientkonsultasjoner – totalt kun $32 i måneden. Etter å ha sett hvor effektiv og kostnadseffektiv løsningen var, bestemte jeg meg for å gjøre den tilgjengelig på nettet, med samme hastighet, nøyaktighet og kvalitet som finnes i premiumtjenester, men uten de høye gebyrene.<br><br>
 I motsetning til kommersielle tilbydere legger ikke denne plattformen på ekstra kostnader eller unødvendige avgifter. Du betaler direkte til OpenAI – det vil si at du går rett til kilden for teknologien, uten mellommenn som tar en ekstra del. Dette gjør det til det mest rimelige alternativet som likevel opprettholder førsteklasses kvalitet.<br><br>
-Mange kolleger innen pasientbehandling betaler ofte mye mer enn nødvendig for et verktøy som burde være rimelig for alle. Denne nettsiden er helt gratis å bruke – den eneste kostnaden er den direkte bruksavgiften til OpenAI for transkripsjoner. Ingen månedlige avgifter, abonnement eller forpliktelser – du betaler kun for de oppgavene du utfører, og du kontrollerer utgiftene ved å bestemme hvor mye du overfører til din OpenAI-lommebok.<br><br>
-Det eneste jeg ber om, er at du aksepterer annonser, som hjelper til med å dekke backend-serverkostnadene. Etter hvert som bruken øker, øker også driftskostnadene, og annonseinntektene sikrer at tjenesten kan opprettholdes uten at brukerne belastes.<br><br>
-Til syvende og sist er dette bare en leges forsøk på å skape et rettferdig og rimelig verktøy for kolleger. Hvis denne plattformen hjelper andre med å unngå å bli overbelastet for noe som burde være tilgjengelig, er det en suksess.`
+Mange kolleger innen pasientbehandling betaler ofte mye mer enn nødvendig for et verktøy som burde være tilgjengelig for alle. Denne nettsiden er helt gratis å bruke – den eneste kostnaden er den direkte bruksavgiften til OpenAI for transkripsjoner. Ingen månedlige avgifter, abonnement eller forpliktelser – du betaler kun for de oppgavene du utfører, og du kontrollerer utgiftene ved å bestemme hvor mye du overfører til din OpenAI-lommebok.<br><br>
+Det eneste jeg ber om, er at du aksepterer annonser, som hjelper til med å dekke backend-serverkostnadene. Etter hvert som bruken øker, øker også driftskostnadene, og annonseinntektene sikrer at tjenesten kan opprettholdes uten at brukerne belastes.`
   },
   sv: {
-    pageTitle: "Transkriberingsverktyg med annonser och guideöverlägg",
-    headerTitle: "Transkriberingsverktyg med annonser och guideöverlägg",
-    headerSubtitle: "Avancerad AI-driven tal-till-text & klinisk anteckningsgenerering för patient-läkar konsultationer",
+    pageTitle: "Whisper Klinisk Transkription",
+    headerTitle: "Whisper Klinisk Transkription",
+    headerSubtitle: "Avancerad AI-driven tal-till-text och generering av anteckningar för vårdkonsultationer",
     startText: "För att komma igång, ange din OpenAI API-nyckel:",
     apiPlaceholder: "Ange API-nyckel här",
     enterButton: "Gå till transkriptionsverktyget",
@@ -67,23 +66,22 @@ Til syvende og sist er dette bare en leges forsøk på å skape et rettferdig og
     securityModalHeading: "Säkerhetsinformation",
     securityModalText: `Ditt privatliv och säkerheten för patientinformation är högsta prioritet. För att säkerställa att data förblir konfidentiella:<br><br>
 - <strong>Datakryptering:</strong> All data som behandlas av systemet är säkrad med krypteringsmetoder enligt branschstandard. Transkriptioner och anteckningar är exklusivt kopplade till din krypterade personliga API-nyckel och den enhet du använder, vilket garanterar att endast du har tillgång till det genererade innehållet.<br><br>
-- <strong>Automatisk radering:</strong> När en transkription eller anteckning har genererats och visas på din skärm, raderas den automatiskt och oåterkalleligt från servrarna inom 2 minuter.<br><br>
-- <strong>Skydd mot obehörig åtkomst:</strong> Även om obehörig åtkomst till din API-nyckel skulle ske, förblir data krypterad och skyddad med enhetsspecifika markörer, vilket gör informationen otillgänglig.<br><br>
+- <strong>Automatisk radering:</strong> När en transkription eller anteckning har genererats och visas på din skärm raderas den automatiskt och oåterkalleligt från servrarna inom 2 minuter.<br><br>
+- <strong>Skydd mot obehörig åtkomst:</strong> Även om obehörig åtkomst skulle ske, förblir data krypterad och skyddad med enhetsspecifika markörer, vilket gör informationen otillgänglig.<br><br>
 - <strong>GDPR-kompatibelt hosting:</strong> Alla backend-processer körs på dedikerade Microsoft Azure-servrar inom EU, fullt kompatibla med GDPR, vilket säkerställer att databehandlingen uppfyller de högsta juridiska och etiska standarderna.<br><br>
 Var säker på att strikta säkerhetsåtgärder garanterar att all patientrelaterad data förblir säker, konfidentiell och helt under din kontroll.`,
     aboutModalHeading: "Om detta projekt",
     aboutModalText: `Jag är en norsk allmänläkare med stort intresse för teknologiska framsteg, särskilt inom artificiell intelligens, och jag har noggrant följt utvecklingen av AI inom hälsosektorn.<br><br>
 När jag först hörde talas om företag som erbjuder tal-till-text-tjänster för medicinska konsultationer i Norge, blev jag mycket entusiastisk. Kollegiala återkopplingar och online-recensioner berömde dessa tjänster för de betydande förbättringar de medförde i effektivitet och arbetsflöde. Vid närmare granskning överraskade de höga priserna, särskilt med tanke på att den faktiska kostnaden för teknologin bara utgör en bråkdel av dessa priser.<br><br>
-Motiverad av denna insikt utvecklade jag först en personlig tal-till-text-lösning, vilket avsevärt sänkte mina dagliga transkriptionskostnader till cirka $1.6 per dag för ungefär 20 konsultationer – totalt endast $32 per månad. Efter att ha sett hur effektiv och kostnadseffektiv lösningen var, beslutade jag att göra den tillgänglig online, med samma hastighet, noggrannhet och kvalitet som premiumtjänster, men utan de höga avgifterna.<br><br>
+Motiverad av denna insikt utvecklade jag först en personlig tal-till-text-lösning, vilket avsevärt sänkte mina dagliga transkriptionskostnader till cirka $1.6 per dag för ungefär 20 konsultationer – totalt endast $32 per månad. Efter att ha sett hur effektiv och kostnadseffektiv lösningen var, beslutade jag att göra den tillgänglig online med samma hastighet, noggrannhet och kvalitet som premiumtjänster, men utan de höga avgifterna.<br><br>
 Till skillnad från kommersiella aktörer lägger denna plattform inte på extra kostnader eller onödiga avgifter. Du betalar direkt till OpenAI – vilket innebär att du får tillgång direkt till teknologins källa, utan mellanhänder som tar ut en extra avgift. Detta gör det till det mest prisvärda alternativet, samtidigt som högsta kvalitet bibehålls.<br><br>
-Många kollegor inom vården betalar ofta mycket mer än nödvändigt för ett verktyg som borde vara tillgängligt för alla. Denna webbplats är helt gratis att använda – den enda kostnaden är den direkta avgiften för användning av OpenAI för transkriptioner. Inga månadsavgifter, inget abonnemang, ingen förpliktelse – du betalar bara för de uppgifter du utför, och du kontrollerar dina utgifter genom att själv bestämma hur mycket du överför till din OpenAI-plånbok.<br><br>
-Det enda som efterfrågas är att du accepterar annonser, vilket hjälper till att täcka kostnaderna för backend-servrarna. Med ökad användning ökar även driftskostnaderna, och annonsintäkterna säkerställer att tjänsten kan upprätthållas utan extra kostnader för användarna.<br><br>
-I slutändan är detta bara en läkare som försöker skapa ett rättvist och prisvärt verktyg för kollegor. Om denna plattform hjälper andra att undvika att betala för mycket för en tjänst som borde vara tillgänglig, är det en framgång.`
+Många vårdpersonal betalar ofta mer än nödvändigt för ett verktyg som borde vara tillgängligt för alla. Denna webbplats är helt gratis att använda – den enda kostnaden är den direkta avgiften från OpenAI för transkriptioner. Inga månadsabonnemang, inga förpliktelser – du betalar bara för det arbete som utförs, och du kontrollerar dina utgifter genom att själv bestämma hur mycket du överför till din OpenAI-plånbok.<br><br>
+Det enda som efterfrågas är att du accepterar annonser, vilket hjälper till att täcka kostnaderna för backend-servrarna. Med ökad användning ökar även driftskostnaderna, och annonsintäkterna säkerställer att tjänsten kan upprätthållas utan extra kostnader för användarna.`
   },
   de: {
-    pageTitle: "Sichere Medizinische Transkription",
-    headerTitle: "Sichere Medizinische Transkription",
-    headerSubtitle: "Fortschrittliche KI-gestützte Sprach-zu-Text- und klinische Notizenerstellung für Arzt-Patienten-Konsultationen",
+    pageTitle: "Whisper Klinische Transkription",
+    headerTitle: "Whisper Klinische Transkription",
+    headerSubtitle: "Fortschrittliche KI-gestützte Sprach-zu-Text- und Notizenerstellung für Gesundheitskonsultationen",
     startText: "Um zu beginnen, geben Sie bitte Ihren OpenAI API-Schlüssel ein:",
     apiPlaceholder: "API-Schlüssel hier eingeben",
     enterButton: "Transkriptionswerkzeug öffnen",
@@ -95,22 +93,22 @@ I slutändan är detta bara en läkare som försöker skapa ett rättvist och pr
     securityModalText: `Der Schutz der Privatsphäre und die Sicherheit von Patientendaten haben höchste Priorität. Um sicherzustellen, dass Daten vertraulich bleiben:<br><br>
 - <strong>Datenverschlüsselung:</strong> Alle vom System verarbeiteten Daten werden mit branchenüblichen Verschlüsselungsmethoden gesichert. Transkripte und Notizen sind ausschließlich mit Ihrem verschlüsselten persönlichen API-Schlüssel und dem von Ihnen genutzten Gerät verknüpft, sodass nur Sie Zugriff auf die generierten Inhalte haben.<br><br>
 - <strong>Automatische Löschung:</strong> Sobald ein Transkript oder eine Notiz generiert und auf Ihrem Bildschirm angezeigt wird, wird es innerhalb von 2 Minuten automatisch und unwiderruflich von den Servern gelöscht.<br><br>
-- <strong>Schutz vor unbefugtem Zugriff:</strong> Selbst wenn in einem äußerst unwahrscheinlichen Fall unbefugter Zugriff auf Ihren API-Schlüssel erfolgt, bleiben die Daten verschlüsselt und durch gerätespezifische Marker gesichert, sodass die Informationen unzugänglich sind.<br><br>
-- <strong>GDPR-konformes Hosting:</strong> Alle Backend-Prozesse laufen auf dedizierten Microsoft Azure-Servern innerhalb der EU, die vollständig mit den GDPR-Richtlinien übereinstimmen, sodass die Datenverarbeitung den höchsten rechtlichen und ethischen Standards entspricht.<br><br>
+- <strong>Schutz vor unbefugtem Zugriff:</strong> Selbst im äußerst unwahrscheinlichen Fall eines unbefugten Zugriffs bleibt der Inhalt verschlüsselt und durch gerätespezifische Marker geschützt.<br><br>
+- <strong>GDPR-konformes Hosting:</strong> Alle Backend-Prozesse laufen auf dedizierten Microsoft Azure-Servern innerhalb der EU, die vollständig mit den GDPR-Richtlinien übereinstimmen und somit den höchsten rechtlichen und ethischen Standards genügen.<br><br>
 Seien Sie versichert, dass strenge Sicherheitsmaßnahmen gewährleisten, dass alle patientenbezogenen Daten sicher, vertraulich und vollständig unter Ihrer Kontrolle bleiben.`,
     aboutModalHeading: "Über dieses Projekt",
     aboutModalText: `Ich bin ein norwegischer Hausarzt mit großem Interesse an technologischen Fortschritten, insbesondere im Bereich der künstlichen Intelligenz, und verfolge die Entwicklungen im Gesundheitswesen genau.<br><br>
 Als ich erstmals von Unternehmen hörte, die Sprach-zu-Text-Dienste für medizinische Konsultationen in Norwegen anbieten, war ich sehr begeistert. Kollegiale Rückmeldungen und Online-Bewertungen lobten diese Dienste für signifikante Verbesserungen in Effizienz und Arbeitsablauf. Bei näherer Betrachtung überraschten mich jedoch die hohen Preise, insbesondere wenn man bedenkt, dass die tatsächlichen Kosten der Technologie nur einen Bruchteil dieser Preise ausmachen.<br><br>
-Angesichts dieser Erkenntnis entwickelte ich zunächst eine persönliche Sprach-zu-Text-Lösung, die meine täglichen Transkriptionskosten auf etwa $1.6 pro Tag für rund 20 Patientenkonsultationen senkte – was nur $32 pro Monat entspricht. Nachdem ich die Effektivität und Kosteneffizienz erkannt hatte, entschied ich mich, die Lösung online zugänglich zu machen, und bot dieselbe Geschwindigkeit, Genauigkeit und Qualität wie Premium-Dienste, jedoch ohne die hohen Gebühren.<br><br>
-Im Gegensatz zu kommerziellen Anbietern berechnet diese Plattform keine Aufschläge oder unnötige Gebühren. Sie zahlen direkt an OpenAI – das bedeutet, dass Sie direkt zur Quelle der Technologie gelangen, ohne Zwischenhändler, die einen Aufpreis verlangen. Dadurch ist es die kostengünstigste Option, die dennoch erstklassige Qualität gewährleistet.<br><br>
-Viele meiner Kollegen im Gesundheitswesen zahlen oft weit mehr als notwendig für ein Werkzeug, das für jeden erschwinglich sein sollte. Diese Website ist vollkommen kostenlos – die einzige Kostenstelle ist die direkte Nutzungsgebühr von OpenAI für Transkriptionen. Kein monatliches Abonnement, keine Verpflichtungen – Sie zahlen nur für die ausgeführten Aufgaben und kontrollieren Ihre Ausgaben, indem Sie selbst entscheiden, wie viel Sie in Ihre OpenAI-Brieftasche einzahlen.<br><br>
-Es wird lediglich darum gebeten, dass Sie personalisierte Werbung akzeptieren, welche dazu beiträgt, die Kosten der Backend-Server zu decken. Mit steigender Nutzung erhöhen sich auch die Betriebskosten, und die Werbeeinnahmen stellen sicher, dass der Dienst ohne zusätzliche Kosten für die Nutzer aufrechterhalten werden kann.<br><br>
+Angesichts dieser Erkenntnis entwickelte ich zunächst eine persönliche Sprach-zu-Text-Lösung, die meine täglichen Transkriptionskosten auf etwa $1.6 pro Tag für rund 20 Patientenkonsultationen senkte – was lediglich $32 pro Monat entspricht. Nachdem ich die Effektivität und Kosteneffizienz erkannt hatte, entschied ich mich, die Lösung online zugänglich zu machen und bot somit die gleiche Geschwindigkeit, Genauigkeit und Qualität wie Premium-Dienste, jedoch ohne hohe Gebühren.<br><br>
+Im Gegensatz zu kommerziellen Anbietern berechnet diese Plattform keine Aufschläge oder unnötigen Gebühren. Sie zahlen direkt an OpenAI – das bedeutet, dass Sie direkt zur Quelle der Technologie gelangen, ohne dass Zwischenhändler einen Aufpreis verlangen. Dadurch ist es die kostengünstigste Option, die dennoch erstklassige Qualität gewährleistet.<br><br>
+Viele meiner Kollegen im Gesundheitswesen zahlen oft weit mehr als nötig für ein Werkzeug, das für alle zugänglich sein sollte. Diese Website ist vollkommen kostenlos – Sie zahlen nur die direkte Nutzungsgebühr von OpenAI für Transkriptionen. Kein monatliches Abonnement, keine Verpflichtungen – Sie zahlen nur für das, was Sie nutzen, und bestimmen selbst, wie viel Sie in Ihre OpenAI-Brieftasche einzahlen.<br><br>
+Es wird lediglich darum gebeten, dass Sie personalisierte Werbung akzeptieren, welche dazu beiträgt, die Backend-Serverkosten zu decken. Mit steigender Nutzung erhöhen sich auch die Betriebskosten, und die Werbeeinnahmen stellen sicher, dass der Dienst ohne zusätzliche Kosten für die Nutzer aufrechterhalten werden kann.<br><br>
 Letztlich ist dies der Versuch eines einzelnen Arztes, ein faires und erschwingliches Werkzeug für Kollegen zu schaffen. Wenn diese Plattform anderen hilft, nicht zu viel für einen Dienst zu bezahlen, der zugänglich sein sollte, dann ist das ein Erfolg.`
   },
   fr: {
-    pageTitle: "Transcription Médicale Sécurisée",
-    headerTitle: "Transcription Médicale Sécurisée",
-    headerSubtitle: "Conversion de la parole en texte par IA avancée & génération de notes cliniques pour consultations patient-médecin",
+    pageTitle: "Whisper Transcription Clinique",
+    headerTitle: "Whisper Transcription Clinique",
+    headerSubtitle: "Conversion de la parole en texte et génération de notes par IA avancée pour les consultations de santé",
     startText: "Pour commencer, veuillez entrer votre clé API OpenAI :",
     apiPlaceholder: "Entrez la clé API ici",
     enterButton: "Accéder à l'outil de transcription",
@@ -120,24 +118,24 @@ Letztlich ist dies der Versuch eines einzelnen Arztes, ein faires und erschwingl
     adRevenueMessage: "Ce site étant gratuit et reposant uniquement sur les revenus publicitaires, veuillez accepter les annonces personnalisées pour soutenir le service.",
     securityModalHeading: "Informations de Sécurité",
     securityModalText: `La confidentialité et la sécurité des informations des patients sont des priorités absolues. Pour garantir que les données restent confidentielles :<br><br>
-- <strong>Chiffrement des données :</strong> Toutes les données traitées par le système sont sécurisées à l'aide de méthodes de chiffrement conformes aux normes de l'industrie. Les transcriptions et notes sont exclusivement associées à votre clé API personnelle chiffrée et à l'appareil utilisé, garantissant ainsi que seul vous avez accès aux contenus générés.<br><br>
+- <strong>Chiffrement des données :</strong> Toutes les données traitées par le système sont sécurisées à l'aide de méthodes de chiffrement conformes aux normes de l'industrie. Les transcriptions et les notes sont exclusivement associées à votre clé API personnelle chiffrée et à l'appareil utilisé, garantissant ainsi que seul vous avez accès aux contenus générés.<br><br>
 - <strong>Suppression automatique :</strong> Une fois qu'une transcription ou une note est générée et affichée à l'écran, elle est automatiquement et irréversiblement supprimée des serveurs dans les 2 minutes.<br><br>
 - <strong>Protection contre l'accès non autorisé :</strong> Même dans le cas extrêmement improbable d'un accès non autorisé à votre clé API, les données restent chiffrées et protégées par des identifiants spécifiques à l'appareil, rendant l'information inaccessible.<br><br>
-- <strong>Hébergement conforme au RGPD :</strong> Tous les processus back-end s'exécutent sur des serveurs Microsoft Azure dédiés situés dans l'UE, conformes aux règles et règlements du RGPD, garantissant que le traitement des données respecte les normes légales et éthiques les plus strictes.<br><br>
+- <strong>Hébergement conforme au RGPD :</strong> Tous les processus back-end s'exécutent sur des serveurs Microsoft Azure dédiés situés dans l'UE, conformes aux règles du RGPD, garantissant que le traitement des données respecte les normes légales et éthiques les plus strictes.<br><br>
 Soyez assuré que des mesures de sécurité strictes garantissent que toutes les données relatives aux patients restent sécurisées, confidentielles et entièrement sous votre contrôle.`,
     aboutModalHeading: "À propos de ce projet",
     aboutModalText: `Je suis un médecin de famille norvégien, passionné par les avancées technologiques, en particulier dans le domaine de l'intelligence artificielle, et je suis de près les évolutions de l'IA dans le secteur de la santé.<br><br>
-Lorsque j'ai découvert des entreprises offrant des services de transcription pour des consultations médicales en Norvège, j'ai été très enthousiaste. Des collègues et des avis en ligne ont salué ces services pour les améliorations significatives apportées à leur efficacité et à leur organisation. Cependant, après une analyse approfondie, j'ai été surpris par les tarifs élevés pratiqués – surtout compte tenu du fait que le coût réel de la technologie n'est qu'une fraction de ces prix.<br><br>
-Motivé par cette constatation, j'ai d'abord développé une solution de transcription personnelle, réduisant considérablement mes coûts quotidiens à environ 1,6 $ par jour pour une vingtaine de consultations, soit seulement 32 $ par mois. Conscient de son efficacité et de sa rentabilité, j'ai décidé de rendre cette solution accessible en ligne, offrant la même rapidité, précision et qualité que les services haut de gamme, mais sans les frais élevés.<br><br>
+Lorsque j'ai découvert des entreprises offrant des services de transcription pour des consultations médicales en Norvège, j'ai été très enthousiaste. Des collègues et des avis en ligne ont salué ces services pour les améliorations significatives apportées à leur efficacité et à leur organisation. Toutefois, une analyse approfondie a révélé que les tarifs pratiqués étaient étonnamment élevés, surtout compte tenu du fait que le coût réel de la technologie n'est qu'une fraction de ces prix.<br><br>
+Motivé par cette constatation, j'ai développé une solution personnelle de transcription, réduisant considérablement mes coûts quotidiens à environ 1,6 $ par jour pour une vingtaine de consultations, soit seulement 32 $ par mois. Conscient de son efficacité et de sa rentabilité, j'ai décidé de rendre cette solution accessible en ligne, offrant la même rapidité, précision et qualité que les services haut de gamme, mais sans les frais élevés.<br><br>
 Contrairement aux fournisseurs commerciaux, cette plateforme n'applique pas de majoration ni de frais superflus. Vous payez directement OpenAI – ce qui signifie que vous accédez directement à la source de la technologie, sans intermédiaires prélevant un supplément. Cela en fait l'option la plus économique tout en maintenant une qualité de premier ordre.<br><br>
 Je crois que beaucoup de mes collègues, qui œuvrent chaque jour pour soigner leurs patients, paient bien plus que nécessaire pour accéder à un outil qui devrait être abordable pour tous. Ce site est entièrement gratuit – le seul coût est la facture directe d'utilisation d'OpenAI pour la transcription. Aucun abonnement, aucune redevance mensuelle, aucune obligation – vous payez uniquement pour les tâches effectuées et contrôlez vos dépenses en décidant du montant à transférer vers votre portefeuille OpenAI.<br><br>
 La seule demande est d'accepter les annonces, qui aident à couvrir les frais des serveurs back-end. À mesure que l'utilisation augmente, les coûts d'hébergement et de fonctionnement augmentent, et les revenus publicitaires garantissent que le service peut rester gratuit.<br><br>
 Au final, ce projet est le fruit de l'initiative d'un médecin souhaitant offrir un outil juste et abordable à ses collègues. Si cette plateforme aide d'autres professionnels à éviter de payer trop cher pour un service qui devrait être accessible, alors c'est une réussite.`
   },
   it: {
-    pageTitle: "Trascrizione Medica Sicura",
-    headerTitle: "Trascrizione Medica Sicura",
-    headerSubtitle: "Conversione avanzata da voce a testo tramite IA e generazione di note cliniche per consulti medico-paziente",
+    pageTitle: "Whisper Trascrizione Clinica",
+    headerTitle: "Whisper Trascrizione Clinica",
+    headerSubtitle: "Conversione avanzata da voce a testo e generazione di note per consultazioni sanitarie",
     startText: "Per iniziare, inserisci la tua chiave API OpenAI:",
     apiPlaceholder: "Inserisci qui la chiave API",
     enterButton: "Accedi allo strumento di trascrizione",
@@ -153,13 +151,12 @@ Au final, ce projet est le fruit de l'initiative d'un médecin souhaitant offrir
 - <strong>Hosting conforme al GDPR:</strong> Tutti i processi backend vengono eseguiti su server Microsoft Azure dedicati situati nell'UE, pienamente conformi alle normative GDPR, garantendo che il trattamento dei dati rispetti i più alti standard legali ed etici.<br><br>
 Sii certo che misure di sicurezza rigorose garantiscono che tutti i dati relativi ai pazienti rimangano sicuri, confidenziali e interamente sotto il tuo controllo.`,
     aboutModalHeading: "Informazioni su questo Progetto",
-    aboutModalText: `Sono un medico di famiglia norvegese con oltre dieci anni di esperienza, sempre interessato agli avanzamenti tecnologici, in particolare all'intelligenza artificiale, e ho seguito da vicino lo sviluppo dell'IA nel settore sanitario.<br><br>
-Quando ho sentito parlare per la prima volta di aziende che offrono servizi di trascrizione per consulti medici in Norvegia, sono stato entusiasta. Colleghi e recensioni online hanno elogiato questi servizi per i miglioramenti significativi in termini di efficienza e flusso di lavoro. Tuttavia, approfondendo la questione, sono rimasto sorpreso dai prezzi elevati praticati, soprattutto considerando che il costo effettivo della tecnologia è solo una frazione di tali prezzi.<br><br>
+    aboutModalText: `Sono un medico di famiglia norvegese con grande interesse per i progressi tecnologici, in particolare nell'ambito dell'intelligenza artificiale, e seguo da vicino lo sviluppo dell'IA nel settore sanitario.<br><br>
+Quando ho sentito parlare per la prima volta di aziende che offrono servizi di trascrizione per consulti medici in Norvegia, sono stato entusiasta. Colleghi e recensioni online hanno elogiato questi servizi per i miglioramenti significativi in termini di efficienza e flusso di lavoro. Tuttavia, un'analisi approfondita ha rivelato che i prezzi praticati erano sorprendentemente alti, soprattutto se si considera che il costo reale della tecnologia è solo una frazione di tali prezzi.<br><br>
 Motivato da questa consapevolezza, ho inizialmente sviluppato una soluzione personale di trascrizione, riducendo significativamente i costi giornalieri a circa 1,6 USD al giorno per circa 20 consulti medici – ovvero solo 32 USD al mese. Vedendo l'efficacia e l'economicità della soluzione, ho deciso di renderla accessibile online, offrendo la stessa velocità, precisione e qualità dei servizi premium, ma senza costi aggiuntivi elevati.<br><br>
 A differenza dei fornitori commerciali, questa piattaforma non applica maggiorazioni o commissioni inutili. Paghi direttamente OpenAI, il che significa che accedi direttamente alla fonte della tecnologia, senza intermediari che prelevano una quota. Questo la rende l'opzione più economica disponibile, pur mantenendo una qualità di prim'ordine.<br><br>
-Molti colleghi che lavorano nella cura dei pazienti finiscono per pagare molto più del necessario per uno strumento che dovrebbe essere accessibile a tutti. Questo sito è completamente gratuito: l'unico costo è la tariffa diretta di utilizzo di OpenAI per le trascrizioni. Nessun abbonamento mensile, nessun impegno – paghi solo per le attività svolte e controlli le tue spese decidendo quanto trasferire nel tuo portafoglio OpenAI.<br><br>
-L'unica richiesta è di accettare le pubblicità, che aiutano a coprire i costi dei server backend. Con l'aumentare dell'utilizzo, aumentano anche i costi di hosting e di gestione, e i ricavi pubblicitari garantiscono che il servizio possa rimanere gratuito senza oneri aggiuntivi per gli utenti.<br><br>
-Alla fine, questo è l'impegno di un singolo medico per creare uno strumento equo e accessibile per i colleghi. Se questa piattaforma aiuta altri a evitare di pagare troppo per un servizio che dovrebbe essere accessibile, allora sarà considerato un successo.`
+Molti colleghi nel settore sanitario finiscono per pagare molto più del necessario per uno strumento che dovrebbe essere accessibile a tutti. Questo sito è completamente gratuito: l'unico costo è la tariffa diretta di utilizzo di OpenAI per le trascrizioni. Nessun abbonamento mensile, nessun impegno – paghi solo per le attività svolte e controlli le tue spese decidendo quanto trasferire nel tuo portafoglio OpenAI.<br><br>
+L'unica richiesta è di accettare le pubblicità, che aiutano a coprire i costi dei server backend. Con l'aumentare dell'utilizzo, aumentano anche i costi di hosting e di gestione, e i ricavi pubblicitari garantiscono che il servizio possa rimanere gratuito senza oneri aggiuntivi per gli utenti.`
   }
 };
 
@@ -264,7 +261,7 @@ Klikk på "Funksjoner" for å gå tilbake til hovedskjermen.`
 Klicka på "Funktioner" för att återgå till huvudgränssnittet.`
   },
   de: {
-    pageTitle: "Sichere Medizinische Transkription",
+    pageTitle: "Transkriptionstool mit Anzeigen und Anleitungsoverlay",
     openaiUsageLinkText: "Übersicht über OpenAI-Nutzung",
     btnFunctions: "Funktionen",
     btnGuide: "Anleitung",
@@ -297,7 +294,7 @@ Klicka på "Funktioner" för att återgå till huvudgränssnittet.`
 Bitte klicken Sie auf "Funktionen", um zur Hauptoberfläche zurückzukehren.`
   },
   fr: {
-    pageTitle: "Transcription Médicale Sécurisée",
+    pageTitle: "Outil de Transcription avec Annonces et Superposition de Guide",
     openaiUsageLinkText: "Vue d'ensemble de l'utilisation d'OpenAI",
     btnFunctions: "Fonctions",
     btnGuide: "Guide",
@@ -330,7 +327,7 @@ Bitte klicken Sie auf "Funktionen", um zur Hauptoberfläche zurückzukehren.`
 Veuillez cliquer sur "Fonctions" pour revenir à l'interface principale.`
   },
   it: {
-    pageTitle: "Trascrizione Medica Sicura",
+    pageTitle: "Strumento di Trascrizione con Annunci e Sovrapposizione Guida",
     openaiUsageLinkText: "Panoramica dell'utilizzo di OpenAI",
     btnFunctions: "Funzioni",
     btnGuide: "Guida",
@@ -357,7 +354,7 @@ Veuillez cliquer sur "Fonctions" pour revenir à l'interface principale.`
   <li><strong>Registrazione:</strong> Clicca su "Avvia registrazione" per iniziare a catturare l'audio. L'audio viene catturato tramite MediaStreamTrackProcessor (con WebCodecs) e accumulato per fino a 40 secondi prima di essere confezionato in un file WAV autonomo.</li>
   <li><strong>Completamento:</strong> Dopo aver cliccato su "Ferma/Completa", la registrazione si interrompe. Un periodo finale di 2 secondi raccoglie eventuali tracce residue prima dell'elaborazione finale. Il timer di completamento continua fino a quando la trascrizione completa non viene ricevuta.</li>
   <li><strong>Generazione di note:</strong> Dopo la trascrizione, clicca su "Genera nota" per creare una nota basata sulla trascrizione e sul prompt personalizzato.</li>
-  <li><strong>Prompt personalizzato:</strong> A destra, seleziona uno slot (1–10) e inserisci il tuo prompt personalizzato. Il prompt verrà salvato automaticamente e collegato alla tua chiave API.</li>
+  <li><strong>Prompt personalizzato:</strong> A destra, seleziona uno slot e inserisci il tuo prompt personalizzato. Il prompt verrà salvato automaticamente e collegato alla tua chiave API.</li>
   <li><strong>Guida:</strong> Utilizza i pulsanti "Funzioni" e "Guida" per passare dall'interfaccia funzionale a questa guida.</li>
 </ul>
 Clicca su "Funzioni" per tornare all'interfaccia principale.`

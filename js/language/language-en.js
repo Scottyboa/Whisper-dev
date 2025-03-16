@@ -1,4 +1,4 @@
-// js/languages/language-en.js
+// js/language-en.js
 
 export const indexTranslations = {
   pageTitle: "Whisper Clinical Transcription",
@@ -19,7 +19,18 @@ export const indexTranslations = {
 - <strong>GDPR-Compliant Hosting:</strong> All backend processes run on dedicated Microsoft Azure servers located within the EU, fully compliant with GDPR regulations.<br><br>
 Rest assured, stringent security measures ensure that all patient-related data remains safe, confidential, and entirely under your control.`,
   aboutModalHeading: "About This Project",
-  aboutModalText: `I’m a Norwegian family doctor with a strong interest in technology and AI developments in healthcare. I developed this solution to significantly reduce transcription costs and provide an affordable, direct-to-OpenAI service. You pay only for the actual OpenAI usage fee without any monthly subscription.`,
+  aboutModalText: `I’m a Norwegian family doctor who has always had an interest in technological advancements, particularly in artificial intelligence, and I have followed AI developments in healthcare closely.<br><br>
+When I initially learned about companies providing speech-to-text services for medical consultations in Norway, I was enthusiastic. Colleagues and online reviews praised these services, noting significant improvements in their efficiency and workflow. However, upon researching further, I was surprised at how much these companies charged for their services—especially considering that the actual cost of the technology itself is only a fraction of their prices.<br><br>
+Motivated by this realization, I developed my own speech-to-text solution initially for personal use. Seeing how effective and cost-efficient it was, I decided to make my solution accessible online, offering the same speed, accuracy, and quality found in premium services, but without the high fees.<br><br>
+Unlike commercial providers, this platform doesn’t mark up costs or impose unnecessary fees.<br>
+• Instead, you pay OpenAI directly—meaning you are going straight to the source of the technology, without middlemen taking an extra cut.<br>
+• Because of this, it’s the cheapest option available while maintaining top-tier quality.<br><br>
+I believe that the services offered by some of these companies, while useful, are overpriced for what they actually provide. Many of my colleagues—who work hard every day in patient care—end up paying significantly more than necessary just to access a tool that should be affordable for everyone.<br><br>
+This website is completely free to use—your only cost is the direct OpenAI usage fee for transcriptions.<br>
+• No monthly fees, no subscriptions, no commitments—you only pay for the tasks you perform.<br>
+• You control how much you spend by deciding how much to transfer to your OpenAI wallet.<br><br>
+The only thing I ask is that you accept ads, which help cover backend server costs.<br>
+As more people use the website, the hosting and operational fees will increase, and ad revenue ensures that I can keep it free and running without charging users.`,
   guideModalHeading: "How to Set Up Your OpenAI API for Whisper Clinical Transcription",
   guideModalText: `To use this webapp, you must first create an OpenAI API profile, generate an API key, and fund your OpenAI wallet. Your API key is then copied and pasted into the provided API key field. Once you press Enter, the webapp saves the API key temporarily for your session—this key links you to the OpenAI servers so that speech-to-text transcription and note generation can work. Please note, you are charged immediately per task performed. For more info on cost, please review the "Cost" section on the front page.
 <br><br>

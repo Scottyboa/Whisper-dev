@@ -1,6 +1,6 @@
 // main.js
 
-import { initTranscribeLanguage } from './language.js';
+import { initTranscribeLanguage } from './languageLoaderUsage.js';
 import { initRecording } from './recording.js';
 import { initNoteGeneration } from './noteGeneration.js';
 import { initConsentBanner } from './ui.js';

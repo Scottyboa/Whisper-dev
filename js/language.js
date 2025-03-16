@@ -1,341 +1,96 @@
-// language.js
-
-// Translations for the Index Page
 const indexTranslations = {
   en: {
-    pageTitle: "Whisper Transcription",
-    headerTitle: "Whisper Transcription",
-    headerSubtitle: "Convert speech to text for professional consultations",
+    pageTitle: "Secure Medical Transcription",
+    headerTitle: "Secure Medical Transcription",
+    headerSubtitle: "Advanced AI-Powered Speech-to-Text & Clinical Note Generation for Patient-Doctor Consultations",
     startText: "To get started, please enter your OpenAI API key:",
     apiPlaceholder: "Enter API Key here",
     enterButton: "Enter Transcription Tool",
-    guideButton: "Guide for setting up API key",
-    adRevenueMessage: "As we do not charge for the use of this website and rely solely on ad revenue, we kindly ask you to consent to personalized ads to help support our service."
+    guideButton: "API Guide",
+    securityButton: "Security",
+    aboutButton: "About",
+    adRevenueMessage: "As this website is free to use and relies solely on ad revenue, please consent to personalized ads to help support the service.",
+    securityModalHeading: "Security Information",
+    securityModalText: "Your privacy and the security of patient information are the highest priorities. To ensure that data remains confidential:<br><br>\
+- <strong>Data Encryption:</strong> All data processed by the system is secured using industry-standard encryption methods. Transcripts and notes are linked exclusively to your encrypted personal API key and the device used for access, ensuring that only you have access to the generated content.<br><br>\
+- <strong>Automatic Deletion:</strong> Once a transcript or note is generated and displayed on your screen, it is automatically and irreversibly deleted from the servers within 2 minutes.<br><br>\
+- <strong>Unauthorized Access Protection:</strong> Even if, in an extremely unlikely scenario, unauthorized access to your API key occurs, the data remains encrypted and secured by device-specific markers, rendering the information inaccessible.<br><br>\
+- <strong>GDPR-Compliant Hosting:</strong> All backend processes run on dedicated Microsoft Azure servers located within the EU, fully compliant with GDPR rules and regulations, ensuring that data processing meets the highest legal and ethical standards.<br><br>\
+Rest assured, stringent security measures ensure that all patient-related data remains safe, confidential, and entirely within your control.",
+    aboutModalHeading: "About This Project",
+    aboutModalText: "I’m a Norwegian family doctor who has always had an interest in technological advancements, particularly in artificial intelligence, and have closely followed AI developments in healthcare.<br><br>\
+When I initially learned about companies providing speech-to-text services for medical consultations in Norway, enthusiasm was high. Colleagues and online reviews praised these services for significant improvements in efficiency and workflow. However, further research revealed that the prices charged by these companies were surprisingly high—especially considering that the actual cost of the technology is only a fraction of those prices.<br><br>\
+Motivated by this realization, I developed a personal speech-to-text solution, significantly reducing daily transcription costs to approximately $1.6 per day for about 20 patient consultations—which totals only $32 per month. Recognizing its effectiveness and cost efficiency, I decided to make the solution accessible online, offering the same speed, accuracy, and quality as premium services, but without the high fees.<br><br>\
+Unlike commercial providers, this platform doesn’t mark up costs or impose unnecessary fees. Instead, you pay OpenAI directly—meaning you go straight to the source of the technology, without intermediaries taking an extra cut. This makes it the most affordable option available while maintaining top-tier quality.<br><br>\
+Many colleagues in patient care end up paying significantly more than necessary for a tool that should be accessible to everyone. This website is completely free to use—your only cost is the direct OpenAI usage fee for transcriptions. No monthly fees, subscriptions, or commitments—you only pay for the tasks performed, and you control your spending by deciding how much to transfer to your OpenAI wallet.<br><br>\
+The only request is to accept ads, which help cover backend server costs. As usage increases, hosting and operational fees rise, and ad revenue ensures that the service can be maintained without charging users.<br><br>\
+At the end of the day, this is just one doctor’s effort to create a fair and affordable tool for colleagues. If this platform helps others avoid being overcharged for something that should be accessible, then that is a success."
   },
   no: {
-    pageTitle: "Whisper Transkripsjon",
-    headerTitle: "Whisper Transkripsjon",
-    headerSubtitle: "Konverter tale til tekst for profesjonelle konsultasjoner",
+    pageTitle: "Sikker Medisinsk Transkripsjon",
+    headerTitle: "Sikker Medisinsk Transkripsjon",
+    headerSubtitle: "Avansert AI-drevet tale-til-tekst og klinisk notatgenerering for pasient-leger konsultasjoner",
     startText: "For å komme i gang, vennligst skriv inn din OpenAI API-nøkkel:",
     apiPlaceholder: "Skriv inn API-nøkkel her",
     enterButton: "Gå til transkripsjonsverktøy",
-    guideButton: "Veiledning for oppsett av API-nøkkel",
-    adRevenueMessage: "Siden vi ikke tar betalt for bruk av denne nettsiden og utelukkende er avhengige av annonseinntekter, ber vi deg vennligst om å samtykke til personaliserte annonser for å støtte tjenesten vår."
+    guideButton: "API-veiledning",
+    securityButton: "Sikkerhet",
+    aboutButton: "Om",
+    adRevenueMessage: "Siden denne nettsiden er gratis å bruke og kun støttes av annonseinntekter, vennligst gi ditt samtykke til personaliserte annonser for å støtte tjenesten.",
+    securityModalHeading: "Sikkerhetsinformasjon",
+    securityModalText: "Personvernet og sikkerheten til pasientinformasjon er de høyeste prioriteringene. For å sikre at data forblir konfidensielle:<br><br>\
+- <strong>Datakryptering:</strong> All data behandlet av systemet er sikret med krypteringsmetoder i henhold til industristandard. Transkripsjoner og notater er eksklusivt knyttet til din krypterte personlige API-nøkkel og den enheten du bruker, slik at kun du har tilgang til det genererte innholdet.<br><br>\
+- <strong>Automatisk sletting:</strong> Når en transkripsjon eller et notat er generert og vist på skjermen, slettes det automatisk og uopprettelig fra serverne innen 2 minutter.<br><br>\
+- <strong>Beskyttelse mot uautorisert tilgang:</strong> Selv i et ekstremt usannsynlig tilfelle av uautorisert tilgang til din API-nøkkel, forblir dataene kryptert og sikret med enhetsspesifikke markører, noe som gjør informasjonen utilgjengelig.<br><br>\
+- <strong>GDPR-kompatibel hosting:</strong> Alle backend-prosesser kjøres på dedikerte Microsoft Azure-servere innenfor EU, som er fullt i samsvar med GDPR, og sikrer at databehandlingen møter de høyeste juridiske og etiske standardene.<br><br>\
+Vær trygg på at strenge sikkerhetstiltak sikrer at all pasientrelatert data forblir trygg, konfidensiell og helt under din kontroll.",
+    aboutModalHeading: "Om dette prosjektet",
+    aboutModalText: "Jeg er en norsk allmennlege med stor interesse for teknologiske fremskritt, spesielt innen kunstig intelligens, og jeg har fulgt AI-utviklingen i helsesektoren nøye.<br><br>\
+Da jeg først hørte om selskaper som tilbyr tale-til-tekst-tjenester for medisinske konsultasjoner i Norge, var entusiasmen stor. Kollegers og online anmeldelser roste disse tjenestene for betydelige forbedringer i effektivitet og arbeidsflyt. Men ved nærmere ettersyn ble jeg overrasket over de høye prisene disse selskapene tar, spesielt når den faktiske kostnaden for teknologien er en brøkdel av disse prisene.<br><br>\
+Motivert av denne innsikten utviklet jeg først en personlig tale-til-tekst-løsning, noe som reduserte mine daglige transkripsjonskostnader til omtrent $1.6 per dag for ca. 20 pasientkonsultasjoner – totalt kun $32 i måneden. Etter å ha sett hvor effektiv og kostnadseffektiv løsningen var, bestemte jeg meg for å gjøre den tilgjengelig på nettet, med samme hastighet, nøyaktighet og kvalitet som finnes i premiumtjenester, men uten de høye gebyrene.<br><br>\
+I motsetning til kommersielle tilbydere legger ikke denne plattformen på ekstra kostnader eller unødvendige avgifter. Du betaler direkte til OpenAI – det vil si at du går rett til kilden for teknologien, uten mellommenn som tar en ekstra del. Dette gjør det til det mest rimelige alternativet som likevel opprettholder førsteklasses kvalitet.<br><br>\
+Mange kolleger innen pasientbehandling betaler ofte mye mer enn nødvendig for et verktøy som burde være rimelig for alle. Denne nettsiden er helt gratis å bruke – den eneste kostnaden er den direkte bruksavgiften til OpenAI for transkripsjoner. Ingen månedlige avgifter, abonnement eller forpliktelser – du betaler kun for de oppgavene du utfører, og du kontrollerer utgiftene ved å bestemme hvor mye du overfører til din OpenAI-lommebok.<br><br>\
+Det eneste jeg ber om, er at du aksepterer annonser, som hjelper til med å dekke backend-serverkostnadene. Etter hvert som bruken øker, øker også driftskostnadene, og annonseinntektene sikrer at tjenesten kan opprettholdes uten at brukerne belastes.<br><br>\
+Til syvende og sist er dette bare en leges forsøk på å skape et rettferdig og rimelig verktøy for kolleger. Hvis denne plattformen hjelper andre med å unngå å bli overbelastet for noe som burde være tilgjengelig, er det en suksess."
   },
   sv: {
-    pageTitle: "Whisper Transkription",
-    headerTitle: "Whisper Transkription",
-    headerSubtitle: "Omvandla tal till text för professionella konsultationer",
-    startText: "För att komma igång, vänligen ange din OpenAI API-nyckel:",
+    pageTitle: "Säker Medicinsk Transkription",
+    headerTitle: "Säker Medicinsk Transkription",
+    headerSubtitle: "Avancerad AI-driven tal-till-text & klinisk anteckningsgenerering för patient-läkar konsultationer",
+    startText: "För att komma igång, ange din OpenAI API-nyckel:",
     apiPlaceholder: "Ange API-nyckel här",
-    enterButton: "Gå till transkriptionverktyget",
-    guideButton: "Guide för att ställa in API-nyckel",
-    adRevenueMessage: "Eftersom vi inte tar betalt för användningen av denna webbplats och enbart är beroende av annonsintäkter, ber vi dig vänligen att ge ditt samtycke till personliga annonser för att stödja vår tjänst."
+    enterButton: "Gå till transkriptionsverktyget",
+    guideButton: "API-guide",
+    securityButton: "Säkerhet",
+    aboutButton: "Om",
+    adRevenueMessage: "Eftersom denna webbplats är gratis och enbart förlitar sig på annonsintäkter, vänligen ge ditt samtycke till personliga annonser för att stödja tjänsten.",
+    securityModalHeading: "Säkerhetsinformation",
+    securityModalText: "Ditt privatliv och säkerheten för patientinformation är högsta prioritet. För att säkerställa att data förblir konfidentiella:<br><br>\
+- <strong>Datakryptering:</strong> All data som behandlas av systemet är säkrad med krypteringsmetoder enligt branschstandard. Transkriptioner och anteckningar är exklusivt kopplade till din krypterade personliga API-nyckel och den enhet du använder, vilket garanterar att endast du har tillgång till det genererade innehållet.<br><br>\
+- <strong>Automatisk radering:</strong> När en transkription eller anteckning har genererats och visas på din skärm, raderas den automatiskt och oåterkalleligt från servrarna inom 2 minuter.<br><br>\
+- <strong>Skydd mot obehörig åtkomst:</strong> Även om obehörig åtkomst till din API-nyckel skulle ske, förblir data krypterad och skyddad med enhetsspecifika markörer, vilket gör informationen otillgänglig.<br><br>\
+- <strong>GDPR-kompatibelt hosting:</strong> Alla backend-processer körs på dedikerade Microsoft Azure-servrar inom EU, fullt kompatibla med GDPR, vilket säkerställer att databehandlingen uppfyller de högsta juridiska och etiska standarderna.<br><br>\
+Var säker på att strikta säkerhetsåtgärder garanterar att all patientrelaterad data förblir säker, konfidentiell och helt under din kontroll.",
+    aboutModalHeading: "Om detta projekt",
+    aboutModalText: "Jag är en norsk allmänläkare med stort intresse för teknologiska framsteg, särskilt inom artificiell intelligens, och har noggrant följt utvecklingen av AI inom hälsosektorn.<br><br>\
+När jag först hörde talas om företag som erbjuder tal-till-text-tjänster för medicinska konsultationer i Norge, blev jag mycket entusiastisk. Kollegor och online-recensioner berömde dessa tjänster för de betydande förbättringar de medförde i effektivitet och arbetsflöde. Vid närmare granskning blev jag dock förvånad över de höga priserna – särskilt med tanke på att den faktiska kostnaden för teknologin bara utgör en bråkdel av dessa priser.<br><br>\
+Motiverad av denna insikt utvecklade jag först en personlig tal-till-text-lösning, vilket avsevärt sänkte mina dagliga transkriptionskostnader till cirka $1.6 per dag för ungefär 20 konsultationer – totalt endast $32 per månad. Efter att ha sett hur effektiv och kostnadseffektiv lösningen var, beslutade jag att göra den tillgänglig online, med samma hastighet, noggrannhet och kvalitet som premiumtjänster, men utan de höga avgifterna.<br><br>\
+Till skillnad från kommersiella aktörer lägger denna plattform inte på extra kostnader eller onödiga avgifter. Du betalar direkt till OpenAI – vilket innebär att du får tillgång direkt till teknologins källa, utan mellanhänder som tar ut en extra avgift. Detta gör det till det mest prisvärda alternativet, samtidigt som högsta kvalitet bibehålls.<br><br>\
+Många kollegor inom vården betalar ofta mycket mer än nödvändigt för ett verktyg som borde vara tillgängligt för alla. Denna webbplats är helt gratis att använda – den enda kostnaden är den direkta avgiften för användning av OpenAI för transkriptioner. Inga månadsavgifter, inget abonnemang, ingen förpliktelse – du betalar bara för de uppgifter du utför, och du kontrollerar dina utgifter genom att själv bestämma hur mycket du överför till din OpenAI-plånbok.<br><br>\
+Det enda jag ber om är att du accepterar annonser, vilket hjälper till att täcka kostnaderna för backend-servrarna. Med ökad användning ökar även driftskostnaderna, och annonsintäkterna säkerställer att tjänsten kan upprätthållas utan extra kostnader för användarna.<br><br>\
+I slutändan är detta bara en läkare som försöker skapa ett rättvist och prisvärt verktyg för kollegor. Om denna plattform hjälper andra att undvika att betala för mycket för något som borde vara tillgängligt, är det en framgång."
   },
   de: {
-    pageTitle: "Whisper Transkription",
-    headerTitle: "Whisper Transkription",
-    headerSubtitle: "Sprache in Text umwandeln für professionelle Beratungen",
+    pageTitle: "Sichere Medizinische Transkription",
+    headerTitle: "Sichere Medizinische Transkription",
+    headerSubtitle: "Fortschrittliche KI-gestützte Sprach-zu-Text- und klinische Notizenerstellung für Arzt-Patienten-Konsultationen",
     startText: "Um zu beginnen, geben Sie bitte Ihren OpenAI API-Schlüssel ein:",
     apiPlaceholder: "API-Schlüssel hier eingeben",
     enterButton: "Transkriptionswerkzeug öffnen",
-    guideButton: "Anleitung zum Einrichten des API-Schlüssels",
-    adRevenueMessage: "Da wir diese Website kostenlos anbieten und ausschließlich auf Werbeeinnahmen angewiesen sind, bitten wir Sie, personalisierte Werbung zuzulassen, um unseren Service zu unterstützen."
-  },
-  fr: {
-    pageTitle: "Transcription Whisper",
-    headerTitle: "Transcription Whisper",
-    headerSubtitle: "Convertir la parole en texte pour des consultations professionnelles",
-    startText: "Pour commencer, veuillez entrer votre clé API OpenAI :",
-    apiPlaceholder: "Entrez la clé API ici",
-    enterButton: "Accéder à l'outil de transcription",
-    guideButton: "Guide pour configurer la clé API",
-    adRevenueMessage: "Comme nous ne facturons pas l'utilisation de ce site et dépendons uniquement des revenus publicitaires, nous vous demandons de bien vouloir accepter les publicités personnalisées pour soutenir notre service."
-  },
-  it: {
-    pageTitle: "Trascrizione Whisper",
-    headerTitle: "Trascrizione Whisper",
-    headerSubtitle: "Convertire il parlato in testo per consulenze professionali",
-    startText: "Per iniziare, inserisci la tua chiave API OpenAI:",
-    apiPlaceholder: "Inserisci qui la chiave API",
-    enterButton: "Accedi allo strumento di trascrizione",
-    guideButton: "Guida per configurare la chiave API",
-    adRevenueMessage: "Poiché non addebitiamo l'uso di questo sito e ci affidiamo esclusivamente alle entrate pubblicitarie, ti chiediamo cortesemente di acconsentire agli annunci personalizzati per supportare il nostro servizio."
-  }
-};
-
-// Updates the index page elements based on the current language
-function updateLanguageIndex(lang) {
-  document.getElementById("page-title").textContent = indexTranslations[lang].pageTitle;
-  document.getElementById("header-title").textContent = indexTranslations[lang].headerTitle;
-  document.getElementById("header-subtitle").textContent = indexTranslations[lang].headerSubtitle;
-  document.getElementById("start-text").textContent = indexTranslations[lang].startText;
-  document.getElementById("apiKeyInput").setAttribute("placeholder", indexTranslations[lang].apiPlaceholder);
-  document.getElementById("enterTranscriptionBtn").textContent = indexTranslations[lang].enterButton;
-  document.getElementById("openGuideButton").textContent = indexTranslations[lang].guideButton;
-  document.getElementById("ad-revenue-message").textContent = indexTranslations[lang].adRevenueMessage;
-}
-
-// Initializes the language selection for the index page
-function initIndexLanguage() {
-  let currentLang = localStorage.getItem("siteLanguage") || "en";
-  const langSelect = document.getElementById("lang-select");
-  if (!langSelect) return;
-  langSelect.value = currentLang;
-  updateLanguageIndex(currentLang);
-  langSelect.addEventListener("change", function() {
-    currentLang = this.value;
-    localStorage.setItem("siteLanguage", currentLang);
-    updateLanguageIndex(currentLang);
-  });
-}
-
-// Translations for the Transcribe Page
-const transcribeTranslations = {
-  en: {
-    pageTitle: "Transcription Tool with Ads and Guide Overlay",
-    openaiUsageLinkText: "Cost usage overview",
-    btnFunctions: "Functions",
-    btnGuide: "Guide",
-    recordingAreaTitle: "Recording Area",
-    recordTimer: "Recording Timer: 0 sec",
-    transcribeTimer: "Completion Timer: 0 sec",
-    transcriptionPlaceholder: "Transcription result will appear here...",
-    startButton: "Start Recording",
-    stopButton: "Stop/Complete",
-    pauseButton: "Pause Recording",
-    statusMessage: "Welcome! Click \"Start Recording\" to begin.",
-    noteGenerationTitle: "Note Generation",
-    generateNoteButton: "Generate Note",
-    noteTimer: "Note Generation Timer: 0 sec",
-    generatedNotePlaceholder: "Generated note will appear here...",
-    customPromptTitle: "Custom Prompt",
-    promptSlotLabel: "Prompt Slot:",
-    customPromptPlaceholder: "Enter custom prompt here",
-    adUnitText: "Your Ad Here",
-    guideHeading: "Guide & Instructions",
-    guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.
-<br><br>
-<strong>How to Use the Functions:</strong>
-<ul>
-  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file.</li>
-  <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. A 2-second final capture period collects any remaining audio before processing the final chunk. The Completion Timer then ticks until the full transcript is received.</li>
-  <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
-  <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
-  <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
-</ul>
-Please click "Functions" to return to the main interface.`
-  },
-  no: {
-    pageTitle: "Transkripsjonsverktøy med annonser og veiledningsoverlegg",
-    openaiUsageLinkText: "Vis OpenAI bruk",
-    btnFunctions: "Funksjoner",
-    btnGuide: "Veiledning",
-    recordingAreaTitle: "Opptaksområde",
-    recordTimer: "Opptakstimer: 0 sek",
-    transcribeTimer: "Fullføringstimer: 0 sek",
-    transcriptionPlaceholder: "Transkripsjonsresultatet vises her...",
-    startButton: "Start opptak",
-    stopButton: "Stopp/Fullfør",
-    pauseButton: "Pause opptak",
-    statusMessage: "Velkommen! Klikk 'Start opptak' for å begynne.",
-    noteGenerationTitle: "Notatgenerering",
-    generateNoteButton: "Generer notat",
-    noteTimer: "Notatgenereringstimer: 0 sek",
-    generatedNotePlaceholder: "Generert notat vises her...",
-    customPromptTitle: "Tilpasset melding",
-    promptSlotLabel: "Meldingsplass:",
-    customPromptPlaceholder: "Skriv inn tilpasset melding her",
-    adUnitText: "Din annonse her",
-    guideHeading: "Veiledning og Instruksjoner",
-    guideText: `Velkommen til Whisper Transkripsjonsverktøy. Denne applikasjonen lar medisinske fagpersoner, terapeuter og andre utøvere ta opp og transkribere konsultasjoner, samt generere profesjonelle notater ved hjelp av en AI-drevet notatgenerator.
-<br><br>
-<strong>Slik bruker du verktøyet:</strong>
-<ul>
-  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å starte opptaket. Lydopptak fanges via MediaStreamTrackProcessor (med WebCodecs) og akkumuleres i opptil 40 sekunders biter før de pakkes som gyldige WAV-filer.</li>
-  <li><strong>Fullføring:</strong> Etter at du klikker "Stopp/Fullfør", avsluttes opptaket. En 2-sekunders sluttfase fanger opp resterende lyd, og deretter tickes fullføringstimeren til transkripsjonen er ferdig.</li>
-  <li><strong>Notatgenerering:</strong> Etter transkripsjonen, klikk "Generer notat" for å lage et notat basert på transkripsjonen og din tilpassede melding.</li>
-  <li><strong>Tilpasset melding:</strong> Velg et meldingsfelt (1–10) og skriv inn din tilpassede melding. Meldingen lagres automatisk og knyttes til din API-nøkkel.</li>
-  <li><strong>Veiledning:</strong> Bruk knappene "Funksjoner" og "Veiledning" for å bytte mellom verktøysgrensesnittet og denne veiledningen.</li>
-</ul>
-Klikk "Funksjoner" for å gå tilbake til hovedskjermen.`
-  },
-  sv: {
-    pageTitle: "Transkriberingsverktyg med annonser och guideöverlägg",
-    openaiUsageLinkText: "Översikt över kostnader",
-    btnFunctions: "Funktioner",
-    btnGuide: "Guide",
-    recordingAreaTitle: "Inspelningsområde",
-    recordTimer: "Inspelningstimer: 0 sek",
-    transcribeTimer: "Avslutningstimer: 0 sek",
-    transcriptionPlaceholder: "Transkriptet kommer att visas här...",
-    startButton: "Starta inspelning",
-    stopButton: "Stoppa/Avsluta",
-    pauseButton: "Pausa inspelning",
-    statusMessage: "Välkommen! Klicka på \"Starta inspelning\" för att börja.",
-    noteGenerationTitle: "Noteringsgenerering",
-    generateNoteButton: "Generera anteckning",
-    noteTimer: "Noteringstimer: 0 sek",
-    generatedNotePlaceholder: "Genererad anteckning kommer att visas här...",
-    customPromptTitle: "Anpassad uppmaning",
-    promptSlotLabel: "Uppmaningsplats:",
-    customPromptPlaceholder: "Ange anpassad uppmaning här",
-    adUnitText: "Din annons här",
-    guideHeading: "Guide & Instruktioner",
-    guideText: `Välkommen till Whisper Transkriberingsverktyget. Denna applikation låter medicinska proffs, terapeuter och andra praktiker spela in och transkribera konsultationer, samt generera professionella anteckningar med hjälp av en AI-driven anteckningsgenerator.
-<br><br>
-<strong>Hur du använder funktionerna:</strong>
-<ul>
-  <li><strong>Inspelning:</strong> Klicka på "Starta inspelning" för att börja spela in. Ljud fångas med MediaStreamTrackProcessor (via WebCodecs) och ackumuleras i upp till 40 sekunder innan de paketeras som en komplett WAV-fil.</li>
-  <li><strong>Avslutning:</strong> Efter att du klickat på "Stoppa/Avsluta" stoppas inspelningen. En sista 2-sekunders period samlar upp eventuellt kvarvarande ljud innan den slutgiltiga delen behandlas. Avslutningstimern tickar tills hela transkriptet är mottaget.</li>
-  <li><strong>Noteringsgenerering:</strong> Efter transkriberingen, klicka på "Generera anteckning" för att skapa en anteckning baserad på ditt transkript och din anpassade uppmaning.</li>
-  <li><strong>Anpassad uppmaning:</strong> Välj en uppmaningsplats (1–10) och ange din anpassade uppmaning. Uppmaningen sparas automatiskt och kopplas till din API-nyckel.</li>
-  <li><strong>Guide:</strong> Använd knapparna "Funktioner" och "Guide" för att växla mellan huvudgränssnittet och denna guide.</li>
-</ul>
-Klicka på "Funktioner" för att återgå till huvudgränssnittet.`
-  },
-  de: {
-    pageTitle: "Transkriptionswerkzeug mit Werbung und Anleitungsoverlay",
-    openaiUsageLinkText: "Kostenübersicht",
-    btnFunctions: "Funktionen",
-    btnGuide: "Anleitung",
-    recordingAreaTitle: "Aufnahmebereich",
-    recordTimer: "Aufnahmetimer: 0 Sek",
-    transcribeTimer: "Abschlusstimer: 0 Sek",
-    transcriptionPlaceholder: "Das Transkript erscheint hier...",
-    startButton: "Aufnahme starten",
-    stopButton: "Stoppen/Abschließen",
-    pauseButton: "Aufnahme pausieren",
-    statusMessage: "Willkommen! Klicken Sie auf \"Aufnahme starten\", um zu beginnen.",
-    noteGenerationTitle: "Notizenerstellung",
-    generateNoteButton: "Notiz generieren",
-    noteTimer: "Notiz-Timer: 0 Sek",
-    generatedNotePlaceholder: "Die generierte Notiz erscheint hier...",
-    customPromptTitle: "Benutzerdefinierte Aufforderung",
-    promptSlotLabel: "Aufforderungsplatz:",
-    customPromptPlaceholder: "Benutzerdefinierte Aufforderung hier eingeben",
-    adUnitText: "Ihre Anzeige hier",
-    guideHeading: "Anleitung & Hinweise",
-    guideText: `Willkommen beim Whisper Transkriptionswerkzeug. Diese Anwendung ermöglicht es medizinischen Fachkräften, Therapeuten und anderen Praktikern, Konsultationen aufzunehmen und zu transkribieren sowie professionelle Notizen mit einem KI-basierten Notizgenerator zu erstellen.
-<br><br>
-<strong>So nutzen Sie die Funktionen:</strong>
-<ul>
-  <li><strong>Aufnahme:</strong> Klicken Sie auf "Aufnahme starten", um mit der Tonaufnahme zu beginnen. Audio wird über MediaStreamTrackProcessor (mit WebCodecs) erfasst und bis zu 40 Sekunden lang akkumuliert, bevor es als eigenständige WAV-Datei verpackt wird.</li>
-  <li><strong>Abschluss:</strong> Nach dem Klicken auf "Stoppen/Abschließen" wird die Aufnahme gestoppt. Eine letzte 2-Sekunden-Aufnahme sammelt verbleibende Töne, bevor der endgültige Teil verarbeitet wird. Der Abschlusstimer zählt, bis das vollständige Transkript vorliegt.</li>
-  <li><strong>Notizenerstellung:</strong> Nach der Transkription klicken Sie auf "Notiz generieren", um eine Notiz basierend auf Ihrem Transkript und der benutzerdefinierten Aufforderung zu erstellen.</li>
-  <li><strong>Benutzerdefinierte Aufforderung:</strong> Wählen Sie einen Aufforderungsplatz (1–10) und geben Sie Ihre benutzerdefinierte Aufforderung ein. Diese wird automatisch gespeichert und mit Ihrem API-Schlüssel verknüpft.</li>
-  <li><strong>Anleitung:</strong> Verwenden Sie die Schaltflächen "Funktionen" und "Anleitung", um zwischen der Hauptansicht und dieser Anleitung zu wechseln.</li>
-</ul>
-Bitte klicken Sie auf "Funktionen", um zur Hauptoberfläche zurückzukehren.`
-  },
-  fr: {
-    pageTitle: "Outil de transcription avec publicités et superposition de guide",
-    openaiUsageLinkText: "Vue d'ensemble des coûts",
-    btnFunctions: "Fonctions",
-    btnGuide: "Guide",
-    recordingAreaTitle: "Zone d'enregistrement",
-    recordTimer: "Minuteur d'enregistrement : 0 sec",
-    transcribeTimer: "Minuteur de finalisation : 0 sec",
-    transcriptionPlaceholder: "Le résultat de la transcription apparaîtra ici...",
-    startButton: "Démarrer l'enregistrement",
-    stopButton: "Arrêter/Terminer",
-    pauseButton: "Suspendre l'enregistrement",
-    statusMessage: "Bienvenue ! Cliquez sur \"Démarrer l'enregistrement\" pour commencer.",
-    noteGenerationTitle: "Génération de notes",
-    generateNoteButton: "Générer une note",
-    noteTimer: "Minuteur de génération de note : 0 sec",
-    generatedNotePlaceholder: "La note générée apparaîtra ici...",
-    customPromptTitle: "Invite personnalisée",
-    promptSlotLabel: "Emplacement de l'invite :",
-    customPromptPlaceholder: "Entrez l'invite personnalisée ici",
-    adUnitText: "Votre annonce ici",
-    guideHeading: "Guide et instructions",
-    guideText: `Bienvenue dans l'outil de transcription Whisper. Cette application permet aux professionnels de la santé, aux thérapeutes et à d'autres praticiens d'enregistrer et de transcrire des consultations, ainsi que de générer des notes professionnelles à l'aide d'un générateur de notes alimenté par l'IA.
-<br><br>
-<strong>Comment utiliser les fonctions :</strong>
-<ul>
-  <li><strong>Enregistrement :</strong> Cliquez sur "Démarrer l'enregistrement" pour commencer à capturer l'audio. L'audio est capturé via MediaStreamTrackProcessor (avec WebCodecs) et accumulé pendant jusqu'à 40 secondes avant d'être emballé en un fichier WAV autonome.</li>
-  <li><strong>Finalisation :</strong> Après avoir cliqué sur "Arrêter/Terminer", l'enregistrement s'arrête. Une période finale de 2 secondes collecte tout audio restant avant que le dernier segment soit traité. Le minuteur de finalisation démarre jusqu'à ce que la transcription complète soit reçue.</li>
-  <li><strong>Génération de notes :</strong> Après la transcription, cliquez sur "Générer une note" pour produire une note basée sur votre transcription et votre invite personnalisée.</li>
-  <li><strong>Invite personnalisée :</strong> Sur la droite, sélectionnez un emplacement d'invite (1–10) et saisissez votre invite personnalisée. Celle-ci est enregistrée automatiquement et liée à votre clé API.</li>
-  <li><strong>Guide :</strong> Utilisez les boutons "Fonctions" et "Guide" pour basculer entre l'interface principale et ce guide.</li>
-</ul>
-Veuillez cliquer sur "Fonctions" pour revenir à l'interface principale.`
-  },
-  it: {
-    pageTitle: "Strumento di trascrizione con annunci e sovrapposizione guida",
-    openaiUsageLinkText: "Panoramica dei costi",
-    btnFunctions: "Funzioni",
-    btnGuide: "Guida",
-    recordingAreaTitle: "Area di registrazione",
-    recordTimer: "Timer di registrazione: 0 sec",
-    transcribeTimer: "Timer di completamento: 0 sec",
-    transcriptionPlaceholder: "Il risultato della trascrizione apparirà qui...",
-    startButton: "Avvia registrazione",
-    stopButton: "Ferma/Completa",
-    pauseButton: "Pausa registrazione",
-    statusMessage: "Benvenuto! Clicca su \"Avvia registrazione\" per iniziare.",
-    noteGenerationTitle: "Generazione di note",
-    generateNoteButton: "Genera nota",
-    noteTimer: "Timer generazione note: 0 sec",
-    generatedNotePlaceholder: "La nota generata apparirà qui...",
-    customPromptTitle: "Prompt personalizzato",
-    promptSlotLabel: "Slot per il prompt:",
-    customPromptPlaceholder: "Inserisci il prompt personalizzato qui",
-    adUnitText: "Il tuo annuncio qui",
-    guideHeading: "Guida e istruzioni",
-    guideText: `Benvenuto nello strumento di trascrizione Whisper. Questa applicazione consente ai professionisti del settore medico, ai terapeuti e ad altri operatori di registrare e trascrivere le consultazioni, nonché di generare note professionali utilizzando un generatore di note basato sull'IA.
-<br><br>
-<strong>Come utilizzare le funzioni:</strong>
-<ul>
-  <li><strong>Registrazione:</strong> Clicca su "Avvia registrazione" per iniziare a catturare l'audio. L'audio viene catturato tramite MediaStreamTrackProcessor (con WebCodecs) e accumulato per fino a 40 secondi prima di essere confezionato in un file WAV autonomo.</li>
-  <li><strong>Completamento:</strong> Dopo aver cliccato su "Ferma/Completa", la registrazione si ferma. Un periodo finale di 2 secondi raccoglie eventuali tracce audio residue prima dell'elaborazione finale. Il timer di completamento continua fino a quando la trascrizione completa non viene ricevuta.</li>
-  <li><strong>Generazione di note:</strong> Dopo la trascrizione, clicca su "Genera nota" per creare una nota basata sulla tua trascrizione e sul prompt personalizzato.</li>
-  <li><strong>Prompt personalizzato:</strong> A destra, seleziona uno slot (1–10) e inserisci il tuo prompt personalizzato. Il prompt verrà salvato automaticamente e collegato alla tua chiave API.</li>
-  <li><strong>Guida:</strong> Utilizza i pulsanti "Funzioni" e "Guida" per passare dalla visualizzazione funzionale a questa guida.</li>
-</ul>
-Clicca su "Funzioni" per tornare all'interfaccia principale.`
-  }
-};
-
-// Updates the transcribe page elements based on the current language
-function updateLanguageTranscribe(lang) {
-  document.getElementById("page-title-transcribe").textContent = transcribeTranslations[lang].pageTitle;
-  document.getElementById("openaiUsageLink").textContent = transcribeTranslations[lang].openaiUsageLinkText;
-  document.getElementById("btnFunctions").textContent = transcribeTranslations[lang].btnFunctions;
-  document.getElementById("btnGuide").textContent = transcribeTranslations[lang].btnGuide;
-  document.getElementById("recordingAreaTitle").textContent = transcribeTranslations[lang].recordingAreaTitle;
-  document.getElementById("recordTimer").textContent = transcribeTranslations[lang].recordTimer;
-  document.getElementById("transcribeTimer").textContent = transcribeTranslations[lang].transcribeTimer;
-  document.getElementById("transcription").setAttribute("placeholder", transcribeTranslations[lang].transcriptionPlaceholder);
-  document.getElementById("startButton").textContent = transcribeTranslations[lang].startButton;
-  document.getElementById("stopButton").textContent = transcribeTranslations[lang].stopButton;
-  document.getElementById("pauseResumeButton").textContent = transcribeTranslations[lang].pauseButton;
-  document.getElementById("statusMessage").textContent = transcribeTranslations[lang].statusMessage;
-  document.getElementById("noteGenerationTitle").textContent = transcribeTranslations[lang].noteGenerationTitle;
-  document.getElementById("generateNoteButton").textContent = transcribeTranslations[lang].generateNoteButton;
-  document.getElementById("noteTimer").textContent = transcribeTranslations[lang].noteTimer;
-  document.getElementById("generatedNote").setAttribute("placeholder", transcribeTranslations[lang].generatedNotePlaceholder);
-  document.getElementById("customPromptTitle").textContent = transcribeTranslations[lang].customPromptTitle;
-  document.getElementById("promptSlotLabel").textContent = transcribeTranslations[lang].promptSlotLabel;
-  document.getElementById("customPrompt").setAttribute("placeholder", transcribeTranslations[lang].customPromptPlaceholder);
-  document.getElementById("adUnit").textContent = transcribeTranslations[lang].adUnitText;
-  document.getElementById("guideHeading").textContent = transcribeTranslations[lang].guideHeading;
-  document.getElementById("guideText").innerHTML = transcribeTranslations[lang].guideText;
-}
-
-// Initializes the language selection for the transcribe page
-function initTranscribeLanguage() {
-  let currentLangTranscribe = localStorage.getItem("siteLanguage") || "en";
-  const langSelect = document.getElementById("lang-select-transcribe");
-  if (!langSelect) return;
-  langSelect.value = currentLangTranscribe;
-  updateLanguageTranscribe(currentLangTranscribe);
-  langSelect.addEventListener("change", function() {
-    currentLangTranscribe = this.value;
-    localStorage.setItem("siteLanguage", currentLangTranscribe);
-    updateLanguageTranscribe(currentLangTranscribe);
-  });
-}
-
-export { initIndexLanguage, initTranscribeLanguage };
+    guideButton: "API-Anleitung",
+    securityButton: "Sicherheit",
+    aboutButton: "Über",
+    adRevenueMessage: "Da diese Website kostenlos ist und ausschließlich auf Werbeeinnahmen beruht, geben Sie bitte Ihr Einverständnis für personalisierte Anzeigen, um den Dienst zu unterstützen.",
+    securityModalHeading: "Sicherheitsinformationen",
+    securityModalText: "Der Schutz der Privatsphäre und die Sicherheit von Patientendaten haben höchste Priorität. Um sicherzustellen, dass Daten vertraulich bleiben:<br><br>\
+- <strong>Datenverschlüsselung:</strong> Alle vom System verarbeiteten Daten werden mit branchenüblichen Verschlüsselungsmethoden gesichert. Transkripte und Notizen sin

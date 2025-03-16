@@ -1,4 +1,4 @@
-// js/languages/language-de.js
+// js/language-de.js
 
 export const indexTranslations = {
   pageTitle: "Whisper Klinische Transkription",
@@ -17,153 +17,120 @@ export const indexTranslations = {
 <div style="margin-left:20px;">
   <ul>
     <li><strong>Datenschutz durch Verschlüsselung:</strong> Alle vom System verarbeiteten Daten werden mit branchenüblichen Verschlüsselungsmethoden gesichert. Transkriptionen und Notizen sind ausschließlich mit Ihrem verschlüsselten persönlichen API-Schlüssel und dem verwendeten Gerät verknüpft, sodass nur Sie Zugriff auf die generierten Inhalte haben.</li>
-    <li><strong>Automatische Löschung:</strong> Sobald eine Transkription oder Notiz generiert und auf Ihrem Bildschirm angezeigt wird, wird sie innerhalb von 2 Minuten automatisch und unwiderruflich von den Servern gelöscht.</li>
-    <li><strong>Schutz vor unbefugtem Zugriff:</strong> Selbst im Falle eines unbefugten Zugriffs auf Ihren API-Schlüssel bleiben die Daten verschlüsselt und durch gerätespezifische Marker geschützt, sodass sie nicht zugänglich sind.</li>
+    <li><strong>Automatische Löschung:</strong> Sobald eine Transkription oder Notiz generiert und angezeigt wird, wird sie innerhalb von 2 Minuten automatisch und unwiderruflich von den Servern gelöscht.</li>
+    <li><strong>Schutz vor unbefugtem Zugriff:</strong> Selbst bei unbefugtem Zugriff auf Ihren API-Schlüssel bleiben die Daten verschlüsselt und durch gerätespezifische Marker geschützt, sodass die Informationen nicht zugänglich sind.</li>
     <li><strong>GDPR-konformes Hosting:</strong> Alle Backend-Prozesse laufen auf dedizierten Microsoft Azure-Servern innerhalb der EU, die vollständig den GDPR-Richtlinien entsprechen.</li>
   </ul>
 </div>
 Seien Sie versichert, dass strenge Sicherheitsmaßnahmen gewährleisten, dass alle patientenbezogenen Daten sicher, vertraulich und ausschließlich unter Ihrer Kontrolle bleiben.`,
   
   aboutModalHeading: "Über dieses Projekt",
-  aboutModalText: `Ich bin ein norwegischer Hausarzt mit großem Interesse an Technologie und KI-Entwicklungen im Gesundheitswesen. Ich habe diese Lösung entwickelt, um die Transkriptionskosten erheblich zu senken und einen kostengünstigen, direkten Zugang zu OpenAI zu bieten – Sie zahlen nur für die tatsächliche Nutzung von OpenAI.`,
+  aboutModalText: `Ich bin ein norwegischer Hausarzt, der schon immer ein Interesse an technologischen Fortschritten – insbesondere im Bereich der künstlichen Intelligenz – hatte, und ich verfolge die Entwicklungen in der Gesundheitsbranche sehr genau.<br><br>
+Als ich erstmals von Unternehmen erfuhr, die Sprache-zu-Text-Dienste für medizinische Konsultationen in Norwegen anbieten, war ich sehr begeistert. Kollegen und Online-Bewertungen lobten diese Dienste und hoben deutliche Verbesserungen in Effizienz und Arbeitsabläufen hervor. Bei weiterer Recherche war ich jedoch überrascht, wie viel diese Unternehmen für ihre Leistungen verlangten – insbesondere, da die tatsächlichen Kosten der Technologie nur einen Bruchteil dieser Preise ausmachen.<br><br>
+Angetrieben von dieser Erkenntnis entwickelte ich zunächst für den persönlichen Gebrauch meine eigene Sprache-zu-Text-Lösung. Nachdem ich sah, wie effektiv und kostengünstig sie war, entschied ich mich, meine Lösung online zugänglich zu machen – sie bietet dieselbe Geschwindigkeit, Genauigkeit und Qualität wie Premium-Dienste, jedoch ohne die hohen Gebühren.<br><br>
+Im Gegensatz zu kommerziellen Anbietern werden bei dieser Plattform weder Aufschläge noch unnötige Gebühren erhoben.<br>
+• Stattdessen zahlen Sie direkt an OpenAI – das heißt, Sie gehen ohne Zwischenhändler direkt an die Quelle der Technologie.<br>
+• Dadurch ist dies die günstigste Option, die gleichzeitig höchste Qualität beibehält.<br><br>
+Ich bin überzeugt, dass die von einigen dieser Unternehmen angebotenen Dienstleistungen, so nützlich sie auch sein mögen, im Verhältnis zu dem, was sie tatsächlich liefern, überteuert sind. Viele meiner Kollegen – die täglich hart in der Patientenversorgung arbeiten – zahlen letztlich deutlich mehr als nötig, nur um Zugang zu einem Werkzeug zu erhalten, das für jeden erschwinglich sein sollte.<br><br>
+Diese Website ist vollkommen kostenlos – die einzige Gebühr, die anfällt, ist die direkte Nutzungsgebühr von OpenAI für die Transkriptionen.<br>
+• Keine monatlichen Gebühren, keine Abonnements, keine Verpflichtungen – Sie zahlen nur für die Aufgaben, die Sie ausführen.<br>
+• Sie bestimmen selbst, wie viel Sie ausgeben, indem Sie entscheiden, wie viel Sie in Ihre OpenAI-Wallet überweisen.<br><br>
+Das Einzige, worum ich bitte, ist, dass Sie Werbung akzeptieren, die dazu beiträgt, die Kosten der Backend-Server zu decken.<br>
+Je mehr Menschen diese Website nutzen, desto höher werden die Hosting- und Betriebskosten, und die Werbeeinnahmen ermöglichen es mir, den Service kostenlos und funktionsfähig zu halten, ohne den Nutzern zusätzliche Kosten aufzubürden.`,
   
   guideModalHeading: "API-Guide – So nutzen Sie es",
-  guideModalText: `Um diese Web-App zu nutzen, müssen Sie zunächst ein OpenAI API-Profil erstellen, einen API-Schlüssel generieren und Ihr OpenAI-Konto aufladen. Ihr API-Schlüssel wird in das vorgesehene Feld kopiert und eingefügt. Sobald Sie Enter drücken, wird der API-Schlüssel temporär für Ihre Sitzung gespeichert – dieser Schlüssel verbindet Sie mit den OpenAI-Servern, sodass die Sprache-zu-Text-Transkription und die Notizenerstellung funktionieren. Bitte beachten Sie, dass Sie pro ausgeführter Aufgabe sofort belastet werden. Weitere Informationen zu den Kosten finden Sie im Abschnitt "Kosten" auf der Startseite.
-<br><br>
+  guideModalText: `Um diese Web-App zu verwenden, müssen Sie zunächst ein API-Profil bei OpenAI erstellen, einen API-Schlüssel generieren und Ihr OpenAI-Konto aufladen. Ihr API-Schlüssel wird dann in das vorgesehene Feld kopiert und eingefügt. Sobald Sie Enter drücken, wird der Schlüssel vorübergehend für Ihre Sitzung gespeichert – dieser Schlüssel verbindet Sie mit den OpenAI-Servern, sodass die Sprache-zu-Text-Transkription und die Notizenerstellung funktionieren. Bitte beachten Sie, dass Sie für jede ausgeführte Aufgabe sofort belastet werden. Für weitere Informationen zu den Kosten konsultieren Sie bitte den Abschnitt „Cost Information“ auf der Startseite.<br><br>
 <strong>1. Erstellen Sie Ihr OpenAI API-Profil</strong><br>
-Um zu beginnen, müssen Sie ein Profil auf der OpenAI API-Plattform erstellen. Dieses Profil dient als Ihr Konto zur Verwaltung von API-Schlüsseln und zur Abrechnung. Besuchen Sie dazu die <a href="https://platform.openai.com/signup" style="color:blue;">OpenAI API Signup</a>-Seite und folgen Sie den Anweisungen, indem Sie Ihre E-Mail-Adresse angeben, ein Passwort festlegen und Ihr Konto verifizieren. Nach der Registrierung erhalten Sie Zugriff auf Ihr Dashboard.
-<br><br>
+Um zu beginnen, müssen Sie ein Profil auf der OpenAI API-Plattform erstellen. Dieses Profil dient als Ihr Konto für die Verwaltung von API-Schlüsseln und die Abrechnung. Besuchen Sie die Seite <a href="https://platform.openai.com/signup" style="color:blue;">OpenAI API Signup</a> und folgen Sie den Anweisungen, indem Sie Ihre E-Mail-Adresse angeben, ein Passwort festlegen und Ihr Konto verifizieren. Nach der Registrierung erhalten Sie Zugriff auf Ihr Dashboard.<br><br>
 <strong>2. Generieren Sie einen API-Schlüssel</strong><br>
-Nachdem Sie Ihr Profil erstellt haben, generieren Sie einen API-Schlüssel, indem Sie zur Seite für <a href="https://platform.openai.com/account/api-keys" style="color:blue;">API-Schlüsselverwaltung</a> navigieren. Klicken Sie auf den Button, um einen neuen API-Schlüssel zu erstellen. Wichtig: Sie werden Ihren API-Schlüssel nur einmal sehen. Kopieren Sie ihn sofort und bewahren Sie ihn sicher auf (z.B. in einer Textdatei) für den zukünftigen Gebrauch. Falls Sie den Schlüssel verlieren oder vermuten, dass er kompromittiert wurde, löschen Sie ihn von Ihrem Konto und erstellen Sie einen neuen.
-<br><br>
+Nachdem Sie Ihr Profil erstellt haben, generieren Sie einen API-Schlüssel, indem Sie zur Seite der API-Schlüsselverwaltung (<a href="https://platform.openai.com/account/api-keys" style="color:blue;">API-Schlüsselverwaltung</a>) gehen. Klicken Sie auf den Button, um einen neuen API-Schlüssel zu erstellen. Wichtig: Sie werden Ihren API-Schlüssel nur einmal sehen, also kopieren Sie ihn sofort und bewahren Sie ihn sicher auf. Falls Sie den Schlüssel verlieren oder vermuten, dass er kompromittiert wurde, löschen Sie ihn aus Ihrem Konto und generieren Sie einen neuen.<br><br>
 <strong>3. Laden Sie Ihr OpenAI-Konto auf</strong><br>
-Damit die Web-App funktioniert, muss Ihr OpenAI-Konto über ausreichende Mittel verfügen. Besuchen Sie die Seite für <a href="https://platform.openai.com/account/billing/overview" style="color:blue;">Abrechnung & Zahlung</a>, um Ihr Konto aufzuladen. Sie können jederzeit einen beliebigen Betrag überweisen. Solange ausreichend Mittel vorhanden sind, können Sie die Web-App nutzen – jede Aufgabe wird sofort abgerechnet.
-<br><br>
-<strong>Sicherheits-Hinweis zur Sitzung</strong><br>
-Wenn Sie sich mit Ihrem API-Schlüssel anmelden, wird dieser nur temporär in Ihrer Browser-Sitzung gespeichert. Das bedeutet, wenn Sie die Website verlassen, den Browser schließen oder Ihren Computer ausschalten, wird der API-Schlüssel nicht dauerhaft gespeichert. Sie müssen ihn beim nächsten Mal erneut eingeben, was die Sicherheit Ihres Schlüssels gewährleistet.`,
+Damit die Web-App funktioniert, muss Ihr OpenAI-Konto ausreichend finanziert sein. Besuchen Sie die Seite <a href="https://platform.openai.com/account/billing/overview" style="color:blue;">Billing & Payment</a>, um Ihr Konto aufzuladen. Sie können jederzeit einen beliebigen Betrag überweisen. Solange genügend Mittel vorhanden sind, können Sie den Service nutzen – jede Aufgabe wird sofort abgerechnet.<br><br>
+<strong>Sitzungssicherheits-Erinnerung</strong><br>
+Wenn Sie sich mit Ihrem API-Schlüssel anmelden, wird dieser nur vorübergehend in Ihrer Browsersitzung gespeichert. Das bedeutet, wenn Sie die Website verlassen, den Browser schließen oder Ihren Computer ausschalten, wird der Schlüssel nicht dauerhaft gespeichert. Sie müssen ihn bei Ihrem nächsten Besuch erneut eingeben, um die Sicherheit Ihres Schlüssels zu gewährleisten.`,
   
-  priceButton: "Hier ist eine hochwertige deutsche Übersetzung Ihres Textes:",
-  priceModalHeading: "Kosteninformationen",
-  priceModalText: `<h2>Preise für Sprache-zu-Text</h2>
-<div style="margin-left:20px;">
-  <ul>
-    <li><strong>Kosten:</strong> $0.006 pro Minute.</li>
-    <li><em>Beispiel:</em> Eine 15-minütige Konsultation kostet 15 × $0.006 = <strong>$0.09</strong> pro Konsultation.</li>
-  </ul>
-</div>
-<h2>Preise für Notizenerstellung</h2>
-<div style="margin-left:20px;">
-  <ul>
-    <li><strong>Token-basierte Preisgestaltung:</strong>
-      <div style="margin-left:20px;">
-        <ul>
-          <li><strong>Eingabe (Transkription + Eingabeaufforderung):</strong> $10 pro 1.000.000 Tokens (d. h. $0.00001 pro Token).</li>
-          <li><strong>Ausgabe (generierte Notiz):</strong> $30 pro 1.000.000 Tokens (d. h. $0.00003 pro Token).</li>
-        </ul>
-      </div>
-    </li>
-  </ul>
-</div>
-<h4>Beispielkalkulation für eine Konsultation (nur Notizenerstellung)</h4>
-<div style="margin-left:20px;">
-  <ol>
-    <li>
-      <strong>Berechnung der Eingabe:</strong>
-      <div style="margin-left:20px;">
-        <ul>
-          <li>Angenommen, die Transkription der Konsultation umfasst <strong>700 Wörter</strong>, und Sie fügen eine <strong>30-Wörter-Eingabeaufforderung</strong> hinzu.</li>
-          <li>Gesamtanzahl der Wörter = 700 + 30 = <strong>730 Wörter</strong>.</li>
-          <li>Geschätzte Tokens = 730 × 0.75 ≈ <strong>547.5 Tokens</strong>.</li>
-          <li>Kosten für die Eingabe = 547.5 Tokens × $0.00001 ≈ <strong>$0.0055</strong>.</li>
-        </ul>
-      </div>
-    </li>
-    <li>
-      <strong>Berechnung der Ausgabe:</strong>
-      <div style="margin-left:20px;">
-        <ul>
-          <li>Angenommen, die generierte Notiz umfasst <strong>250 Wörter</strong>.</li>
-          <li>Geschätzte Tokens = 250 × 0.75 ≈ <strong>187.5 Tokens</strong>.</li>
-          <li>Kosten für die Ausgabe = 187.5 Tokens × $0.00003 ≈ <strong>$0.0056</strong>.</li>
-        </ul>
-      </div>
-    </li>
-    <li>
-      <strong>Gesamtkosten für die Notizenerstellung:</strong>
-      <div style="margin-left:20px;">
-        Gesamtkosten ≈ $0.0055 + $0.0056 = <strong>$0.0111</strong> pro Konsultation.
-      </div>
-    </li>
-  </ol>
-</div>
-<h2>Ungefähre Gesamtkosten pro Konsultation</h2>
-<div style="margin-left:20px;">
-  (für eine 15-minütige Konsultation/Aufzeichnung mit beiden Funktionen)
-  <ul>
-    <li><strong>Sprache-zu-Text:</strong> <strong>$0.09</strong></li>
-    <li><strong>Notizenerstellung:</strong> <strong>$0.0111</strong></li>
-    <li><strong>Gesamt:</strong> Ungefähr <strong>$0.101</strong> pro Konsultation.</li>
-  </ul>
-</div>
-<h2>Monatliche Kostenschätzungen</h2>
-<div style="margin-left:20px;">
-  Angenommen, Sie führen 20 Konsultationen pro Tag durch, 4 Tage pro Woche, über 4 Wochen pro Monat (20 × 4 × 4 = <strong>320 Konsultationen</strong> pro Monat):
-  <ol>
-    <li>
-      <strong>Nur Sprache-zu-Text</strong> (mit Notizenerstellung über Ihr eigenes ChatGPT-Konto, das praktisch kostenlos ist):
-      <div style="margin-left:20px;">Monatliche Kosten = 320 × $0.09 = <strong>$28.80</strong>.</div>
-    </li>
-    <li>
-      <strong>Verwendung sowohl von Sprache-zu-Text als auch von Notizenerstellung:</strong>
-      <div style="margin-left:20px;">Monatliche Kosten = 320 × $0.101 ≈ <strong>$32.32</strong>.</div>
-    </li>
-  </ol>
-</div>
-<h2>Alternative Option für die Notizenerstellung</h2>
-<div style="margin-left:20px;">
-  Wenn Sie bereits über ein OpenAI-Konto verfügen, können Sie die Notizenerstellung über ChatGPT in Ihrem eigenen Profil nutzen – dies ist praktisch kostenlos. In diesem Fall fallen für die Nutzung dieser Web-App nur die Kosten für Sprache-zu-Text an.
-</div>
-<h2>Nutzungsmöglichkeiten und Flexibilität</h2>
-<div style="margin-left:20px;">
-  Im Gegensatz zu Anbietern, die ein monatliches Abonnement erfordern, zahlen Sie nur für die tatsächliche Nutzung. Wenn Sie einen freien Tag nehmen, in den Urlaub fahren oder eine Phase ohne Aktivitäten haben, sind Ihre Kosten gleich null. Selbst wenn Sie den Dienst täglich für alle Patientenkonsultationen nutzen, bleiben die Kosten pro Konsultation deutlich niedriger als bei anderen Anbietern.
-</div>
-<hr>
-<h2>Vorteil der direkten Verbindung</h2>
-<div style="margin-left:20px;">
-  Unsere Web-App verbindet Sie direkt mit der OpenAI API – keine Zwischenhändler, keine zusätzlichen Gebühren. Diese direkte Verbindung bedeutet, dass Sie nur für die tatsächlichen KI-Verarbeitungskosten zahlen, was unseren Dienst zu einer der kostengünstigsten Lösungen für Sprache-zu-Text und Notizenerstellung macht, die heute verfügbar sind.
-</div>`,
+  priceButton: "Price",
+  priceModalHeading: "Cost Information",
+  priceModalText: `# Cost Information
+
+## Speech-to-Text Pricing  
+   - **Cost:** $0.006 per minute.  
+     *Example:* A 15-minute consultation will cost 15 × $0.006 = **$0.09** per consultation.
+
+## Note Generation Pricing  
+   - **Token-Based Pricing:**  
+     - **Input (transcription + prompt):** $10 per 1,000,000 tokens (i.e. $0.00001 per token).  
+     - **Output (generated note):** $30 per 1,000,000 tokens (i.e. $0.00003 per token).
+
+       #### Example Consultation Calculation (Note Generation Only)
+       1. **Input Calculation:**  
+          - Assume the consultation transcription is about **700 words** and you add a **30-word prompt**.  
+          - Total words = 700 + 30 = **730 words**.  
+          - Estimated tokens = 730 × 0.75 ≈ **547.5 tokens**.  
+          - Input cost = 547.5 tokens × $0.00001 ≈ **$0.0055**.
+       2. **Output Calculation:**  
+          - Assume the generated note is around **250 words**.  
+          - Estimated tokens = 250 × 0.75 ≈ **187.5 tokens**.  
+          - Output cost = 187.5 tokens × $0.00003 ≈ **$0.0056**.
+       3. **Total Note Generation Cost:**  
+          - Combined cost ≈ $0.0055 + $0.0056 = **$0.0111** per consultation.
+
+## Approximate Combined Cost Per Consultation  
+(for a 15 min consultation/recording, using both functions)  
+   - **Speech-to-Text:** **$0.09**  
+   - **Note Generation:** **$0.0111**  
+   - **Total:** Approximately **$0.101** per consultation.
+
+## Monthly Cost Estimates  
+Assuming you conduct 20 consultations per day, 4 days per week, over 4 weeks per month (20 × 4 × 4 = **320 consultations** per month):
+
+   1. **Using Only Speech-to-Text** (with note generation via your own ChatGPT account, which is essentially free):  
+      - Monthly cost = 320 × $0.09 = **$28.80**.
+   2. **Using Both Speech-to-Text and Note Generation:**  
+      - Monthly cost = 320 × $0.101 ≈ **$32.32**.
+
+## Alternative Note Generation Option  
+   If you already have an OpenAI account, you can use note generation via ChatGPT on your own profile—which is essentially free. In that case, you only incur the speech-to-text cost when using this webapp.
+
+## Usage Flexibility  
+   Unlike providers that require a monthly subscription, you only pay per usage. If you take a day off, go on vacation, or have a period of no activity, your costs will be zero. Even if you use the service every day for all your patient consultations, the per-use cost remains significantly lower compared to other providers.
+
+---
+
+**Direct Connection Advantage**  
+Our webapp connects you directly with the OpenAI API—no intermediary, no extra fees. This direct link means you only pay for the actual AI processing cost, making our service one of the most affordable speech-to-text and note generation solutions available today.`,
 };
 
 export const transcribeTranslations = {
-  pageTitle: "Transkriptionstool mit Anzeigen und Guide-Übersicht",
-  openaiUsageLinkText: "Übersicht über OpenAI-Nutzung",
-  btnFunctions: "Funktionen",
+  pageTitle: "Transcription Tool with Ads and Guide Overlay",
+  openaiUsageLinkText: "Cost usage overview",
+  btnFunctions: "Functions",
   btnGuide: "Guide",
-  recordingAreaTitle: "Aufnahmebereich",
-  recordTimer: "Aufnahmetimer: 0 Sek",
-  transcribeTimer: "Abschlusstimer: 0 Sek",
-  transcriptionPlaceholder: "Das Transkriptionsergebnis erscheint hier...",
-  startButton: "Aufnahme starten",
-  stopButton: "Stoppen/Abschließen",
-  pauseButton: "Aufnahme pausieren",
-  statusMessage: "Willkommen! Klicken Sie auf 'Aufnahme starten', um zu beginnen.",
-  noteGenerationTitle: "Notizenerstellung",
-  generateNoteButton: "Notiz generieren",
-  noteTimer: "Notiz-Timer: 0 Sek",
-  generatedNotePlaceholder: "Die generierte Notiz erscheint hier...",
-  customPromptTitle: "Benutzerdefinierte Aufforderung",
-  promptSlotLabel: "Aufforderungsplatz:",
-  customPromptPlaceholder: "Benutzerdefinierte Aufforderung hier eingeben",
-  adUnitText: "Ihre Anzeige hier",
-  guideHeading: "Guide & Instruktionen",
-  guideText: `Willkommen beim Whisper Transkriptionstool. Diese Anwendung ermöglicht es medizinischen Fachkräften, Therapeuten und anderen, Konsultationen aufzunehmen und zu transkribieren sowie professionelle Notizen mithilfe eines KI-gestützten Notizgenerators zu erstellen.<br><br>
-<strong>So verwenden Sie die Funktionen:</strong>
+  recordingAreaTitle: "Recording Area",
+  recordTimer: "Recording Timer: 0 sec",
+  transcribeTimer: "Completion Timer: 0 sec",
+  transcriptionPlaceholder: "Transcription result will appear here...",
+  startButton: "Start Recording",
+  stopButton: "Stop/Complete",
+  pauseButton: "Pause Recording",
+  statusMessage: "Welcome! Click \"Start Recording\" to begin.",
+  noteGenerationTitle: "Note Generation",
+  generateNoteButton: "Generate Note",
+  noteTimer: "Note Generation Timer: 0 sec",
+  generatedNotePlaceholder: "Generated note will appear here...",
+  customPromptTitle: "Custom Prompt",
+  promptSlotLabel: "Prompt Slot:",
+  customPromptPlaceholder: "Enter custom prompt here",
+  adUnitText: "Your Ad Here",
+  guideHeading: "Guide & Instructions",
+  guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.<br><br>
+<strong>How to Use the Functions:</strong>
 <ul>
-  <li><strong>Aufnahme:</strong> Klicken Sie auf "Aufnahme starten", um mit der Audioaufnahme zu beginnen. Das Audio wird über den MediaStreamTrackProcessor (mithilfe von WebCodecs) erfasst und bis zu 40 Sekunden lang gesammelt, bevor es als eigenständige WAV-Datei verpackt wird.</li>
-  <li><strong>Abschluss:</strong> Nachdem Sie auf "Stoppen/Abschließen" geklickt haben, endet die Aufnahme. Eine letzte Aufnahmephase von 2 Sekunden sammelt verbleibendes Audio, bevor der finale Chunk verarbeitet wird. Der Abschlusstimer läuft, bis die vollständige Transkription empfangen wurde.</li>
-  <li><strong>Notizenerstellung:</strong> Nach der Transkription klicken Sie auf "Notiz generieren", um eine Notiz basierend auf Ihrer Transkription und der benutzerdefinierten Aufforderung zu erstellen.</li>
-  <li><strong>Benutzerdefinierte Aufforderung:</strong> Wählen Sie auf der rechten Seite einen Aufforderungsplatz (1–10) und geben Sie Ihre benutzerdefinierte Aufforderung ein. Ihre Aufforderung wird automatisch gespeichert und mit Ihrem API-Schlüssel verknüpft.</li>
-  <li><strong>Guide:</strong> Nutzen Sie die Schaltflächen "Funktionen" und "Guide", um zwischen der Funktionsansicht und dieser Anleitung zu wechseln.</li>
+  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file.</li>
+  <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. A 2-second final capture period collects any remaining audio before processing the final chunk. The Completion Timer then ticks until the full transcript is received.</li>
+  <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
+  <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
+  <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
 </ul>
-Bitte klicken Sie auf "Funktionen", um zur Hauptoberfläche zurückzukehren.`,
+Please click "Functions" to return to the main interface.`,
 };

@@ -46,7 +46,6 @@ Per il corretto funzionamento della webapp, il tuo portafoglio OpenAI deve esser
 Quando accedi inserendo la tua chiave API, questa viene salvata temporaneamente nella sessione del tuo browser. Ciò significa che se lasci il sito, chiudi il browser o spegni il computer, la chiave non verrà memorizzata in modo permanente. Dovrai reinserirla alla prossima visita, garantendo così la sicurezza della tua chiave.`,
   
   priceButton: "Price",
-  priceModalHeading: "Cost Information",
   priceModalText: `<h1 style="font-size:24px;">Informazioni sui Costi</h1>
 
 <h2 style="font-size:20px;">Tariffa per la Conversione da Voce a Testo</h2>

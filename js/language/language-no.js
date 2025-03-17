@@ -88,7 +88,7 @@ Når du logger inn med din API-nøkkel, lagres den kun midlertidig i nettleserø
 ## Månedlige kostnadsestimater  
 Forutsatt at du gjennomfører 20 konsultasjoner per dag, 4 dager per uke, over 4 uker per måned (20 × 4 × 4 = **320 konsultasjoner** per måned):
 
-   1. **Kun tale-til-tekst** (med notisgenerering via din egen ChatGPT-konto, som i praksis er gratis):  
+   1. **Kun tale-til-tekst** :  
       - Månedlig kostnad = 320 × $0.09 = **$28.80**.
    2. **Bruk av både tale-til-tekst og notisgenerering:**  
       - Månedlig kostnad = 320 × $0.101 ≈ **$32.32**.
@@ -106,35 +106,35 @@ Vår webapp kobler deg direkte til OpenAI API – ingen mellomledd, ingen ekstra
 };
 
 export const transcribeTranslations = {
-  pageTitle: "Transcription Tool with Ads and Guide Overlay",
-  openaiUsageLinkText: "Cost usage overview",
+  pageTitle: "Transkripsjonsverktøy.",
+  openaiUsageLinkText: "Kostnadsoversikt OpenAI",
   btnFunctions: "Functions",
   btnGuide: "Guide",
   recordingAreaTitle: "Recording Area",
-  recordTimer: "Recording Timer: 0 sec",
-  transcribeTimer: "Completion Timer: 0 sec",
-  transcriptionPlaceholder: "Transcription result will appear here...",
-  startButton: "Start Recording",
-  stopButton: "Stop/Complete",
-  pauseButton: "Pause Recording",
-  statusMessage: "Welcome! Click \"Start Recording\" to begin.",
-  noteGenerationTitle: "Note Generation",
-  generateNoteButton: "Generate Note",
-  noteTimer: "Note Generation Timer: 0 sec",
-  generatedNotePlaceholder: "Generated note will appear here...",
-  customPromptTitle: "Custom Prompt",
+  recordTimer: "Opptak Timer: 0 sec",
+  transcribeTimer: "Fullføring Timer: 0 sec",
+  transcriptionPlaceholder: "Diktat vil oppstå her...",
+  startButton: "Start Opptak",
+  stopButton: "Stopp/Fullfør",
+  pauseButton: "Pause Opptak",
+  statusMessage: "Velkommen! Klikk \"Start Opptak\" for å begynne.",
+  noteGenerationTitle: "Notatgenerering",
+  generateNoteButton: "Generer notat",
+  noteTimer: "Notat fullføringstid: 0 sec",
+  generatedNotePlaceholder: "Generert notat vil oppstå her...",
+  customPromptTitle: "Skreddersydd Prompt",
   promptSlotLabel: "Prompt Slot:",
-  customPromptPlaceholder: "Enter custom prompt here",
+  customPromptPlaceholder: "Skriv din prompt her",
   adUnitText: "Your Ad Here",
-  guideHeading: "Guide & Instructions",
-  guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.<br><br>
+  guideHeading: "Guide & Instruksjoner",
+  guideText: `WVelkommen til Whisper Transkripsjon. Denne applikasjonen lar medisinske fagpersoner, terapeuter og andre behandlere ta opp og transkribere konsultasjoner, samt generere profesjonelle notater ved hjelp av en AI-drevet notatgenerator.<br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
-  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file.</li>
-  <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. A 2-second final capture period collects any remaining audio before processing the final chunk. The Completion Timer then ticks until the full transcript is received.</li>
-  <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
-  <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
-  <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
+  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Klikk "Start Opptak" for å begynne opptak og transkripsjon.</li>
+  <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. Når du klikker "Stopp Opptak" så vil opptaket stoppe. Fullføringss-timeren vil så "tikke" til transkriptsjonen er fullført. Dette tar vanligvis mellom 5-10 sec.</li>
+  <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt. Etter at transkripsjonen er fullført så kan du klikke på "Generer notat", som da vil generere et notat basert på din egen prompt.</li>
+  <li><strong>Custom Prompt:</strong> Til høyre, velg en prompt "slot"(1-10), og lag din egen skreddersydde "prompt". Disse vil lagres lokalt på din enhet og kobles til din API-nøkkel, slik at de vil være der igjen når du går inn i webappen på et senere tidspunkt.</li>
+  <li><strong>Guide Toggle:</strong> Bruk "Funksjoner" og "Guide" knappene til å bytte mellom funksjon og guide vinduet.</li>
 </ul>
-Please click "Functions" to return to the main interface.`,
+Please click "Functions" to return to the main interface. Vennligst klikk "Funksjoner" for å returnere til funksjonsvinduet.`,
 };

@@ -99,7 +99,7 @@ Our webapp connects you directly with the OpenAI API—no intermediary, no extra
 
 export const transcribeTranslations = {
   pageTitle: "Transcription Tool with Ads and Guide Overlay",
-  openaiUsageLinkText: "Cost usage overview",
+  openaiUsageLinkText: "Cost Usage Overview",
   btnFunctions: "Functions",
   btnGuide: "Guide",
   recordingAreaTitle: "Recording Area",

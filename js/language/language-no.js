@@ -37,7 +37,7 @@ Denne nettsiden er helt gratis å bruke – den eneste kostnaden du pådrar deg 
 • Du bestemmer selv hvor mye du skal bruke ved å avgjøre hvor mye du overfører til din OpenAI-lommebok.<br><br>
 Det eneste jeg ber om, er at du godtar annonser, som bidrar til å dekke kostnadene for backend-servere.<br>
 Etter hvert som flere bruker nettsiden, vil utgiftene til hosting og drift øke, og annonseinntektene sikrer at jeg kan holde tjenesten gratis og i drift uten å belaste brukerne.`,
-  priceButton: "Price",
+  priceButton: "Pris",
   priceModalHeading: "Kostnadsinformasjon",
   priceModalText: `<h1>Kostnadsinformasjon</h1>
 <h2>Tale-til-tekst-prising</h2>

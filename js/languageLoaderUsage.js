@@ -11,7 +11,12 @@ export async function initIndexLanguage() {
   
   // Load the language module and update the index page UI
   const mod = await loadLanguageModule(currentLang);
-  const indexTranslations = mod.indexTranslations || mod.default?.indexTranslations;
+  console.log("Loaded index language module:", mod);
+  const indexTranslations = mod?.indexTranslations || mod?.default?.indexTranslations;
+  if (!indexTranslations) {
+    console.error("Index translations not found for language:", currentLang);
+    return;
+  }
   updateIndexUI(indexTranslations);
   
   // Listen for language changes
@@ -19,7 +24,12 @@ export async function initIndexLanguage() {
     currentLang = this.value;
     localStorage.setItem("siteLanguage", currentLang);
     const mod = await loadLanguageModule(currentLang);
-    const indexTranslations = mod.indexTranslations || mod.default?.indexTranslations;
+    console.log("Loaded index language module on change:", mod);
+    const indexTranslations = mod?.indexTranslations || mod?.default?.indexTranslations;
+    if (!indexTranslations) {
+      console.error("Index translations not found for language:", currentLang);
+      return;
+    }
     updateIndexUI(indexTranslations);
   });
 }
@@ -87,7 +97,12 @@ export async function initTranscribeLanguage() {
   
   // Load and update UI for the current language
   const mod = await loadLanguageModule(currentLang);
-  const transcribeTranslations = mod.transcribeTranslations || mod.default?.transcribeTranslations;
+  console.log("Loaded transcribe language module:", mod);
+  const transcribeTranslations = mod?.transcribeTranslations || mod?.default?.transcribeTranslations;
+  if (!transcribeTranslations) {
+    console.error("Transcribe translations not found for language:", currentLang);
+    return;
+  }
   updateTranscribeUI(transcribeTranslations);
   
   // Listen for language changes using the "change" event
@@ -95,15 +110,24 @@ export async function initTranscribeLanguage() {
     currentLang = this.value;
     localStorage.setItem("siteLanguage", currentLang);
     const mod = await loadLanguageModule(currentLang);
-    const transcribeTranslations = mod.transcribeTranslations || mod.default?.transcribeTranslations;
+    console.log("Loaded transcribe language module on change:", mod);
+    const transcribeTranslations = mod?.transcribeTranslations || mod?.default?.transcribeTranslations;
+    if (!transcribeTranslations) {
+      console.error("Transcribe translations not found for language:", currentLang);
+      return;
+    }
     updateTranscribeUI(transcribeTranslations);
   });
   
   // Also listen for "click" events to force an update even if the same language is re-selected
   langSelect.addEventListener("click", async function() {
-    const currentValue = this.value;
-    const mod = await loadLanguageModule(currentValue);
-    const transcribeTranslations = mod.transcribeTranslations || mod.default?.transcribeTranslations;
+    const mod = await loadLanguageModule(this.value);
+    console.log("Loaded transcribe language module on click:", mod);
+    const transcribeTranslations = mod?.transcribeTranslations || mod?.default?.transcribeTranslations;
+    if (!transcribeTranslations) {
+      console.error("Transcribe translations not found for language:", this.value);
+      return;
+    }
     updateTranscribeUI(transcribeTranslations);
   });
 }

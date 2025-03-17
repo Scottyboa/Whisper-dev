@@ -32,6 +32,7 @@ function updateIndexUI(trans) {
   document.getElementById("enterTranscriptionBtn").textContent = trans.enterButton;
   document.getElementById("openGuideButton").textContent = trans.guideButton;
   document.getElementById("openSecurityButton").textContent = trans.securityButton;
+  document.getElementById("openPriceButton").textContent = trans.priceButton; // New line added for Price button
   document.getElementById("openAboutButton").textContent = trans.aboutButton;
   document.getElementById("ad-revenue-message").textContent = trans.adRevenueMessage;
   

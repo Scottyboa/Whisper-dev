@@ -49,7 +49,6 @@ Pour que l'application fonctionne, votre compte OpenAI doit être suffisamment a
 Lorsque vous vous connectez en entrant votre clé API, celle-ci est stockée temporairement dans votre session de navigateur. Ainsi, si vous quittez le site, fermez votre navigateur ou éteignez votre ordinateur, la clé ne sera pas conservée de manière permanente. Vous devrez la saisir à nouveau lors de votre prochaine utilisation, garantissant ainsi sa sécurité.`,
   
   priceButton: "Price",
-  priceModalHeading: "Cost Information",
   priceModalText: `<h1 style="font-size:24px;">Informations sur les Coûts</h1>
 
 <h2 style="font-size:20px;">Tarification de la Conversion de la Parole en Texte</h2>

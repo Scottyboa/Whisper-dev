@@ -47,7 +47,6 @@ Damit die Web-App funktioniert, muss Ihr OpenAI-Konto ausreichend finanziert sei
 Wenn Sie sich mit Ihrem API-Schlüssel anmelden, wird dieser nur vorübergehend in Ihrer Browsersitzung gespeichert. Das bedeutet, wenn Sie die Website verlassen, den Browser schließen oder Ihren Computer ausschalten, wird der Schlüssel nicht dauerhaft gespeichert. Sie müssen ihn bei der nächsten Nutzung erneut eingeben, um die Sicherheit Ihres Schlüssels zu gewährleisten.`,
   
   priceButton: "Price",
-  priceModalHeading: "Cost Information",
   priceModalText: `<h1 style="font-size:24px;">Kosteninformation</h1>
 
 <h2 style="font-size:20px;">Preisgestaltung für Sprache-zu-Text</h2>

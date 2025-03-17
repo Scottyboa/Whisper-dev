@@ -110,30 +110,31 @@ When you log in by entering your API key, it is stored only temporarily in your 
   <p>Our webapp connects you directly with the OpenAI API—no intermediary, no extra fees. This direct link means you only pay for the actual AI processing cost, making our service one of the most affordable speech-to-text and note generation solutions available today.</p>
 </div>
 `,
-  priceButton: "Price",
-  transcribeTranslations: {
-    pageTitle: "Transcription Tool with Ads and Guide Overlay",
-    openaiUsageLinkText: "Cost Usage Overview",
-    btnFunctions: "Functions",
-    btnGuide: "Guide",
-    recordingAreaTitle: "Recording Area",
-    recordTimer: "Recording Timer: 0 sec",
-    transcribeTimer: "Completion Timer: 0 sec",
-    transcriptionPlaceholder: "Transcription result will appear here...",
-    startButton: "Start Recording",
-    stopButton: "Stop/Complete",
-    pauseButton: "Pause Recording",
-    statusMessage: "Welcome! Click \"Start Recording\" to begin.",
-    noteGenerationTitle: "Note Generation",
-    generateNoteButton: "Generate Note",
-    noteTimer: "Note Generation Timer: 0 sec",
-    generatedNotePlaceholder: "Generated note will appear here...",
-    customPromptTitle: "Custom Prompt",
-    promptSlotLabel: "Prompt Slot:",
-    customPromptPlaceholder: "Enter custom prompt here",
-    adUnitText: "Your Ad Here",
-    guideHeading: "Guide & Instructions",
-    guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.<br><br>
+};
+
+export const transcribeTranslations = {
+  pageTitle: "Transcription Tool with Ads and Guide Overlay",
+  openaiUsageLinkText: "Cost Usage Overview",
+  btnFunctions: "Functions",
+  btnGuide: "Guide",
+  recordingAreaTitle: "Recording Area",
+  recordTimer: "Recording Timer: 0 sec",
+  transcribeTimer: "Completion Timer: 0 sec",
+  transcriptionPlaceholder: "Transcription result will appear here...",
+  startButton: "Start Recording",
+  stopButton: "Stop/Complete",
+  pauseButton: "Pause Recording",
+  statusMessage: "Welcome! Click \"Start Recording\" to begin.",
+  noteGenerationTitle: "Note Generation",
+  generateNoteButton: "Generate Note",
+  noteTimer: "Note Generation Timer: 0 sec",
+  generatedNotePlaceholder: "Generated note will appear here...",
+  customPromptTitle: "Custom Prompt",
+  promptSlotLabel: "Prompt Slot:",
+  customPromptPlaceholder: "Enter custom prompt here",
+  adUnitText: "Your Ad Here",
+  guideHeading: "Guide & Instructions",
+  guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.<br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
   <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Every 40 sec a chunk/slice of audio will be automatically sent for transcription at the OpenAI servers. The transcriptions will arrive one by one at the transcription text output field.</li>
@@ -143,5 +144,6 @@ When you log in by entering your API key, it is stored only temporarily in your 
   <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
 </ul>
 Please click "Functions" to return to the main interface.`,
-  },
 };
+
+export default { indexTranslations, transcribeTranslations };

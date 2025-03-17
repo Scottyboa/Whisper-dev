@@ -54,7 +54,6 @@ När du loggar in med din API-nyckel sparas den endast temporärt i din webbläs
   
   priceButton: "Price",
   priceModalHeading: "Kostnadsinformation",
-  priceModalText: `<h1 style="font-size:24px;">Kostnadsinformation</h1>
 
 <h2 style="font-size:20px;">Tal-till-text-prissättning</h2>
 <p style="font-size:16px;">

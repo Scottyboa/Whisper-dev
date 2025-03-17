@@ -47,79 +47,93 @@ For the webapp to function, your OpenAI wallet must have sufficient funds. Visit
 When you log in by entering your API key, it is stored only temporarily in your browser session. This means if you exit the website, close your browser, or turn off your computer, the API key will not be saved. You will need to re-enter your API key the next time you use the webapp, ensuring your key remains secure.`,
   priceButton: "Price",
   priceModalHeading: "Cost Information",
-  priceModalText: `# Cost Information
-
-## Speech-to-Text Pricing  
-   - **Cost:** $0.006 per minute.  
-     *Example:* A 15-minute consultation will cost 15 × $0.006 = **$0.09** per consultation.
-
-## Note Generation Pricing  
-   - **Token-Based Pricing:**  
-     - **Input (transcription + prompt):** $10 per 1,000,000 tokens (i.e. $0.00001 per token).  
-     - **Output (generated note):** $30 per 1,000,000 tokens (i.e. $0.00003 per token).
-
-       #### Example Consultation Calculation (Note Generation Only)
-       1. **Input Calculation:**  
-          - Assume the consultation transcription is about **700 words** and you add a **30-word prompt**.  
-          - Total words = 700 + 30 = **730 words**.  
-          - Estimated tokens = 730 × 0.75 ≈ **547.5 tokens**.  
-          - Input cost = 547.5 tokens × $0.00001 ≈ **$0.0055**.
-       2. **Output Calculation:**  
-          - Assume the generated note is around **250 words**.  
-          - Estimated tokens = 250 × 0.75 ≈ **187.5 tokens**.  
-          - Output cost = 187.5 tokens × $0.00003 ≈ **$0.0056**.
-       3. **Total Note Generation Cost:**  
-          - Combined cost ≈ $0.0055 + $0.0056 = **$0.0111** per consultation.
-
-## Approximate Combined Cost Per Consultation  
-(for a 15 min consultation/recording, using both functions)  
-   - **Speech-to-Text:** **$0.09**  
-   - **Note Generation:** **$0.0111**  
-   - **Total:** Approximately **$0.101** per consultation.
-
-## Monthly Cost Estimates  
-Assuming you conduct 20 consultations per day, 4 days per week, over 4 weeks per month (20 × 4 × 4 = **320 consultations** per month):
-
-   1. **Using Only Speech-to-Text** (with note generation via your own ChatGPT account, which is essentially free):  
-      - Monthly cost = 320 × $0.09 = **$28.80**.
-   2. **Using Both Speech-to-Text and Note Generation:**  
-      - Monthly cost = 320 × $0.101 ≈ **$32.32**.
-
-## Alternative Note Generation Option  
-   If you already have an OpenAI account, you can use note generation via ChatGPT on your own profile—which is essentially free. In that case, you only incur the speech-to-text cost when using this webapp.
-
-## Usage Flexibility  
-   Unlike providers that require a monthly subscription, you only pay per usage. If you take a day off, go on vacation, or have a period of no activity, your costs will be zero. Even if you use the service every day for all your patient consultations, the per-use cost remains significantly lower compared to other providers.
-
----
-
-**Direct Connection Advantage**  
-Our webapp connects you directly with the OpenAI API—no intermediary, no extra fees. This direct link means you only pay for the actual AI processing cost, making our service one of the most affordable speech-to-text and note generation solutions available today.`,
-};
-
-export const transcribeTranslations = {
-  pageTitle: "Transcription Tool with Ads and Guide Overlay",
-  openaiUsageLinkText: "Cost Usage Overview",
-  btnFunctions: "Functions",
-  btnGuide: "Guide",
-  recordingAreaTitle: "Recording Area",
-  recordTimer: "Recording Timer: 0 sec",
-  transcribeTimer: "Completion Timer: 0 sec",
-  transcriptionPlaceholder: "Transcription result will appear here...",
-  startButton: "Start Recording",
-  stopButton: "Stop/Complete",
-  pauseButton: "Pause Recording",
-  statusMessage: "Welcome! Click \"Start Recording\" to begin.",
-  noteGenerationTitle: "Note Generation",
-  generateNoteButton: "Generate Note",
-  noteTimer: "Note Generation Timer: 0 sec",
-  generatedNotePlaceholder: "Generated note will appear here...",
-  customPromptTitle: "Custom Prompt",
-  promptSlotLabel: "Prompt Slot:",
-  customPromptPlaceholder: "Enter custom prompt here",
-  adUnitText: "Your Ad Here",
-  guideHeading: "Guide & Instructions",
-  guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.<br><br>
+  priceModalText: `
+<div>
+  <h1>Cost Information</h1>
+  <h2>Speech-to-Text Pricing</h2>
+  <ul>
+    <li><strong>Cost:</strong> $0.006 per minute. <em>Example:</em> A 15-minute consultation will cost 15 × $0.006 = <strong>$0.09</strong> per consultation.</li>
+  </ul>
+  <h2>Note Generation Pricing</h2>
+  <ul>
+    <li><strong>Token-Based Pricing:</strong></li>
+    <ul>
+      <li><strong>Input (transcription + prompt):</strong> $10 per 1,000,000 tokens (i.e. $0.00001 per token).</li>
+      <li><strong>Output (generated note):</strong> $30 per 1,000,000 tokens (i.e. $0.00003 per token).</li>
+    </ul>
+  </ul>
+  <h3>Example Consultation Calculation (Note Generation Only)</h3>
+  <ol>
+    <li>
+      <strong>Input Calculation:</strong>
+      <p>Assume the consultation transcription is about <strong>700 words</strong> and you add a <strong>30-word prompt</strong>.<br>
+      Total words = 700 + 30 = <strong>730 words</strong>.<br>
+      Estimated tokens = 730 × 0.75 ≈ <strong>547.5 tokens</strong>.<br>
+      Input cost = 547.5 tokens × $0.00001 ≈ <strong>$0.0055</strong>.</p>
+    </li>
+    <li>
+      <strong>Output Calculation:</strong>
+      <p>Assume the generated note is around <strong>250 words</strong>.<br>
+      Estimated tokens = 250 × 0.75 ≈ <strong>187.5 tokens</strong>.<br>
+      Output cost = 187.5 tokens × $0.00003 ≈ <strong>$0.0056</strong>.</p>
+    </li>
+    <li>
+      <strong>Total Note Generation Cost:</strong>
+      <p>Combined cost ≈ $0.0055 + $0.0056 = <strong>$0.0111</strong> per consultation.</p>
+    </li>
+  </ol>
+  <h2>Approximate Combined Cost Per Consultation</h2>
+  <p>(for a 15-minute consultation/recording, using both functions)</p>
+  <ul>
+    <li><strong>Speech-to-Text:</strong> <strong>$0.09</strong></li>
+    <li><strong>Note Generation:</strong> <strong>$0.0111</strong></li>
+    <li><strong>Total:</strong> Approximately <strong>$0.101</strong> per consultation.</li>
+  </ul>
+  <h2>Monthly Cost Estimates</h2>
+  <p>Assuming you conduct 20 consultations per day, 4 days per week, over 4 weeks per month (20 × 4 × 4 = <strong>320 consultations</strong> per month):</p>
+  <ol>
+    <li>
+      <strong>Using Only Speech-to-Text</strong> (with note generation via your own ChatGPT account, which is essentially free):<br>
+      Monthly cost = 320 × $0.09 = <strong>$28.80</strong>.
+    </li>
+    <li>
+      <strong>Using Both Speech-to-Text and Note Generation:</strong><br>
+      Monthly cost = 320 × $0.101 ≈ <strong>$32.32</strong>.
+    </li>
+  </ol>
+  <h2>Alternative Note Generation Option</h2>
+  <p>If you already have an OpenAI account, you can use note generation via ChatGPT on your own profile—which is essentially free. In that case, you only incur the speech-to-text cost when using this webapp.</p>
+  <h2>Usage Flexibility</h2>
+  <p>Unlike providers that require a monthly subscription, you only pay per usage. If you take a day off, go on vacation, or have a period of no activity, your costs will be zero. Even if you use the service every day for all your patient consultations, the per-use cost remains significantly lower compared to other providers.</p>
+  <hr>
+  <h2>Direct Connection Advantage</h2>
+  <p>Our webapp connects you directly with the OpenAI API—no intermediary, no extra fees. This direct link means you only pay for the actual AI processing cost, making our service one of the most affordable speech-to-text and note generation solutions available today.</p>
+</div>
+`,
+  priceButton: "Price",
+  transcribeTranslations: {
+    pageTitle: "Transcription Tool with Ads and Guide Overlay",
+    openaiUsageLinkText: "Cost Usage Overview",
+    btnFunctions: "Functions",
+    btnGuide: "Guide",
+    recordingAreaTitle: "Recording Area",
+    recordTimer: "Recording Timer: 0 sec",
+    transcribeTimer: "Completion Timer: 0 sec",
+    transcriptionPlaceholder: "Transcription result will appear here...",
+    startButton: "Start Recording",
+    stopButton: "Stop/Complete",
+    pauseButton: "Pause Recording",
+    statusMessage: "Welcome! Click \"Start Recording\" to begin.",
+    noteGenerationTitle: "Note Generation",
+    generateNoteButton: "Generate Note",
+    noteTimer: "Note Generation Timer: 0 sec",
+    generatedNotePlaceholder: "Generated note will appear here...",
+    customPromptTitle: "Custom Prompt",
+    promptSlotLabel: "Prompt Slot:",
+    customPromptPlaceholder: "Enter custom prompt here",
+    adUnitText: "Your Ad Here",
+    guideHeading: "Guide & Instructions",
+    guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.<br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
   <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Every 40 sec a chunk/slice of audio will be automatically sent for transcription at the OpenAI servers. The transcriptions will arrive one by one at the transcription text output field.</li>
@@ -129,4 +143,5 @@ export const transcribeTranslations = {
   <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
 </ul>
 Please click "Functions" to return to the main interface.`,
+  },
 };

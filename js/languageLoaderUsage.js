@@ -32,7 +32,6 @@ function updateIndexUI(trans) {
   document.getElementById("enterTranscriptionBtn").textContent = trans.enterButton;
   document.getElementById("openGuideButton").textContent = trans.guideButton;
   document.getElementById("openSecurityButton").textContent = trans.securityButton;
-  document.getElementById("openPriceButton").textContent = trans.priceButton; // New line added for Price button
   document.getElementById("openAboutButton").textContent = trans.aboutButton;
   document.getElementById("ad-revenue-message").textContent = trans.adRevenueMessage;
   
@@ -84,14 +83,22 @@ export async function initTranscribeLanguage() {
   if (!langSelect) return;
   langSelect.value = currentLang;
   
+  // Load and update UI for the current language
   const { transcribeTranslations } = await loadLanguageModule(currentLang);
   updateTranscribeUI(transcribeTranslations);
   
-  // Listen for language changes
+  // Listen for language changes using the "change" event
   langSelect.addEventListener("change", async function() {
     currentLang = this.value;
     localStorage.setItem("siteLanguage", currentLang);
     const { transcribeTranslations } = await loadLanguageModule(currentLang);
+    updateTranscribeUI(transcribeTranslations);
+  });
+  
+  // Also listen for "click" events to force an update even if the same language is re-selected
+  langSelect.addEventListener("click", async function() {
+    const currentValue = this.value;
+    const { transcribeTranslations } = await loadLanguageModule(currentValue);
     updateTranscribeUI(transcribeTranslations);
   });
 }

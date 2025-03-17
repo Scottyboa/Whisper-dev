@@ -22,7 +22,7 @@ Sii certo che rigorose misure di sicurezza assicurano che tutti i dati relativi 
   
   aboutModalHeading: "Informazioni su questo progetto",
   aboutModalText: `Sono un medico di famiglia norvegese, sempre interessato alle innovazioni tecnologiche, in particolare all'intelligenza artificiale, e ho seguito da vicino lo sviluppo dell'IA nel settore sanitario.<br><br>
-Quando ho sentito per la prima volta parlare di aziende che offrono servizi di conversione da voce a testo per consultazioni mediche in Norvegia, ne sono stato entusiasta. Colleghi e recensioni online hanno elogiato questi servizi, sottolineando miglioramenti significativi in termini di efficienza e flusso di lavoro. Tuttavia, approfondendo la questione, sono rimasto sorpreso dai costi elevati richiesti da queste aziende, soprattutto considerando che il costo reale della tecnologia rappresenta solo una frazione dei loro prezzi.<br><br>
+Quando ho sentito per la prima volta parlare di aziende che offrono servizi di conversione da voce a testo per consulenze mediche in Norvegia, ne sono stato entusiasta. Colleghi e recensioni online hanno elogiato questi servizi, sottolineando miglioramenti significativi in termini di efficienza e flusso di lavoro. Tuttavia, approfondendo la questione, sono rimasto sorpreso dai costi elevati richiesti da queste aziende, soprattutto considerando che il costo reale della tecnologia rappresenta solo una frazione dei loro prezzi.<br><br>
 Spinto da questa consapevolezza, ho sviluppato la mia soluzione di conversione da voce a testo, inizialmente per uso personale. Vedendo quanto fosse efficace ed economica, ho deciso di renderla disponibile online, offrendo la stessa velocità, precisione e qualità tipiche dei servizi premium, ma senza le tariffe elevate.<br><br>
 A differenza dei fornitori commerciali, questa piattaforma non applica maggiorazioni o commissioni inutili.<br>
 • Invece, paghi direttamente OpenAI — ciò significa che accedi direttamente alla fonte della tecnologia, senza che intermediari trattengano una quota extra.<br>
@@ -35,7 +35,7 @@ L'unica cosa che chiedo è che tu accetti le pubblicità, che aiutano a coprire 
 Con l'aumentare degli utenti, i costi di hosting e operativi cresceranno, e i ricavi pubblicitari garantiranno che io possa mantenere il servizio gratuito e in funzione senza addebitare costi agli utenti.`,
   
   guideModalHeading: "API guide – Come usarlo",
-  guideModalText: `Per utilizzare questa webapp, devi prima creare un profilo API su OpenAI, generare una chiave API e finanziare il tuo portafoglio OpenAI. La tua chiave API viene quindi copiata e incollata nel campo apposito. Una volta premuto Invio, la webapp salva temporaneamente la chiave per la sessione, collegandoti direttamente ai server di OpenAI affinché la conversione da voce a testo e la generazione di note funzionino. Nota che verrai addebitato immediatamente per ogni operazione eseguita. Per ulteriori informazioni sui costi, consulta la sezione "Costi" sulla pagina principale.<br><br>
+  guideModalText: `Per utilizzare questa webapp, devi prima creare un profilo API su OpenAI, generare una chiave API e finanziare il tuo portafoglio OpenAI. La tua chiave API viene quindi copiata e incollata nel campo apposito. Una volta premuto Invio, la webapp salva temporaneamente la chiave per la sessione, collegandoti direttamente ai server di OpenAI affinché la conversione da voce a testo e la generazione di note funzionino. Nota che verrai addebitato immediatamente per ogni operazione eseguita. Per ulteriori informazioni sui costi, consulta la sezione "Cost" sulla pagina principale.<br><br>
 <strong>1. Crea il tuo profilo API su OpenAI</strong><br>
 Per iniziare, devi creare un profilo sulla piattaforma API di OpenAI. Questo profilo fungerà da account per la gestione delle chiavi API e della fatturazione. Visita la pagina <a href="https://platform.openai.com/signup" style="color:blue;">OpenAI API Signup</a> e segui le istruzioni, inserendo il tuo indirizzo e-mail, creando una password e verificando il tuo account. Una volta registrato, avrai accesso alla tua dashboard.<br><br>
 <strong>2. Genera una chiave API</strong><br>
@@ -47,79 +47,97 @@ Quando accedi inserendo la tua chiave API, questa viene salvata temporaneamente 
   
   priceButton: "Price",
   priceModalHeading: "Cost Information",
-  priceModalText: `# Cost Information
+  priceModalText: `<h1 style="font-size:24px;">Informazioni sui Costi</h1>
 
-## Speech-to-Text Pricing  
-   - **Cost:** $0.006 per minute.  
-     *Example:* A 15-minute consultation will cost 15 × $0.006 = **$0.09** per consultation.
+<h2 style="font-size:20px;">Tariffa per la Conversione da Voce a Testo</h2>
+<p style="font-size:16px;">
+   <strong>Costo:</strong> $0,006 al minuto.<br>
+   <em>Esempio:</em> Una consulenza di 15 minuti costerà 15 × $0,006 = <strong>$0,09</strong> per consulenza.
+</p>
 
-## Note Generation Pricing  
-   - **Token-Based Pricing:**  
-     - **Input (transcription + prompt):** $10 per 1,000,000 tokens (i.e. $0.00001 per token).  
-     - **Output (generated note):** $30 per 1,000,000 tokens (i.e. $0.00003 per token).
+<h2 style="font-size:20px;">Tariffa per la Generazione delle Note</h2>
+<p style="font-size:16px;">
+   <strong>Tariffa basata sui token:</strong><br>
+   - <strong>Input (trascrizione + prompt):</strong> $10 per 1.000.000 di token (ovvero $0,00001 per token).<br>
+   - <strong>Output (nota generata):</strong> $30 per 1.000.000 di token (ovvero $0,00003 per token).
+</p>
 
-       #### Example Consultation Calculation (Note Generation Only)
-       1. **Input Calculation:**  
-          - Assume the consultation transcription is about **700 words** and you add a **30-word prompt**.  
-          - Total words = 700 + 30 = **730 words**.  
-          - Estimated tokens = 730 × 0.75 ≈ **547.5 tokens**.  
-          - Input cost = 547.5 tokens × $0.00001 ≈ **$0.0055**.
-       2. **Output Calculation:**  
-          - Assume the generated note is around **250 words**.  
-          - Estimated tokens = 250 × 0.75 ≈ **187.5 tokens**.  
-          - Output cost = 187.5 tokens × $0.00003 ≈ **$0.0056**.
-       3. **Total Note Generation Cost:**  
-          - Combined cost ≈ $0.0055 + $0.0056 = **$0.0111** per consultation.
+<h4 style="font-size:18px;">Calcolo Esemplificativo per una Consulenza (solo Generazione delle Note)</h4>
+<p style="font-size:16px;">
+   1. <strong>Calcolo dell'Input:</strong><br>
+      - Si assume che la trascrizione della consulenza contenga circa <strong>700 parole</strong> e che venga aggiunto un prompt di <strong>30 parole</strong>.<br>
+      - Totale parole = 700 + 30 = <strong>730 parole</strong>.<br>
+      - Token stimati = 730 × 0,75 ≈ <strong>547,5 token</strong>.<br>
+      - Costo dell'input = 547,5 token × $0,00001 ≈ <strong>$0,0055</strong>.
+</p>
+<p style="font-size:16px;">
+   2. <strong>Calcolo dell'Output:</strong><br>
+      - Si assume che la nota generata contenga circa <strong>250 parole</strong>.<br>
+      - Token stimati = 250 × 0,75 ≈ <strong>187,5 token</strong>.<br>
+      - Costo dell'output = 187,5 token × $0,00003 ≈ <strong>$0,0056</strong>.
+</p>
+<p style="font-size:16px;">
+   3. <strong>Costo Totale per la Generazione delle Note:</strong><br>
+      - Costo combinato ≈ $0,0055 + $0,0056 = <strong>$0,0111</strong> per consulenza.
+</p>
 
-## Approximate Combined Cost Per Consultation  
-(for a 15 min consultation/recording, using both functions)  
-   - **Speech-to-Text:** **$0.09**  
-   - **Note Generation:** **$0.0111**  
-   - **Total:** Approximately **$0.101** per consultation.
+<h2 style="font-size:20px;">Costo Combinato Approssimativo per Consulenza</h2>
+<p style="font-size:16px;">
+   (per una consulenza/registrazione di 15 minuti, utilizzando entrambe le funzioni)<br>
+   - <strong>Conversione da Voce a Testo:</strong> <strong>$0,09</strong><br>
+   - <strong>Generazione delle Note:</strong> <strong>$0,0111</strong><br>
+   - <strong>Totale:</strong> Circa <strong>$0,101</strong> per consulenza.
+</p>
 
-## Monthly Cost Estimates  
-Assuming you conduct 20 consultations per day, 4 days per week, over 4 weeks per month (20 × 4 × 4 = **320 consultations** per month):
+<h2 style="font-size:20px;">Stime Mensili dei Costi</h2>
+<p style="font-size:16px;">
+   Supponendo di effettuare 20 consulenze al giorno, 4 giorni alla settimana, per 4 settimane al mese (20 × 4 × 4 = <strong>320 consulenze</strong> al mese):<br><br>
+   1. <strong>Utilizzando solo la Conversione da Voce a Testo</strong> (con generazione delle note tramite il tuo account ChatGPT, che è essenzialmente gratuito):<br>
+      - Costo mensile = 320 × $0,09 = <strong>$28,80</strong>.<br><br>
+   2. <strong>Utilizzando sia la Conversione da Voce a Testo che la Generazione delle Note:</strong><br>
+      - Costo mensile = 320 × $0,101 ≈ <strong>$32,32</strong>.
+</p>
 
-   1. **Using Only Speech-to-Text** (with note generation via your own ChatGPT account, which is essentially free):  
-      - Monthly cost = 320 × $0.09 = **$28.80**.
-   2. **Using Both Speech-to-Text and Note Generation:**  
-      - Monthly cost = 320 × $0.101 ≈ **$32.32**.
+<h2 style="font-size:20px;">Opzione Alternativa per la Generazione delle Note</h2>
+<p style="font-size:16px;">
+   Se possiedi già un account OpenAI, puoi utilizzare la generazione delle note tramite ChatGPT sul tuo profilo, che è essenzialmente gratuita. In tal caso, sostieni solo il costo della Conversione da Voce a Testo quando utilizzi questa webapp.
+</p>
 
-## Alternative Note Generation Option  
-   If you already have an OpenAI account, you can use note generation via ChatGPT on your own profile—which is essentially free. In that case, you only incur the speech-to-text cost when using this webapp.
+<h2 style="font-size:20px;">Flessibilità d'Uso</h2>
+<p style="font-size:16px;">
+   A differenza dei fornitori che richiedono un abbonamento mensile, paghi solo per l'utilizzo effettivo. Se prendi un giorno libero, vai in vacanza o hai un periodo di inattività, i tuoi costi saranno zero. Anche se utilizzi il servizio quotidianamente per tutte le tue consulenze, il costo per utilizzo rimane significativamente inferiore rispetto ad altri fornitori.
+</p>
 
-## Usage Flexibility  
-   Unlike providers that require a monthly subscription, you only pay per usage. If you take a day off, go on vacation, or have a period of no activity, your costs will be zero. Even if you use the service every day for all your patient consultations, the per-use cost remains significantly lower compared to other providers.
+<hr>
 
----
-
-**Direct Connection Advantage**  
-Our webapp connects you directly with the OpenAI API—no intermediary, no extra fees. This direct link means you only pay for the actual AI processing cost, making our service one of the most affordable speech-to-text and note generation solutions available today.`,
-};
-
-export const transcribeTranslations = {
-  pageTitle: "Transcription Tool with Ads and Guide Overlay",
-  openaiUsageLinkText: "Cost usage overview",
-  btnFunctions: "Functions",
-  btnGuide: "Guide",
-  recordingAreaTitle: "Recording Area",
-  recordTimer: "Recording Timer: 0 sec",
-  transcribeTimer: "Completion Timer: 0 sec",
-  transcriptionPlaceholder: "Transcription result will appear here...",
-  startButton: "Start Recording",
-  stopButton: "Stop/Complete",
-  pauseButton: "Pause Recording",
-  statusMessage: "Welcome! Click \"Start Recording\" to begin.",
-  noteGenerationTitle: "Note Generation",
-  generateNoteButton: "Generate Note",
-  noteTimer: "Note Generation Timer: 0 sec",
-  generatedNotePlaceholder: "Generated note will appear here...",
-  customPromptTitle: "Custom Prompt",
-  promptSlotLabel: "Prompt Slot:",
-  customPromptPlaceholder: "Enter custom prompt here",
-  adUnitText: "Your Ad Here",
-  guideHeading: "Guide & Instructions",
-  guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.<br><br>
+<p style="font-size:16px;">
+   <strong>Vantaggio della Connessione Diretta</strong><br>
+   La nostra webapp ti collega direttamente all'API di OpenAI — senza intermediari, senza costi aggiuntivi. Questo collegamento diretto significa che paghi solo per il costo effettivo dell'elaborazione dell'IA, rendendo il nostro servizio una delle soluzioni più economiche disponibili per la conversione da voce a testo e la generazione delle note.
+</p>`,
+  
+  transcribeTranslations: {
+    pageTitle: "Transcription Tool with Ads and Guide Overlay",
+    openaiUsageLinkText: "Cost usage overview",
+    btnFunctions: "Functions",
+    btnGuide: "Guide",
+    recordingAreaTitle: "Recording Area",
+    recordTimer: "Recording Timer: 0 sec",
+    transcribeTimer: "Completion Timer: 0 sec",
+    transcriptionPlaceholder: "Transcription result will appear here...",
+    startButton: "Start Recording",
+    stopButton: "Stop/Complete",
+    pauseButton: "Pause Recording",
+    statusMessage: "Welcome! Click \"Start Recording\" to begin.",
+    noteGenerationTitle: "Note Generation",
+    generateNoteButton: "Generate Note",
+    noteTimer: "Note Generation Timer: 0 sec",
+    generatedNotePlaceholder: "Generated note will appear here...",
+    customPromptTitle: "Custom Prompt",
+    promptSlotLabel: "Prompt Slot:",
+    customPromptPlaceholder: "Enter custom prompt here",
+    adUnitText: "Your Ad Here",
+    guideHeading: "Guide & Instructions",
+    guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.<br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
   <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file.</li>
@@ -129,4 +147,5 @@ export const transcribeTranslations = {
   <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
 </ul>
 Please click "Functions" to return to the main interface.`,
+  }
 };

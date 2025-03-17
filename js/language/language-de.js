@@ -30,101 +30,90 @@ Diese Website ist vollständig kostenlos – Ihre einzigen Kosten sind die direk
 Das Einzige, was ich verlange, ist die Akzeptanz von Werbung, die dazu beiträgt, die Backend-Serverkosten zu decken.<br>
 Je mehr Menschen die Website nutzen, desto höher werden die Hosting- und Betriebskosten, und die Werbeeinnahmen stellen sicher, dass ich sie kostenlos betreiben kann.`,
   guideModalHeading: "Einrichtung Ihrer OpenAI API für Whisper Klinische Transkription",
-  guideModalText: `Um diese Webapp zu nutzen, müssen Sie zunächst ein OpenAI API-Profil erstellen, einen API-Schlüssel generieren und Ihre OpenAI-Wallet aufladen. Anschließend kopieren Sie Ihren API-Schlüssel und fügen ihn in das vorgesehene Feld ein. Sobald Sie die Eingabetaste drücken, speichert die Webapp den API-Schlüssel vorübergehend für Ihre Sitzung – dieser Schlüssel verbindet Sie mit den OpenAI-Servern, sodass die Sprach-zu-Text-Transkription und die Notizenerstellung funktionieren. Bitte beachten Sie, dass Sie für jede durchgeführte Aufgabe sofort belastet werden. Für weitere Informationen zu den Kosten lesen Sie bitte den Abschnitt "Kosten" auf der Startseite.
-<br><br>
+  guideModalText: `Um diese Webapp zu nutzen, müssen Sie zunächst ein OpenAI API-Profil erstellen, einen API-Schlüssel generieren und Ihre OpenAI-Wallet aufladen. Anschließend kopieren Sie Ihren API-Schlüssel und fügen ihn in das vorgesehene Feld ein. Sobald Sie die Eingabetaste drücken, speichert die Webapp den API-Schlüssel vorübergehend für Ihre Sitzung – dieser Schlüssel verbindet Sie mit den OpenAI-Servern, sodass die Sprach-zu-Text-Transkription und die Notizenerstellung funktionieren. Bitte beachten Sie, dass Sie für jede durchgeführte Aufgabe sofort belastet werden. Für weitere Informationen zu den Kosten lesen Sie bitte den Abschnitt "Kosten" auf der Startseite.<br><br>
 <strong>1. Erstellen Sie Ihr OpenAI API-Profil</strong><br>
-Zunächst müssen Sie ein Profil auf der OpenAI API-Plattform erstellen. Dieses Profil dient als Ihr Konto zur Verwaltung von API-Schlüsseln und Abrechnungen. Um loszulegen, besuchen Sie die <a href="https://platform.openai.com/signup" style="color:blue;">OpenAI API-Anmeldung</a>. Folgen Sie den Anweisungen, indem Sie Ihre E-Mail-Adresse angeben, ein Passwort festlegen und Ihr Konto verifizieren. Nach der Registrierung haben Sie Zugriff auf Ihr Dashboard.
-<br><br>
+Zunächst müssen Sie ein Profil auf der OpenAI API-Plattform erstellen. Dieses Profil dient als Ihr Konto zur Verwaltung von API-Schlüsseln und Abrechnungen. Um loszulegen, besuchen Sie die <a href="https://platform.openai.com/signup" style="color:blue;">OpenAI API-Anmeldung</a>. Folgen Sie den Anweisungen, indem Sie Ihre E-Mail-Adresse angeben, ein Passwort festlegen und Ihr Konto verifizieren. Nach der Registrierung haben Sie Zugriff auf Ihr Dashboard.<br><br>
 <strong>2. Generieren Sie einen API-Schlüssel</strong><br>
-Nachdem Sie Ihr Profil erstellt haben, generieren Sie einen API-Schlüssel, indem Sie zur Seite <a href="https://platform.openai.com/account/api-keys" style="color:blue;">API-Schlüssel-Verwaltung</a> navigieren. Klicken Sie auf die Schaltfläche, um einen neuen API-Schlüssel zu erstellen. Wichtig: Sie sehen Ihren API-Schlüssel nur einmal. Kopieren Sie ihn sofort und bewahren Sie ihn sicher auf (z. B. in einer Textdatei) für die zukünftige Verwendung. Wenn Sie den Schlüssel verlieren oder vermuten, dass er kompromittiert wurde, löschen Sie ihn aus Ihrem Konto und erstellen Sie einen neuen.
-<br><br>
+Nachdem Sie Ihr Profil erstellt haben, generieren Sie einen API-Schlüssel, indem Sie zur Seite <a href="https://platform.openai.com/account/api-keys" style="color:blue;">API-Schlüssel-Verwaltung</a> navigieren. Klicken Sie auf die Schaltfläche, um einen neuen API-Schlüssel zu erstellen. Wichtig: Sie sehen Ihren API-Schlüssel nur einmal. Kopieren Sie ihn sofort und bewahren Sie ihn sicher auf (z. B. in einer Textdatei) für die zukünftige Verwendung. Wenn Sie den Schlüssel verlieren oder vermuten, dass er kompromittiert wurde, löschen Sie ihn aus Ihrem Konto und erstellen Sie einen neuen.<br><br>
 <strong>3. Laden Sie Ihre OpenAI-Wallet auf</strong><br>
-Damit die Webapp funktioniert, muss Ihre OpenAI-Wallet über ausreichende Mittel verfügen. Besuchen Sie die Seite <a href="https://platform.openai.com/account/billing/overview" style="color:blue;">Abrechnung & Zahlung</a>, um Geld hinzuzufügen. Sie können jederzeit einen beliebigen Betrag überweisen. Solange ausreichend Mittel vorhanden sind, können Sie die Website nutzen – jede Aufgabe wird sofort berechnet.
-<br><br>
+Damit die Webapp funktioniert, muss Ihre OpenAI-Wallet über ausreichende Mittel verfügen. Besuchen Sie die Seite <a href="https://platform.openai.com/account/billing/overview" style="color:blue;">Abrechnung & Zahlung</a>, um Geld hinzuzufügen. Sie können jederzeit einen beliebigen Betrag überweisen. Solange ausreichend Mittel vorhanden sind, können Sie die Website nutzen – jede Aufgabe wird sofort berechnet.<br><br>
 <strong>Hinweis zur Sitzungs-Sicherheit</strong><br>
 Wenn Sie sich durch Eingabe Ihres API-Schlüssels anmelden, wird dieser nur vorübergehend in Ihrer Browser-Sitzung gespeichert. Das bedeutet, wenn Sie die Website verlassen, Ihren Browser schließen oder Ihren Computer ausschalten, wird der API-Schlüssel nicht gespeichert. Beim nächsten Besuch der Webapp müssen Sie Ihren API-Schlüssel erneut eingeben, um die Sicherheit Ihres Schlüssels zu gewährleisten.`,
   priceButton: "Preis",
   priceModalHeading: "Kosteninformationen",
-  priceModalText: `# Kosteninformationen
-
-## Preisgestaltung für Sprach-zu-Text  
-   - **Kosten:** $0.006 pro Minute.  
-     *Beispiel:* Eine 15-minütige Konsultation kostet 15 × $0.006 = **$0.09** pro Konsultation.
-
-## Preisgestaltung für die Notizenerstellung  
-   - **Token-basierte Preisgestaltung:**  
-     - **Eingabe (Transkription + Prompt):** $10 pro 1.000.000 Tokens (d.h. $0.00001 pro Token).  
-     - **Ausgabe (generierte Notiz):** $30 pro 1.000.000 Tokens (d.h. $0.00003 pro Token).
-
-       #### Beispielrechnung für eine Konsultation (nur Notizenerstellung)
-       1. **Berechnung der Eingabe:**  
-          - Angenommen, die Transkription der Konsultation umfasst etwa **700 Wörter** und Sie fügen einen **30-Wörter-Prompt** hinzu.  
-          - Gesamtanzahl der Wörter = 700 + 30 = **730 Wörter**.  
-          - Geschätzte Tokens = 730 × 0.75 ≈ **547,5 Tokens**.  
-          - Eingabekosten = 547,5 Tokens × $0.00001 ≈ **$0.0055**.
-       2. **Berechnung der Ausgabe:**  
-          - Angenommen, die generierte Notiz umfasst etwa **250 Wörter**.  
-          - Geschätzte Tokens = 250 × 0.75 ≈ **187,5 Tokens**.  
-          - Ausgabekosten = 187,5 Tokens × $0.00003 ≈ **$0.0056**.
-       3. **Gesamtkosten der Notizenerstellung:**  
-          - Gesamtkosten ≈ $0.0055 + $0.0056 = **$0.0111** pro Konsultation.
-
-## Ungefähre Gesamtkosten pro Konsultation  
-(für eine 15-minütige Konsultation/Aufzeichnung, bei Nutzung beider Funktionen)  
-   - **Sprach-zu-Text:** **$0.09**  
-   - **Notizenerstellung:** **$0.0111**  
-   - **Gesamt:** Ungefähr **$0.101** pro Konsultation.
-
-## Monatliche Kostenschätzungen  
-Angenommen, Sie führen 20 Konsultationen pro Tag durch, 4 Tage pro Woche, über 4 Wochen im Monat (20 × 4 × 4 = **320 Konsultationen** pro Monat):
-
-   1. **Nur Sprach-zu-Text** (mit Notizenerstellung über Ihr eigenes ChatGPT-Konto, das im Grunde kostenlos ist):  
-      - Monatliche Kosten = 320 × $0.09 = **$28.80**.
-   2. **Sprach-zu-Text und Notizenerstellung:**  
-      - Monatliche Kosten = 320 × $0.101 ≈ **$32.32**.
-
-## Alternative Option für die Notizenerstellung  
-   Falls Sie bereits ein OpenAI-Konto besitzen, können Sie die Notizenerstellung über ChatGPT in Ihrem eigenen Profil nutzen – was im Grunde kostenlos ist. In diesem Fall entstehen Ihnen nur die Kosten für den Sprach-zu-Text-Dienst bei Nutzung dieser Webapp.
-
-## Flexibilität in der Nutzung  
-   Im Gegensatz zu Anbietern, die ein monatliches Abonnement verlangen, zahlen Sie nur pro Nutzung. Wenn Sie einen Tag frei nehmen, in den Urlaub fahren oder eine Zeit ohne Aktivität haben, betragen Ihre Kosten null. Selbst wenn Sie den Dienst täglich für alle Ihre Patienten konsultationen nutzen, bleiben die Kosten pro Nutzung deutlich niedriger im Vergleich zu anderen Anbietern.
-
---- 
-
-**Vorteil der direkten Verbindung**  
-Unsere Webapp verbindet Sie direkt mit der OpenAI API – kein Zwischenhändler, keine zusätzlichen Gebühren. Diese direkte Verbindung bedeutet, dass Sie nur für die tatsächlichen KI-Verarbeitungskosten zahlen, was unseren Service zu einer der erschwinglichsten Lösungen für Sprach-zu-Text und Notizenerstellung macht.`,
-};
-
-export const transcribeTranslations = {
-  pageTitle: "Transkriptionstool mit Werbung und Anleitung",
-  openaiUsageLinkText: "Kostenübersicht",
-  btnFunctions: "Funktionen",
-  btnGuide: "Anleitung",
-  recordingAreaTitle: "Aufnahmebereich",
-  recordTimer: "Aufnahme-Timer: 0 Sek.",
-  transcribeTimer: "Fertigstellungs-Timer: 0 Sek.",
-  transcriptionPlaceholder: "Das Transkriptionsergebnis erscheint hier...",
-  startButton: "Aufnahme starten",
-  stopButton: "Stoppen/Abschließen",
-  pauseButton: "Aufnahme pausieren",
-  statusMessage: "Willkommen! Klicken Sie auf „Aufnahme starten“, um zu beginnen.",
-  noteGenerationTitle: "Notizenerstellung",
-  generateNoteButton: "Notiz generieren",
-  noteTimer: "Notiz-Erstellungstimer: 0 Sek.",
-  generatedNotePlaceholder: "Die generierte Notiz erscheint hier...",
-  customPromptTitle: "Individueller Prompt",
-  promptSlotLabel: "Prompt-Slot:",
-  customPromptPlaceholder: "Geben Sie hier Ihren individuellen Prompt ein",
-  adUnitText: "Ihre Anzeige hier",
-  guideHeading: "Anleitung & Hinweise",
-  guideText: `Willkommen beim Whisper Transkriptionstool. Diese Anwendung ermöglicht es medizinischen Fachkräften, Therapeuten und anderen Praktikern, Konsultationen aufzunehmen und zu transkribieren sowie professionelle Notizen mithilfe eines KI-gestützten Notizgenerators zu erstellen.<br><br>
-<strong>So verwenden Sie die Funktionen:</strong>
-<ul>
-  <li><strong>Aufnahme:</strong> Klicken Sie auf „Aufnahme starten“, um mit der Audioaufnahme zu beginnen. Alle 40 Sekunden wird ein Abschnitt der Aufnahme automatisch zur Transkription an die OpenAI-Server gesendet. Die Transkripte werden nacheinander im Ausgabefeld für das Transkript angezeigt.</li>
-  <li><strong>Fertigstellung:</strong> Nach Klick auf „Stoppen/Abschließen“ endet die Aufnahme. Der Fertigstellungstimer zählt, bis das vollständige Transkript empfangen wurde. Dies dauert in der Regel zwischen 5 und 10 Sekunden.</li>
-  <li><strong>Notizenerstellung:</strong> Nach der Transkription klicken Sie auf „Notiz generieren“, um eine Notiz basierend auf Ihrem Transkript und Ihrem individuellen Prompt zu erstellen.</li>
-  <li><strong>Individueller Prompt:</strong> Wählen Sie rechts einen Prompt-Slot (1–10) aus und geben Sie Ihren individuellen Prompt ein. Ihr Prompt wird automatisch gespeichert und mit Ihrem API-Schlüssel verknüpft.</li>
-  <li><strong>Anleitungs-Umschaltung:</strong> Verwenden Sie die Schaltflächen „Funktionen“ und „Anleitung“, um zwischen der Funktionsansicht und dieser Anleitung zu wechseln.</li>
-</ul>
-Bitte klicken Sie auf „Funktionen“, um zur Hauptoberfläche zurückzukehren.`,
+  priceModalText: `
+    <h1>Kosteninformationen</h1>
+    
+    <h2>Preisgestaltung für Sprach-zu-Text</h2>
+    <ul>
+      <li>
+        <strong>Kosten:</strong> $0.006 pro Minute. <br>
+        <em>Beispiel:</em> Eine 15-minütige Konsultation kostet 15 × $0.006 = <strong>$0.09</strong> pro Konsultation.
+      </li>
+    </ul>
+    
+    <h2>Preisgestaltung für die Notizenerstellung</h2>
+    <ul>
+      <li>
+        <strong>Token-basierte Preisgestaltung:</strong>
+        <ul>
+          <li><strong>Eingabe (Transkription + Prompt):</strong> $10 pro 1.000.000 Tokens (d.h. $0.00001 pro Token).</li>
+          <li><strong>Ausgabe (generierte Notiz):</strong> $30 pro 1.000.000 Tokens (d.h. $0.00003 pro Token).</li>
+        </ul>
+      </li>
+    </ul>
+    
+    <h3>Beispielrechnung für eine Konsultation (nur Notizenerstellung)</h3>
+    <ol>
+      <li>
+        <strong>Berechnung der Eingabe:</strong><br>
+        - Angenommen, die Transkription der Konsultation umfasst etwa <strong>700 Wörter</strong> und Sie fügen einen <strong>30-Wörter-Prompt</strong> hinzu.<br>
+        - Gesamtanzahl der Wörter = 700 + 30 = <strong>730 Wörter</strong>.<br>
+        - Geschätzte Tokens = 730 × 0.75 ≈ <strong>547,5 Tokens</strong>.<br>
+        - Eingabekosten = 547,5 Tokens × $0.00001 ≈ <strong>$0.0055</strong>.
+      </li>
+      <li>
+        <strong>Berechnung der Ausgabe:</strong><br>
+        - Angenommen, die generierte Notiz umfasst etwa <strong>250 Wörter</strong>.<br>
+        - Geschätzte Tokens = 250 × 0.75 ≈ <strong>187,5 Tokens</strong>.<br>
+        - Ausgabekosten = 187,5 Tokens × $0.00003 ≈ <strong>$0.0056</strong>.
+      </li>
+      <li>
+        <strong>Gesamtkosten der Notizenerstellung:</strong><br>
+        - Gesamtkosten ≈ $0.0055 + $0.0056 = <strong>$0.0111</strong> pro Konsultation.
+      </li>
+    </ol>
+    
+    <h2>Ungefähre Gesamtkosten pro Konsultation</h2>
+    <p>(für eine 15-minütige Konsultation/Aufzeichnung, bei Nutzung beider Funktionen)</p>
+    <ul>
+      <li><strong>Sprach-zu-Text:</strong> <strong>$0.09</strong></li>
+      <li><strong>Notizenerstellung:</strong> <strong>$0.0111</strong></li>
+      <li><strong>Gesamt:</strong> Ungefähr <strong>$0.101</strong> pro Konsultation.</li>
+    </ul>
+    
+    <h2>Monatliche Kostenschätzungen</h2>
+    <p>Angenommen, Sie führen 20 Konsultationen pro Tag durch, 4 Tage pro Woche, über 4 Wochen im Monat (20 × 4 × 4 = <strong>320 Konsultationen</strong> pro Monat):</p>
+    <ol>
+      <li>
+        <strong>Nur Sprach-zu-Text</strong> (mit Notizenerstellung über Ihr eigenes ChatGPT-Konto, das im Grunde kostenlos ist):<br>
+        - Monatliche Kosten = 320 × $0.09 = <strong>$28.80</strong>.
+      </li>
+      <li>
+        <strong>Sprach-zu-Text und Notizenerstellung:</strong><br>
+        - Monatliche Kosten = 320 × $0.101 ≈ <strong>$32.32</strong>.
+      </li>
+    </ol>
+    
+    <h2>Alternative Option für die Notizenerstellung</h2>
+    <p>Falls Sie bereits ein OpenAI-Konto besitzen, können Sie die Notizenerstellung über ChatGPT in Ihrem eigenen Profil nutzen – was im Grunde kostenlos ist. In diesem Fall entstehen Ihnen nur die Kosten für den Sprach-zu-Text-Dienst bei Nutzung dieser Webapp.</p>
+    
+    <h2>Flexibilität in der Nutzung</h2>
+    <p>Im Gegensatz zu Anbietern, die ein monatliches Abonnement verlangen, zahlen Sie nur pro Nutzung. Wenn Sie einen Tag frei nehmen, in den Urlaub fahren oder eine Zeit ohne Aktivität haben, betragen Ihre Kosten null. Selbst wenn Sie den Dienst täglich für alle Ihre Patienten konsultationen nutzen, bleiben die Kosten pro Nutzung deutlich niedriger im Vergleich zu anderen Anbietern.</p>
+    
+    <hr>
+    
+    <p><strong>Vorteil der direkten Verbindung</strong><br>
+    Unsere Webapp verbindet Sie direkt mit der OpenAI API – kein Zwischenhändler, keine zusätzlichen Gebühren. Diese direkte Verbindung bedeutet, dass Sie nur für die tatsächlichen KI-Verarbeitungskosten zahlen, was unseren Service zu einer der erschwinglichsten Lösungen für Sprach-zu-Text und Notizenerstellung macht.</p>
+  `,
 };

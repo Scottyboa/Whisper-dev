@@ -55,97 +55,79 @@ Når du logger inn med din API-nøkkel, lagres den kun midlertidig i nettleserø
   
   priceButton: "Price",
   priceModalHeading: "Kostnadsinformasjon",
-  priceModalText: `<h1 style="font-size:24px;">Kostnadsinformasjon</h1>
+  priceModalText: `# Kostnadsinformasjon
 
-<h2 style="font-size:20px;">Tale-til-tekst Prising</h2>
-<p style="font-size:16px;">
-   <strong>Kostnad:</strong> $0.006 per minutt.<br>
-   <em>Eksempel:</em> En 15-minutters konsultasjon vil koste 15 × $0.006 = <strong>$0.09</strong> per konsultasjon.
-</p>
+## Tal-till-tekst-prising  
+   - **Kostnad:** $0.006 per minutt.  
+     *Eksempel:* En 15-minutters konsultasjon vil koste 15 × $0.006 = **$0.09** per konsultasjon.
 
-<h2 style="font-size:20px;">Notatgenerering Prising</h2>
-<p style="font-size:16px;">
-   <strong>Token-basert Prising:</strong><br>
-   - <strong>Input (transkripsjon + prompt):</strong> $10 per 1,000,000 tokens (dvs. $0.00001 per token).<br>
-   - <strong>Output (generert notat):</strong> $30 per 1,000,000 tokens (dvs. $0.00003 per token).
-</p>
+## Notisgenereringsprissättning  
+   - **Token-baserad prissättning:**  
+     - **Input (transkripsjon + prompt):** $10 per 1,000,000 tokens (dvs. $0.00001 per token).  
+     - **Output (generert notis):** $30 per 1,000,000 tokens (dvs. $0.00003 per token).
 
-<h4 style="font-size:18px;">Eksempelberegning for konsultasjon (kun notatgenerering)</h4>
-<p style="font-size:16px;">
-   1. <strong>Input Beregning:</strong><br>
-      - Forutsett at konsultasjonens transkripsjon er på omtrent <strong>700 ord</strong> og at du legger til en <strong>30-ords prompt</strong>.<br>
-      - Totalt antall ord = 700 + 30 = <strong>730 ord</strong>.<br>
-      - Estimerte tokens = 730 × 0.75 ≈ <strong>547.5 tokens</strong>.<br>
-      - Input kostnad = 547.5 tokens × $0.00001 ≈ <strong>$0.0055</strong>.
-</p>
-<p style="font-size:16px;">
-   2. <strong>Output Beregning:</strong><br>
-      - Forutsett at det genererte notatet er på rundt <strong>250 ord</strong>.<br>
-      - Estimerte tokens = 250 × 0.75 ≈ <strong>187.5 tokens</strong>.<br>
-      - Output kostnad = 187.5 tokens × $0.00003 ≈ <strong>$0.0056</strong>.
-</p>
-<p style="font-size:16px;">
-   3. <strong>Total Kostnad for Notatgenerering:</strong><br>
-      - Kombinert kostnad ≈ $0.0055 + $0.0056 = <strong>$0.0111</strong> per konsultasjon.
-</p>
+       #### Exempelberäkning (endast notisgenerering)
+       1. **Beräkning av input:**  
+          - Anta att transkriptionen av konsultationen är cirka **700 ord** och att du lägger till en **30-ords prompt**.  
+          - Totalt antal ord = 700 + 30 = **730 ord**.  
+          - Uppskattade tokens = 730 × 0.75 ≈ **547.5 tokens**.  
+          - Input-kostnad = 547.5 tokens × $0.00001 ≈ **$0.0055**.
+       2. **Beräkning av output:**  
+          - Anta att den genererade notisen är omkring **250 ord**.  
+          - Uppskattade tokens = 250 × 0.75 ≈ **187.5 tokens**.  
+          - Output-kostnad = 187.5 tokens × $0.00003 ≈ **$0.0056**.
+       3. **Total kostnad för notisgenerering:**  
+          - Kombinerad kostnad ≈ $0.0055 + $0.0056 = **$0.0111** per konsultasjon.
 
-<h2 style="font-size:20px;">Omtrentlig Total Kostnad per Konsultasjon</h2>
-<p style="font-size:16px;">
-   (for en 15-minutters konsultasjon/innspilling med begge funksjoner)<br>
-   - <strong>Tale-til-tekst:</strong> <strong>$0.09</strong><br>
-   - <strong>Notatgenerering:</strong> <strong>$0.0111</strong><br>
-   - <strong>Totalt:</strong> Omtrent <strong>$0.101</strong> per konsultasjon.
-</p>
+## Omtrentlig total kostnad per konsultasjon  
+(For en 15-minutters konsultasjon/innspilling med begge funksjoner)  
+   - **Tal-till-tekst:** **$0.09**  
+   - **Notisgenerering:** **$0.0111**  
+   - **Totalt:** Omtrent **$0.101** per konsultasjon.
 
-<h2 style="font-size:20px;">Månedlige Kostnadsestimater</h2>
-<p style="font-size:16px;">
-   Forutsatt at du gjennomfører 20 konsultasjoner per dag, 4 dager i uken, over 4 uker per måned (20 × 4 × 4 = <strong>320 konsultasjoner</strong> per måned):<br><br>
-   1. <strong>Kun Tale-til-tekst</strong> (med notatgenerering via din egen ChatGPT-konto, som i praksis er gratis):<br>
-      - Månedlig kostnad = 320 × $0.09 = <strong>$28.80</strong>.<br><br>
-   2. <strong>Både Tale-til-tekst og Notatgenerering</strong>:<br>
-      - Månedlig kostnad = 320 × $0.101 ≈ <strong>$32.32</strong>.
-</p>
+## Månedlige kostnadsestimater  
+Forutsatt at du gjennomfører 20 konsultasjoner per dag, 4 dager per uke, over 4 uker per måned (20 × 4 × 4 = **320 konsultasjoner** per måned):
 
-<h2 style="font-size:20px;">Alternativ for Notatgenerering</h2>
-<p style="font-size:16px;">
-   Hvis du allerede har en OpenAI-konto, kan du bruke notatgenerering via ChatGPT på din egen profil – noe som i praksis er gratis. I så fall påløper kun kostnaden for tale-til-tekst når du bruker denne webappen.
-</p>
+   1. **Kun tale-til-tekst** (med notisgenerering via din egen ChatGPT-konto, som i praksis er gratis):  
+      - Månedlig kostnad = 320 × $0.09 = **$28.80**.
+   2. **Bruk av både tale-til-tekst og notisgenerering:**  
+      - Månedlig kostnad = 320 × $0.101 ≈ **$32.32**.
 
-<h2 style="font-size:20px;">Fleksibilitet i Bruk</h2>
-<p style="font-size:16px;">
-   I motsetning til leverandører som krever et månedlig abonnement, betaler du kun for faktisk bruk. Hvis du tar en fridag, drar på ferie, eller har en periode uten aktivitet, vil kostnadene dine være null. Selv om du bruker tjenesten daglig for alle dine pasientkonsultasjoner, forblir kostnaden per konsultasjon betydelig lavere enn hos andre leverandører.
-</p>
+## Alternativ for notisgenerering  
+   Hvis du allerede har en OpenAI-konto, kan du bruke notisgenerering via ChatGPT på ditt eget profil – i praksis gratis. I så fall påløper kun kostnaden for tale-til-tekst når du bruker denne webappen.
 
-<hr>
+## Brukervennlighet  
+   I motsetning til leverandører som krever et månedlig abonnement, betaler du kun for faktisk bruk. Hvis du tar en fridag, drar på ferie eller har en periode uten aktivitet, vil kostnadene dine være null. Selv om du bruker tjenesten daglig for alle dine pasientkonsultasjoner, forblir kostnaden per konsultasjon betydelig lavere enn hos andre leverandører.
 
-<p style="font-size:16px;">
-   <strong>Direkte Tilkoblingsfordel</strong><br>
-   Vår webapp kobler deg direkte til OpenAI API – ingen mellomledd, ingen ekstra avgifter. Denne direkte forbindelsen betyr at du kun betaler for den faktiske AI-behandlingskostnaden, noe som gjør vår tjeneste til en av de mest prisgunstige løsningene for tale-til-tekst og notatgenerering som er tilgjengelig i dag.
-</p>`,
-  
-  transcribeTranslations: {
-    pageTitle: "Transcription Tool with Ads and Guide Overlay",
-    openaiUsageLinkText: "Cost usage overview",
-    btnFunctions: "Functions",
-    btnGuide: "Guide",
-    recordingAreaTitle: "Recording Area",
-    recordTimer: "Recording Timer: 0 sec",
-    transcribeTimer: "Completion Timer: 0 sec",
-    transcriptionPlaceholder: "Transcription result will appear here...",
-    startButton: "Start Recording",
-    stopButton: "Stop/Complete",
-    pauseButton: "Pause Recording",
-    statusMessage: "Welcome! Click \"Start Recording\" to begin.",
-    noteGenerationTitle: "Note Generation",
-    generateNoteButton: "Generate Note",
-    noteTimer: "Note Generation Timer: 0 sec",
-    generatedNotePlaceholder: "Generated note will appear here...",
-    customPromptTitle: "Custom Prompt",
-    promptSlotLabel: "Prompt Slot:",
-    customPromptPlaceholder: "Enter custom prompt here",
-    adUnitText: "Your Ad Here",
-    guideHeading: "Guide & Instructions",
-    guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.<br><br>
+---
+
+**Direkte Tilkoblingsfordel**  
+Vår webapp kobler deg direkte til OpenAI API – ingen mellomledd, ingen ekstra avgifter. Denne direkte koblingen betyr at du kun betaler for den faktiske AI-behandlingskostnaden, noe som gjør vår tjeneste til en av de mest prisgunstige løsningene for tale-til-tekst og notisgenerering som er tilgjengelig i dag.`,
+};
+
+export const transcribeTranslations = {
+  pageTitle: "Transcription Tool with Ads and Guide Overlay",
+  openaiUsageLinkText: "Cost usage overview",
+  btnFunctions: "Functions",
+  btnGuide: "Guide",
+  recordingAreaTitle: "Recording Area",
+  recordTimer: "Recording Timer: 0 sec",
+  transcribeTimer: "Completion Timer: 0 sec",
+  transcriptionPlaceholder: "Transcription result will appear here...",
+  startButton: "Start Recording",
+  stopButton: "Stop/Complete",
+  pauseButton: "Pause Recording",
+  statusMessage: "Welcome! Click \"Start Recording\" to begin.",
+  noteGenerationTitle: "Note Generation",
+  generateNoteButton: "Generate Note",
+  noteTimer: "Note Generation Timer: 0 sec",
+  generatedNotePlaceholder: "Generated note will appear here...",
+  customPromptTitle: "Custom Prompt",
+  promptSlotLabel: "Prompt Slot:",
+  customPromptPlaceholder: "Enter custom prompt here",
+  adUnitText: "Your Ad Here",
+  guideHeading: "Guide & Instructions",
+  guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.<br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
   <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file.</li>
@@ -155,5 +137,4 @@ Når du logger inn med din API-nøkkel, lagres den kun midlertidig i nettleserø
   <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
 </ul>
 Please click "Functions" to return to the main interface.`,
-  }
 };

@@ -53,7 +53,7 @@ For at webappen skal fungere, må lommeboken din ha tilstrekkelige midler. Besø
 <strong>Sikkerhet ved økten</strong><br>
 Når du logger inn med din API-nøkkel, lagres den kun midlertidig i nettleserøkten. Dette betyr at hvis du forlater nettsiden, lukker nettleseren eller slår av datamaskinen, blir nøkkelen ikke lagret permanent. Du må skrive den inn på nytt neste gang du bruker webappen, noe som sikrer at nøkkelen din forblir sikker.`,
   
-  priceButton: "Price",
+  priceButton: "Pris",
   priceModalHeading: "Kostnadsinformasjon",
   priceModalText: `# Kostnadsinformasjon
 

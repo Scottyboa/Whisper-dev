@@ -46,6 +46,7 @@ For the webapp to function, your OpenAI wallet must have sufficient funds. Visit
 When you log in by entering your API key, it is stored only temporarily in your browser session. This means if you exit the website, close your browser, or turn off your computer, the API key will not be saved. You will need to re-enter your API key the next time you use the webapp, ensuring your key remains secure.`,
   priceButton: "Price",
   priceModalHeading: "Cost Information",
+  priceModalText: `<h1 style="font-size:24px;">Cost Information</h1>
 
 <h2 style="font-size:20px;">Speech-to-Text Pricing</h2>
 <p style="font-size:16px;">

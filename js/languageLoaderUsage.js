@@ -10,14 +10,16 @@ export async function initIndexLanguage() {
   langSelect.value = currentLang;
   
   // Load the language module and update the index page UI
-  const { indexTranslations } = await loadLanguageModule(currentLang);
+  const mod = await loadLanguageModule(currentLang);
+  const indexTranslations = mod.indexTranslations || mod.default?.indexTranslations;
   updateIndexUI(indexTranslations);
   
   // Listen for language changes
   langSelect.addEventListener("change", async function() {
     currentLang = this.value;
     localStorage.setItem("siteLanguage", currentLang);
-    const { indexTranslations } = await loadLanguageModule(currentLang);
+    const mod = await loadLanguageModule(currentLang);
+    const indexTranslations = mod.indexTranslations || mod.default?.indexTranslations;
     updateIndexUI(indexTranslations);
   });
 }
@@ -84,21 +86,24 @@ export async function initTranscribeLanguage() {
   langSelect.value = currentLang;
   
   // Load and update UI for the current language
-  const { transcribeTranslations } = await loadLanguageModule(currentLang);
+  const mod = await loadLanguageModule(currentLang);
+  const transcribeTranslations = mod.transcribeTranslations || mod.default?.transcribeTranslations;
   updateTranscribeUI(transcribeTranslations);
   
   // Listen for language changes using the "change" event
   langSelect.addEventListener("change", async function() {
     currentLang = this.value;
     localStorage.setItem("siteLanguage", currentLang);
-    const { transcribeTranslations } = await loadLanguageModule(currentLang);
+    const mod = await loadLanguageModule(currentLang);
+    const transcribeTranslations = mod.transcribeTranslations || mod.default?.transcribeTranslations;
     updateTranscribeUI(transcribeTranslations);
   });
   
   // Also listen for "click" events to force an update even if the same language is re-selected
   langSelect.addEventListener("click", async function() {
     const currentValue = this.value;
-    const { transcribeTranslations } = await loadLanguageModule(currentValue);
+    const mod = await loadLanguageModule(currentValue);
+    const transcribeTranslations = mod.transcribeTranslations || mod.default?.transcribeTranslations;
     updateTranscribeUI(transcribeTranslations);
   });
 }

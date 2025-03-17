@@ -122,9 +122,9 @@ export const transcribeTranslations = {
   guideText: `Welcome to the Whisper Transcription tool. This application allows medical professionals, therapists, and other practitioners to record and transcribe consultations, as well as generate professional notes using an AI-powered note generator.<br><br>
 <strong>How to Use the Functions:</strong>
 <ul>
-  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Audio is captured via MediaStreamTrackProcessor (using WebCodecs) and accumulated for up to 40 seconds before being packaged as a self-contained WAV file.</li>
-  <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. A 2-second final capture period collects any remaining audio before processing the final chunk. The Completion Timer then ticks until the full transcript is received.</li>
-  <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt.</li>
+  <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Every 40 sec a chunk/slice of audio will be automatically sent for transcription at the OpenAI servers. The transcriptions will arrive one by one at the transcription text output field.</li>
+  <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. The Completion Timer then ticks until the full transcript is received. This usually takes between 5-10 sec.</li>
+  <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and your custom prompt.</li>
   <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key.</li>
   <li><strong>Guide Toggle:</strong> Use the "Functions" and "Guide" buttons to switch between the functional view and this guide.</li>
 </ul>

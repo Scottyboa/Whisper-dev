@@ -16,10 +16,88 @@ export const indexTranslations = {
   aboutModalHeading: "À propos de ce projet",
   aboutModalText: "Je suis un médecin généraliste norvégien passionné par les avancées technologiques, en particulier dans le domaine de l'intelligence artificielle, et je suis de près les développements de l'IA dans le secteur de la santé.<br><br>Lorsque j'ai découvert pour la première fois des entreprises proposant des services de transcription audio en texte pour les consultations médicales en Norvège, j'ai été enthousiasmé. Des collègues et des avis en ligne louaient ces services, soulignant une amélioration significative de leur efficacité et de leur organisation. Cependant, en approfondissant mes recherches, j'ai été surpris par les tarifs pratiqués par ces entreprises — surtout quand on considère que le coût réel de la technologie n'est qu'une fraction de leurs prix.<br><br>Motivé par cette constatation, j'ai développé ma propre solution de transcription audio en texte, initialement pour un usage personnel. Constatant son efficacité et sa rentabilité, j'ai décidé de rendre ma solution accessible en ligne, offrant la même rapidité, précision et qualité que les services premium, mais sans les frais élevés.<br><br>Contrairement aux fournisseurs commerciaux, cette plateforme n'applique pas de majoration ou de frais superflus.<br>• Vous payez directement OpenAI — ce qui signifie que vous accédez directement à la source de la technologie, sans intermédiaires prélevant une commission supplémentaire.<br>• Cela en fait l'option la moins chère disponible tout en maintenant une qualité de premier ordre.<br><br>Je suis convaincu que, bien que certains de ces services soient utiles, ils sont souvent trop chers par rapport à ce qu'ils offrent réellement. Nombre de mes collègues — qui travaillent quotidiennement en soins aux patients — se retrouvent à payer bien plus que nécessaire pour accéder à un outil qui devrait être abordable pour tous.<br><br>Ce site est entièrement gratuit — le seul coût que vous avez à supporter est le tarif d'utilisation direct d'OpenAI pour les transcriptions.<br>• Pas de frais mensuels, d'abonnements ou d'engagements — vous payez uniquement pour les tâches effectuées.<br>• Vous contrôlez vos dépenses en décidant du montant à transférer vers votre portefeuille OpenAI.<br><br>La seule chose que je vous demande est d'accepter les publicités, qui aident à couvrir les coûts des serveurs backend.<br>Au fur et à mesure que le nombre d'utilisateurs augmente, les frais d'hébergement et d'exploitation augmenteront, et les revenus publicitaires permettront de maintenir le service gratuit et opérationnel sans facturer les utilisateurs.",
   guideModalHeading: "Comment configurer votre API OpenAI pour la transcription clinique Whisper",
-  guideModalText: "Pour utiliser cette application web, vous devez d'abord créer un profil API OpenAI, générer une clé API et approvisionner votre portefeuille OpenAI. Votre clé API est ensuite copiée et collée dans le champ prévu à cet effet. Une fois que vous appuyez sur Entrée, l'application enregistre temporairement la clé API pour votre session — cette clé vous relie aux serveurs d'OpenAI afin de permettre la transcription audio en texte et la génération de notes. Veuillez noter que chaque tâche effectuée vous est facturée immédiatement. Pour plus d'informations sur les coûts, veuillez consulter la section « Tarifs » sur la page d'accueil.<br><br><strong>1. Créez votre profil API OpenAI</strong><br>Pour commencer, vous devez créer un profil sur la plateforme API d'OpenAI. Ce profil sert de compte pour gérer vos clés API et votre facturation. Pour démarrer, rendez-vous sur la page d'<a href=\"https://platform.openai.com/signup\" style=\"color:blue;\">Inscription API OpenAI</a>. Suivez les instructions pour vous inscrire en fournissant votre adresse e-mail, en définissant un mot de passe et en vérifiant votre compte. Une fois inscrit, vous aurez accès à votre tableau de bord.<br><br><strong>2. Générez une clé API</strong><br>Après avoir créé votre profil, générez une clé API en vous rendant sur la page de <a href=\"https://platform.openai.com/account/api-keys\" style=\"color:blue;\">gestion des clés API</a>. Cliquez sur le bouton pour créer une nouvelle clé API. Important : Vous ne verrez votre clé API qu'une seule fois. Copiez-la immédiatement et stockez-la en lieu sûr (par exemple, dans un fichier texte) pour une utilisation future. Si vous perdez la clé ou suspectez qu'elle a été compromise, supprimez-la de votre compte et créez-en une nouvelle.<br><br><strong>3. Approvisionnez votre portefeuille OpenAI</strong><br>Pour que l'application web fonctionne, votre portefeuille OpenAI doit être suffisamment approvisionné. Rendez-vous sur la page <a href=\"https://platform.openai.com/account/billing/overview\" style=\"color:blue;\">Facturation et Paiement</a> pour ajouter des fonds. Vous pouvez transférer n'importe quel montant à tout moment. Tant que des fonds sont disponibles, vous pourrez utiliser le site — chaque tâche est facturée immédiatement.<br><br><strong>Rappel sur la sécurité de la session</strong><br>Lorsque vous vous connectez en entrant votre clé API, celle-ci est stockée temporairement dans votre session de navigateur. Cela signifie que si vous quittez le site, fermez votre navigateur ou éteignez votre ordinateur, la clé API ne sera pas enregistrée. Vous devrez la saisir à nouveau lors de votre prochaine utilisation de l'application, garantissant ainsi la sécurité de votre clé.",
+  guideModalText: "Pour utiliser cette application web, vous devez d'abord créer un profil API OpenAI, générer une clé API et approvisionner votre portefeuille OpenAI. Votre clé API est ensuite copiée et collée dans le champ prévu à cet effet. Une fois que vous appuyez sur Entrée, l'application enregistre temporairement la clé API pour votre session — cette clé vous relie aux serveurs d'OpenAI afin de permettre la transcription audio en texte et la génération de notes. Veuillez noter que chaque tâche effectuée vous est facturée immédiatement. Pour plus d'informations sur les coûts, veuillez consulter la section « Tarifs » sur la page d'accueil.",
   priceButton: "Prix",
   priceModalHeading: "Informations sur les coûts",
-  priceModalText: "# Informations sur les coûts\n\n## Tarification de la transcription audio en texte  \n   - **Coût :** 0,006 $ par minute.  \n     *Exemple :* Une consultation de 15 minutes coûtera 15 × 0,006 $ = **0,09 $** par consultation.\n\n## Tarification de la génération de notes  \n   - **Tarification basée sur les tokens :**  \n     - **Entrée (transcription + prompt) :** 10 $ par 1 000 000 tokens (soit 0,00001 $ par token).  \n     - **Sortie (note générée) :** 30 $ par 1 000 000 tokens (soit 0,00003 $ par token).\n\n       #### Exemple de calcul pour une consultation (génération de note uniquement)\n       1. **Calcul pour l'entrée :**  \n          - Supposons que la transcription de la consultation comporte environ **700 mots** et que vous ajoutiez un prompt de **30 mots**.  \n          - Total de mots = 700 + 30 = **730 mots**.  \n          - Tokens estimés = 730 × 0,75 ≈ **547,5 tokens**.  \n          - Coût de l'entrée = 547,5 tokens × 0,00001 $ ≈ **0,0055 $**.\n       2. **Calcul pour la sortie :**  \n          - Supposons que la note générée fasse environ **250 mots**.  \n          - Tokens estimés = 250 × 0,75 ≈ **187,5 tokens**.  \n          - Coût de la sortie = 187,5 tokens × 0,00003 $ ≈ **0,0056 $**.\n       3. **Coût total de la génération de note :**  \n          - Coût combiné ≈ 0,0055 $ + 0,0056 $ = **0,0111 $** par consultation.\n\n## Coût combiné approximatif par consultation  \n(pour une consultation/enregistrement de 15 minutes, utilisant les deux fonctions)  \n   - **Transcription audio en texte :** **0,09 $**  \n   - **Génération de notes :** **0,0111 $**  \n   - **Total :** Environ **0,101 $** par consultation.\n\n## Estimations mensuelles  \nEn supposant que vous effectuiez 20 consultations par jour, 4 jours par semaine, pendant 4 semaines par mois (20 × 4 × 4 = **320 consultations** par mois) :\n\n   1. **Utilisation de la transcription audio en texte uniquement** (avec génération de notes via votre propre compte ChatGPT, qui est pratiquement gratuit) :  \n      - Coût mensuel = 320 × 0,09 $ = **28,80 $**.\n   2. **Utilisation de la transcription audio en texte et de la génération de notes :**  \n      - Coût mensuel = 320 × 0,101 $ ≈ **32,32 $**.\n\n## Option alternative pour la génération de notes  \n   Si vous possédez déjà un compte OpenAI, vous pouvez utiliser la génération de notes via ChatGPT sur votre propre profil — ce qui est pratiquement gratuit. Dans ce cas, vous n'encourez que le coût de la transcription audio en texte lors de l'utilisation de cette application.\n\n## Flexibilité d'utilisation  \n   Contrairement aux fournisseurs qui exigent un abonnement mensuel, vous ne payez que par utilisation. Si vous prenez une journée de repos, partez en vacances ou si vous ne faites aucune activité, vos coûts seront nuls. Même si vous utilisez le service chaque jour pour toutes vos consultations, le coût par utilisation reste nettement inférieur à celui des autres fournisseurs.\n\n---\n\n**Avantage de la connexion directe**  \nNotre application web vous connecte directement à l'API OpenAI — sans intermédiaire, sans frais supplémentaires. Ce lien direct signifie que vous ne payez que pour le coût réel de traitement par l'IA, faisant de notre service l'une des solutions de transcription audio en texte et de génération de notes les plus abordables disponibles à ce jour.",
+  priceModalText: `
+    <h1>Informations sur les coûts</h1>
+    <h2>Tarification de la transcription audio en texte</h2>
+    <ul>
+      <li><strong>Coût :</strong> 0,006 $ par minute.</li>
+      <li><em>Exemple :</em> Une consultation de 15 minutes coûtera 15 × 0,006 $ = <strong>0,09 $</strong> par consultation.</li>
+    </ul>
+
+    <h2>Tarification de la génération de notes</h2>
+    <ul>
+      <li><strong>Tarification basée sur les tokens :</strong></li>
+      <ul>
+        <li><strong>Entrée (transcription + prompt) :</strong> 10 $ par 1 000 000 tokens (soit 0,00001 $ par token).</li>
+        <li><strong>Sortie (note générée) :</strong> 30 $ par 1 000 000 tokens (soit 0,00003 $ par token).</li>
+      </ul>
+    </ul>
+
+    <h3>Exemple de calcul pour une consultation (génération de note uniquement)</h3>
+    <ol>
+      <li>
+        <strong>Calcul pour l'entrée :</strong>
+        <ul>
+          <li>Supposons que la transcription de la consultation comporte environ <strong>700 mots</strong> et que vous ajoutiez un prompt de <strong>30 mots</strong>.</li>
+          <li>Total de mots = 700 + 30 = <strong>730 mots</strong>.</li>
+          <li>Tokens estimés = 730 × 0,75 ≈ <strong>547,5 tokens</strong>.</li>
+          <li>Coût de l'entrée = 547,5 tokens × 0,00001 $ ≈ <strong>0,0055 $</strong>.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Calcul pour la sortie :</strong>
+        <ul>
+          <li>Supposons que la note générée fasse environ <strong>250 mots</strong>.</li>
+          <li>Tokens estimés = 250 × 0,75 ≈ <strong>187,5 tokens</strong>.</li>
+          <li>Coût de la sortie = 187,5 tokens × 0,00003 $ ≈ <strong>0,0056 $</strong>.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Coût total de la génération de note :</strong> Coût combiné ≈ 0,0055 $ + 0,0056 $ = <strong>0,0111 $</strong> par consultation.
+      </li>
+    </ol>
+
+    <h2>Coût combiné approximatif par consultation</h2>
+    <p>(pour une consultation/enregistrement de 15 minutes, utilisant les deux fonctions)</p>
+    <ul>
+      <li><strong>Transcription audio en texte :</strong> <strong>0,09 $</strong></li>
+      <li><strong>Génération de notes :</strong> <strong>0,0111 $</strong></li>
+      <li><strong>Total :</strong> Environ <strong>0,101 $</strong> par consultation.</li>
+    </ul>
+
+    <h2>Estimations mensuelles</h2>
+    <p>En supposant que vous effectuiez 20 consultations par jour, 4 jours par semaine, pendant 4 semaines par mois (20 × 4 × 4 = <strong>320 consultations</strong> par mois) :</p>
+    <ul>
+      <li>
+        <strong>Utilisation de la transcription audio en texte uniquement</strong> (avec génération de notes via votre propre compte ChatGPT, qui est pratiquement gratuit) :<br>
+        Coût mensuel = 320 × 0,09 $ = <strong>28,80 $</strong>.
+      </li>
+      <li>
+        <strong>Utilisation de la transcription audio en texte et de la génération de notes :</strong><br>
+        Coût mensuel = 320 × 0,101 $ ≈ <strong>32,32 $</strong>.
+      </li>
+    </ul>
+
+    <h2>Option alternative pour la génération de notes</h2>
+    <p>
+      Si vous possédez déjà un compte OpenAI, vous pouvez utiliser la génération de notes via ChatGPT sur votre propre profil — ce qui est pratiquement gratuit. Dans ce cas, vous n'encourez que le coût de la transcription audio en texte lors de l'utilisation de cette application.
+    </p>
+
+    <h2>Flexibilité d'utilisation</h2>
+    <p>
+      Contrairement aux fournisseurs qui exigent un abonnement mensuel, vous ne payez que par utilisation. Si vous prenez une journée de repos, partez en vacances ou si vous ne faites aucune activité, vos coûts seront nuls. Même si vous utilisez le service chaque jour pour toutes vos consultations, le coût par utilisation reste nettement inférieur à celui des autres fournisseurs.
+    </p>
+
+    <hr>
+
+    <h2>Avantage de la connexion directe</h2>
+    <p>
+      Notre application web vous connecte directement à l'API OpenAI — sans intermédiaire, sans frais supplémentaires. Ce lien direct signifie que vous ne payez que pour le coût réel de traitement par l'IA, faisant de notre service l'une des solutions de transcription audio en texte et de génération de notes les plus abordables disponibles à ce jour.
+    </p>
+  `,
 };
 
 export const transcribeTranslations = {

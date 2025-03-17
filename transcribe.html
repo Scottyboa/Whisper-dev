@@ -46,23 +46,27 @@
       border-bottom: 1px solid #ddd;
       padding-bottom: 20px;
     }
+    .recording-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
     .timer {
       font-size: 18px;
       margin-bottom: 10px;
       color: #333;
     }
-    /* Styling for the Cost Usage Overview Link */
+    /* Style the cost overview hyperlink */
     #openaiUsageLink {
-      font-size: 20px;
-      font-weight: bold;
-      text-align: center;
-      display: block;
-      margin: 0 auto 10px;
-      text-decoration: none;
-      color: #5a9;
+      font-size: inherit;
+      font-family: inherit;
+      text-decoration: underline;
+      color: blue;
+      margin: 0;
     }
     #openaiUsageLink:hover {
-      color: #489;
+      color: darkblue;
     }
     /* Auto-resizing Textareas */
     #transcription, #generatedNote, #customPrompt {
@@ -203,9 +207,10 @@
     <main class="main-content">
       <!-- Recording Area -->
       <div class="recording-area">
-        <h3 id="recordingAreaTitle">Recording Area</h3>
-        <!-- Moved the cost usage overview hyperlink here -->
-        <a id="openaiUsageLink" href="https://platform.openai.com/usage" target="_blank">Cost usage overview</a>
+        <div class="recording-header">
+          <h3 id="recordingAreaTitle">Recording Area</h3>
+          <a id="openaiUsageLink" href="https://platform.openai.com/usage" target="_blank" rel="noopener noreferrer">Cost usage overview</a>
+        </div>
         <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
         <div id="transcribeTimer" class="timer">Completion Timer: 0 sec</div>
         <textarea id="transcription" placeholder="Transcription result will appear here..."></textarea>

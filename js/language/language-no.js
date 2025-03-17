@@ -107,10 +107,10 @@ Vår webapp kobler deg direkte til OpenAI API – ingen mellomledd, ingen ekstra
 
 export const transcribeTranslations = {
   pageTitle: "Transkripsjonsverktøy.",
-  openaiUsageLinkText: "Kostnadsoversikt OpenAI",
+  openaiUsageLinkText: "OpenAI - Kostnadsoversikt",
   btnFunctions: "Functions",
   btnGuide: "Guide",
-  recordingAreaTitle: "Recording Area",
+  recordingAreaTitle: "Opptaksområde",
   recordTimer: "Opptak Timer: 0 sec",
   transcribeTimer: "Fullføring Timer: 0 sec",
   transcriptionPlaceholder: "Diktat vil oppstå her...",
@@ -132,9 +132,9 @@ export const transcribeTranslations = {
 <ul>
   <li><strong>Recording:</strong> Click "Start Recording" to begin capturing audio. Klikk "Start Opptak" for å begynne opptak og transkripsjon.</li>
   <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. Når du klikker "Stopp Opptak" så vil opptaket stoppe. Fullføringss-timeren vil så "tikke" til transkriptsjonen er fullført. Dette tar vanligvis mellom 5-10 sec.</li>
-  <li><strong>Note Generation:</strong> After transcription, click "Generate Note" to produce a note based on your transcript and custom prompt. Etter at transkripsjonen er fullført så kan du klikke på "Generer notat", som da vil generere et notat basert på din egen prompt.</li>
+  <li><strong>Note Generation:</strong> Etter at transkripsjonen er fullført så kan du klikke på "Generer notat", som da vil generere et notat basert på din egen prompt.</li>
   <li><strong>Custom Prompt:</strong> Til høyre, velg en prompt "slot"(1-10), og lag din egen skreddersydde "prompt". Disse vil lagres lokalt på din enhet og kobles til din API-nøkkel, slik at de vil være der igjen når du går inn i webappen på et senere tidspunkt.</li>
   <li><strong>Guide Toggle:</strong> Bruk "Funksjoner" og "Guide" knappene til å bytte mellom funksjon og guide vinduet.</li>
 </ul>
-Please click "Functions" to return to the main interface. Vennligst klikk "Funksjoner" for å returnere til funksjonsvinduet.`,
+Vennligst klikk "Funksjoner" for å returnere til funksjonsvinduet.`,
 };

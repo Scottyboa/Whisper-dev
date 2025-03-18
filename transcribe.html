@@ -59,7 +59,7 @@
     }
     /* Style the cost overview hyperlink */
     #openaiUsageLink {
-      font-size: 20px;
+      font-size: inherit;
       font-family: inherit;
       text-decoration: underline;
       color: blue;
@@ -278,6 +278,26 @@
     <button id="cmp-accept">Accept</button>
     <button id="cmp-manage">Manage</button>
   </div>
+  <!-- Inline script to toggle the guide overlay on the transcribe page -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const btnGuide = document.getElementById("btnGuide");
+      const btnFunctions = document.getElementById("btnFunctions");
+      const guideView = document.getElementById("guideView");
+      
+      if (btnGuide && guideView) {
+        btnGuide.addEventListener("click", function() {
+          guideView.style.display = "block";
+        });
+      }
+      
+      if (btnFunctions && guideView) {
+        btnFunctions.addEventListener("click", function() {
+          guideView.style.display = "none";
+        });
+      }
+    });
+  </script>
   <!-- Import the main module to initialize language, recording, note generation, and UI functionalities -->
   <script type="module" src="./js/main.js"></script>
 </body>

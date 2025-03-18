@@ -38,6 +38,21 @@ Denne nettsiden er helt gratis å bruke – den eneste kostnaden du pådrar deg 
 Det eneste jeg ber om, er at du aksepterer annonser, som bidrar til å dekke kostnadene for backend-servere.<br>
 Etter hvert som flere benytter nettsiden, vil kostnadene til hosting og drift øke, og annonseinntektene sikrer at jeg kan holde tjenesten gratis og i drift uten å belaste brukerne.`,
   
+  guideModalHeading: "Slik setter du opp din OpenAI API for Whisper Klinisk Transkripsjon",
+  guideModalText: `For å bruke denne webappen, må du først opprette en OpenAI API-profil, generere en API-nøkkel og sørge for at din OpenAI-lommebok har tilstrekkelige midler. API-nøkkelen kopieres deretter og limes inn i det angitte feltet. Når du trykker på "Enter", lagrer webappen API-nøkkelen midlertidig for økten – denne nøkkelen kobler deg til OpenAI-serverne slik at tale-til-tekst-transkripsjon og notatgenerering kan fungere. Vennligst merk at du belastes umiddelbart per utført oppgave. For mer informasjon om kostnader, se "Kostnad"-seksjonen på forsiden.
+<br><br>
+<strong>1. Opprett din OpenAI API-profil</strong><br>
+For å komme i gang, må du opprette en profil på OpenAI API-plattformen. Denne profilen fungerer som din konto for administrasjon av API-nøkler og fakturering. For å starte, besøk <a href="https://platform.openai.com/signup" style="color:blue;">OpenAI API Registrering</a>. Følg instruksjonene ved å oppgi e-postadressen din, sette et passord og bekrefte kontoen din. Når du er registrert, får du tilgang til dashbordet ditt.
+<br><br>
+<strong>2. Generer en API-nøkkel</strong><br>
+Etter at du har opprettet profilen din, generer en API-nøkkel ved å gå til <a href="https://platform.openai.com/account/api-keys" style="color:blue;">API-nøkkeladministrasjonen</a>. Klikk på knappen for å opprette en ny API-nøkkel. Viktig: Du vil kun se nøkkelen én gang. Kopier den umiddelbart og oppbevar den sikkert (f.eks. i en tekstfil). Hvis du mister nøkkelen eller mistenker at den har blitt kompromittert, slett den og opprett en ny.
+<br><br>
+<strong>3. Sett inn midler på din OpenAI-lommebok</strong><br>
+For at webappen skal fungere, må din OpenAI-lommebok ha tilstrekkelige midler. Besøk <a href="https://platform.openai.com/account/billing/overview" style="color:blue;">Fakturerings- og betalingsside</a> for å sette inn midler. Du kan overføre hvilket som helst beløp når som helst. Så lenge midlene er tilgjengelige, vil du kunne bruke siden – hver oppgave belastes umiddelbart.
+<br><br>
+<strong>Sikkerhetsmerknad for økten</strong><br>
+Når du logger inn ved å skrive inn API-nøkkelen, lagres den kun midlertidig i nettleserøkten din. Dette betyr at hvis du forlater nettsiden, lukker nettleseren eller slår av datamaskinen, vil ikke API-nøkkelen bli lagret. Du må skrive den inn på nytt neste gang du bruker webappen, noe som sikrer at nøkkelen din forblir sikker.`,
+  
   priceButton: "Pris",
   priceModalHeading: "Kostnadsinformasjon",
   priceModalText: `
@@ -83,7 +98,7 @@ Etter hvert som flere benytter nettsiden, vil kostnadene til hosting og drift ø
     <li><strong>Totalt:</strong> Omtrent <strong>$0.101</strong> per konsultasjon.</li>
   </ul>
   <h2>Månedlige kostnadsestimater</h2>
-  <p>Forutsatt at du gjennomfører 20 konsultasjoner per dag, 4 dager per uke, over 4 uker per måned (20 × 4 × 4 = <strong>320 konsultasjoner</strong> per måned):</p>
+  <p>Dersom du gjennomfører 20 konsultasjoner per dag, 4 dager i uken, over 4 uker i måneden (20 × 4 × 4 = <strong>320 konsultasjoner</strong> per måned):</p>
   <ol>
     <li>
       <strong>Kun tale-til-tekst</strong> (med notisgenerering via din egen ChatGPT-konto, som i praksis er gratis):<br>
@@ -97,7 +112,7 @@ Etter hvert som flere benytter nettsiden, vil kostnadene til hosting og drift ø
   <h2>Alternativ for notisgenerering</h2>
   <p>Hvis du allerede har en OpenAI-konto, kan du bruke notisgenerering via ChatGPT på din egen profil – som i praksis er gratis. I så fall påløper kun kostnaden for tale-til-tekst når du bruker denne webappen.</p>
   <h2>Fleksibilitet i bruken</h2>
-  <p>I motsetning til leverandører som krever et månedlig abonnement, betaler du kun for faktisk bruk. Hvis du tar en fridag, drar på ferie, eller har en periode uten aktivitet, vil kostnadene dine være null. Selv om du bruker tjenesten daglig for alle dine pasientkonsultasjoner, forblir kostnaden per oppgave betydelig lavere sammenlignet med andre leverandører.</p>
+  <p>I motsetning til leverandører som krever et månedlig abonnement, betaler du kun for faktisk bruk. Om du tar en fridag, drar på ferie eller har en periode uten aktivitet, vil kostnadene dine være null. Selv om du bruker tjenesten daglig for alle dine pasientkonsultasjoner, forblir kostnaden per oppgave betydelig lavere enn hos andre leverandører.</p>
   <hr>
   <h2>Fordel med direkte tilkobling</h2>
   <p>Vår webapp kobler deg direkte til OpenAI API – ingen mellomledd, ingen ekstra avgifter. Denne direkte tilkoblingen betyr at du kun betaler for den faktiske AI-behandlingskostnaden, noe som gjør vår tjeneste til en av de mest prisgunstige løsningene for tale-til-tekst og notisgenerering som er tilgjengelig i dag.</p>
@@ -130,11 +145,13 @@ export const transcribeTranslations = {
   guideText: `Velkommen til Whisper Transkripsjonsverktøy. Denne applikasjonen gir medisinske fagpersoner, terapeuter og andre behandlere muligheten til å ta opp og transkribere konsultasjoner, samt generere profesjonelle notater ved hjelp av en AI-drevet notatgenerator.<br><br>
 <strong>Slik bruker du funksjonene:</strong>
 <ul>
-  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å begynne å ta opp lyd. Hvert 40. sekund vil et segment av lyd automatisk bli sendt til OpenAI-serverne for transkripsjon. Transkripsjonene vil bli mottatt én etter én i tekstfeltet for transkripsjon.</li>
+  <li><strong>Opptak:</strong> Klikk på "Start opptak" for å begynne å ta opp lyd. Hvert 40. sekund vil et lydsegment automatisk bli sendt til OpenAI-serverne for transkripsjon. Transkripsjonene vil vises én etter én i tekstfeltet.</li>
   <li><strong>Fullføring:</strong> Etter at du klikker på "Stopp/Fullfør", stopper opptaket. Fullføringstimeren går deretter til den fullstendige transkripsjonen er mottatt. Dette tar vanligvis mellom 5 og 10 sekunder.</li>
-  <li><strong>Notatgenerering:</strong> Etter transkripsjonen, klikk på "Generer notat" for å lage et notat basert på transkripsjonen din og din tilpassede prompt.</li>
-  <li><strong>Tilpasset prompt:</strong> Til høyre, velg en prompt slot (1–10) og skriv inn din tilpassede prompt. Prompten lagres automatisk og knyttes til din API-nøkkel.</li>
-  <li><strong>Guide-bryter:</strong> Bruk knappene "Funksjoner" og "Guide" for å bytte mellom funksjonsvisningen og denne guiden.</li>
+  <li><strong>Notatgenerering:</strong> Etter transkripsjonen klikker du på "Generer notat" for å lage et notat basert på transkripsjonen din og din tilpassede prompt.</li>
+  <li><strong>Tilpasset prompt:</strong> Til høyre, velg en prompt slot (1–10) og skriv inn din tilpassede prompt. Denne lagres automatisk og knyttes til din API-nøkkel.</li>
+  <li><strong>Guide-bryter:</strong> Bruk knappene "Funksjoner" og "Guide" for å bytte mellom hovedvisningen og denne guiden.</li>
 </ul>
 Vennligst klikk på "Funksjoner" for å gå tilbake til hovedgrensesnittet.`,
 };
+
+export default { indexTranslations, transcribeTranslations };

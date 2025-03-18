@@ -1,5 +1,3 @@
-// js/languageLoaderUsage.js
-
 import { loadLanguageModule } from './languageLoader.js';
 
 // For the index page
@@ -55,6 +53,11 @@ function updateIndexUI(trans) {
   const guideContent = document.getElementById("guide-p1");
   if (guideContent) {
     guideContent.innerHTML = trans.guideModalText;
+    // Automatically modify all links in the guide to open in a new tab
+    guideContent.querySelectorAll("a").forEach(anchor => {
+      anchor.setAttribute("target", "_blank");
+      anchor.setAttribute("rel", "noopener noreferrer");
+    });
   }
   
   // Update Price Modal content

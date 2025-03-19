@@ -17,4 +17,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize the consent banner and ad loading.
   initConsentBanner();
+
+  // Add hotkey for the "r" key to trigger the "Start Recording" button,
+  // but only when not inside an editable text field.
+  document.addEventListener('keydown', (event) => {
+    const activeElement = document.activeElement;
+    // Check if the active element is an input, textarea, or a contentEditable element.
+    if (
+      activeElement &&
+      (activeElement.tagName === 'INPUT' ||
+       activeElement.tagName === 'TEXTAREA' ||
+       activeElement.isContentEditable)
+    ) {
+      return;
+    }
+    // Check if the pressed key is "r" (case-insensitive).
+    if (event.key.toLowerCase() === 'r') {
+      const startButton = document.getElementById('startButton');
+      if (startButton) {
+        startButton.click();
+      }
+    }
+  });
 });

@@ -24,11 +24,12 @@ function getCookie(name) {
   return null;
 }
 
-// Dynamically loads the AdSense script.
+// Dynamically loads the AdSense script with the proper client parameter and crossorigin attribute.
 function loadAdSense() {
   const script = document.createElement("script");
   script.async = true;
-  script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+  script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3747901131960450";
+  script.setAttribute("crossorigin", "anonymous");
   document.head.appendChild(script);
   (adsbygoogle = window.adsbygoogle || []).push({});
 }

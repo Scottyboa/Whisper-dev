@@ -126,14 +126,11 @@
       flex-direction: column;
       align-items: center;
     }
+    /* Updated Ad Unit Container */
     #adUnit {
       width: 100%;
-      height: 200px;
-      background-color: #ddd;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
+      height: auto;
+      text-align: center;
       margin-bottom: 10px;
     }
     /* Guide Overlay */
@@ -251,7 +248,16 @@
     <!-- Right Sidebar (Ad Area) -->
     <aside class="ad-sidebar">
       <div id="adArea">
-        <div id="adUnit">Your Ad Here</div>
+        <!-- AdSense Ad Unit -->
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-3747901131960450"
+             data-ad-slot="YOUR_AD_SLOT_ID"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>
+          (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
       </div>
     </aside>
   </div>
@@ -259,6 +265,8 @@
   <div id="guideView">
     <h3 id="guideHeading">Guide & Instructions</h3>
     <p id="guideText">
+      <!-- Guide content will be populated here -->
+    </p>
   </div>
   <!-- Consent Banner -->
   <div id="cmp-banner">

@@ -416,7 +416,7 @@ function pollChunkTranscript(chunkNum, currentGroup) {
       logDebug(`Polling stopped for chunk ${chunkNum} due to session change.`);
       return;
     }
-    if (Date.now() - pollStart > 60000) {
+    if (Date.now() - pollStart > 120000) {
       logInfo(`Polling timeout for chunk ${chunkNum}`);
       clearInterval(pollingIntervals[chunkNum]);
       return;

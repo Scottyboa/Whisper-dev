@@ -70,8 +70,9 @@ function initConsentBanner() {
   }
 }
 
-// === Guide Overlay for Index Page ===
-// This function initializes the API key guide overlay on the index page.
+// === Guide Overlay (Index Page) ===
+
+// Initializes the API key guide overlay and the enter button event listener.
 function initGuideOverlay() {
   const overlay = document.getElementById("apiKeyGuideOverlay");
   const closeGuide = document.getElementById("closeGuideBtn");
@@ -79,6 +80,7 @@ function initGuideOverlay() {
   const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");
   const apiKeyInput = document.getElementById("apiKeyInput");
 
+  // Check if overlay and openGuideButton exist
   if (openGuideButton && overlay) {
     openGuideButton.addEventListener("click", () => {
       overlay.style.display = "flex";
@@ -99,6 +101,7 @@ function initGuideOverlay() {
     console.error("Close guide button element missing.");
   }
 
+  // Attach event listener to enter button.
   if (enterTranscriptionBtn && apiKeyInput) {
     enterTranscriptionBtn.addEventListener("click", () => {
       console.log("Enter button clicked.");
@@ -117,31 +120,4 @@ function initGuideOverlay() {
   }
 }
 
-// === Guide Overlay for Transcribe Page ===
-// This function uses delegated event handling via document.body using closest() so that
-// the guide button remains responsive even after recording or DOM updates.
-function initTranscribeGuideOverlay() {
-  document.body.addEventListener("click", function(event) {
-    const btnGuide = event.target.closest("#btnGuide");
-    if (btnGuide) {
-      const guideView = document.getElementById("guideView");
-      if (guideView) {
-        guideView.style.display = "block";
-      } else {
-        console.error("Guide overlay not found.");
-      }
-    }
-
-    const closeGuide = event.target.closest("#closeGuide");
-    if (closeGuide) {
-      const guideView = document.getElementById("guideView");
-      if (guideView) {
-        guideView.style.display = "none";
-      } else {
-        console.error("Guide overlay not found.");
-      }
-    }
-  });
-}
-
-export { initConsentBanner, initGuideOverlay, initTranscribeGuideOverlay };
+export { initConsentBanner, initGuideOverlay };

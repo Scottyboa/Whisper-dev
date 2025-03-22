@@ -150,7 +150,6 @@
       overflow-y: auto;
       z-index: 2000;
     }
-    #guideView.active { display: block; }
     /* Language Dropdown in Sidebar */
     #lang-container-transcribe {
       position: absolute;
@@ -276,4 +275,13 @@
   </div>
   <!-- Consent Banner -->
   <div id="cmp-banner">
-    <span id="consent-text">This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads
+    <span id="consent-text">This website is free to use because we rely solely on ad revenue. We use cookies to personalize ads and improve your experience. By clicking "Accept", you consent to the use of cookies.</span>
+    <button id="cmp-accept">Accept</button>
+    <button id="cmp-manage">Manage</button>
+  </div>
+  <!-- Removed inline script for guide overlay.
+       All event listeners will now be initialized via our module scripts. -->
+  <!-- Import the main module to initialize language, recording, note generation, UI, and guide overlay functionalities -->
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

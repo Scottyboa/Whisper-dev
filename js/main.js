@@ -3,7 +3,7 @@
 import { initTranscribeLanguage } from './languageLoaderUsage.js';
 import { initRecording } from './recording.js';
 import { initNoteGeneration } from './noteGeneration.js';
-import { initConsentBanner } from './ui.js';
+import { initConsentBanner, initTranscribeGuideOverlay } from './ui.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize language support for the transcribe page.
@@ -18,11 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize the consent banner and ad loading.
   initConsentBanner();
 
-  // Add hotkey for the "r" key to trigger the "Start Recording" button,
-  // but only when not inside an editable text field.
+  // Initialize the guide overlay for the transcribe page.
+  initTranscribeGuideOverlay();
+
+  // Add a hotkey for the "r" key to trigger the "Start Recording" button,
+  // but only when not inside an editable field.
   document.addEventListener('keydown', (event) => {
     const activeElement = document.activeElement;
-    // Check if the active element is an input, textarea, or a contentEditable element.
     if (
       activeElement &&
       (activeElement.tagName === 'INPUT' ||
@@ -31,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     ) {
       return;
     }
-    // Check if the pressed key is "r" (case-insensitive).
     if (event.key.toLowerCase() === 'r') {
       const startButton = document.getElementById('startButton');
       if (startButton) {

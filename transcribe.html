@@ -150,6 +150,7 @@
       overflow-y: auto;
       z-index: 2000;
     }
+    #guideView.active { display: block; }
     /* Language Dropdown in Sidebar */
     #lang-container-transcribe {
       position: absolute;
@@ -181,26 +182,13 @@
       box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
     }
     #cmp-banner button { margin-left: 10px; padding: 8px 16px; }
-    
-    /* Close Guide Button */
-    .close-guide-button {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: transparent;
-      border: none;
-      font-size: 28px;
-      font-weight: bold;
-      color: red;
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
   <div class="grid-container">
     <!-- Left Sidebar -->
     <aside class="sidebar">
-      <!-- Only the Guide button is present now -->
+      <button id="btnFunctions">Functions</button>
       <button id="btnGuide">Guide</button>
       <!-- Language dropdown -->
       <div id="lang-container-transcribe">
@@ -269,9 +257,8 @@
   </div>
   <!-- Guide Overlay -->
   <div id="guideView">
-    <button id="closeGuide" class="close-guide-button">×</button>
     <h3 id="guideHeading">Guide & Instructions</h3>
-    <p id="guideText"></p>
+    <p id="guideText">
   </div>
   <!-- Consent Banner -->
   <div id="cmp-banner">
@@ -279,9 +266,27 @@
     <button id="cmp-accept">Accept</button>
     <button id="cmp-manage">Manage</button>
   </div>
-  <!-- Removed inline script for guide overlay.
-       All event listeners will now be initialized via our module scripts. -->
-  <!-- Import the main module to initialize language, recording, note generation, UI, and guide overlay functionalities -->
+  <!-- Inline script to toggle the guide overlay on the transcribe page -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const btnGuide = document.getElementById("btnGuide");
+      const btnFunctions = document.getElementById("btnFunctions");
+      const guideView = document.getElementById("guideView");
+      
+      if (btnGuide && guideView) {
+        btnGuide.addEventListener("click", function() {
+          guideView.style.display = "block";
+        });
+      }
+      
+      if (btnFunctions && guideView) {
+        btnFunctions.addEventListener("click", function() {
+          guideView.style.display = "none";
+        });
+      }
+    });
+  </script>
+  <!-- Import the main module to initialize language, recording, note generation, and UI functionalities -->
   <script type="module" src="./js/main.js"></script>
 </body>
 </html>

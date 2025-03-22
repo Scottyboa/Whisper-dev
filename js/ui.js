@@ -118,27 +118,27 @@ function initGuideOverlay() {
 }
 
 // === Guide Overlay for Transcribe Page ===
-// This function initializes the guide overlay on the transcribe page.
+// Instead of binding events directly to the buttons (which might be lost if the element is re-rendered),
+// we attach a delegated event listener on the document body.
 function initTranscribeGuideOverlay() {
-  const btnGuide = document.getElementById("btnGuide");
-  const guideView = document.getElementById("guideView");
-  const closeGuide = document.getElementById("closeGuide");
-
-  if (btnGuide && guideView) {
-    btnGuide.addEventListener("click", function() {
-      guideView.style.display = "block";
-    });
-  } else {
-    console.error("Guide button or guide overlay missing on transcribe page.");
-  }
-
-  if (closeGuide && guideView) {
-    closeGuide.addEventListener("click", function() {
-      guideView.style.display = "none";
-    });
-  } else {
-    console.error("Close guide button or guide overlay missing on transcribe page.");
-  }
+  document.body.addEventListener("click", function(event) {
+    if (event.target && event.target.id === "btnGuide") {
+      const guideView = document.getElementById("guideView");
+      if (guideView) {
+        guideView.style.display = "block";
+      } else {
+        console.error("Guide overlay not found.");
+      }
+    }
+    if (event.target && event.target.id === "closeGuide") {
+      const guideView = document.getElementById("guideView");
+      if (guideView) {
+        guideView.style.display = "none";
+      } else {
+        console.error("Guide overlay not found.");
+      }
+    }
+  });
 }
 
 export { initConsentBanner, initGuideOverlay, initTranscribeGuideOverlay };

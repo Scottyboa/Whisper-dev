@@ -188,7 +188,7 @@
   <div class="grid-container">
     <!-- Left Sidebar -->
     <aside class="sidebar">
-      <button id="btnFunctions">Functions</button>
+      <!-- Removed Functions button -->
       <button id="btnGuide">Guide</button>
       <!-- Language dropdown -->
       <div id="lang-container-transcribe">
@@ -257,8 +257,12 @@
   </div>
   <!-- Guide Overlay -->
   <div id="guideView">
+    <!-- Red cross exit icon -->
+    <span id="closeGuide" style="position: absolute; top: 10px; right: 10px; font-size: 24px; cursor: pointer; color: red;">&times;</span>
     <h3 id="guideHeading">Guide & Instructions</h3>
     <p id="guideText">
+      <!-- Your guide content here -->
+    </p>
   </div>
   <!-- Consent Banner -->
   <div id="cmp-banner">
@@ -270,8 +274,8 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       const btnGuide = document.getElementById("btnGuide");
-      const btnFunctions = document.getElementById("btnFunctions");
       const guideView = document.getElementById("guideView");
+      const closeGuide = document.getElementById("closeGuide");
       
       if (btnGuide && guideView) {
         btnGuide.addEventListener("click", function() {
@@ -279,8 +283,8 @@
         });
       }
       
-      if (btnFunctions && guideView) {
-        btnFunctions.addEventListener("click", function() {
+      if (closeGuide && guideView) {
+        closeGuide.addEventListener("click", function() {
           guideView.style.display = "none";
         });
       }

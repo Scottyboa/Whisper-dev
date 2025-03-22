@@ -1,5 +1,3 @@
-// js/languageLoaderUsage.js
-
 import { loadLanguageModule } from './languageLoader.js';
 
 // For the index page
@@ -141,13 +139,7 @@ export async function initTranscribeLanguage() {
 function updateTranscribeUI(trans) {
   document.getElementById("page-title-transcribe").textContent = trans.pageTitle;
   document.getElementById("openaiUsageLink").textContent = trans.openaiUsageLinkText;
-  
-  // Only update btnFunctions if it exists (it may have been removed)
-  const btnFunctions = document.getElementById("btnFunctions");
-  if (btnFunctions) {
-    btnFunctions.textContent = trans.btnFunctions;
-  }
-  
+  document.getElementById("btnFunctions").textContent = trans.btnFunctions;
   document.getElementById("btnGuide").textContent = trans.btnGuide;
   document.getElementById("recordingAreaTitle").textContent = trans.recordingAreaTitle;
   document.getElementById("recordTimer").textContent = trans.recordTimer;

@@ -70,9 +70,8 @@ function initConsentBanner() {
   }
 }
 
-// === Guide Overlay (Index Page) ===
-
-// Initializes the API key guide overlay and the enter button event listener.
+// === Guide Overlay for Index Page ===
+// This function initializes the API key guide overlay on the index page.
 function initGuideOverlay() {
   const overlay = document.getElementById("apiKeyGuideOverlay");
   const closeGuide = document.getElementById("closeGuideBtn");
@@ -80,7 +79,6 @@ function initGuideOverlay() {
   const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");
   const apiKeyInput = document.getElementById("apiKeyInput");
 
-  // Check if overlay and openGuideButton exist
   if (openGuideButton && overlay) {
     openGuideButton.addEventListener("click", () => {
       overlay.style.display = "flex";
@@ -101,7 +99,6 @@ function initGuideOverlay() {
     console.error("Close guide button element missing.");
   }
 
-  // Attach event listener to enter button.
   if (enterTranscriptionBtn && apiKeyInput) {
     enterTranscriptionBtn.addEventListener("click", () => {
       console.log("Enter button clicked.");
@@ -120,4 +117,28 @@ function initGuideOverlay() {
   }
 }
 
-export { initConsentBanner, initGuideOverlay };
+// === Guide Overlay for Transcribe Page ===
+// This function initializes the guide overlay on the transcribe page.
+function initTranscribeGuideOverlay() {
+  const btnGuide = document.getElementById("btnGuide");
+  const guideView = document.getElementById("guideView");
+  const closeGuide = document.getElementById("closeGuide");
+
+  if (btnGuide && guideView) {
+    btnGuide.addEventListener("click", function() {
+      guideView.style.display = "block";
+    });
+  } else {
+    console.error("Guide button or guide overlay missing on transcribe page.");
+  }
+
+  if (closeGuide && guideView) {
+    closeGuide.addEventListener("click", function() {
+      guideView.style.display = "none";
+    });
+  } else {
+    console.error("Close guide button or guide overlay missing on transcribe page.");
+  }
+}
+
+export { initConsentBanner, initGuideOverlay, initTranscribeGuideOverlay };

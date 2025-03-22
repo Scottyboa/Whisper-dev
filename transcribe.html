@@ -97,7 +97,7 @@
     }
     button:hover { background-color: #489; }
     button:active { transform: scale(0.98); }
-    /* Custom style for disabled buttons */
+    /* Disabled Button Styles */
     button:disabled {
       background-color: #ccc;
       color: #666;
@@ -150,6 +150,7 @@
       overflow-y: auto;
       z-index: 2000;
     }
+    /* When active, the overlay displays as block */
     #guideView.active { display: block; }
     /* Language Dropdown in Sidebar */
     #lang-container-transcribe {
@@ -160,9 +161,7 @@
       align-items: center;
       gap: 8px;
     }
-    /* Increased size for language icon */
     #lang-icon-transcribe { width: 36px; height: 36px; }
-    /* Increased font-size for language select */
     #lang-select-transcribe {
       font-size: 18px;
       padding: 4px;
@@ -188,9 +187,9 @@
   <div class="grid-container">
     <!-- Left Sidebar -->
     <aside class="sidebar">
-      <button id="btnFunctions">Functions</button>
+      <!-- "Functions" button removed; only the "Guide" button remains -->
       <button id="btnGuide">Guide</button>
-      <!-- Language dropdown -->
+      <!-- Language Dropdown -->
       <div id="lang-container-transcribe">
         <img src="language-icon.png" alt="Language Icon" id="lang-icon-transcribe">
         <select id="lang-select-transcribe">
@@ -255,10 +254,12 @@
       </div>
     </aside>
   </div>
-  <!-- Guide Overlay -->
+  <!-- Guide Overlay (toggled by the "Guide" button, no separate close button) -->
   <div id="guideView">
     <h3 id="guideHeading">Guide & Instructions</h3>
     <p id="guideText">
+      <!-- Guide content will be injected via the language modules -->
+    </p>
   </div>
   <!-- Consent Banner -->
   <div id="cmp-banner">
@@ -266,27 +267,19 @@
     <button id="cmp-accept">Accept</button>
     <button id="cmp-manage">Manage</button>
   </div>
-  <!-- Inline script to toggle the guide overlay on the transcribe page -->
+  <!-- Inline Script to Toggle Guide Overlay -->
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       const btnGuide = document.getElementById("btnGuide");
-      const btnFunctions = document.getElementById("btnFunctions");
       const guideView = document.getElementById("guideView");
-      
       if (btnGuide && guideView) {
         btnGuide.addEventListener("click", function() {
-          guideView.style.display = "block";
-        });
-      }
-      
-      if (btnFunctions && guideView) {
-        btnFunctions.addEventListener("click", function() {
-          guideView.style.display = "none";
+          guideView.classList.toggle("active");
         });
       }
     });
   </script>
-  <!-- Import the main module to initialize language, recording, note generation, and UI functionalities -->
+  <!-- Import Main Module (initializes language, recording, note generation, and consent functionalities) -->
   <script type="module" src="./js/main.js"></script>
 </body>
 </html>

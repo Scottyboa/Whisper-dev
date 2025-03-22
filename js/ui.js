@@ -118,11 +118,12 @@ function initGuideOverlay() {
 }
 
 // === Guide Overlay for Transcribe Page ===
-// Instead of binding events directly to the buttons (which might be lost if the element is re-rendered),
-// we attach a delegated event listener on the document body.
+// This function uses delegated event handling via document.body using closest() so that
+// the guide button remains responsive even after recording or DOM updates.
 function initTranscribeGuideOverlay() {
   document.body.addEventListener("click", function(event) {
-    if (event.target && event.target.id === "btnGuide") {
+    const btnGuide = event.target.closest("#btnGuide");
+    if (btnGuide) {
       const guideView = document.getElementById("guideView");
       if (guideView) {
         guideView.style.display = "block";
@@ -130,7 +131,9 @@ function initTranscribeGuideOverlay() {
         console.error("Guide overlay not found.");
       }
     }
-    if (event.target && event.target.id === "closeGuide") {
+
+    const closeGuide = event.target.closest("#closeGuide");
+    if (closeGuide) {
       const guideView = document.getElementById("guideView");
       if (guideView) {
         guideView.style.display = "none";

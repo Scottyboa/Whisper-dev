@@ -28,8 +28,8 @@ function logError(message, ...optionalParams) {
   console.error(new Date().toISOString(), "[ERROR]", message, ...optionalParams);
 }
 
-const MIN_CHUNK_DURATION = 45000; // 45 seconds
-const MAX_CHUNK_DURATION = 45000; // 45 seconds
+const MIN_CHUNK_DURATION = 120000; // 45 seconds
+const MAX_CHUNK_DURATION = 120000; // 45 seconds
 const watchdogThreshold = 1500;   // 1,5 seconds with no frame
 const backendUrl = "https://whisper-dev-backend.fly.dev";
 

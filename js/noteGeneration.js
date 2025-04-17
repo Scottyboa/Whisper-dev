@@ -123,7 +123,8 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + apiKey
+        "Authorization": "Bearer " + apiKey,
+        "x-openai-api-data-collection-opt-out": "true"  // ✅ This disables 30-day storage
       },
       body: JSON.stringify({
         model: "chatgpt-4o-latest",

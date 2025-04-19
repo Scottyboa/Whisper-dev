@@ -238,7 +238,7 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
   
   const formData = new FormData();
   formData.append("file", wavBlob, `chunk_${chunkNum}.wav`);
-  formData.append("model", "whisper-1");
+  formData.append("model", "gpt-4o-transcribe");
   
   try {
     const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {

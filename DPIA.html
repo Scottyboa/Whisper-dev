@@ -3,302 +3,178 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>DPIA – AI-basert journalnotat-assistent</title>
-  <!-- Google Fonts to match transcribe.html -->
+  <title>DPIA-generator</title>
   <link
-    href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap"
     rel="stylesheet"
   />
   <style>
-    /* Base Reset & Body */
-    html, body {
-      margin: 0;
-      padding: 0;
-    }
+    /* Global reset */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Roboto', sans-serif;
-      background-color: #f8f8f8;
-      color: #333;
-      padding: 2em;
-      line-height: 1.5;
+      font-family: 'Lato', sans-serif;
+      background: #eef2f3;
+      color: #2d3a3f;
+      padding: 2rem;
+      line-height: 1.6;
     }
-    /* Headings */
-    h1, h2, h3 {
-      color: #2E5E4E;
-      margin-top: 1em;
-      margin-bottom: 0.5em;
+    h1, h2, h3 { color: #176f6b; margin-bottom: .5rem; }
+    input.editable, textarea.editable {
+      width: 100%; padding: .5rem; margin-bottom: 1rem;
+      border: 1px solid #aac0bf; border-radius: 4px;
+      background: #fff;
+      font-family: inherit;
+      font-size: 1rem;
     }
-    /* Editable Fields */
-    .editable {
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      padding: 8px;
-      background-color: #fff;
-      font-family: 'Roboto', sans-serif;
-      font-size: 16px;
-      box-sizing: border-box;
-      margin-bottom: 1em;
-    }
-    input.editable {
-      width: 100%;
-    }
-    textarea.editable {
-      width: 100%;
-      min-height: 100px;
-      resize: vertical;
-    }
-    /* Controls (Generate/Preview buttons) */
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
+    .section { margin-bottom: 2rem; }
+    .controls { display: flex; gap: .5rem; }
     .controls button {
-      background-color: #5a9;
+      flex: 1;
+      padding: .75rem;
+      background: #176f6b;
       color: #fff;
       border: none;
-      border-radius: 10px;
-      padding: 12px 20px;
-      font-size: 16px;
+      border-radius: 4px;
       cursor: pointer;
-      transition: background-color 0.3s, transform 0.1s;
+      transition: background .2s;
     }
-    .controls button:hover {
-      background-color: #489;
-    }
-    .controls button:active {
-      transform: scale(0.98);
-    }
-    /* PDF mode */
-    .pdf-document {
-      display: none;
-      max-width: 210mm;
-      margin: 0 auto;
-      background: #fff;
-      padding: 2em;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    .pdf-document h1,
-    .pdf-document h2 {
-      color: #2E5E4E;
-    }
+    .controls button:hover { background: #135d58; }
+
+    /* PDF styling */
+    .pdf-view { display: none; max-width:210mm; margin:0 auto; background:#fff; padding:2rem; }
     @media print {
-      body {
-        padding: 0;
-      }
-      .controls,
-      .edit-mode {
-        display: none !important;
-      }
-      .pdf-document {
-        display: block !important;
-      }
-    }
-    /* Form Layout */
-    .edit-mode p, .edit-mode li {
-      margin-bottom: 0.75em;
-    }
-    .edit-mode ul {
-      padding-left: 1.2em;
+      .edit-mode { display: none; }
+      .pdf-view { display: block; }
     }
   </style>
 </head>
 <body>
-  <!-- REDIGÉRBAR VERSJON -->
   <div class="edit-mode">
-    <h1>Personvernkonsekvensvurdering (DPIA)</h1>
-    <h2>AI-basert journalnotat-assistent for pasientkonsultasjoner</h2>
-    <p>
-      <strong>Behandlingsansvarlig:</strong>
-      <input type="text" id="edit-behandlingsansvarlig" class="editable" value="Lege Legesen">
+    <h1>Personvernkonsekvensanalyse</h1>
+    <p><strong>Ansvarlig:</strong>
+      <input type="text" id="owner" class="editable" value="Dr. Ola Nordmann">
     </p>
-    <p>
-      <strong>Databehandlingens formål:</strong>
-      <input type="text" id="edit-formaal" class="editable" value="Effektivisere og forbedre dokumentasjon av pasientkonsultasjoner ved automatisk transkribering og utkast til journalnotat">
+    <p><strong>Dato for vurdering:</strong>
+      <input type="date" id="date" class="editable" value="2025-04-10">
     </p>
-    <p>
-      <strong>Dato:</strong>
-      <input type="text" id="edit-dato" class="editable" style="width:120px;" value="10.4.25">
-      ,
-      <strong>Ansvarlig for vurderingen:</strong>
-      <input type="text" id="edit-ansvarlig" class="editable" value="Lege Legesen">
-    </p>
-    <hr/>
-    <h2>1. Beskrivelse av behandlingen</h2>
-    <p>Beskrivelse av hvordan personopplysninger behandles i løsningen:</p>
-    <ul>
-      <li>Legen tar opp lyd av pasientkonsultasjonen (samtalen mellom lege og pasient).</li>
-      <li>Lydopptaket overføres sikkert (kryptert) over internett til OpenAI Whisper API, som automatisk transkriberer lyd til tekst.</li>
-      <li>Transkribert tekst (inneholder potensielt hele dialogen med pasientens helseopplysninger) sendes deretter til OpenAI ChatGPT API, som genererer et forslag til journalnotat/sammendrag.</li>
-      <li>Legen mottar det genererte notatutkastet, gjennomgår det og redigerer ved behov. Endelig godkjent journalnotat lagres i pasientens journal i legens journalsystem (EPJ) som vanlig.</li>
-      <li>Ingen personopplysninger lagres hos app-utvikleren. All datautveksling skjer direkte mellom legens enhet og OpenAIs skytjeneste ved bruk av legens egne API-nøkler.</li>
-      <li>OpenAI (databehandler) lagrer ikke dataene permanent; innsendt lyd og tekst behandles i minnet og slettes fortløpende fra aktive systemer. Det opprettes kun kortvarige loggdata hos OpenAI (inntil 30 dager) for å kunne oppdage misbruk og feilsituasjoner, deretter slettes også disse automatisk.</li>
-    </ul>
-    <p>
-      <strong>Opplysningstyper og omfang:</strong>
-      <textarea id="edit-opplysningstyper" class="editable">Opptaket og transkripsjonen kan inneholde pasientens identitet (navn, fødselsdata) dersom dette nevnes i konsultasjonen, samt detaljer om helseforhold, symptomer, diagnose, behandling osv. Dette utgjør helseopplysninger (særlige kategorier). Hele konsultasjonen (typisk 10-20 minutter dialog) behandles, hvilket kan innebære omfattende mengde personopplysninger. Ingen ekstra opplysninger utover det som naturlig fremkommer i samtalen samles inn.</textarea>
-    </p>
-    <p>
-      <strong>System/teknologi:</strong>
-      <textarea id="edit-systemteknologi" class="editable">Appen er en webapplikasjon som hostes på domenet fastlegen.com, som administreres av Asbjørn Grini. Webapplikasjonen er hostet på one.com sine servere, med kontoadgang sikret med tofaktor-autentisering (2FA). Selve webapplikasjonen fungerer som en klient som kjører i legens nettleser - one.com behandler ingen pasientdata. Appen benytter OpenAIs skybaserte AI-tjenester for selve databehandlingen. Data overføres direkte fra legens enhet til OpenAI over HTTPS. OpenAI Whisper og GPT er maskinlæringsmodeller driftet på OpenAIs servere (for tiden lokasjon USA). Legens enhet (PC/nettbrett/mobil) fungerer som klient. Ingen data lagres lokalt utover evt. midlertidig bufferminne under opplastning, og endelig journalnotat lagres kun i lokalt EPJ-system som i dag.</textarea>
-    </p>
-    <h2>2. Behandlingsgrunnlag</h2>
-    <p>
-      <strong>Lovlig grunnlag for behandlingen:</strong>
-      Behandlingen er nødvendig for å oppfylle legens lovpålagte dokumentasjonsplikt av helsehjelp, jf. helsepersonelloven §39. Det rettslige grunnlaget er GDPR art. 6(1)(c) (rettslig forpliktelse) for journalføring. For de sensitive helseopplysningene anvendes GDPR art. 9(2)(h) – behandling er nødvendig for å yte helsehjelp og utføres av helsepersonell underlagt lovpålagt taushetsplikt. Dette gir et gyldig unntak for behandling av særlige kategorier personopplysninger.
-    </p>
-    <p>
-      <em>Merk: Pasientene informeres om denne behandlingen gjennom klinikkens personvernerklæring. Det innhentes ikke eksplisitt samtykke, da behandlingen anses dekket av ovennevnte grunnlag som del av helsehjelpen. Pasienten har imidlertid rett til informasjon og kan etterspørre manuell journalføring ved særlige ønsker.</em>
-    </p>
-    <h2>3. Nødvendighet og proporsjonalitet</h2>
-    <p>
-      <strong>Vurdering av nødvendighet i forhold til formålet:</strong>
-    </p>
-    <textarea id="edit-nodvendighet" class="editable">Legen er forpliktet til å føre nøyaktige journalnotater fra hver konsultasjon. Tradisjonelt gjøres dette manuelt under eller etter timen. Denne KI-baserte løsningen er innført for å effektivisere prosessen (mindre tidsbruk på skriving) og potensielt øke kvaliteten på notatet (mer utfyllende beskrivelse av konsultasjonen). Alternativer som ble vurdert: manuell skriving (tidskrevende), eller diktering til human sekretær (personellkostnad, kan også medføre deling av taushetsbelagt info). Sammenlignet anses KI-løsningen som et proporsjonalt tiltak – den oppfyller samme formål raskere. Det behandles ikke flere opplysninger enn det som uansett fremkommer i konsultasjonen; hele samtalen må analyseres for å lage et godt sammendrag, så utvalget av data er nødvendig. Ingen sekundærbruk av data utover notatgenereringen forekommer. Bruken av OpenAIs tjeneste er nødvendig da tilsvarende kvalitet ikke kunne oppnås med lokale verktøy pr. nå.</textarea>
-    <p>
-      <strong>Vurdering av proporsjonalitet og personvernprinsipper:</strong>
-    </p>
-    <ul>
-      <li><em><u>Dataminimering:</u></em> Løsningen forsøker å minimere personopplysninger ved at kun lyd fra selve konsultasjonen behandles – det samles ikke inn ekstra data om pasienten utover det som sies. Legen unngår å inkludere unødvendige identifikatorer i samtalen (f.eks. personnummer nevnes normalt ikke muntlig).</li>
-      <li><em><u>Lagringsbegrensning:</u></em> Data lagres ikke utover det som trengs for å gjennomføre formålet. Hos OpenAI slettes data raskt etter behandling (ingen vedvarende lagring utover kortvarige sikkerhetslogger). Hos legen lagres kun det ferdige journalnotatet som en del av pasientens journal (i tråd med lovkrav om journaloppbevaring).</li>
-      <li><em><u>Integritet og konfidensialitet:</u></em> Det er iverksatt tekniske og organisatoriske tiltak for å beskytte dataene (se punkt 5 om tiltak). All behandling foregår under taushetsplikt. Journalnotatet kontrolleres av legen for kvalitet før det tas i bruk.</li>
-      <li><em><u>Formålsbegrensning:</u></em> Opplysningene fra konsultasjonen brukes kun til ett formål: generere et journalnotat for den aktuelle pasientens behandling. De benyttes ikke til noe annet, verken av legen eller OpenAI.</li>
-    </ul>
-    <h2>4. Vurdering av risiko for de registrerte</h2>
-    <p>Her identifiseres potensielle personvernrisikoer for pasientene (de registrerte) ved denne databehandlingen:</p>
-    <ul>
-      <li><strong>Uautorisert innsyn (konfidensialitet):</strong> Risiko for at uvedkommende kan få tilgang til pasientopplysningene under overføring eller behandling. Dette kan skje gjennom dataangrep/hacking mot OpenAI, eller dersom data ulovlig utleveres til tredjepart (f.eks. fremmed lands myndigheter siden data overføres til USA). Konsekvensen vil være brudd på taushetsplikten og potensielt skade for pasienten hvis sensitiv informasjon kommer på avveie.</li>
-      <li><strong>Feil eller endring av innhold (integritet):</strong> Risiko for at KI-tjenesten transkriberer eller oppsummerer feil, slik at journalnotatet blir misvisende eller inneholder feil opplysninger. Dette kan påvirke pasientens rettigheter (feil behandling basert på feil info) og tillit. (Merk: Dette er en risiko for kvaliteten og pasientsikkerheten, men også et personvernproblem dersom feilopplysningar lagres om en person.)</li>
-      <li><strong>Utilgjengelighet eller tap av data:</strong> Risiko for at opptaket eller generert notat går tapt i prosessen, f.eks. pga. teknisk feil, slik at viktig informasjon fra konsultasjonen ikke blir dokumentert. Pasientens historikk kan da bli ufullstendig. (Denne risikoen mitigéres ved at legen kan skrive notatet manuelt ved feil, men er til stede.)</li>
-      <li><strong>Bruk av data utover formålet:</strong> Risiko for at OpenAI kan benytte pasientdataene til noe annet enn å levere tjenesten, f.eks. til utvikling av sine modeller eller dele dataene med underleverandører. Ifølge avtalen skal ikke dette skje, men det er en teoretisk risiko hvis avtalebrudd eller policyendring oppstår. Selv kortvarig lagring i 30 dager innebærer en mulighet for intern adgang til data hos leverandøren.</li>
-      <li><strong>Overføring til tredjeland:</strong> Siden data sendes til USA, er det en risiko for at amerikanske etterretningsmyndigheter kan pålegge utlevering av data (jf. FISA 702/Cloud Act). Pasientdata underlagt norsk taushetsplikt kan da komme på avveie uten at pasienten eller legen vet det. Selv om sannsynligheten anses lav for enkeltkonsultasjoner, er konsekvensen svært høy om det skjer.</li>
-      <li><strong>Kompromittering av webapplikasjonen:</strong> Selv om webapplikasjonen (på fastleggen.com) ikke behandler pasientdata direkte, er det en teoretisk risiko for at selve applikasjonen kompromitteres og modifiseres til å sende data til uautoriserte tredjeparter. Denne risikoen mitigeres gjennom sikker kontoadministrasjon med 2FA og regelmessig sikkerhetsgjennomgang av koden.</li>
-      <li><strong>Rettighetene til pasienten:</strong> Pasientens innsynsrett og retting/sletting kompliseres noe: Opptaket og KI-behandlingen er forbigående, så pasienten kan ikke få innsyn i "KI-prosessingen" hos OpenAI (den er slettet innen få uker). Pasienten får imidlertid innsyn i det endelige journalnotatet hos legen. Risikoen er at pasienten ikke fullt ut forstår eller kan kontrollere denne mellomliggende behandlingen, noe som kan utfordre tilliten.</li>
-    </ul>
-    <p>
-      <strong>Vurdering av risikoenes alvorlighet og sannsynlighet:</strong>
-      <textarea id="edit-risikovurdering" class="editable">Uautorisert innsyn vurderes som alvorlig (sensitivt innhold), men lite sannsynlig gitt kryptering og kort lagring (lav sannsynlighet, høy konsekvens). Feil i notat vurderes som moderat sannsynlig (KI kan feiltolke noe) og konsekvens moderat (legen fanger opp de fleste feil under gjennomlesing). Overføring til USA gir en lav sannsynlighet for myndighetsinnsyn, men konsekvensen ville vært svært alvorlig; samlet gir det en viss risiko som må tas på alvor. Kompromittering av webapplikasjonen vurderes som svært lite sannsynlig gitt sikkerhetsmekanismene, men konsekvensen ville vært alvorlig om det skulle skje. Bruk utover formål vurderes som lav sannsynlighet pga. kontraktuelle forbud og leverandørens egen interesse i tillit; konsekvens ville vært alvorlig (moderat risiko). Totalt sett anses ingen risikoer umiddelbart "svært høy" etter eksisterende tiltak, men enkelte er medium og krever tydelige kontroller (se tiltak nedenfor).</textarea>
-    </p>
-    <h2>5. Tiltak for å redusere risiko</h2>
-    <p>Følgende sikkerhetstiltak og prosedyrer er iverksatt eller planlagt for å mitigere de identifiserte risikoene:</p>
-    <ul>
-      <li><strong>Databehandleravtale med OpenAI:</strong> Det er inngått en skriftlig avtale som forplikter OpenAI til å behandle opplysningene konfidensielt og kun etter instruks fra legen. Avtalen spesifiserer at dataene ikke brukes til noe annet formål (f.eks. ikke til trening av AI-modeller), og at de slettes etter endt behandling. Standard Contractual Clauses (SCC) er inkludert for å dekke overføringen ut av EØS, og OpenAI har bekreftet å følge GDPR-krav.</li>
-      <li><strong>Kryptering og sikker overføring:</strong> All kommunikasjon mellom legens enhet og OpenAIs API er kryptert (HTTPS/TLS). Dette hindrer avlytting under transport. API-nøkler brukes for autentisering og holdes hemmelige; de er lagret sikkert på legens enhet og rotasjon av nøkler gjøres regelmessig ved mistanke om kompromittering.</li>
-      <li><strong>Sikkerhetstiltak for webapplikasjonen:</strong> Domenet fastlegen.com og hostingen på one.com er sikret med tofaktor-autentisering (2FA) for administrativ tilgang. Kildekoden til applikasjonen gjennomgås regelmessig for sårbarheter, og sikkerhetsoppdateringer implementeres fortløpende. Applikasjonen er utviklet slik at all databehandling skjer direkte mellom legens enhet og OpenAI, uten mellomlagring på webserveren.</li>
-      <li><strong>Begrenset lagring og sletting:</strong> OpenAI beholder data maksimalt i 30 dager i sine systemer for formål av driftssikkerhet/misbruksdeteksjon. Etter dette slettes loggene automatisk. Lydopptak og transkribering lagres ikke permanent noe sted i skyen. Legen selv oppbevarer ikke lydopptaket etter at notatet er generert og kvalitetssikret, med mindre det skulle være nødvendig for dokumentasjon ved et avvik. Dette tiltaket sikrer at pasientdata ikke blir liggende lenger enn absolutt nødvendig.</li>
-      <li><strong>Tilleggstiltak for tredjelandsoverføring:</strong> Det er gjennomført en transfer impact assessment (TIA) for å vurdere USAs lovverk opp mot personvernrisiko. Som risikoreduserende tiltak lagres det ikke direkte identifiserende informasjon i teksten som sendes (legen unngår f.eks. å diktere fullt navn/personnummer i opptaket). Dermed reduseres skadevirkningen dersom data skulle bli eksponert. Videre er leverandøren underlagt EU Model Clauses som juridisk vern. Skulle myndigheter i USA be om utlevering av data, forplikter OpenAI seg i den grad mulig til å varsle om dette og kjempe imot urimelige forespørsler. Selv om disse tiltakene ikke eliminerer risikoen, vurderes den som tilstrekkelig redusert til at overføring kan forsvares.</li>
-      <li><strong>Organisatoriske tiltak hos legen:</strong> Legen og evt. klinikkpersonale er trent i riktig bruk av systemet. Det finnes en skriftlig prosedyre som beskriver hvordan opptak skal håndteres sikkert (f.eks. ikke dele opptak via usikre kanaler, kun bruke den godkjente appen). Pasientene informeres i forkant (generelt via informasjon ved oppstart av konsultasjon eller i samtykkeerklæring til behandling) at konsultasjonen kan bli lydopptatt og automatisk transkribert, slik at de er klar over det. Pasienten kan reservere seg dersom han/hun er utrygg – i så fall vil legen benytte ordinær journalføring. Denne åpenheten bygger tillit og sikrer etterlevelse av informasjonsplikten.</li>
-      <li><strong>Kvalitetskontroll av output:</strong> For å håndtere risikoen for feil i notatet (integritetsrisiko), har legen implementert en rutine om å alltid lese nøye gjennom det KI-genererte notatet før det lagres endelig. All medisinsk vurdering i notatet kontrolleres og korrigeres av legen. KI-assistenten brukes kun som et verktøy for utkast, ikke som beslutningstaker. Dette sikrer at pasientjournalen forblir korrekt og oppdatert, til tross for bruk av KI.</li>
-      <li><strong>Løpende evaluering og revisjon:</strong> Løsningen vil jevnlig evalueres for personvern og sikkerhet. DPIA-en oppdateres dersom det skjer endringer (for eksempel hvis OpenAI endrer betingelsene, eller hvis det kommer ny veiledning fra myndighetene). Klinikken har utpekt <input type="text" id="edit-ansvarsperson" class="editable" value="personvernombud / ansvarlig person"> som ansvarlig for å følge opp at tiltakene faktisk fungerer og at det ikke har inntruffet personvernbrudd.</li>
-    </ul>
-    <h2>6. Konklusjon av personvernkonsekvensvurderingen</h2>
-    <p>
-      <strong>Oppsummering og aksept av risiko:</strong>
-      <textarea id="edit-konklusjon" class="editable">Etter å ha gjennomgått ovenstående vurderinger mener vi at risikoene ved denne behandlingen av pasientopplysninger er redusert til et akseptabelt nivå gjennom de iverksatte tiltakene. Formålet (effektiv journalføring) oppnås på en måte som respekterer pasientenes personvern i så stor grad som mulig. Det gjenstår en viss residual risiko knyttet til overføring til USA (myndighetsadgang utenfor vår kontroll) og til at en sky-leverandør håndterer helseopplysninger. Denne risikoen vurderes imidlertid som lav og innenfor det som kan forsvares når vi veier den opp mot fordelen for pasientbehandlingen. At selve webapplikasjonen er hostet på en ekstern tjener (one.com) utgjør ingen direkte personvernrisiko ettersom det ikke skjer noen databehandling på denne tjeneren - applikasjonen fungerer kun som et grensesnitt for kommunikasjon mellom legens enhet og OpenAI. Ingen identifiserte risikoer anses "høy risiko" etter tiltak; det er dermed ikke nødvendig med forhåndsdrøfting med Datatilsynet.</textarea>
-    </p>
-    <p>
-      Vedtak: Løsningen kan tas i bruk forutsatt at alle beskrevne tiltak opprettholdes. DPIA skal revideres innen
-      <input type="text" id="edit-revisjonsdato" class="editable" value="10.4.26"> eller tidligere ved vesentlige endringer.
-    </p>
-    <p>
-      <strong>Godkjenning:</strong><br/>
-      Ansvarlig behandlingsansvarlig:
-      <input type="text" id="edit-godkjenner" class="editable" value="Dr Lege Legesen">
-      (signatur)<br/>
-      Dato:
-      <input type="text" id="edit-godkjenningsdato" class="editable" value="10.4.25">
-    </p>
+
+    <!-- SECTION A: FORMÅL & OMFANG -->
+    <div class="section">
+      <h2>1. Formål &amp; omfang</h2>
+      <textarea id="scope" class="editable" rows="4">
+Formålet er å effektivisere dokumentasjonsprosessen ved automatisk å transkribere pasientkonsultasjoner og lage utkast til journalnotat.
+      </textarea>
+    </div>
+
+    <!-- SECTION B: BESKRIVELSE -->
+    <div class="section">
+      <h2>2. Behandlingsprosess</h2>
+      <ul>
+        <li>Opptak av konsultasjon på legekontoret.</li>
+        <li>Sikker opplasting til Whisper-API for tale-til-tekst.</li>
+        <li>Autogenerering av sammendrag via ChatGPT-API.</li>
+        <li>Legen redigerer utkast og lagrer endelig notat i EPJ.</li>
+      </ul>
+    </div>
+
+    <!-- SECTION C: JURIDISK GRUNNLAG -->
+    <div class="section">
+      <h2>3. Juridisk grunnlag</h2>
+      <textarea id="legal" class="editable" rows="3">
+Behandling er nødvendig for dokumentasjonsplikt etter helsepersonelloven §39; GDPR art. 6(1)(c) og art. 9(2)(h) for sensitive helseopplysninger.
+      </textarea>
+    </div>
+
+    <!-- SECTION D: RISIKOANALYSE -->
+    <div class="section">
+      <h2>4. Risikoanalyse</h2>
+      <textarea id="risk" class="editable" rows="5">
+Vurdering av uautorisert innsyn, feil i KI-utskrift, tredjelandsoverføring og systemkompromiss; konsekvens og sannsynlighet vurdert som lav til middels.
+      </textarea>
+    </div>
+
+    <!-- SECTION E: RISIKOHÅNDTERING -->
+    <div class="section">
+      <h2>5. Tiltak og kontroller</h2>
+      <ul>
+        <li>Databehandleravtale med OpenAI.</li>
+        <li>HTTPS/TLS og 2FA på webklient.</li>
+        <li>Kortvarig logglagring (≤30 dager).</li>
+        <li>Rutine for manuell gjennomgang av utkast.</li>
+      </ul>
+    </div>
+
+    <!-- SECTION F: KONKLUSJON -->
+    <div class="section">
+      <h2>6. Konklusjon</h2>
+      <textarea id="conclusion" class="editable" rows="4">
+Gjenstående risiko vurderes som akseptabel gitt tiltakene. Løsningen kan tas i bruk uten forhåndsdrøfting med Datatilsynet.
+      </textarea>
+      <p><strong>Revisjon innen:</strong>
+        <input type="date" id="reviewDate" class="editable" value="2026-04-10">
+      </p>
+    </div>
+
     <div class="controls">
-      <button id="generatePdfBtn">Generer PDF</button>
-      <button id="previewPdfBtn">Forhåndsvis PDF</button>
+      <button id="previewBtn">Forhåndsvis PDF</button>
+      <button id="printBtn">Generer PDF</button>
     </div>
   </div>
-  <!-- PDF VERSJON -->
-  <div class="pdf-document" id="pdfVersion"></div>
 
-  <!-- jsPDF + html2canvas libraries -->
+  <div id="pdfContent" class="pdf-view"></div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
-    // Funksjon for å oppdatere PDF-versjonen med verdier fra redigerbare felt
-    function updatePdfContent() {
-      const pdfContent = document.getElementById('pdfVersion');
-      pdfContent.innerHTML = `
-        <h1>Personvernkonsekvensvurdering (DPIA)</h1>
-        <h2>AI-basert journalnotat-assistent for pasientkonsultasjoner</h2>
-        <p><strong>Behandlingsansvarlig:</strong> ${document.getElementById('edit-behandlingsansvarlig').value}</p>
-        <p><strong>Databehandlingens formål:</strong> ${document.getElementById('edit-formaal').value}</p>
-        <p><strong>Dato:</strong> ${document.getElementById('edit-dato').value}, 
-           <strong>Ansvarlig for vurderingen:</strong> ${document.getElementById('edit-ansvarlig').value}</p>
-        <hr/>
-        <h2>1. Beskrivelse av behandlingen</h2>
-        <p>Beskrivelse av hvordan personopplysninger behandles i løsningen:</p>
-        <ul>
-          <li>Legen tar opp lyd av pasientkonsultasjonen (samtalen mellom lege og pasient).</li>
-          <li>Lydopptaket overføres sikkert (kryptert) over internett til OpenAI Whisper API, som automatisk transkriberer lyd til tekst.</li>
-          <li>Transkribert tekst (inneholder potensielt hele dialogen med pasientens helseopplysninger) sendes deretter til OpenAI ChatGPT API, som genererer et forslag til journalnotat/sammendrag.</li>
-          <li>Legen mottar det genererte notatutkastet, gjennomgår det og redigerer ved behov. Endelig godkjent journalnotat lagres i pasientens journal i legens journalsystem (EPJ) som vanlig.</li>
-          <li>Ingen personopplysninger lagres hos app-utvikleren. All datautveksling skjer direkte mellom legens enhet og OpenAIs skytjeneste ved bruk av legens egne API-nøkler.</li>
-          <li>OpenAI (databehandler) lagrer ikke dataene permanent; innsendt lyd og tekst behandles i minnet og slettes fortløpende fra aktive systemer. Det opprettes kun kortvarige loggdata hos OpenAI (inntil 30 dager) for å kunne oppdage misbruk og feilsituasjoner, deretter slettes også disse automatisk.</li>
-        </ul>
-        <p><strong>Opplysningstyper og omfang:</strong> ${document.getElementById('edit-opplysningstyper').value}</p>
-        <p><strong>System/teknologi:</strong> ${document.getElementById('edit-systemteknologi').value}</p>
-        <h2>2. Behandlingsgrunnlag</h2>
-        <p>Behandlingen er nødvendig for å oppfylle legens lovpålagte dokumentasjonsplikt av helsehjelp, jf. helsepersonelloven §39. GDPR art. 6(1)(c) og art. 9(2)(h).</p>
-        <h2>3. Nødvendighet og proporsjonalitet</h2>
-        <p><strong>Vurdering av nødvendighet:</strong></p>
-        <p>${document.getElementById('edit-nodvendighet').value}</p>
-        <p><strong>Personvernprinsipper:</strong></p>
-        <ul>
-          <li><em>Dataminimering:</em> Løsningen behandler kun lyd fra konsultasjonen.</li>
-          <li><em>Lagringsbegrensning:</em> Data slettes raskt; kun journalnotat lagres.</li>
-          <li><em>Integritet og konfidensialitet:</em> Kryptert overføring og 2FA.</li>
-          <li><em>Formålsbegrensning:</em> Kun journalgenerering.</li>
-        </ul>
-        <h2>4. Vurdering av risiko</h2>
-        <ul>
-          <li>Uautorisert innsyn, KI-feil, datatap, tredjepartsbruk, tredjelandsoverføring, webkompromiss, pasientrettigheter.</li>
-        </ul>
-        <p><strong>Risikovurdering:</strong> ${document.getElementById('edit-risikovurdering').value}</p>
+    function syncPDF() {
+      const c = document.getElementById('pdfContent');
+      c.innerHTML = \`
+        <h1>Personvernkonsekvensanalyse</h1>
+        <p><strong>Ansvarlig:</strong> \${document.getElementById('owner').value}</p>
+        <p><strong>Dato:</strong> \${document.getElementById('date').value}</p>
+        <h2>1. Formål & omfang</h2>
+        <p>\${document.getElementById('scope').value}</p>
+        <h2>2. Behandlingsprosess</h2>
+        <ul>\${
+          Array.from(document.querySelectorAll('.section:nth-child(3) ul li'))
+               .map(li => '<li>'+li.textContent+'</li>').join('')
+        }</ul>
+        <h2>3. Juridisk grunnlag</h2>
+        <p>\${document.getElementById('legal').value}</p>
+        <h2>4. Risikoanalyse</h2>
+        <p>\${document.getElementById('risk').value}</p>
         <h2>5. Tiltak</h2>
-        <ul>
-          <li>Databehandleravtale, kryptering, web-sikkerhet, lagringsbegrensning, TIA, organisasjonstiltak, kvalitetskontroll, revisjon.</li>
-        </ul>
+        <ul>\${
+          Array.from(document.querySelectorAll('.section:nth-child(6) ul li'))
+               .map(li => '<li>'+li.textContent+'</li>').join('')
+        }</ul>
         <h2>6. Konklusjon</h2>
-        <p>${document.getElementById('edit-konklusjon').value}</p>
-        <p>Vedtak: DPIA kan tas i bruk. Revisjon innen ${document.getElementById('edit-revisjonsdato').value}.</p>
-        <p><strong>Godkjenning:</strong> ${document.getElementById('edit-godkjenner').value}, Dato: ${document.getElementById('edit-godkjenningsdato').value}</p>
-      `;
+        <p>\${document.getElementById('conclusion').value}</p>
+        <p><strong>Revisjon innen:</strong> \${document.getElementById('reviewDate').value}</p>
+      \`;
     }
 
-    function generatePDF() {
-      updatePdfContent();
-      document.querySelector('.edit-mode').style.display = 'none';
-      document.getElementById('pdfVersion').style.display = 'block';
-      setTimeout(()=>{ window.print(); setTimeout(()=>{
-          document.querySelector('.edit-mode').style.display = 'block';
-          document.getElementById('pdfVersion').style.display = 'none';
-      },1000); },300);
+    function printPDF() {
+      syncPDF();
+      document.body.classList.add('print-mode');
+      window.print();
+      document.body.classList.remove('print-mode');
     }
 
-    function previewPDF() {
-      updatePdfContent();
+    document.getElementById('previewBtn').addEventListener('click', () => {
+      syncPDF();
       document.querySelector('.edit-mode').style.display = 'none';
-      document.getElementById('pdfVersion').style.display = 'block';
+      document.getElementById('pdfContent').style.display = 'block';
       const back = document.createElement('button');
-      back.textContent = 'Tilbake til redigering';
-      back.className = 'controls';
-      back.onclick = ()=>{ 
-        document.querySelector('.edit-mode').style.display='block';
-        document.getElementById('pdfVersion').style.display='none';
+      back.textContent = 'Tilbake';
+      back.onclick = () => {
+        document.querySelector('.edit-mode').style.display = 'block';
+        document.getElementById('pdfContent').style.display = 'none';
         back.remove();
       };
-      document.getElementById('pdfVersion').appendChild(back);
-    }
-
-    document.getElementById('generatePdfBtn').addEventListener('click', generatePDF);
-    document.getElementById('previewPdfBtn').addEventListener('click', previewPDF);
+      document.getElementById('pdfContent').appendChild(back);
+    });
+    document.getElementById('printBtn').addEventListener('click', printPDF);
   </script>
 </body>
 </html>

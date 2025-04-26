@@ -45,7 +45,6 @@ All kommunikasjon med OpenAI skjer direkte fra din nettleser ved bruk av din per
 <hr><br>
 
 <strong>3. Databehandleravtale (DPA) med OpenAI</strong><br>
-<strong>4. Inngå databehandleravtale (DPA)</strong><br>
 Hvis du skal bruke API-tjenestene til behandling av personopplysninger anbefales det at du inngår en databehandleravtale med OpenAI. Du finner OpenAI sin standardavtale her: <a href="https://ironcladapp.com/public-launch/63ffefa2bed6885f4536d0fe" style="color:blue;">OpenAI databehandleravtale (DPA)</a>. Du finner ditt organisasjonsnummer her: <a href="https://platform.openai.com/settings/organization/general" style="color:blue;">din OpenAI organisasjonsprofil</a>. Når avtalen er signert, så har du og OpenAI anerkjent at det er du som bruker, som har rollen som databehandler – ikke OpenAI.<br><br>
 <hr><br>
 

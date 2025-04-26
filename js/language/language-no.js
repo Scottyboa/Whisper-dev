@@ -13,7 +13,7 @@ export const indexTranslations = {
   adRevenueMessage: "Siden dette nettstedet er gratis å bruke og utelukkende finansieres av annonseinntekter, setter vi stor pris på om du godtar annonser for å støtte tjenesten.",
   
   securityModalHeading: "Personvern",
-  securityModalText: `
+securityModalText: `
 <strong>Personvern og Databehandling</strong><br><br>
 Denne webappen er laget som et verktøy for bruk av tale-til-tekst og notatgenerering. Det er ditt fulle ansvar som helsepersonell/behandlingsansvarlig å sikre at all bruk er i samsvar med GDPR, helsepersonelloven og Normen for informasjonssikkerhet.<br><br>
 
@@ -45,19 +45,19 @@ All kommunikasjon med OpenAI skjer direkte fra din nettleser ved bruk av din per
 <hr><br>
 
 <strong>3. Databehandleravtale (DPA) med OpenAI</strong><br>
-Hvis du skal bruke API-tjenestene til behandling av personopplysninger anbefales det at du inngår en databehandleravtale med OpenAI. Du finner OpenAI sin standardavtale her: <a href="https://ironcladapp.com/public-launch/63ffefa2bed6885f4536d0fe" style="color:blue;">OpenAI databehandleravtale (DPA)</a>. Du finner ditt organisasjonsnummer her: <a href="https://platform.openai.com/settings/organization/general" style="color:blue;">din OpenAI organisasjonsprofil</a>. Når avtalen er signert, så har du og OpenAI anerkjent at det er du som bruker, som har rollen som databehandler – ikke OpenAI.<br><br>
+Hvis du skal bruke API-tjenestene til behandling av personopplysninger anbefales det at du inngår en databehandleravtale med OpenAI. Du finner OpenAI sin standardavtale her: <a href="https://ironcladapp.com/public-launch/63ffefa2bed6885f4536d0fe" style="color:blue;" target="_blank">OpenAI databehandleravtale (DPA)</a>. Du finner ditt organisasjonsnummer her: <a href="https://platform.openai.com/settings/organization/general" style="color:blue;" target="_blank">din OpenAI organisasjonsprofil</a>. Når avtalen er signert, så har du og OpenAI anerkjent at det er du som bruker, som har rollen som databehandler – ikke OpenAI.<br><br>
 <hr><br>
 
 <strong>4. DPIA og TIA – Nødvendige risikovurderinger</strong><br><br>
 
 <strong>DPIA (Data Protection Impact Assessment):</strong> Påkrevd etter GDPR artikkel 35 når ny teknologi brukes til å behandle særlige kategorier opplysninger. Formålet er å identifisere og redusere personvernrisikoene knyttet til selve behandlingen.<br>
 Undersøk hva som behandles, hvorfor, og hvilke tiltak som trengs for å beskytte pasientenes rettigheter.<br>
-Eksempelmal tilgjengelig her: <a href="https://transcribe-notes.netlify.app/dpia" style="color:blue;">Forslag til DPIA (eksempelmal)</a><br><br>
+Eksempelmal tilgjengelig her: <a href="https://transcribe-notes.netlify.app/dpia" style="color:blue;" target="_blank">Forslag til DPIA (eksempelmal)</a><br><br>
 
 <strong>TIA (Transfer Impact Assessment):</strong> Påkrevd etter Schrems II-dommen og GDPR artikkel 44–49 når personopplysninger overføres til et land utenfor EØS (som USA). Formålet er å dokumentere at overføringen gir et «vesentlig tilsvarende» personvernnivå.<br>
 Vurder amerikansk lovgivning (FISA 702, CLOUD Act m.m.) mot dataenes art og dine supplerende tekniske/kontraktuelle tiltak.<br>
 Konkluder på om overføringen – sammen med Standard Contractual Clauses og OpenAIs EU-US Data Privacy Framework-sertifisering – fortsatt er forsvarlig.<br>
-Eksempelmal tilgjengelig her: <a href="https://transcribe-notes.netlify.app/tia.html" style="color:blue;">Forslag til Transfer Impact Assessment (TIA)</a><br><br>
+Eksempelmal tilgjengelig her: <a href="https://transcribe-notes.netlify.app/tia.html" style="color:blue;" target="_blank">Forslag til Transfer Impact Assessment (TIA)</a><br><br>
 
 Begge vurderingene bør være gjennomført, dokumentert og godkjent av deg som bruker før webappen tas i bruk.<br><br>
 <hr><br>
@@ -128,7 +128,7 @@ Din vurdering er avgjørende: Lovligheten av å bruke dette verktøyet med pasie
 
 <strong>9. Informasjonskapsler og annonser</strong><br><br>
 Vi benytter informasjonskapsler (cookies) utelukkende for å kunne vise relevante annonser gjennom Google Ads, og for språkvalg, samtykke og for lagring av tilpassede prompts som du har laget. Informasjonskapslene lagrer ikke personopplysninger utover det som er nødvendig for funksjonalitet og tilpasning. Googles informasjonskapsler har ingen tilgang til data relatert til lydopptak og generert tekst (pasientdata).
-`,
+`
   
   aboutModalHeading: "Om",
   aboutModalText: `Denne nettsiden ble opprettet for å gi helsepersonell og andre brukere direkte tilgang til høykvalitets tale-til-tekst transkripsjon og klinisk notatgenerering – uten unødvendige kostnader eller mellomledd.<br><br>

@@ -1,10 +1,25 @@
 // netlify/functions/get-token.js
-import fetch from 'node-fetch';
-
-exports.handler = async (event) => {
+exports.handler = async function(event) {
+  let userKey;
   try {
-    const { userKey } = JSON.parse(event.body);
-    const resp = await fetch(
+    ({ userKey } = JSON.parse(event.body || '{}'));
+  } catch {
+    return {
+      statusCode: 400,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: 'Invalid JSON' })
+    };
+  }
+  if (!userKey) {
+    return {
+      statusCode: 400,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: 'No userKey provided' })
+    };
+  }
+
+  try {
+    const openaiRes = await fetch(
       'https://api.openai.com/v1/audio/ephemeral_tokens?model=gpt-4o-realtime-preview',
       {
         method: 'POST',
@@ -14,14 +29,14 @@ exports.handler = async (event) => {
         }
       }
     );
-    const payload = await resp.json();
+    const data = await openaiRes.json();
     return {
-      statusCode: resp.status,
+      statusCode: openaiRes.status,
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(data)
     };
   } catch (err) {
     return {

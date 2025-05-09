@@ -29,16 +29,18 @@ exports.handler = async function(event) {
   // 3. Relay request to OpenAI
   try {
     console.log('Calling OpenAI endpoint with token prefix:', userKey.slice(0,5) + '…');
-    const openaiRes = await fetch(
-      'https://api.openai.com/v1/audio/ephemeral_tokens?model=gpt-4o-realtime-preview',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${userKey}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+ const openaiRes = await fetch(
+   'https://api.openai.com/v1/audio/ephemeral_tokens',
+   {
+     method: 'POST',
+     headers: {
+       'Authorization': `Bearer ${userKey}`,
+       'Content-Type': 'application/json'
+     },
+     body: JSON.stringify({ model: 'gpt-4o-realtime-preview' })
+   }
+ );
+
     const data = await openaiRes.json();
     console.log('OpenAI response status:', openaiRes.status, 'payload:', data);
 

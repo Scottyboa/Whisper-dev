@@ -47,7 +47,19 @@ async function fetchEphemeralToken() {
     body: JSON.stringify({ userKey: apiKey })
   });
 
-  if (!resp.ok) throw new Error('Failed to fetch ephemeral token');
+  // If we didn’t get a 2xx, read the body and print it
+  if (!resp.ok) {
+    let errText;
+    try {
+      errText = await resp.text();
+    } catch (e) {
+      errText = `<unreadable>`;
+    }
+    console.error('Token function returned failure:', resp.status, errText);
+    throw new Error(`Token fetch failed ${resp.status}: ${errText}`);
+  }
+
+  // Otherwise parse and return
   const { client_secret } = await resp.json();
   return client_secret;
 }

@@ -330,14 +330,21 @@ async function processAudioChunkInternal(force = false) {
     offset += arr.length;
   }
   
-  // Process the raw audio samples using OfflineAudioContext:
-  // Convert to mono, resample to 16kHz, and apply 0.3s fade-in/out.
-  const wavBlob = await processAudioUsingOfflineContext(pcmFloat32, sampleRate, numChannels);
-  
-  // Instead of uploading to a backend, enqueue this processed chunk for direct transcription.
-  enqueueTranscription(wavBlob, chunkNumber);
-  
-  chunkNumber++;
+const wavBlob = await processAudioUsingOfflineContext(...);
+
+// tag and send each chunk over WS
+const header = {
+  type: "audio",
+  data: {
+    chunk: chunkNumber,
+    audio_format: "wav"
+  }
+};
+ws.send(JSON.stringify(header));           // metadata for this chunk
+ws.send(await wavBlob.arrayBuffer());      // raw WAV bytes
+
+chunkNumber++;
+
 }
 
 async function safeProcessAudioChunk(force = false) {
@@ -492,34 +499,37 @@ if (recordingTimerInterval) {
   recordingTimerInterval = null;
 }
 
-recordingStartTime = Date.now();
-recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+const ws = new WebSocket(
+  "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview"
+);
+ws.binaryType = "arraybuffer";
 
-      
-      const track = mediaStream.getAudioTracks()[0];
-      const processor = new MediaStreamTrackProcessor({ track: track });
-      audioReader = processor.readable.getReader();
-      
-      function readLoop() {
-        audioReader.read().then(({ done, value }) => {
-          if (done) {
-            logInfo("Audio track reading complete.");
-            return;
-          }
-          lastFrameTime = Date.now();
-          audioFrames.push(value);
-          readLoop();
-        }).catch(err => {
-          logError("Error reading audio frames", err);
-        });
-      }
-      readLoop();
-      scheduleChunk();
-      logInfo("MediaStreamTrackProcessor started, reading audio frames.");
-      startButton.disabled = true;
-      stopButton.disabled = false;
-      pauseResumeButton.disabled = false;
-      pauseResumeButton.innerText = "Pause Recording";
+ws.onopen = () => {
+  ws.send(JSON.stringify({
+    type: "authorization",
+    data: { api_key: getAPIKey() }
+  }));
+};
+
+ws.onmessage = evt => {
+  const msg = JSON.parse(evt.data);
+  if (msg.type === "transcription") {
+    transcriptChunks[msg.data.chunk] = msg.data.text;
+    updateTranscriptionOutput();
+
+    // — new: when the model signals the last chunk —
+    if (msg.data.is_final && msg.data.chunk === chunkNumber - 1) {
+      updateStatusMessage("Transcription finished!", "green");
+      document.getElementById("startButton").disabled      = false;
+      document.getElementById("stopButton").disabled       = true;
+      document.getElementById("pauseResumeButton").disabled = true;
+    }
+  }
+};
+
+ws.onerror = e => console.error("Realtime API WS error", e);
+ws.onclose  = () => console.info("Realtime API WS closed");
+
     } catch (error) {
       updateStatusMessage("Microphone access error: " + error, "red");
       logError("Microphone access error", error);
@@ -608,25 +618,20 @@ stopButton.addEventListener("click", async () => {
   manualStop = true;
   clearTimeout(chunkTimeoutId);
   clearInterval(recordingTimerInterval);
+
   stopMicrophone();
+
+  // — new: signal end-of-stream and close the realtime WS —
+  ws.send(JSON.stringify({ type: "eof" }));
+  ws.close();
+
   chunkStartTime = 0;
   lastFrameTime = 0;
   await new Promise(resolve => setTimeout(resolve, 200));
 
   // NEW: If the recording is paused, finalize immediately.
   if (recordingPaused) {
-    finalChunkProcessed = true;
-    const compTimerElem = document.getElementById("transcribeTimer");
-    if (compTimerElem) {
-      compTimerElem.innerText = "Completion Timer: 0 sec";
-    }
-    updateStatusMessage("Transcription finished!", "green");
-    const startButton = document.getElementById("startButton");
-    if (startButton) startButton.disabled = false;
-    stopButton.disabled = true;
-    const pauseResumeButton = document.getElementById("pauseResumeButton");
-    if (pauseResumeButton) pauseResumeButton.disabled = true;
-    logInfo("Recording paused and stop pressed; transcription complete without extra processing.");
+    // … your existing paused logic …
     return;
   }
 

@@ -1,11 +1,7 @@
 # netlify.toml
 
 [build]
-  # since you have no build step, tell Netlify to skip building
-  command   = ""  
-
-  # publish your site from the repo root
-  publish   = "/"
-
-  # functions live in netlify/functions
-  functions = "netlify/functions"
+  # No build step—just publish your files from the repo root
+  command   = ""
+  publish   = "."          # Serve the repo root as your site
+  functions = "netlify/functions"  # Where to find your serverless code

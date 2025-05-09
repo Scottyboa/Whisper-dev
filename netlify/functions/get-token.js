@@ -1,9 +1,7 @@
 // netlify/functions/get-token.js
 
-// (Netlify runs on Node 18+, so global fetch is available)
-
 export async function handler(event, context) {
-  // 1. Handle CORS preflight
+  // 1. CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 204,
@@ -12,31 +10,31 @@ export async function handler(event, context) {
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
       },
-      body: ''
+      body: '',
     };
   }
 
-  // 2. Only allow POST
+  // 2. Only POST
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
       headers: {
         'Allow': 'POST, OPTIONS',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
       },
-      body: 'Method Not Allowed'
+      body: 'Method Not Allowed',
     };
   }
 
-  // 3. Parse & validate JSON body
+  // 3. Parse body
   let payload;
   try {
-    payload = JSON.parse(event.body);
-  } catch (err) {
+    payload = JSON.parse(event.body || '{}');
+  } catch {
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Invalid JSON in request body' })
+      body: JSON.stringify({ error: 'Invalid JSON' }),
     };
   }
 
@@ -45,31 +43,47 @@ export async function handler(event, context) {
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Missing userKey' })
+      body: JSON.stringify({ error: 'Missing userKey' }),
     };
   }
 
-  // 4. Forward request to OpenAI
+  // 4. Call OpenAI
   try {
-    console.log(
-      '→ Calling OpenAI ephemeral_tokens with key prefix:',
-      userKey.slice(0,5) + '…'
-    );
-
+    console.log('→ Calling OpenAI with key prefix:', userKey.slice(0,5) + '…');
     const openaiRes = await fetch(
       'https://api.openai.com/v1/audio/ephemeral_tokens',
       {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${userKey}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ model: 'gpt-4o-realtime-preview' })
+        body: JSON.stringify({ model: 'gpt-4o-realtime-preview' }),
       }
     );
 
-    const data = await openaiRes.json();
-    console.log('← OpenAI responded', openaiRes.status, data);
+    // Read raw text
+    const raw = await openaiRes.text();
+    console.log('← OpenAI status:', openaiRes.status);
+    console.log('← OpenAI raw body:', raw);
+
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (err) {
+      console.error('JSON parse error:', err);
+      // Return the raw HTML so you can inspect it in curl/browser
+      return {
+        statusCode: 502,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify({
+          error: 'OpenAI returned non-JSON; check logs for raw body'
+        })
+      };
+    }
 
     return {
       statusCode: openaiRes.status,
@@ -77,19 +91,18 @@ export async function handler(event, context) {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     };
+
   } catch (err) {
-    console.error('✖ Error reaching OpenAI:', err);
+    console.error('Fetch to OpenAI failed:', err);
     return {
       statusCode: 502,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify({
-        error: 'Failed to reach OpenAI: ' + err.message
-      })
+      body: JSON.stringify({ error: 'Failed to reach OpenAI: ' + err.message }),
     };
   }
 }

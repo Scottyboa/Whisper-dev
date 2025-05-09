@@ -36,17 +36,18 @@ function getAPIKey() {
   return sessionStorage.getItem('user_api_key');
 }
 
-async function fetchEphemeralToken() {
-  const apiKey = getAPIKey();
-  if (!apiKey) throw new Error('API key not available');
-  const resp = await fetch('https://api.openai.com/v1/audio/ephemeral_tokens?model=gpt-4o-realtime-preview', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + apiKey }
-  });
-  if (!resp.ok) throw new Error('Failed to fetch ephemeral token');
-  const { client_secret } = await resp.json();
-  return client_secret;
-}
+ async function fetchEphemeralToken() {
+   const apiKey = getAPIKey();
+   if (!apiKey) throw new Error('API key not available');
+   const resp = await fetch('https://YOUR_DOMAIN.com/get-token', {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify({ userKey: apiKey })
+   });
+   if (!resp.ok) throw new Error('Failed to fetch ephemeral token');
+   const { client_secret } = await resp.json();
+   return client_secret;
+ }
 
 function updateTranscript(text) {
   const transcriptionElem = document.getElementById('transcription');

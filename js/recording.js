@@ -36,18 +36,21 @@ function getAPIKey() {
   return sessionStorage.getItem('user_api_key');
 }
 
- async function fetchEphemeralToken() {
-   const apiKey = getAPIKey();
-   if (!apiKey) throw new Error('API key not available');
-   const resp = await fetch('https://YOUR_DOMAIN.com/get-token', {
-     method: 'POST',
-     headers: { 'Content-Type': 'application/json' },
-     body: JSON.stringify({ userKey: apiKey })
-   });
-   if (!resp.ok) throw new Error('Failed to fetch ephemeral token');
-   const { client_secret } = await resp.json();
-   return client_secret;
- }
+// Replaced direct OpenAI token fetch with Netlify Function proxy at /.netlify/functions/get-token
+async function fetchEphemeralToken() {
+  const apiKey = getAPIKey();
+  if (!apiKey) throw new Error('API key not available');
+
+  const resp = await fetch('/.netlify/functions/get-token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userKey: apiKey })
+  });
+
+  if (!resp.ok) throw new Error('Failed to fetch ephemeral token');
+  const { client_secret } = await resp.json();
+  return client_secret;
+}
 
 function updateTranscript(text) {
   const transcriptionElem = document.getElementById('transcription');
@@ -72,7 +75,7 @@ async function startRecording() {
   updateStatusMessage('Initializing real-time transcription...', 'blue');
 
   try {
-    // 1. Fetch ephemeral token
+    // 1. Fetch ephemeral token via Netlify Function proxy
     const token = await fetchEphemeralToken();
 
     // 2. Open signaling WebSocket

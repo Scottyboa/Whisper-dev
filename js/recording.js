@@ -3,6 +3,26 @@
 // processing audio chunks using OfflineAudioContext,
 // and implementing a client‑side transcription queue that sends each processed chunk directly to OpenAI's Whisper API.
 
+const realtimeSocket = new WebSocket(
+  `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview`
+);
+realtimeSocket.binaryType = "arraybuffer";
+realtimeSocket.onopen = () => {
+  console.info("Realtime socket opened");
+  const apiKey = getAPIKey();
+  realtimeSocket.send(JSON.stringify({ type: "auth", apiKey }));
+};
+realtimeSocket.onmessage = event => {
+  const data = JSON.parse(event.data);
+  if (data.text) {
+    const idx = data.chunkNumber || 0;
+    transcriptChunks[idx] = data.text;
+    updateTranscriptionOutput();
+  }
+};
+realtimeSocket.onerror = err => console.error("Realtime socket error", err);
+realtimeSocket.onclose = () => console.info("Realtime socket closed");
+
 function hashString(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -230,57 +250,6 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
   return wavBlob;
 }
 
-// --- New: Transcribe Chunk Directly ---
-// Sends the WAV blob directly to OpenAI's Whisper API and returns the transcript.
-async function transcribeChunkDirectly(wavBlob, chunkNum) {
-  const apiKey = getAPIKey();
-  if (!apiKey) throw new Error("API key not available for transcription");
-  
-  const formData = new FormData();
-  formData.append("file", wavBlob, `chunk_${chunkNum}.wav`);
-  formData.append("model", "whisper-1");
-  
-  try {
-    const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + apiKey
-      },
-      body: formData
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`OpenAI API error: ${errorText}`);
-    }
-    const result = await response.json();
-    return result.text || "";
-  } catch (error) {
-    logError(`Error transcribing chunk ${chunkNum}:`, error);
-    return `[Error transcribing chunk ${chunkNum}]`;
-  }
-}
-
-// --- Transcription Queue Processing ---
-// Adds a processed chunk to the queue and processes chunks sequentially.
-function enqueueTranscription(wavBlob, chunkNum) {
-  transcriptionQueue.push({ chunkNum, wavBlob });
-  processTranscriptionQueue();
-}
-
-async function processTranscriptionQueue() {
-  if (isProcessingQueue) return;
-  isProcessingQueue = true;
-  
-  while (transcriptionQueue.length > 0) {
-    const { chunkNum, wavBlob } = transcriptionQueue.shift();
-    logInfo(`Transcribing chunk ${chunkNum}...`);
-    const transcript = await transcribeChunkDirectly(wavBlob, chunkNum);
-    transcriptChunks[chunkNum] = transcript;
-    updateTranscriptionOutput();
-  }
-  
-  isProcessingQueue = false;
-}
 
 // --- Removed: Polling functions (pollChunkTranscript) since we now transcribe directly ---
 
@@ -332,12 +301,12 @@ async function processAudioChunkInternal(force = false) {
   
   // Process the raw audio samples using OfflineAudioContext:
   // Convert to mono, resample to 16kHz, and apply 0.3s fade-in/out.
-  const wavBlob = await processAudioUsingOfflineContext(pcmFloat32, sampleRate, numChannels);
-  
-  // Instead of uploading to a backend, enqueue this processed chunk for direct transcription.
-  enqueueTranscription(wavBlob, chunkNumber);
-  
-  chunkNumber++;
+const wavBlob = await processAudioUsingOfflineContext(
+  pcmFloat32, sampleRate, numChannels
+);
+const arrayBuffer = await wavBlob.arrayBuffer();
+realtimeSocket.send(arrayBuffer);
+chunkNumber++;
 }
 
 async function safeProcessAudioChunk(force = false) {
@@ -605,6 +574,10 @@ recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
 
 stopButton.addEventListener("click", async () => {
   updateStatusMessage("Finishing transcription...", "blue");
+  if (realtimeSocket.readyState === WebSocket.OPEN) {
+    realtimeSocket.send(JSON.stringify({ event: "eof" }));
+    realtimeSocket.close();
+  }
   manualStop = true;
   clearTimeout(chunkTimeoutId);
   clearInterval(recordingTimerInterval);

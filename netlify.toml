@@ -1,0 +1,11 @@
+# netlify.toml
+
+[build]
+  # since you have no build step, tell Netlify to skip building
+  command   = ""  
+
+  # publish your site from the repo root
+  publish   = "/"
+
+  # functions live in netlify/functions
+  functions = "netlify/functions"

@@ -30,7 +30,7 @@ exports.handler = async function(event) {
   try {
     console.log('🔑 Calling OpenAI with key prefix:', userKey.slice(0, 5) + '…');
 const openaiRes = await fetch(
-  'https://api.openai.com/v1/audio/ephemeral-tokens?model=gpt-4o-realtime-preview',
+  'https://api.openai.com/v1/audio/ephemeral_tokens?model=gpt-4o-realtime-preview',
   {
     method: 'POST',
     headers: {

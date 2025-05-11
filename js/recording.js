@@ -1,6 +1,5 @@
 // recording.js
 // Real-time transcription using GPT-4o Realtime Preview via WebRTC signaling
-// Replace chunked Whisper logic with a live streaming pipeline.
 
 let pc = null;
 let ws = null;
@@ -12,154 +11,139 @@ let recordingStartTime = 0;
 function updateStatusMessage(message, color = '#333') {
   const statusElem = document.getElementById('statusMessage');
   if (statusElem) {
-    statusElem.innerText = message;
+    statusElem.textContent = message;
     statusElem.style.color = color;
   }
 }
 
-function formatTime(ms) {
-  const totalSec = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSec / 60);
-  const seconds = totalSec % 60;
-  return minutes + ' min ' + seconds + ' sec';
-}
-
-function updateRecordingTimer() {
-  const elapsed = Date.now() - recordingStartTime;
-  const timerElem = document.getElementById('recordTimer');
-  if (timerElem) {
-    timerElem.innerText = 'Recording Timer: ' + formatTime(elapsed);
-  }
-}
-
+// Retrieve stored API key from sessionStorage
 function getAPIKey() {
-  return sessionStorage.getItem('user_api_key');
+  return sessionStorage.getItem('OPENAI_API_KEY');
 }
 
-// Fetch an ephemeral token & session ID via Netlify Function proxy
+// Fetch ephemeral token & session ID via Netlify Function
 async function fetchEphemeralToken() {
   const apiKey = getAPIKey();
-  if (!apiKey) throw new Error('API key not available');
-
+  if (!apiKey) throw new Error('API key not set in sessionStorage');
   const resp = await fetch('/.netlify/functions/get-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userKey: apiKey })
+    body: JSON.stringify({ apiKey })
   });
-
   if (!resp.ok) {
-    const errText = await resp.text().catch(() => '<unreadable>');
-    throw new Error(`Token fetch failed ${resp.status}: ${errText}`);
+    const errText = await resp.text();
+    throw new Error(`Failed to fetch token: ${errText}`);
   }
-
-  const { token, sessionId } = await resp.json();
-  console.log('🗝️ token/sessionId:', { token, sessionId });
-  return { token, sessionId };
+  return await resp.json(); // { token, sessionId }
 }
 
-function updateTranscript(text) {
-  const transcriptionElem = document.getElementById('transcription');
-  if (transcriptionElem) {
-    transcriptionElem.value = text;
-  }
-}
-
+// Start real-time transcription
 async function startRecording() {
-  const startBtn = document.getElementById('startButton');
-  const stopBtn  = document.getElementById('stopButton');
-  startBtn.disabled = true;
-  stopBtn.disabled  = false;
-
-  const apiKey = getAPIKey();
-  if (!apiKey || !apiKey.startsWith('sk-')) {
-    alert('Please enter a valid OpenAI API key.');
-    startBtn.disabled = false;
-    return;
-  }
-
-  updateStatusMessage('Initializing real-time transcription...', 'blue');
-
   try {
-    // 1. Get ephemeral token & session
+    updateStatusMessage('Initializing...', '#555');
     const { token, sessionId } = await fetchEphemeralToken();
 
-    // 2. Open signaling WebSocket
-    ws = new WebSocket(
-      `wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`
-    );
+    ws = new WebSocket(`wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`);
 
-    // 3–8. Setup PeerConnection, media capture & SDP exchange after WS opens
     ws.onopen = async () => {
-      // 3. Create RTCPeerConnection
-      pc = new RTCPeerConnection({
-        iceServers: [{ urls: ['stun:stun.openai.com:443'] }]
-      });
+      updateStatusMessage('Connection open. Setting up WebRTC...', '#555');
 
-      // 4. Handle incoming messages (SDP answer, ICE, transcript)
-      ws.onmessage = async (evt) => {
-        const msg = JSON.parse(evt.data);
-        if (msg.type === 'sdp_answer') {
-          await pc.setRemoteDescription(msg.data);
-        } else if (msg.type === 'ice_candidate') {
-          await pc.addIceCandidate(msg.data);
-        } else if (msg.type === 'transcript') {
-          updateTranscript(msg.data.text);
-        }
-      };
+      pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.openai.com:3478' }] });
 
-      // 5. Send local ICE candidates
-      pc.onicecandidate = (e) => {
-        if (!e.candidate) return;
-        ws.send(JSON.stringify({
-          type: 'ice_candidate',
-          data: e.candidate
-        }));
-      };
-
-      // 6. Capture mic and add to peer
+      // Capture microphone audio
       mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
 
-      // 7. Create SDP offer and send to server
+      // Send ICE candidates to server
+      pc.onicecandidate = ({ candidate }) => {
+        if (candidate) {
+          ws.send(JSON.stringify({ type: 'ice_candidate', data: candidate }));
+        }
+      };
+
+      // Receive transcripts via DataChannel
+      pc.ondatachannel = (event) => {
+        const dc = event.channel;
+        dc.onmessage = (msg) => {
+          const parsed = JSON.parse(msg.data);
+          if (parsed.type === 'transcript') {
+            const output = document.getElementById('transcript');
+            if (output) output.value = parsed.data.text;
+          }
+        };
+      };
+
+      // Create and send SDP offer
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       ws.send(JSON.stringify({ type: 'sdp_offer', data: offer }));
 
-      // 8. Start recording timer & update UI
-      recordingStartTime = Date.now();
-      recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-      updateStatusMessage('Recording... Speak now.', 'green');
+      // Start UI timer
+      startTimer();
+      updateStatusMessage('Recording...', '#080');
+    };
+
+    ws.onmessage = async (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'sdp_answer') {
+        await pc.setRemoteDescription(msg.data);
+      } else if (msg.type === 'ice_candidate') {
+        await pc.addIceCandidate(msg.data);
+      }
+    };
+
+    ws.onerror = (err) => {
+      console.error('WebSocket error:', err);
+      updateStatusMessage('WebSocket error', '#f00');
+      stopRecording();
+    };
+
+    ws.onclose = () => {
+      cleanup();
+      updateStatusMessage('Connection closed', '#333');
     };
 
   } catch (err) {
     console.error(err);
-    updateStatusMessage('Error: ' + err.message, 'red');
-    document.getElementById('startButton').disabled = false;
+    updateStatusMessage(err.message, '#f00');
+    stopRecording();
   }
 }
 
+// Stop recording and cleanup
 function stopRecording() {
-  // Close peer and WebSocket
-  if (pc)          { pc.close();      pc = null; }
-  if (ws)          { ws.close();      ws = null; }
-  // Stop microphone
-  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-  // Stop timer
-  clearInterval(recordingTimerInterval);
-  // Reset UI
-  document.getElementById('startButton').disabled = false;
-  document.getElementById('stopButton').disabled  = true;
-  updateStatusMessage('Transcription finished!', 'green');
-}
-
-function initRecording() {
+  if (recordingTimerInterval) clearInterval(recordingTimerInterval);
+  if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
+  if (pc) pc.close();
+  if (ws) ws.close();
+  updateStatusMessage('Stopped.', '#333');
   const startBtn = document.getElementById('startButton');
-  const stopBtn  = document.getElementById('stopButton');
-  if (startBtn && stopBtn) {
-    startBtn.addEventListener('click', startRecording);
-    stopBtn.addEventListener('click', stopRecording);
-    stopBtn.disabled = true;
-  }
+  if (startBtn) startBtn.disabled = false;
 }
 
-export { initRecording };
+function cleanup() {
+  if (pc) { pc.close(); pc = null; }
+  if (ws) { ws.close(); ws = null; }
+  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+  if (recordingTimerInterval) { clearInterval(recordingTimerInterval); recordingTimerInterval = null; }
+}
+
+// Recording timer UI
+function startTimer() {
+  recordingStartTime = Date.now();
+  recordingTimerInterval = setInterval(() => {
+    const elapsed = Date.now() - recordingStartTime;
+    const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
+    const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
+    const timer = document.getElementById('timer');
+    if (timer) timer.textContent = `${mins}:${secs}`;
+  }, 500);
+}
+
+// Bind UI buttons
+document.addEventListener('DOMContentLoaded', () => {
+  const startBtn = document.getElementById('startButton');
+  const stopBtn = document.getElementById('stopButton');
+  if (startBtn) startBtn.addEventListener('click', () => { startBtn.disabled = true; startRecording(); });
+  if (stopBtn) stopBtn.addEventListener('click', stopRecording);
+});

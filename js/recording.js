@@ -54,10 +54,8 @@ async function fetchEphemeralToken() {
     throw new Error(`Token fetch failed ${resp.status}: ${errText}`);
   }
 
-// Now pull both values, extracting the nested .value
-const data = await resp.json();
-const token     = data.client_secret.value;
-const sessionId = data.session_id;
+// Now pull both values:
+const { client_secret: token, session_id: sessionId } = await resp.json();
 return { token, sessionId };
 }
 

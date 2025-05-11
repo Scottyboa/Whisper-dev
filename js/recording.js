@@ -36,12 +36,10 @@ function getAPIKey() {
   return sessionStorage.getItem('user_api_key');
 }
 
-// Replaced direct OpenAI token fetch with Netlify Function proxy at /.netlify/functions/get-token
+// Fetch an ephemeral token & session ID via Netlify Function proxy
 async function fetchEphemeralToken() {
   const apiKey = getAPIKey();
   if (!apiKey) throw new Error('API key not available');
-
-  // → updated fetchEphemeralToken()
 
   const resp = await fetch('/.netlify/functions/get-token', {
     method: 'POST',
@@ -54,9 +52,8 @@ async function fetchEphemeralToken() {
     throw new Error(`Token fetch failed ${resp.status}: ${errText}`);
   }
 
-  // Pull the flat strings your function now returns
   const { token, sessionId } = await resp.json();
-  console.log('🗝️ token/sessionId:', { token, sessionId });  // <-- sanity check
+  console.log('🗝️ token/sessionId:', { token, sessionId });
   return { token, sessionId };
 }
 
@@ -83,7 +80,7 @@ async function startRecording() {
   updateStatusMessage('Initializing real-time transcription...', 'blue');
 
   try {
-    // 1. Fetch ephemeral token + session ID
+    // 1. Get ephemeral token & session
     const { token, sessionId } = await fetchEphemeralToken();
 
     // 2. Open signaling WebSocket
@@ -91,7 +88,7 @@ async function startRecording() {
       `wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`
     );
 
-    // 3–8. All PeerConnection setup, media capture & SDP offer only after WS opens
+    // 3–8. Setup PeerConnection, media capture & SDP exchange after WS opens
     ws.onopen = async () => {
       // 3. Create RTCPeerConnection
       pc = new RTCPeerConnection({
@@ -126,17 +123,14 @@ async function startRecording() {
       // 7. Create SDP offer and send to server
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      ws.send(JSON.stringify({
-        type: 'sdp_offer',
-        data: offer
-      }));
+      ws.send(JSON.stringify({ type: 'sdp_offer', data: offer }));
 
       // 8. Start recording timer & update UI
       recordingStartTime = Date.now();
       recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
       updateStatusMessage('Recording... Speak now.', 'green');
     };
-    
+
   } catch (err) {
     console.error(err);
     updateStatusMessage('Error: ' + err.message, 'red');

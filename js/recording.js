@@ -90,49 +90,52 @@ async function startRecording() {
       `wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`
     );
 
-    // 3. Create RTCPeerConnection
-    pc = new RTCPeerConnection({
-      iceServers: [{ urls: ['stun:stun.openai.com:443'] }]
-    });
+    // 3–8. All PeerConnection setup, media capture & SDP offer only after WS opens
+    ws.onopen = async () => {
+      // 3. Create RTCPeerConnection
+      pc = new RTCPeerConnection({
+        iceServers: [{ urls: ['stun:stun.openai.com:443'] }]
+      });
 
-    // 4. Handle incoming messages (SDP answer, ICE, transcript)
-    ws.onmessage = async (evt) => {
-      const msg = JSON.parse(evt.data);
-      if (msg.type === 'sdp_answer') {
-        await pc.setRemoteDescription(msg.data);
-      } else if (msg.type === 'ice_candidate') {
-        await pc.addIceCandidate(msg.data);
-      } else if (msg.type === 'transcript') {
-        updateTranscript(msg.data.text);
-      }
-    };
+      // 4. Handle incoming messages (SDP answer, ICE, transcript)
+      ws.onmessage = async (evt) => {
+        const msg = JSON.parse(evt.data);
+        if (msg.type === 'sdp_answer') {
+          await pc.setRemoteDescription(msg.data);
+        } else if (msg.type === 'ice_candidate') {
+          await pc.addIceCandidate(msg.data);
+        } else if (msg.type === 'transcript') {
+          updateTranscript(msg.data.text);
+        }
+      };
 
-    // 5. Send local ICE candidates
-    pc.onicecandidate = (e) => {
-      if (!e.candidate) return;
+      // 5. Send local ICE candidates
+      pc.onicecandidate = (e) => {
+        if (!e.candidate) return;
+        ws.send(JSON.stringify({
+          type: 'ice_candidate',
+          data: e.candidate
+        }));
+      };
+
+      // 6. Capture mic and add to peer
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
+
+      // 7. Create SDP offer and send to server
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
       ws.send(JSON.stringify({
-        type: 'ice_candidate',
-        data: e.candidate
+        type: 'sdp_offer',
+        data: offer
       }));
+
+      // 8. Start recording timer & update UI
+      recordingStartTime = Date.now();
+      recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+      updateStatusMessage('Recording... Speak now.', 'green');
     };
-
-    // 6. Capture mic and add to peer
-    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
-
-    // 7. Create SDP offer and send to server
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    ws.send(JSON.stringify({
-      type: 'sdp_offer',
-      data: offer
-    }));
-
-    // 8. Start recording timer & update UI
-    recordingStartTime = Date.now();
-    recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-    updateStatusMessage('Recording... Speak now.', 'green');
-
+    
   } catch (err) {
     console.error(err);
     updateStatusMessage('Error: ' + err.message, 'red');
@@ -141,14 +144,13 @@ async function startRecording() {
 }
 
 function stopRecording() {
-  // Close connections
+  // Close peer and WebSocket
   if (pc)          { pc.close();      pc = null; }
   if (ws)          { ws.close();      ws = null; }
+  // Stop microphone
   if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-
   // Stop timer
   clearInterval(recordingTimerInterval);
-
   // Reset UI
   document.getElementById('startButton').disabled = false;
   document.getElementById('stopButton').disabled  = true;

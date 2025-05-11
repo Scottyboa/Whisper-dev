@@ -1,183 +1,118 @@
 // recording.js
-// Real-time transcription using GPT-4o Realtime Preview via WebRTC signaling
-// Replace chunked Whisper logic with a live streaming pipeline.
+const $ = document.querySelector.bind(document);
+const apiKeyEl        = $('#openai-api-key');
+const modelEl         = $('#model');
+const promptEl        = $('#prompt');
+const turnDetectionEl = $('#turn-detection');
+const transcriptEl    = $('#transcript');
+const startMicEl      = $('#start-microphone');
+const startFileEl     = $('#start-file');
+const stopEl          = $('#stop');
+const audioEl         = $('#audio-file');
+const statusEl        = $('#status');
 
-let pc = null;
-let ws = null;
-let mediaStream = null;
-let recordingTimerInterval = null;
-let recordingStartTime = 0;
+let session = null, sessionConfig = null, vadTime = 0;
 
-// UI Helpers
-function updateStatusMessage(message, color = '#333') {
-  const statusElem = document.getElementById('statusMessage');
-  if (statusElem) {
-    statusElem.innerText = message;
-    statusElem.style.color = color;
+function initState() {
+  [apiKeyEl, modelEl, promptEl, turnDetectionEl].forEach(el => {
+    const key = el.id === 'openai-api-key' ? el.id : `realtime/transcribe/${el.id}`;
+    const val = localStorage.getItem(key);
+    if (val) el.value = val;
+    el.addEventListener('change', () => localStorage.setItem(key, el.value));
+  });
+  updateState(false);
+}
+
+function updateState(running) {
+  [apiKeyEl, modelEl, promptEl, turnDetectionEl, startMicEl, startFileEl].forEach(el => el.disabled = running);
+  stopEl.disabled = !running;
+  statusEl.textContent = '';
+}
+
+async function startMicrophone() {
+  if (!apiKeyEl.value) {
+    return alert('Please enter your OpenAI API Key first.');
+  }
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  await start(stream);
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) audioEl.src = URL.createObjectURL(file);
+  startFile();
+}
+
+async function startFile() {
+  if (!apiKeyEl.value) {
+    return alert('Please enter your OpenAI API Key first.');
+  }
+  audioEl.currentTime = 0;
+  audioEl.onended = () => setTimeout(() => stop(), 3000);
+  if (audioEl.readyState !== HTMLMediaElement.HAVE_METADATA) {
+    await new Promise(r => audioEl.onloadedmetadata = r);
+  }
+  const stream = audioEl.captureStream();
+  await start(stream);
+  await audioEl.play();
+}
+
+async function start(stream) {
+  updateState(true);
+  transcriptEl.value = '';
+  session = new Session(apiKeyEl.value);
+  session.onconnectionstatechange = s => statusEl.textContent = s;
+  session.onmessage            = handleMessage;
+  session.onerror              = handleError;
+
+  const config = {
+    input_audio_transcription: {
+      model:  modelEl.value,
+      prompt: promptEl.value || undefined
+    },
+    turn_detection: {
+      type: turnDetectionEl.value
+    }
+  };
+  await session.startTranscription(stream, config);
+}
+
+function stop() {
+  updateState(false);
+  audioEl.pause();
+  session?.stop();
+  session = null;
+}
+
+function handleMessage(msg) {
+  switch (msg.type) {
+    case "transcription_session.created":
+      sessionConfig = msg.session;
+      break;
+    case "input_audio_buffer.speech_started":
+      updateTranscript('.', true);
+      break;
+    case "input_audio_buffer.speech_stopped":
+      updateTranscript('***', true);
+      vadTime = performance.now() - sessionConfig.turn_detection.silence_duration_ms;
+      break;
+    case "conversation.item.input_audio_transcription.completed":
+      const latency = (performance.now() - vadTime).toFixed(0);
+      updateTranscript(msg.transcript + ` (${latency} ms)`, false);
+      break;
   }
 }
 
-function formatTime(ms) {
-  const totalSec = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSec / 60);
-  const seconds = totalSec % 60;
-  return minutes + ' min ' + seconds + ' sec';
+function updateTranscript(text, partial = false) {
+  const lines = transcriptEl.value.split('\n');
+  lines[lines.length - (partial ? 1 : 0)] = text;
+  transcriptEl.value = lines.join('\n') + (partial ? '' : '\n');
+  transcriptEl.scrollTop = transcriptEl.scrollHeight;
 }
 
-function updateRecordingTimer() {
-  const elapsed = Date.now() - recordingStartTime;
-  const timerElem = document.getElementById('recordTimer');
-  if (timerElem) {
-    timerElem.innerText = 'Recording Timer: ' + formatTime(elapsed);
-  }
+function handleError(err) {
+  console.error(err);
+  stop();
 }
 
-function getAPIKey() {
-  return sessionStorage.getItem('user_api_key');
-}
-
-// Replaced direct OpenAI token fetch with Netlify Function proxy at /.netlify/functions/get-token
-async function fetchEphemeralToken() {
-  const apiKey = getAPIKey();
-  if (!apiKey) throw new Error('API key not available');
-
-  // → updated fetchEphemeralToken()
-
-const resp = await fetch('/.netlify/functions/get-token', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ userKey: apiKey })
-});
-
-if (!resp.ok) {
-  const errText = await resp.text().catch(() => '<unreadable>');
-  throw new Error(`Token fetch failed ${resp.status}: ${errText}`);
-}
-
-// Pull the flat strings your function now returns
-const { token, sessionId } = await resp.json();
-console.log('🗝️ token/sessionId:', { token, sessionId });  // <-- sanity check
-return { token, sessionId };
-}
-
-function updateTranscript(text) {
-  const transcriptionElem = document.getElementById('transcription');
-  if (transcriptionElem) {
-    transcriptionElem.value = text;
-  }
-}
-
-async function startRecording() {
-  const startBtn = document.getElementById('startButton');
-  const stopBtn  = document.getElementById('stopButton');
-  startBtn.disabled = true;
-  stopBtn.disabled  = false;
-
-  const apiKey = getAPIKey();
-  if (!apiKey || !apiKey.startsWith('sk-')) {
-    alert('Please enter a valid OpenAI API key.');
-    startBtn.disabled = false;
-    return;
-  }
-
-  updateStatusMessage('Initializing real-time transcription...', 'blue');
-
-  try {
-    // 1. Fetch ephemeral token + session ID
-    const { token, sessionId } = await fetchEphemeralToken();
-
-    // 2. Open signaling WebSocket
-const wsUrl =
-  `wss://realtime.openai.com/ws` +
-  `?session_id=${encodeURIComponent(sessionId)}` +
-  `&token=${encodeURIComponent(token)}`;
-console.log("🕸 Connecting WebSocket to:", wsUrl);
-
-// Open the socket
-const ws = new WebSocket(wsUrl);
-
-// Instrument the handshake
-ws.addEventListener("open",  () => console.log("✅ WS opened"));
-ws.addEventListener("error", e => console.error("❌ WS error", e));
-ws.addEventListener("close", (e) => 
-  console.log("⚠️ WS closed", e.code, e.reason)
-);
-
-    // 3–8. All PeerConnection setup, media capture & SDP offer only after WS opens
-    ws.onopen = async () => {
-      // 3. Create RTCPeerConnection
-      pc = new RTCPeerConnection({
-        iceServers: [{ urls: ['stun:stun.openai.com:443'] }]
-      });
-
-      // 4. Handle incoming messages (SDP answer, ICE, transcript)
-      ws.onmessage = async (evt) => {
-        const msg = JSON.parse(evt.data);
-        if (msg.type === 'sdp_answer') {
-          await pc.setRemoteDescription(msg.data);
-        } else if (msg.type === 'ice_candidate') {
-          await pc.addIceCandidate(msg.data);
-        } else if (msg.type === 'transcript') {
-          updateTranscript(msg.data.text);
-        }
-      };
-
-      // 5. Send local ICE candidates
-      pc.onicecandidate = (e) => {
-        if (!e.candidate) return;
-        ws.send(JSON.stringify({
-          type: 'ice_candidate',
-          data: e.candidate
-        }));
-      };
-
-      // 6. Capture mic and add to peer
-      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
-
-      // 7. Create SDP offer and send to server
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      ws.send(JSON.stringify({
-        type: 'sdp_offer',
-        data: offer
-      }));
-
-      // 8. Start recording timer & update UI
-      recordingStartTime = Date.now();
-      recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-      updateStatusMessage('Recording... Speak now.', 'green');
-    };
-    
-  } catch (err) {
-    console.error(err);
-    updateStatusMessage('Error: ' + err.message, 'red');
-    document.getElementById('startButton').disabled = false;
-  }
-}
-
-function stopRecording() {
-  // Close peer and WebSocket
-  if (pc)          { pc.close();      pc = null; }
-  if (ws)          { ws.close();      ws = null; }
-  // Stop microphone
-  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-  // Stop timer
-  clearInterval(recordingTimerInterval);
-  // Reset UI
-  document.getElementById('startButton').disabled = false;
-  document.getElementById('stopButton').disabled  = true;
-  updateStatusMessage('Transcription finished!', 'green');
-}
-
-function initRecording() {
-  const startBtn = document.getElementById('startButton');
-  const stopBtn  = document.getElementById('stopButton');
-  if (startBtn && stopBtn) {
-    startBtn.addEventListener('click', startRecording);
-    stopBtn.addEventListener('click', stopRecording);
-    stopBtn.disabled = true;
-  }
-}
-
-export { initRecording };
+initState();

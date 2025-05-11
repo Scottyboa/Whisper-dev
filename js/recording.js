@@ -16,134 +16,108 @@ function updateStatusMessage(message, color = '#333') {
   }
 }
 
-// Retrieve stored API key from sessionStorage
-function getAPIKey() {
-  return sessionStorage.getItem('OPENAI_API_KEY');
+function updateTimer() {
+  const elapsed = Date.now() - recordingStartTime;
+  const seconds = Math.floor(elapsed / 1000);
+  const timerElem = document.getElementById('recordingTimer');
+  if (timerElem) timerElem.textContent = `${seconds}s`;
 }
 
-// Fetch ephemeral token & session ID via Netlify Function
+// Fetch ephemeral token and session ID from Netlify function
 async function fetchEphemeralToken() {
-  const apiKey = getAPIKey();
-  if (!apiKey) throw new Error('API key not set in sessionStorage');
+  const apiKey = sessionStorage.getItem('user_api_key');
   const resp = await fetch('/.netlify/functions/get-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ apiKey })
+    body: JSON.stringify({ userKey: apiKey })
   });
-  if (!resp.ok) {
-    const errText = await resp.text();
-    throw new Error(`Failed to fetch token: ${errText}`);
-  }
-  return await resp.json(); // { token, sessionId }
+  if (!resp.ok) throw new Error(`Token fetch failed: ${resp.statusText}`);
+  const { token, sessionId } = await resp.json();
+  return { token, sessionId };
 }
 
-// Start real-time transcription
+// Start recording and transcription
 async function startRecording() {
   try {
     updateStatusMessage('Initializing...', '#555');
     const { token, sessionId } = await fetchEphemeralToken();
 
     ws = new WebSocket(`wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`);
+    pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
 
     ws.onopen = async () => {
-      updateStatusMessage('Connection open. Setting up WebRTC...', '#555');
-
-      pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.openai.com:3478' }] });
-
-      // Capture microphone audio
+      updateStatusMessage('WebSocket open. Getting microphone…');
       mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
 
-      // Send ICE candidates to server
-      pc.onicecandidate = ({ candidate }) => {
-        if (candidate) {
-          ws.send(JSON.stringify({ type: 'ice_candidate', data: candidate }));
+      pc.onicecandidate = event => {
+        if (event.candidate) {
+          ws.send(JSON.stringify({ type: 'ice_candidate', data: event.candidate }));
         }
       };
 
-      // Receive transcripts via DataChannel
-      pc.ondatachannel = (event) => {
-        const dc = event.channel;
-        dc.onmessage = (msg) => {
-          const parsed = JSON.parse(msg.data);
-          if (parsed.type === 'transcript') {
-            const output = document.getElementById('transcript');
-            if (output) output.value = parsed.data.text;
-          }
-        };
+      pc.ontrack = () => {
+        // no-op: transcripts come over WebSocket
       };
 
-      // Create and send SDP offer
+      pc.ondatachannel = () => {
+        // no-op
+      };
+
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       ws.send(JSON.stringify({ type: 'sdp_offer', data: offer }));
 
-      // Start UI timer
-      startTimer();
-      updateStatusMessage('Recording...', '#080');
+      // Start timer
+      recordingStartTime = Date.now();
+      recordingTimerInterval = setInterval(updateTimer, 1000);
+      document.getElementById('startButton').disabled = true;
+      document.getElementById('stopButton').disabled = false;
+      updateStatusMessage('Recording…');
     };
 
-    ws.onmessage = async (event) => {
+    ws.onmessage = event => {
       const msg = JSON.parse(event.data);
       if (msg.type === 'sdp_answer') {
-        await pc.setRemoteDescription(msg.data);
+        pc.setRemoteDescription(new RTCSessionDescription(msg.data));
       } else if (msg.type === 'ice_candidate') {
-        await pc.addIceCandidate(msg.data);
+        pc.addIceCandidate(new RTCIceCandidate(msg.data));
+      } else if (msg.type === 'transcript') {
+        const { text } = msg.data;
+        const textarea = document.getElementById('transcriptOutput');
+        if (textarea) textarea.value = text;
       }
     };
 
-    ws.onerror = (err) => {
+    ws.onerror = err => {
       console.error('WebSocket error:', err);
-      updateStatusMessage('WebSocket error', '#f00');
-      stopRecording();
-    };
-
-    ws.onclose = () => {
-      cleanup();
-      updateStatusMessage('Connection closed', '#333');
+      updateStatusMessage('WebSocket error', 'red');
     };
 
   } catch (err) {
     console.error(err);
-    updateStatusMessage(err.message, '#f00');
-    stopRecording();
+    updateStatusMessage(err.message, 'red');
   }
 }
 
-// Stop recording and cleanup
+// Stop recording and clean up
 function stopRecording() {
   if (recordingTimerInterval) clearInterval(recordingTimerInterval);
-  if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
+  if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
   if (pc) pc.close();
   if (ws) ws.close();
-  updateStatusMessage('Stopped.', '#333');
-  const startBtn = document.getElementById('startButton');
-  if (startBtn) startBtn.disabled = false;
+  document.getElementById('startButton').disabled = false;
+  document.getElementById('stopButton').disabled = true;
+  updateStatusMessage('Ready');
+  const timerElem = document.getElementById('recordingTimer');
+  if (timerElem) timerElem.textContent = '0s';
 }
 
-function cleanup() {
-  if (pc) { pc.close(); pc = null; }
-  if (ws) { ws.close(); ws = null; }
-  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-  if (recordingTimerInterval) { clearInterval(recordingTimerInterval); recordingTimerInterval = null; }
-}
-
-// Recording timer UI
-function startTimer() {
-  recordingStartTime = Date.now();
-  recordingTimerInterval = setInterval(() => {
-    const elapsed = Date.now() - recordingStartTime;
-    const mins = String(Math.floor(elapsed / 60000)).padStart(2, '0');
-    const secs = String(Math.floor((elapsed % 60000) / 1000)).padStart(2, '0');
-    const timer = document.getElementById('timer');
-    if (timer) timer.textContent = `${mins}:${secs}`;
-  }, 500);
-}
-
-// Bind UI buttons
-document.addEventListener('DOMContentLoaded', () => {
+// Initialization for main.js
+export function initRecording() {
   const startBtn = document.getElementById('startButton');
   const stopBtn = document.getElementById('stopButton');
-  if (startBtn) startBtn.addEventListener('click', () => { startBtn.disabled = true; startRecording(); });
+  if (startBtn) startBtn.addEventListener('click', startRecording);
   if (stopBtn) stopBtn.addEventListener('click', stopRecording);
-});
+  updateStatusMessage('Ready');
+}

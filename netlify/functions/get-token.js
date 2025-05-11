@@ -47,9 +47,23 @@ exports.handler = async function(event) {
       };
     }
 
-    // 4. Extract flat strings
-    const sessionId = data.session_id;
-    const token     = data.client_secret.value;
+// 4. Extract flat strings, with fallback for session ID
+const sessionId =
+  data.session_id       // OpenAI may return this
+  || data.id            // sometimes the field is called "id"
+  || data.session?.id;  // or nested under "session"
+
+const token = data.client_secret.value;
+
+if (!sessionId || !token) {
+  console.error("Invalid session response:", data);
+  return {
+    statusCode: 500,
+    headers: { "Access-Control-Allow-Origin": "*" },
+    body: JSON.stringify({ error: "Could not extract sessionId or token" })
+  };
+}
+
 
     // 5. Return them
     return {

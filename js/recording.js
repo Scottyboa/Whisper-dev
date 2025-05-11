@@ -41,21 +41,22 @@ async function fetchEphemeralToken() {
   const apiKey = getAPIKey();
   if (!apiKey) throw new Error('API key not available');
 
-  const resp = await fetch('/.netlify/functions/get-token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userKey: apiKey })
-  });
+  // → updated fetchEphemeralToken()
 
-  if (!resp.ok) {
-    let errText;
-    try { errText = await resp.text(); } catch (e) { errText = `<unreadable>`; }
-    console.error('Token function returned failure:', resp.status, errText);
-    throw new Error(`Token fetch failed ${resp.status}: ${errText}`);
-  }
+const resp = await fetch('/.netlify/functions/get-token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ userKey: apiKey })
+});
 
-// Now pull both values:
-const { client_secret: token, session_id: sessionId } = await resp.json();
+if (!resp.ok) {
+  const errText = await resp.text().catch(() => '<unreadable>');
+  throw new Error(`Token fetch failed ${resp.status}: ${errText}`);
+}
+
+// Pull the flat strings your function now returns
+const { token, sessionId } = await resp.json();
+console.log('🗝️ token/sessionId:', { token, sessionId });  // <-- sanity check
 return { token, sessionId };
 }
 

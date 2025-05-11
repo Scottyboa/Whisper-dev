@@ -1,7 +1,5 @@
 // netlify/functions/get-token.js
 
-const fetch = require("node-fetch"); // If your runtime already has global fetch, you can omit this line
-
 exports.handler = async function(event) {
   console.log("get-token invoked, body:", event.body);
 
@@ -29,19 +27,14 @@ exports.handler = async function(event) {
   }
 
   try {
-    // 3. Create a Realtime transcription session
-    //    See: curl -X POST https://api.openai.com/v1/realtime/sessions … :contentReference[oaicite:0]{index=0}
+    // 3. Create a realtime transcription session
     const openaiRes = await fetch("https://api.openai.com/v1/realtime/sessions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        // If you’re in beta and need it, you may also need:
-        // "OpenAI-Beta": "assistants=v2"
+        "Content-Type":  "application/json"
       },
-      body: JSON.stringify({
-        model: "gpt-4o-mini-transcribe" // or whichever realtime‐transcription model you prefer
-      })
+      body: JSON.stringify({ model: "gpt-4o-mini-transcribe" })
     });
 
     const data = await openaiRes.json();
@@ -49,29 +42,28 @@ exports.handler = async function(event) {
       console.error("OpenAI error:", data);
       return {
         statusCode: openaiRes.status,
-        headers: { "Access-Control-Allow-Origin": "*" },
-        body: JSON.stringify({ error: data.error || data })
+        headers:    { "Access-Control-Allow-Origin": "*" },
+        body:       JSON.stringify({ error: data.error || data })
       };
     }
 
-    // 4. Extract the raw token string from the nested client_secret object
-    //    The API returns { client_secret: { value: "...", expires_at: ... }, session_id: "..." } :contentReference[oaicite:1]{index=1}
+    // 4. Extract flat strings
     const sessionId = data.session_id;
     const token     = data.client_secret.value;
 
-    // 5. Return flat strings for easy client consumption
+    // 5. Return them
     return {
       statusCode: 200,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ token, sessionId })
+      headers:    { "Access-Control-Allow-Origin": "*" },
+      body:       JSON.stringify({ token, sessionId })
     };
 
   } catch (err) {
     console.error("Fetch to OpenAI failed:", err);
     return {
       statusCode: 502,
-      headers:   { "Access-Control-Allow-Origin": "*" },
-      body:      JSON.stringify({ error: "Failed to reach OpenAI: " + err.message })
+      headers:    { "Access-Control-Allow-Origin": "*" },
+      body:       JSON.stringify({ error: "Failed to reach OpenAI: " + err.message })
     };
   }
 };

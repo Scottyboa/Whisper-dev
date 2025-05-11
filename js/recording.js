@@ -68,9 +68,9 @@ function updateTranscript(text) {
 
 async function startRecording() {
   const startBtn = document.getElementById('startButton');
-  const stopBtn = document.getElementById('stopButton');
+  const stopBtn  = document.getElementById('stopButton');
   startBtn.disabled = true;
-  stopBtn.disabled = false;
+  stopBtn.disabled  = false;
 
   const apiKey = getAPIKey();
   if (!apiKey || !apiKey.startsWith('sk-')) {
@@ -82,64 +82,55 @@ async function startRecording() {
   updateStatusMessage('Initializing real-time transcription...', 'blue');
 
   try {
-    // 1. Fetch ephemeral token via Netlify Function proxy
+    // 1. Fetch ephemeral token + session ID
     const { token, sessionId } = await fetchEphemeralToken();
 
-// 2. Open signaling WebSocket with sessionId & token
-ws = new WebSocket(
-  `wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`
-);
+    // 2. Open signaling WebSocket
+    ws = new WebSocket(
+      `wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`
+    );
 
     // 3. Create RTCPeerConnection
     pc = new RTCPeerConnection({
       iceServers: [{ urls: ['stun:stun.openai.com:443'] }]
     });
 
-// 4. Handle incoming WebSocket messages (SDP answer, ICE, transcript)
-ws.onmessage = async (evt) => {
-  const msg = JSON.parse(evt.data);
+    // 4. Handle incoming messages (SDP answer, ICE, transcript)
+    ws.onmessage = async (evt) => {
+      const msg = JSON.parse(evt.data);
+      if (msg.type === 'sdp_answer') {
+        await pc.setRemoteDescription(msg.data);
+      } else if (msg.type === 'ice_candidate') {
+        await pc.addIceCandidate(msg.data);
+      } else if (msg.type === 'transcript') {
+        updateTranscript(msg.data.text);
+      }
+    };
 
-  // 4a. SDP answer from server
-  if (msg.type === 'sdp_answer') {
-    await pc.setRemoteDescription(msg.data);
+    // 5. Send local ICE candidates
+    pc.onicecandidate = (e) => {
+      if (!e.candidate) return;
+      ws.send(JSON.stringify({
+        type: 'ice_candidate',
+        data: e.candidate
+      }));
+    };
 
-  // 4b. ICE candidate from server
-  } else if (msg.type === 'ice_candidate') {
-    await pc.addIceCandidate(msg.data);
-
-  // 4c. Transcript event
-  } else if (msg.type === 'transcript') {
-    updateTranscript(msg.data.text);
-  }
-};
-
-// 5. Send local ICE candidates
-pc.onicecandidate = (e) => {
-  if (!e.candidate) return;
-  ws.send(JSON.stringify({
-    type: 'ice_candidate',
-    data: e.candidate
-  }));
-};
-
-// …later, after adding your audio tracks…
-
-// 6. Create & send our SDP offer
-const offer = await pc.createOffer();
-await pc.setLocalDescription(offer);
-ws.send(JSON.stringify({
-  type: 'sdp_offer',
-  data: offer
-}));
-
-    // 6. Capture microphone and add to peer
+    // 6. Capture mic and add to peer
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
 
-    // 7. Start recording timer
+    // 7. Create SDP offer and send to server
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    ws.send(JSON.stringify({
+      type: 'sdp_offer',
+      data: offer
+    }));
+
+    // 8. Start recording timer & update UI
     recordingStartTime = Date.now();
     recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-
     updateStatusMessage('Recording... Speak now.', 'green');
 
   } catch (err) {
@@ -150,30 +141,23 @@ ws.send(JSON.stringify({
 }
 
 function stopRecording() {
-  // Close peer and WebSocket
-  if (pc) {
-    pc.close(); pc = null;
-  }
-  if (ws) {
-    ws.close(); ws = null;
-  }
-  // Stop microphone
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
-  }
+  // Close connections
+  if (pc)          { pc.close();      pc = null; }
+  if (ws)          { ws.close();      ws = null; }
+  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+
   // Stop timer
   clearInterval(recordingTimerInterval);
 
-  // Update buttons and status
+  // Reset UI
   document.getElementById('startButton').disabled = false;
-  document.getElementById('stopButton').disabled = true;
+  document.getElementById('stopButton').disabled  = true;
   updateStatusMessage('Transcription finished!', 'green');
 }
 
 function initRecording() {
   const startBtn = document.getElementById('startButton');
-  const stopBtn = document.getElementById('stopButton');
+  const stopBtn  = document.getElementById('stopButton');
   if (startBtn && stopBtn) {
     startBtn.addEventListener('click', startRecording);
     stopBtn.addEventListener('click', stopRecording);

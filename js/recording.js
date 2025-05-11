@@ -47,21 +47,16 @@ async function fetchEphemeralToken() {
     body: JSON.stringify({ userKey: apiKey })
   });
 
-  // If we didn’t get a 2xx, read the body and print it
   if (!resp.ok) {
     let errText;
-    try {
-      errText = await resp.text();
-    } catch (e) {
-      errText = `<unreadable>`;
-    }
+    try { errText = await resp.text(); } catch (e) { errText = `<unreadable>`; }
     console.error('Token function returned failure:', resp.status, errText);
     throw new Error(`Token fetch failed ${resp.status}: ${errText}`);
   }
 
-  // Otherwise parse and return
-  const { client_secret } = await resp.json();
-  return client_secret;
+  // Now pull both values:
+  const { client_secret: token, session_id: sessionId } = await resp.json();
+  return { token, sessionId };
 }
 
 function updateTranscript(text) {
@@ -88,40 +83,54 @@ async function startRecording() {
 
   try {
     // 1. Fetch ephemeral token via Netlify Function proxy
-    const token = await fetchEphemeralToken();
+    const { token, sessionId } = await fetchEphemeralToken();
 
-    // 2. Open signaling WebSocket
-    ws = new WebSocket(`wss://realtime.openai.com/ws?model=gpt-4o-realtime-preview&token=${token}`);
+// 2. Open signaling WebSocket with sessionId & token
+ws = new WebSocket(
+  `wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`
+);
 
     // 3. Create RTCPeerConnection
     pc = new RTCPeerConnection({
       iceServers: [{ urls: ['stun:stun.openai.com:443'] }]
     });
 
-    // 4. Handle incoming WebSocket messages (SDP and ICE)
-    ws.onmessage = async (evt) => {
-      const msg = JSON.parse(evt.data);
-      if (msg.sdp) {
-        // Remote offer
-        await pc.setRemoteDescription(msg);
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        ws.send(JSON.stringify({ sdp: pc.localDescription }));
-      } else if (msg.ice) {
-        // Remote ICE candidate
-        await pc.addIceCandidate(msg.ice);
-      } else if (msg.transcript) {
-        // Partial or final transcript
-        updateTranscript(msg.transcript);
-      }
-    };
+// 4. Handle incoming WebSocket messages (SDP answer, ICE, transcript)
+ws.onmessage = async (evt) => {
+  const msg = JSON.parse(evt.data);
 
-    // 5. Send local ICE candidates
-    pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        ws.send(JSON.stringify({ ice: e.candidate }));
-      }
-    };
+  // 4a. SDP answer from server
+  if (msg.type === 'sdp_answer') {
+    await pc.setRemoteDescription(msg.data);
+
+  // 4b. ICE candidate from server
+  } else if (msg.type === 'ice_candidate') {
+    await pc.addIceCandidate(msg.data);
+
+  // 4c. Transcript event
+  } else if (msg.type === 'transcript') {
+    updateTranscript(msg.data.text);
+  }
+};
+
+// 5. Send local ICE candidates
+pc.onicecandidate = (e) => {
+  if (!e.candidate) return;
+  ws.send(JSON.stringify({
+    type: 'ice_candidate',
+    data: e.candidate
+  }));
+};
+
+// …later, after adding your audio tracks…
+
+// 6. Create & send our SDP offer
+const offer = await pc.createOffer();
+await pc.setLocalDescription(offer);
+ws.send(JSON.stringify({
+  type: 'sdp_offer',
+  data: offer
+}));
 
     // 6. Capture microphone and add to peer
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });

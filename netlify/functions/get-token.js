@@ -1,108 +1,72 @@
 // netlify/functions/get-token.js
 
-export async function handler(event, context) {
-  // 1. CORS preflight
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 204,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-      body: '',
-    };
-  }
+exports.handler = async function(event) {
+  console.log('get-token invoked, body:', event.body);
 
-  // 2. Only POST
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: {
-        'Allow': 'POST, OPTIONS',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: 'Method Not Allowed',
-    };
-  }
-
-  // 3. Parse body
-  let payload;
+  // 1. Parse incoming JSON
+  let userKey;
   try {
-    payload = JSON.parse(event.body || '{}');
-  } catch {
+    ({ userKey } = JSON.parse(event.body || '{}'));
+  } catch (err) {
+    console.error('JSON parse error:', err);
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Invalid JSON' }),
+      body: JSON.stringify({ error: 'Invalid JSON in request body' })
     };
   }
 
-  const userKey = payload.userKey;
-  if (!userKey) {
+  // 2. Validate API key
+  if (!userKey || typeof userKey !== 'string') {
+    console.error('No or invalid userKey provided:', userKey);
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Missing userKey' }),
+      body: JSON.stringify({ error: 'Missing or invalid userKey' })
     };
   }
 
-  // 4. Call OpenAI
+  // 3. Create a realtime transcription session
   try {
-    console.log('→ Calling OpenAI with key prefix:', userKey.slice(0,5) + '…');
+    console.log('Creating transcription session, key prefix:', userKey.slice(0,5) + '…');
     const openaiRes = await fetch(
-      'https://api.openai.com/v1/audio/ephemeral_tokens',
+      'https://api.openai.com/v1/realtime/transcription_sessions',
       {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${userKey}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ model: 'gpt-4o-realtime-preview' }),
+        body: JSON.stringify({
+          input_audio_transcription: {
+            model: 'gpt-4o-transcribe',
+            language: 'en'
+          }
+        })
       }
     );
 
-    // Read raw text
-    const raw = await openaiRes.text();
-    console.log('← OpenAI status:', openaiRes.status);
-    console.log('← OpenAI raw body:', raw);
+    const data = await openaiRes.json();
+    console.log('OpenAI response status:', openaiRes.status, 'payload:', data);
 
-    let data;
-    try {
-      data = JSON.parse(raw);
-    } catch (err) {
-      console.error('JSON parse error:', err);
-      // Return the raw HTML so you can inspect it in curl/browser
-      return {
-        statusCode: 502,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        },
-        body: JSON.stringify({
-          error: 'OpenAI returned non-JSON; check logs for raw body'
-        })
-      };
-    }
-
+    // 4. Relay both token and session_id back to the client
     return {
       statusCode: openaiRes.status,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        client_secret: data.client_secret,
+        session_id:   data.session_id
+      })
     };
-
   } catch (err) {
     console.error('Fetch to OpenAI failed:', err);
     return {
       statusCode: 502,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({ error: 'Failed to reach OpenAI: ' + err.message }),
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: 'Failed to reach OpenAI: ' + err.message })
     };
   }
-}
+};

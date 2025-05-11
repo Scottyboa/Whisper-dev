@@ -87,9 +87,21 @@ async function startRecording() {
     const { token, sessionId } = await fetchEphemeralToken();
 
     // 2. Open signaling WebSocket
-    ws = new WebSocket(
-      `wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`
-    );
+const wsUrl =
+  `wss://realtime.openai.com/ws` +
+  `?session_id=${encodeURIComponent(sessionId)}` +
+  `&token=${encodeURIComponent(token)}`;
+console.log("🕸 Connecting WebSocket to:", wsUrl);
+
+// Open the socket
+const ws = new WebSocket(wsUrl);
+
+// Instrument the handshake
+ws.addEventListener("open",  () => console.log("✅ WS opened"));
+ws.addEventListener("error", e => console.error("❌ WS error", e));
+ws.addEventListener("close", (e) => 
+  console.log("⚠️ WS closed", e.code, e.reason)
+);
 
     // 3–8. All PeerConnection setup, media capture & SDP offer only after WS opens
     ws.onopen = async () => {

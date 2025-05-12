@@ -1,10 +1,10 @@
 // netlify/functions/get-token.js
 
-// Creates a real-time transcription session and returns { token, sessionId }.
-// Uses OpenAI's v1/realtime/transcription_sessions endpoint with the beta header "assistants=v2".
+// Creates and returns an ephemeral token for real-time transcription via WebSocket
+// Uses OpenAI's /v1/realtime/transcription_sessions endpoint with the assistants=v2 beta header
 
 exports.handler = async function(event) {
-  // Handle CORS preflight
+  // CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 204,
@@ -17,15 +17,15 @@ exports.handler = async function(event) {
     };
   }
 
-  // Parse request body
+  // Parse body
   let params;
   try {
     params = JSON.parse(event.body || '{}');
-  } catch (e) {
+  } catch {
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Invalid JSON in request body' })
+      body: JSON.stringify({ error: 'Invalid JSON in request' })
     };
   }
 
@@ -34,57 +34,61 @@ exports.handler = async function(event) {
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Missing userKey in request body' })
+      body: JSON.stringify({ error: 'Missing userKey in request' })
     };
   }
 
-  // Call OpenAI to create a transcription session
-  const response = await fetch('https://api.openai.com/v1/realtime/transcription_sessions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${userKey}`,
-      'Content-Type':  'application/json',
-      'OpenAI-Beta':   'assistants=v2'
-    },
-    body: JSON.stringify({
-      input_audio_format: 'pcm16',
-      input_audio_transcription: {
-        model: 'gpt-4o-mini-transcribe',
-        language: 'en',
-        prompt: 'Transcribe the incoming audio in real time.'
+  // Request a new transient session and token
+  try {
+    const resp = await fetch('https://api.openai.com/v1/realtime/transcription_sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${userKey}`,
+        'Content-Type':  'application/json',
+        'OpenAI-Beta':   'assistants=v2'
       },
-      turn_detection: { type: 'server_vad', silence_duration_ms: 300 }
-    })
-  });
+      body: JSON.stringify({
+        input_audio_format: 'pcm16',
+        input_audio_transcription: {
+          model:    'gpt-4o-mini-transcribe',
+          language: 'en',
+          prompt:   'Transcribe the incoming audio in real time.'
+        },
+        turn_detection: { type: 'server_vad', silence_duration_ms: 300 }
+      })
+    });
 
-  const data = await response.json();
+    const data = await resp.json();
+    if (!resp.ok) {
+      return {
+        statusCode: resp.status,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'OpenAI error', data })
+      };
+    }
 
-  // Propagate any error from OpenAI
-  if (!response.ok) {
+    // Extract ephemeral token
+    const token = data.client_secret?.value;
+    if (!token) {
+      return {
+        statusCode: 500,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'Missing ephemeral token', data })
+      };
+    }
+
+    // Success
     return {
-      statusCode: response.status,
+      statusCode: 200,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'OpenAI API error', data })
+      body: JSON.stringify({ token })
     };
-  }
 
-  // Extract ephemeral token and the session ID
-  const token     = data.client_secret?.value;
-  const sessionId = data.session?.id;
-
-  if (!token || !sessionId) {
-    // Return raw payload for debugging if missing
+  } catch (err) {
     return {
       statusCode: 500,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Missing token or sessionId', data })
+      body: JSON.stringify({ error: 'Internal error', message: err.message })
     };
   }
-
-  // Success: return token & sessionId
-  return {
-    statusCode: 200,
-    headers:    { 'Access-Control-Allow-Origin': '*' },
-    body:       JSON.stringify({ token, sessionId })
-  };
 };

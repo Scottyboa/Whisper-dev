@@ -2,8 +2,22 @@
 // Implements real-time transcription via HTTP signaling and WebRTC DataChannel
 
 export function initRecording() {
-  document.getElementById('startButton').onclick = startRecording;
-  document.getElementById('stopButton').onclick = stopRecording;
+  // Wire up Start, Stop, and Pause/Resume buttons
+  const startBtn = document.getElementById('startButton');
+  const stopBtn = document.getElementById('stopButton');
+  const pauseBtn = document.getElementById('pauseResumeButton');
+
+  if (startBtn) startBtn.onclick = startRecording;
+  if (stopBtn) stopBtn.onclick = stopRecording;
+  if (pauseBtn) {
+    pauseBtn.disabled = true;
+    pauseBtn.textContent = 'Pause Recording';
+    pauseBtn.onclick = togglePause;
+  }
+
+  // Initial button states
+  if (startBtn) startBtn.disabled = false;
+  if (stopBtn) stopBtn.disabled = true;
 }
 
 let pc = null;
@@ -20,14 +34,6 @@ function updateStatusMessage(message, color = '#333') {
   }
 }
 
-function updateTranscript(text) {
-  const textarea = document.getElementById('transcript');
-  if (textarea) {
-    textarea.value += text + "\n";
-  }
-}
-
-// Fetch ephemeral token & sessionId from Netlify function
 async function fetchEphemeralToken() {
   const apiKey = sessionStorage.getItem('user_api_key');
   if (!apiKey) throw new Error('No API key in sessionStorage under "user_api_key"');
@@ -37,13 +43,14 @@ async function fetchEphemeralToken() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userKey: apiKey })
   });
+
   const raw = await resp.json();
   console.log('💡 RAW get-token response →', raw);
   if (!resp.ok) throw new Error(`Token fetch failed: ${JSON.stringify(raw)}`);
 
   const { token, sessionId } = raw;
   if (typeof token !== 'string' || typeof sessionId !== 'string') {
-    throw new Error(`Invalid token payload: ${JSON.stringify(raw)}`);
+    throw new Error(`Invalid token payload, expected strings: ${JSON.stringify(raw)}`);
   }
   return { token, sessionId };
 }
@@ -55,25 +62,33 @@ async function startRecording() {
     const { token, sessionId } = await fetchEphemeralToken();
     console.log('✅ Using token:', token, 'sessionId:', sessionId);
 
-    // 1) Create the RTCPeerConnection & DataChannel
+    // Create RTCPeerConnection & DataChannel
     pc = new RTCPeerConnection();
     const dc = pc.createDataChannel('oai-events');
     dc.onmessage = (evt) => {
       const msg = JSON.parse(evt.data);
-      if (msg.type === 'transcript') {
-        document.getElementById('transcript').value += msg.data.text + '\n';
+      let text = '';
+      if (msg.type === 'transcript' && msg.data?.text) {
+        text = msg.data.text;
+      } else if (msg.type === 'conversation.item.input_audio_transcription.completed' && msg.transcript) {
+        text = msg.transcript;
+      }
+      if (text) {
+        const out = document.getElementById('transcription');
+        out.value += text + '\n';
+        out.scrollTop = out.scrollHeight;
       }
     };
 
-    // 2) Hook up the mic
+    // Hook up the mic
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
 
-    // 3) Create & set the local SDP offer
+    // Create & set local SDP offer
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    // 4) Signal via HTTP instead of WebSocket
+    // Signal via HTTP
     const signalUrl = 'https://api.openai.com/v1/realtime';
     const signalResponse = await fetch(signalUrl, {
       method: 'POST',
@@ -83,20 +98,25 @@ async function startRecording() {
       },
       body: offer.sdp
     });
-
-    const signalText = await signalResponse.text();
+    const answerSdp = await signalResponse.text();
     if (!signalResponse.ok) {
       console.error(
         '❌ Signal error:',
         signalResponse.status,
         signalResponse.statusText,
-        signalText
+        answerSdp
       );
       throw new Error(`Failed to signal SDP offer: ${signalResponse.status}`);
     }
 
-    // 5) Apply the SDP answer from OpenAI
-    await pc.setRemoteDescription({ type: 'answer', sdp: signalText });
+    // Apply the SDP answer
+    await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+
+    // Update buttons
+    document.getElementById('startButton').disabled = true;
+    document.getElementById('stopButton').disabled  = false;
+    const pauseBtn = document.getElementById('pauseResumeButton');
+    if (pauseBtn) pauseBtn.disabled = false;
 
     updateStatusMessage('Recording… speak now!', 'green');
 
@@ -106,19 +126,41 @@ async function startRecording() {
   }
 }
 
-// Stop recording: clean up
+// Stop recording: clean up and reset UI
 function stopRecording() {
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(track => track.stop());
-    mediaStream = null;
-  }
   if (pc) {
     pc.close();
     pc = null;
   }
-  if (recordingTimerInterval) {
-    clearInterval(recordingTimerInterval);
-    recordingTimerInterval = null;
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
   }
-  updateStatusMessage('Recording stopped.', '#333');
+  clearInterval(recordingTimerInterval);
+
+  // Reset buttons
+  const startBtn = document.getElementById('startButton');
+  const stopBtn  = document.getElementById('stopButton');
+  const pauseBtn = document.getElementById('pauseResumeButton');
+  if (startBtn) startBtn.disabled = false;
+  if (stopBtn)  stopBtn.disabled  = true;
+  if (pauseBtn) {
+    pauseBtn.disabled = true;
+    pauseBtn.textContent = 'Pause Recording';
+  }
+
+  updateStatusMessage('Transcription finished!', 'green');
+}
+
+// Toggle pause/resume: mute/unmute mic track
+function togglePause() {
+  const pauseBtn = document.getElementById('pauseResumeButton');
+  if (!pc || !pauseBtn) return;
+  const isPause = pauseBtn.textContent === 'Pause Recording';
+  pc.getSenders().forEach(s => {
+    if (s.track && s.track.kind === 'audio') {
+      s.track.enabled = isPause ? false : true;
+    }
+  });
+  pauseBtn.textContent = isPause ? 'Resume Recording' : 'Pause Recording';
 }

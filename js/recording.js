@@ -1,24 +1,24 @@
 // recording.js
-// Implements real-time transcription via HTTP signaling and WebRTC DataChannel
-// — with detailed debug logging and fixed element IDs.
+// Real-time transcription via HTTP signaling + WebRTC DataChannel
+// — now with full debug logging.
 
 export function initRecording() {
   console.log('⚙️ initRecording()');
   document.getElementById('startButton').onclick = startRecording;
-  document.getElementById('stopButton').onclick = stopRecording;
+  document.getElementById('stopButton').onclick  = stopRecording;
 }
 
 let pc = null;
 let mediaStream = null;
 
 // UI Helpers
-function updateStatus(message, color = '#333') {
-  const statusElem = document.getElementById('statusMessage');
-  if (statusElem) {
-    statusElem.textContent = message;
-    statusElem.style.color = color;
+function updateStatus(msg, color = '#333') {
+  const el = document.getElementById('statusMessage');
+  if (el) {
+    el.textContent = msg;
+    el.style.color   = color;
   }
-  console.log(`🛈 Status: ${message}`);
+  console.log(`🛈 Status: ${msg}`);
 }
 
 function appendTranscript(text) {
@@ -31,89 +31,92 @@ function appendTranscript(text) {
   console.log(`📝 Transcript: ${text}`);
 }
 
-// Fetch ephemeral token & sessionId from Netlify function
+// 1) Fetch token/sessionId
 async function fetchEphemeralToken() {
   console.log('🔑 fetchEphemeralToken()');
   const apiKey = sessionStorage.getItem('user_api_key');
-  if (!apiKey) throw new Error('No API key in sessionStorage under "user_api_key"');
-
+  if (!apiKey) throw new Error('No API key in sessionStorage');
   const resp = await fetch('/.netlify/functions/get-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userKey: apiKey })
   });
-  const raw = await resp.json();
-  console.log('💡 get-token response →', raw);
-
-  if (!resp.ok) throw new Error(`Token fetch failed: ${JSON.stringify(raw)}`);
-  const { token, sessionId } = raw;
-  if (!token || !sessionId) {
-    throw new Error(`Invalid token payload: ${JSON.stringify(raw)}`);
-  }
-  console.log(`✅ Got token & sessionId`);
+  const body = await resp.json();
+  console.log('💡 get-token response →', body);
+  if (!resp.ok) throw new Error(`Token fetch failed: ${resp.status}`);
+  const { token, sessionId } = body;
+  if (!token || !sessionId) throw new Error(`Bad token payload`);
   return { token, sessionId };
 }
 
-// Start recording: use HTTP signaling instead of WebSocket
+// 2) Start
 async function startRecording() {
   console.log('▶️ startRecording()');
   updateStatus('Initializing…');
   try {
     const { token, sessionId } = await fetchEphemeralToken();
 
-    // 1) Create RTCPeerConnection & DataChannel
+    // — Create PeerConnection
     pc = new RTCPeerConnection();
-    pc.onicecandidate = (evt) => {
-      console.log('➿ ICE candidate:', evt.candidate);
-    };
     console.log('🎧 PeerConnection created');
 
+    // — Debug hooks
+    pc.onicecandidate            = e => console.log('➿ ICE candidate:', e.candidate);
+    pc.oniceconnectionstatechange= () => console.log('➿ ICE connectionState:', pc.iceConnectionState);
+    pc.onconnectionstatechange   = () => console.log('🔗 connectionState:', pc.connectionState);
+    pc.onsignalingstatechange    = () => console.log('📶 signalingState:', pc.signalingState);
+    pc.onicegatheringstatechange = () => console.log('⌛ iceGatheringState:', pc.iceGatheringState);
+
+    // — DataChannel
     const dc = pc.createDataChannel('oai-events');
-    dc.onopen  = () => console.log('🔗 DataChannel open');
-    dc.onclose = () => console.log('❌ DataChannel closed');
-    dc.onerror = (e) => console.error('💥 DataChannel error:', e);
-    dc.onmessage = (evt) => {
+    console.log('📁 DataChannel created:', dc.label);
+    dc.onopen    = () => console.log('🔓 DC open (readyState=', dc.readyState,')');
+    dc.onclose   = () => console.log('🔒 DC closed (readyState=', dc.readyState,')');
+    dc.onerror   = err => console.error('💥 DC error:', err);
+    dc.onmessage = evt => {
+      console.log('📨 DC message event:', evt.data);
       try {
         const msg = JSON.parse(evt.data);
-        if (msg.type === 'transcript') {
-          appendTranscript(msg.data.text);
-        } else {
-          console.log('📨 DC message:', msg);
-        }
-      } catch (err) {
-        console.error('⚠️ Failed to parse DC message:', evt.data, err);
+        if (msg.type === 'transcript') appendTranscript(msg.data.text);
+      } catch(e) {
+        console.error('⚠️ DC parse failed:', e);
       }
     };
 
-    // 2) Hook up the mic
-    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
-    console.log('🎤 Microphone stream attached');
-
-    // 3) Create & set the local SDP offer
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    console.log('📢 SDP offer created & set:', offer.sdp);
-
-    // 4) Wait for ICE gathering to complete
-    if (pc.iceGatheringState !== 'complete') {
-      console.log('⌛ Waiting for ICE gathering…');
-      await new Promise(resolve => {
-        function checkState() {
-          if (pc.iceGatheringState === 'complete') {
-            pc.removeEventListener('icegatheringstatechange', checkState);
-            resolve();
-          }
-        }
-        pc.addEventListener('icegatheringstatechange', checkState);
-      });
-      console.log('✅ ICE gathering complete');
+    // — SCTP state (if supported)
+    if (pc.sctp) {
+      console.log('⚡ SCTP available!');
+      pc.sctp.onstatechange = () => console.log('⛓️ SCTP state:', pc.sctp.state);
     }
 
-    // 5) Signal via HTTP
-    const signalUrl = 'https://api.openai.com/v1/realtime';
-    console.log('📡 Signaling to OpenAI…');
-    const signalResp = await fetch(signalUrl, {
+    // — Audio
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaStream.getTracks().forEach(t => pc.addTrack(t, mediaStream));
+    console.log('🎤 Mic attached');
+
+    // — Offer
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    console.log('📢 Local SDP set:', offer.sdp.split('\n').slice(0,5).join('\n'), '…');
+
+    // — Wait for ICE gather
+    if (pc.iceGatheringState !== 'complete') {
+      await new Promise(res => {
+        const check = () => {
+          console.log('⌛ waiting, iceGatheringState=', pc.iceGatheringState);
+          if (pc.iceGatheringState === 'complete') {
+            pc.removeEventListener('icegatheringstatechange', check);
+            res();
+          }
+        };
+        pc.addEventListener('icegatheringstatechange', check);
+      });
+    }
+    console.log('✅ ICE gathering complete');
+
+    // — Signal
+    console.log('📡 Sending SDP to OpenAI…');
+    const sig = await fetch('https://api.openai.com/v1/realtime', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -121,30 +124,28 @@ async function startRecording() {
       },
       body: pc.localDescription.sdp
     });
-    const answerSdp = await signalResp.text();
-    if (!signalResp.ok) {
-      console.error('❌ Signal error:', signalResp.status, signalResp.statusText, answerSdp);
-      throw new Error(`Failed to signal SDP: ${signalResp.status}`);
-    }
-    console.log('🎯 Received SDP answer:', answerSdp);
+    const answer = await sig.text();
+    console.log(`🎯 Received answer SDP (first lines):\n${answer.split('\n').slice(0,5).join('\n')}…`);
 
-    // 6) Apply the SDP answer
-    await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+    if (!sig.ok) throw new Error(`Signal failed ${sig.status}`);
+
+    // — Apply remote
+    await pc.setRemoteDescription({ type: 'answer', sdp: answer });
     console.log('✅ Remote SDP applied');
+    console.log('⏯️ DC readyState now:', dc.readyState);
 
     updateStatus('Recording… speak now!', 'green');
-
   } catch (err) {
     console.error('❗ startRecording error:', err);
     updateStatus(`Error: ${err.message}`, 'red');
   }
 }
 
-// Stop recording: clean up
+// 3) Stop
 function stopRecording() {
   console.log('⏹️ stopRecording()');
   if (mediaStream) {
-    mediaStream.getTracks().forEach(track => track.stop());
+    mediaStream.getTracks().forEach(t => t.stop());
     mediaStream = null;
   }
   if (pc) {

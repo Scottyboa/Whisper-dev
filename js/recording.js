@@ -63,22 +63,18 @@ async function startRecording() {
     console.log('✅ Using token:', token, 'sessionId:', sessionId);
 
     // Create RTCPeerConnection & DataChannel
-    pc = new RTCPeerConnection();
-    const dc = pc.createDataChannel('');
-    dc.onmessage = (evt) => {
-      const msg = JSON.parse(evt.data);
-      let text = '';
-      if (msg.type === 'transcript' && msg.data?.text) {
-        text = msg.data.text;
-      } else if (msg.type === 'conversation.item.input_audio_transcription.completed' && msg.transcript) {
-        text = msg.transcript;
-      }
-      if (text) {
-        const out = document.getElementById('transcription');
-        out.value += text + '\n';
-        out.scrollTop = out.scrollHeight;
-      }
-    };
+      pc = new RTCPeerConnection();
+  // Create a channel with an *empty* label so it matches what the server uses
+  const dc = pc.createDataChannel('');
+  dc.onopen = () => updateStatusMessage('Recording… speak now!', 'green');
+  dc.onmessage = (evt) => {
+    const msg = JSON.parse(evt.data);
+    if (msg.type === 'transcript' && msg.data?.text) {
+      const out = document.getElementById('transcription');
+      out.value += msg.data.text + '\n';
+      out.scrollTop = out.scrollHeight;
+    }
+  };
 
     // Hook up the mic
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });

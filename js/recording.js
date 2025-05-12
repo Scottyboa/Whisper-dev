@@ -23,7 +23,6 @@ export function initRecording() {
 // Globals
 let pc = null;
 let mediaStream = null;
-let recordingTimerInterval = null;
 
 // UI helper
 function updateStatusMessage(message, color = '#333') {
@@ -34,7 +33,7 @@ function updateStatusMessage(message, color = '#333') {
   }
 }
 
-// Fetch ephemeral key + sessionId from your Netlify function
+// Fetch ephemeral key + sessionId from Netlify
 async function fetchEphemeralToken() {
   const apiKey = sessionStorage.getItem('user_api_key');
   if (!apiKey) throw new Error('No API key in sessionStorage under "user_api_key"');
@@ -56,7 +55,7 @@ async function fetchEphemeralToken() {
   return { token, sessionId };
 }
 
-// Start recording: HTTP-signal the SDP offer, then stream transcripts over DataChannel
+// Start recording: HTTP-signal the SDP offer, then stream transcripts
 async function startRecording() {
   try {
     updateStatusMessage('Getting ephemeral token…', 'blue');
@@ -84,18 +83,17 @@ async function startRecording() {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    // 4) Immediately signal that offer — no ICE-wait
-    const signalResponse = await fetch(
-      'https://api.openai.com/v1/realtime',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type':  'application/sdp'
-        },
-        body: offer.sdp
-      }
-    );
+    // 4) HTTP signal the offer to the specific session
+    const signalUrl = `https://api.openai.com/v1/realtime?session_id=${sessionId}`;
+    const signalResponse = await fetch(signalUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type':  'application/sdp'
+      },
+      body: offer.sdp
+    });
+
     const answerSdp = await signalResponse.text();
     if (!signalResponse.ok) {
       console.error('❌ Signal error:', signalResponse.status, answerSdp);
@@ -118,7 +116,7 @@ async function startRecording() {
   }
 }
 
-// Stop recording: close everything and reset UI
+// Stop recording: cleanup and reset UI
 function stopRecording() {
   if (pc) {
     pc.close();
@@ -128,7 +126,6 @@ function stopRecording() {
     mediaStream.getTracks().forEach(t => t.stop());
     mediaStream = null;
   }
-  clearInterval(recordingTimerInterval);
 
   document.getElementById('startButton').disabled = false;
   document.getElementById('stopButton').disabled  = true;

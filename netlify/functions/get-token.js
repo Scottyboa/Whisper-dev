@@ -9,29 +9,26 @@ exports.handler = async function(event) {
       statusCode: 204,
       headers: {
         'Access-Control-Allow-Origin':  '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'OPTIONS, POST',
         'Access-Control-Allow-Headers': 'Content-Type',
       },
       body: ''
     };
   }
 
-  // 2. Parse incoming API key
-  let userKey;
+  // 2. Parse incoming JSON for userKey
+  let body;
   try {
-    ({ userKey } = JSON.parse(event.body || '{}'));
+    body = JSON.parse(event.body || '{}');
   } catch (err) {
-    console.error('JSON parse error:', err);
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({ error: 'Invalid JSON in request body' })
     };
   }
-
-  const apiKey = userKey || process.env.OPENAI_API_KEY;
+  const apiKey = body.userKey || process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.error('Missing API key');
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
@@ -55,15 +52,12 @@ exports.handler = async function(event) {
             model:    'gpt-4o-transcribe',
             language: 'en'
           }
-        })
+        }),
       }
     );
 
     const data = await openaiRes.json();
-
-    // 4. Propagate any errors from OpenAI
     if (!openaiRes.ok) {
-      console.error('OpenAI error:', openaiRes.status, data);
       return {
         statusCode: openaiRes.status,
         headers:    { 'Access-Control-Allow-Origin': '*' },
@@ -71,30 +65,28 @@ exports.handler = async function(event) {
       };
     }
 
-    // 5. Extract and return flat strings
-    const sessionId = data.session_id;
+    // 4. Extract flat strings
     const token     = data.client_secret?.value;
-
-    if (!sessionId || !token) {
+    const sessionId = data.session_id;
+    if (!token || !sessionId) {
       throw new Error('Unexpected response shape from OpenAI');
     }
 
+    // 5. Return exactly what your client expects
     return {
       statusCode: 200,
       headers: {
-        'Content-Type':                 'application/json',
-        'Access-Control-Allow-Origin':  '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Content-Type':                'application/json',
+        'Access-Control-Allow-Origin': '*'
       },
       body: JSON.stringify({ token, sessionId })
     };
-
   } catch (err) {
-    console.error('Fetch to OpenAI failed:', err);
+    console.error('get-token error:', err);
     return {
       statusCode: 502,
       headers:    { 'Access-Control-Allow-Origin': '*' },
-      body:       JSON.stringify({ error: 'Failed to reach OpenAI: ' + err.message })
+      body:       JSON.stringify({ error: err.message })
     };
   }
 };

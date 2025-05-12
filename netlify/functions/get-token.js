@@ -38,7 +38,7 @@ exports.handler = async function(event) {
   // 3) Call the OpenAI realtime transcription_sessions endpoint
   try {
     const openaiRes = await fetch(
-      'https://api.openai.com/v1/realtime/transcription_sessions',
+      'https://api.openai.com/v1/realtime/sessions',
       {
         method: 'POST',
         headers: {

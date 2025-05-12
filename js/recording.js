@@ -84,6 +84,23 @@ async function startRecording() {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
+  // ─── WAIT FOR ICE GATHERING ──────────────────────────────────────────────
+  // ICE gathering will emit a final null-candidate; we wait until then.
+  await new Promise(resolve => {
+    if (pc.iceGatheringState === 'complete') {
+      return resolve();
+    }
+    function checkState() {
+      if (pc.iceGatheringState === 'complete') {
+        pc.removeEventListener('icegatheringstatechange', checkState);
+        resolve();
+      }
+    }
+    pc.addEventListener('icegatheringstatechange', checkState);
+  });
+
+  // Now pc.localDescription.sdp contains ICE candidates.
+
     // Signal via HTTP
     const signalUrl = 'https://api.openai.com/v1/realtime';
     const signalResponse = await fetch(signalUrl, {
@@ -92,7 +109,7 @@ async function startRecording() {
         'Authorization': `Bearer ${token}`,
         'Content-Type':  'application/sdp'
       },
-      body: offer.sdp
+      body: pc.localDescription.sdp
     });
     const answerSdp = await signalResponse.text();
     if (!signalResponse.ok) {

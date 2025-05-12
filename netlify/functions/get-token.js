@@ -70,10 +70,11 @@ exports.handler = async function(event) {
     typeof data.token === 'string' ? data.token :
     typeof data.client_secret?.value === 'string' ? data.client_secret.value :
     undefined;
-  const sessionId =
-    typeof data.sessionId === 'string' ? data.sessionId :
-    typeof data.session_id === 'string' ? data.session_id :
-    undefined;
+ const sessionId =
+   typeof data.sessionId === 'string' ? data.sessionId :      // camelCase fallback
+   typeof data.session_id === 'string' ? data.session_id :    // snake_case fallback
+   typeof data.id === 'string' ? data.id :                    // <— the 'sessions' endpoint uses `id`
+   undefined;
 
   if (!token || !sessionId) {
     // Return the raw payload so the client can inspect it

@@ -45,7 +45,7 @@ exports.handler = async function(event) {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type':  'application/json',
           // required beta header (as per docs) 
-          'OpenAI-Beta':   'realtime=v1'
+          'openai-beta": "realtime-v1'
         },
         body: JSON.stringify({
           // configure transcription model & language

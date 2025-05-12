@@ -80,43 +80,32 @@ async function startRecording() {
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
 
-    // 3) Create & set local SDP offer
+    // 3) Create & set the local SDP offer
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    // 4) WAIT for ICE gathering to complete so SDP contains candidates
-    await new Promise(resolve => {
-      if (pc.iceGatheringState === 'complete') return resolve();
-      function check() {
-        if (pc.iceGatheringState === 'complete') {
-          pc.removeEventListener('icegatheringstatechange', check);
-          resolve();
-        }
+    // 4) Immediately signal that offer — no ICE-wait
+    const signalResponse = await fetch(
+      'https://api.openai.com/v1/realtime',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type':  'application/sdp'
+        },
+        body: offer.sdp
       }
-      pc.addEventListener('icegatheringstatechange', check);
-    });
-
-    // 5) Signal via HTTP
-    const signalUrl = 'https://api.openai.com/v1/realtime';
-    const signalResponse = await fetch(signalUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type':  'application/sdp'
-      },
-      body: pc.localDescription.sdp
-    });
-
+    );
     const answerSdp = await signalResponse.text();
     if (!signalResponse.ok) {
-      console.error('❌ Signal error:', signalResponse.status, signalResponse.statusText, answerSdp);
+      console.error('❌ Signal error:', signalResponse.status, answerSdp);
       throw new Error(`Failed to signal SDP offer: ${signalResponse.status}`);
     }
 
-    // 6) Apply the SDP answer
+    // 5) Apply the SDP answer
     await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
 
-    // 7) Toggle buttons
+    // 6) Toggle buttons
     document.getElementById('startButton').disabled = true;
     document.getElementById('stopButton').disabled  = false;
     const pauseBtn = document.getElementById('pauseResumeButton');

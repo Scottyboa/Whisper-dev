@@ -1,7 +1,8 @@
 // netlify/functions/get-token.js
 
+// Creates a realtime session and returns { token, sessionId }.
+// If fields are missing, returns the raw OpenAI payload for debugging.
 exports.handler = async function(event) {
-  // 1) CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 204,
@@ -14,7 +15,6 @@ exports.handler = async function(event) {
     };
   }
 
-  // 2) Parse the incoming userKey
   let body;
   try {
     body = JSON.parse(event.body || '{}');
@@ -34,7 +34,6 @@ exports.handler = async function(event) {
     };
   }
 
-  // 3) Create a realtime session (demo’s exact endpoint & header)
   let data;
   try {
     const res = await fetch(
@@ -50,16 +49,15 @@ exports.handler = async function(event) {
       }
     );
     data = await res.json();
-    console.log('📡 OpenAI create-session response:', JSON.stringify(data));
+    console.log('📡 OpenAI response:', data);
     if (!res.ok) {
       return {
         statusCode: res.status,
         headers:    { 'Access-Control-Allow-Origin': '*' },
-        body:       JSON.stringify({ error: data.error || data })
+        body:       JSON.stringify({ error: data.error || data, data })
       };
     }
   } catch (err) {
-    console.error('Fetch to OpenAI failed:', err);
     return {
       statusCode: 502,
       headers:    { 'Access-Control-Allow-Origin': '*' },
@@ -67,10 +65,10 @@ exports.handler = async function(event) {
     };
   }
 
-  // 4) Extract token & sessionId with fallbacks
+  // Attempt to extract flat strings
   const token =
-    typeof data.token === 'string'                 ? data.token :
-    typeof data.client_secret?.value === 'string'  ? data.client_secret.value :
+    typeof data.token === 'string' ? data.token :
+    typeof data.client_secret?.value === 'string' ? data.client_secret.value :
     undefined;
   const sessionId =
     typeof data.sessionId === 'string' ? data.sessionId :
@@ -78,21 +76,17 @@ exports.handler = async function(event) {
     undefined;
 
   if (!token || !sessionId) {
-    console.error('⚠️ Missing token/sessionId in response:', data);
+    // Return the raw payload so the client can inspect it
     return {
-      statusCode: 502,
+      statusCode: 200,
       headers:    { 'Access-Control-Allow-Origin': '*' },
-      body:       JSON.stringify({ error: 'Missing token or sessionId' })
+      body:       JSON.stringify({ error: 'Missing token or sessionId', data })
     };
   }
 
-  // 5) Return exactly what your client needs
   return {
     statusCode: 200,
-    headers: {
-      'Content-Type':                'application/json',
-      'Access-Control-Allow-Origin': '*'
-    },
-    body: JSON.stringify({ token, sessionId })
+    headers:    { 'Access-Control-Allow-Origin': '*' },
+    body:       JSON.stringify({ token, sessionId })
   };
 };

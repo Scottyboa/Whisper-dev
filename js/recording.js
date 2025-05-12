@@ -23,36 +23,31 @@ function updateStatusMessage(message, color = '#333') {
 }
 
 async function fetchEphemeralToken() {
-  // 1. Pull the user’s OpenAI key out of sessionStorage
+  // 1) Grab the user’s API key from sessionStorage
   const apiKey = sessionStorage.getItem('user_api_key');
   if (!apiKey) {
-    throw new Error('No API key found in sessionStorage under "user_api_key"');
+    throw new Error('No API key in sessionStorage under "user_api_key"');
   }
 
-  // 2. POST to your Netlify function
+  // 2) Call your Netlify function
   const resp = await fetch('/.netlify/functions/get-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userKey: apiKey }),
+    body: JSON.stringify({ userKey: apiKey })
   });
 
-  // 3. Parse & log the raw JSON for debugging
+  // 3) Parse & log
   const raw = await resp.json();
   console.log('Raw get-token response →', raw);
 
-  // 4. If HTTP status isn’t 200, throw (so you’ll see the error in console)
+  // 4) If we didn’t get 200 OK, throw
   if (!resp.ok) {
     throw new Error(`Token fetch failed: ${JSON.stringify(raw)}`);
   }
 
-  // 5. Normalize the two possible shapes:
-  //    new: { token, sessionId }
-  //    old: { client_secret: { value }, session_id }
-  const token     = raw.token ?? raw.client_secret?.value;
-  const sessionId = raw.sessionId ?? raw.session_id;
-
-  // 6. If something’s still missing, blow up with the payload for inspection
-  if (!token || !sessionId) {
+  // 5) Destructure flat strings
+  const { token, sessionId } = raw;
+  if (typeof token !== 'string' || typeof sessionId !== 'string') {
     throw new Error(`Invalid token payload: ${JSON.stringify(raw)}`);
   }
 
@@ -61,9 +56,9 @@ async function fetchEphemeralToken() {
 
 async function startRecording() {
   try {
-    updateStatusMessage('Fetching ephemeral token…');
+    updateStatusMessage('Getting ephemeral token…');
     const { token, sessionId } = await fetchEphemeralToken();
-    console.log('Using token:', token, 'sessionId:', sessionId);
+    console.log('Got token:', token, 'sessionId:', sessionId);
 
     // Open signaling WebSocket
     ws = new WebSocket(`wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`);

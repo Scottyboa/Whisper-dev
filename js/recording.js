@@ -77,7 +77,7 @@ async function startRecording() {
     dc.onopen    = () => {
       console.log('🔓 DC open (readyState=', dc.readyState,') — enabling transcription');
       dc.send(JSON.stringify({
-        type: 'session_update',
+        type: 'session.update',                   // <-- use a dot, not underscore
         args: { input_audio_transcription: true }
       }));
     };

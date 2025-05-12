@@ -1,6 +1,6 @@
 // recording.js
 // Real-time transcription via HTTP signaling + WebRTC DataChannel
-// — includes model selection, beta header, session_update, and full debug logging.
+// — updated to use assistants=v2 session creation and correct DataChannel update shape
 
 export function initRecording() {
   console.log('⚙️ initRecording()');
@@ -30,11 +30,11 @@ function appendTranscript(text) {
   console.log(`📝 Transcript: ${text}`);
 }
 
-// 1) Fetch ephemeral token & sessionId from your Netlify function
+// 1) Fetch ephemeral token & sessionId from Netlify function
 async function fetchEphemeralToken() {
   console.log('🔑 fetchEphemeralToken()');
   const apiKey = sessionStorage.getItem('user_api_key');
-  if (!apiKey) throw new Error('No API key in sessionStorage under "user_api_key"');
+  if (!apiKey) throw new Error('No API key stored in sessionStorage');
 
   const resp = await fetch('/.netlify/functions/get-token', {
     method: 'POST',
@@ -43,10 +43,10 @@ async function fetchEphemeralToken() {
   });
   const body = await resp.json();
   console.log('💡 get-token response →', body);
-
   if (!resp.ok) throw new Error(`Token fetch failed: ${resp.status}`);
+
   const { token, sessionId } = body;
-  if (!token || !sessionId) throw new Error(`Invalid token payload`);
+  if (!token || !sessionId) throw new Error('Invalid token payload: missing token or sessionId');
   console.log('✅ Got token & sessionId');
   return { token, sessionId };
 }
@@ -57,100 +57,90 @@ async function startRecording() {
   updateStatus('Initializing…');
 
   try {
-    const { token, sessionId } = await fetchEphemeralToken();
+    const { token, sessionId: initialSessionId } = await fetchEphemeralToken();
 
-    // — Create PeerConnection
+    // Create PeerConnection
     pc = new RTCPeerConnection();
     console.log('🎧 PeerConnection created');
-
-    // — Debug hooks
     pc.onicecandidate             = e => console.log('➿ ICE candidate:', e.candidate);
     pc.oniceconnectionstatechange = () => console.log('➿ ICE connectionState:', pc.iceConnectionState);
     pc.onconnectionstatechange    = () => console.log('🔗 connectionState:', pc.connectionState);
     pc.onsignalingstatechange     = () => console.log('📶 signalingState:', pc.signalingState);
     pc.onicegatheringstatechange  = () => console.log('⌛ iceGatheringState:', pc.iceGatheringState);
 
-    // — Create DataChannel
+    // Create DataChannel
     const dc = pc.createDataChannel('oai-events');
     console.log('📁 DataChannel created:', dc.label);
 
-    // 1) When channel opens, await session creation
+    // Open handler
     dc.onopen = () => {
-      console.log('🔓 DC open (readyState=', dc.readyState, ') — waiting for session');
+      console.log('🔓 DC open — waiting for session.created');
     };
 
-    // 2) Handle incoming messages
+    // Message handler
     dc.onmessage = evt => {
-      console.log('📨 DC message event:', evt.data);
+      console.log('📨 DC message:', evt.data);
       let msg;
-      try {
-        msg = JSON.parse(evt.data);
-      } catch (e) {
-        console.error('⚠️ DC parse failed:', e);
-        return;
-      }
+      try { msg = JSON.parse(evt.data); } catch (e) { return; }
 
-      // 2a) Session created
       if (msg.type === 'session.created') {
-        const srvSessionId = msg.session.id;
-        console.log('📨 session.created →', srvSessionId);
+        const srvId = msg.session.id;
+        console.log('📨 session.created →', srvId);
 
-        // 3) Update transcription settings
-        dc.send(JSON.stringify({
+        // Send transcription_session.update with full settings
+        const update = {
           type: 'transcription_session.update',
-          args: {
-            session: srvSessionId,
-            input_audio_transcription: true
+          session: {
+            input_audio_transcription: {
+              model: 'gpt-4o-mini-transcribe',
+              language: 'en',
+              prompt: 'Transcribe the incoming audio in real time.'
+            },
+            turn_detection: {
+              type: 'server_vad',
+              silence_duration_ms: 300
+            }
           }
-        }));
+        };
+        console.log('📤 Sending update:', update);
+        dc.send(JSON.stringify(update));
         console.log('📤 transcription_session.update sent');
         updateStatus('Recording… speak now!', 'green');
         return;
       }
 
-      // 2b) Transcript received
       if (msg.type === 'transcript') {
         appendTranscript(msg.data.text);
         return;
       }
     };
 
-    // 4) Error and close handlers
-    dc.onerror = err => console.error('💥 DC error:', err);
-    dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')');
+    dc.onerror = e => console.error('💥 DC error:', e);
+    dc.onclose = () => console.log('🔒 DC closed');
 
-    // — Attach microphone
+    // Attach microphone
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
     console.log('🎤 Mic attached');
 
-    // — Create & set local SDP offer
+    // Create offer
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    console.log('📢 Local SDP set (first lines):\n' +
-      offer.sdp.split('\n').slice(0,5).join('\n') + '\n…');
+    console.log('📢 Local SDP set (first lines):\n' + offer.sdp.split('\n').slice(0,5).join('\n') + '\n…');
 
-    // — Wait for ICE gathering
+    // Wait ICE
     if (pc.iceGatheringState !== 'complete') {
       await new Promise(resolve => {
-        const check = () => {
-          console.log('⌛ waiting, iceGatheringState=', pc.iceGatheringState);
-          if (pc.iceGatheringState === 'complete') {
-            pc.removeEventListener('icegatheringstatechange', check);
-            resolve();
-          }
-        };
-        pc.addEventListener('icegatheringstatechange', check);
+        const listener = () => pc.iceGatheringState === 'complete' && resolve();
+        pc.addEventListener('icegatheringstatechange', listener);
       });
     }
     console.log('✅ ICE gathering complete');
 
-    // — Signal to OpenAI with model & beta header
-    const model     = 'gpt-4o-mini-transcribe';
-    const signalUrl = `https://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`;
-    console.log(`📡 Sending SDP to ${signalUrl}`);
-
-    const signalResp = await fetch(signalUrl, {
+    // Signal via HTTP
+    const url = `https://api.openai.com/v1/realtime?model=${encodeURIComponent('gpt-4o-mini-transcribe')}`;
+    console.log(`📡 Sending SDP to ${url}`);
+    const signalResp = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -159,17 +149,9 @@ async function startRecording() {
       },
       body: pc.localDescription.sdp
     });
-
     const answer = await signalResp.text();
-    console.log('🎯 Received answer SDP (first lines):\n' +
-      answer.split('\n').slice(0,5).join('\n') + '\n…');
-
-    if (!signalResp.ok) {
-      console.error('❌ Signal error:', signalResp.status, answer);
-      throw new Error(`Signal failed: ${signalResp.status}`);
-    }
-
-    // — Apply remote SDP
+    if (!signalResp.ok) throw new Error(`Signal error: ${signalResp.status}`);
+    console.log('🎯 Received answer SDP (first lines):\n' + answer.split('\n').slice(0,5).join('\n') + '\n…');
     await pc.setRemoteDescription({ type: 'answer', sdp: answer });
 
   } catch (err) {
@@ -178,16 +160,11 @@ async function startRecording() {
   }
 }
 
-// 3) Stop recording / cleanup
+// 3) Stop recording
 function stopRecording() {
   console.log('⏹️ stopRecording()');
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
-  }
-  if (pc) {
-    pc.close();
-    pc = null;
-  }
+  mediaStream?.getTracks().forEach(t => t.stop());
+  pc?.close();
+  pc = null;
   updateStatus('Recording stopped.', '#333');
 }

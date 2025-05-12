@@ -38,21 +38,19 @@ exports.handler = async function(event) {
   // 3) Call the OpenAI realtime transcription_sessions endpoint
   try {
     const openaiRes = await fetch(
-      'https://api.openai.com/v1/realtime/sessions',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type':  'application/json',
-          // required beta header (as per docs) 
-          'openai-beta": "realtime-v1'
-        },
-        body: JSON.stringify({
-          // configure transcription model & language
-          input_audio_transcription: { model: 'gpt-4o-transcribe', language: 'en' }
-        })
-      }
-    );
+  'https://api.openai.com/v1/realtime/sessions',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type':  'application/json',
+      'openai-beta':   'realtime-v1'      // lowercase!
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-transcribe'      // demo’s simple body
+    })
+  }
+);
 
     // 4) Read & log the raw OpenAI response for debugging
     const data = await openaiRes.json();

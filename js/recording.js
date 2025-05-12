@@ -16,9 +16,8 @@ function updateStatus(msg, color = '#333') {
   const el = document.getElementById('statusMessage');
   if (el) {
     el.textContent = msg;
-    el.style.color   = color;
+    el.style.color = color;
   }
-  console.log(`🛈 Status: ${msg}`);
 }
 
 function appendTranscript(text) {
@@ -74,34 +73,51 @@ async function startRecording() {
     // — Create DataChannel
     const dc = pc.createDataChannel('oai-events');
     console.log('📁 DataChannel created:', dc.label);
-    dc.onopen    = () => {
-      console.log('🔓 DC open (readyState=', dc.readyState,') — enabling transcription');
-  dc.send(JSON.stringify({
-    type: 'session.update',
-    args: {
-      session: sessionId,                    // ← tell OpenAI which session
-      input_audio_transcription: true
-    }
-  }));
-  
+
+    // 1) When channel opens, await session creation
+    dc.onopen = () => {
+      console.log('🔓 DC open (readyState=', dc.readyState, ') — waiting for session');
     };
-    dc.onclose   = () => console.log('🔒 DC closed (readyState=', dc.readyState,')');
-    dc.onerror   = err => console.error('💥 DC error:', err);
+
+    // 2) Handle incoming messages
     dc.onmessage = evt => {
       console.log('📨 DC message event:', evt.data);
+      let msg;
       try {
-        const msg = JSON.parse(evt.data);
-        if (msg.type === 'transcript') appendTranscript(msg.data.text);
-      } catch(e) {
+        msg = JSON.parse(evt.data);
+      } catch (e) {
         console.error('⚠️ DC parse failed:', e);
+        return;
+      }
+
+      // 2a) Session created
+      if (msg.type === 'session.created') {
+        const srvSessionId = msg.session.id;
+        console.log('📨 session.created →', srvSessionId);
+
+        // 3) Update transcription settings
+        dc.send(JSON.stringify({
+          type: 'transcription_session.update',
+          args: {
+            session: srvSessionId,
+            input_audio_transcription: true
+          }
+        }));
+        console.log('📤 transcription_session.update sent');
+        updateStatus('Recording… speak now!', 'green');
+        return;
+      }
+
+      // 2b) Transcript received
+      if (msg.type === 'transcript') {
+        appendTranscript(msg.data.text);
+        return;
       }
     };
 
-    // — (Optional) SCTP state logging
-    if (pc.sctp) {
-      console.log('⚡ SCTP available!');
-      pc.sctp.onstatechange = () => console.log('⛓️ SCTP state:', pc.sctp.state);
-    }
+    // 4) Error and close handlers
+    dc.onerror = err => console.error('💥 DC error:', err);
+    dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')');
 
     // — Attach microphone
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -114,7 +130,7 @@ async function startRecording() {
     console.log('📢 Local SDP set (first lines):\n' +
       offer.sdp.split('\n').slice(0,5).join('\n') + '\n…');
 
-    // — Wait for ICE gathering to complete
+    // — Wait for ICE gathering
     if (pc.iceGatheringState !== 'complete') {
       await new Promise(resolve => {
         const check = () => {
@@ -130,7 +146,7 @@ async function startRecording() {
     console.log('✅ ICE gathering complete');
 
     // — Signal to OpenAI with model & beta header
-    const model     = 'gpt-4o-mini-transcribe';  // ← choose your realtime-transcribe model
+    const model     = 'gpt-4o-mini-transcribe';
     const signalUrl = `https://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`;
     console.log(`📡 Sending SDP to ${signalUrl}`);
 
@@ -139,7 +155,7 @@ async function startRecording() {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type':  'application/sdp',
-        'OpenAI-Beta':  'realtime=v1'
+        'OpenAI-Beta':   'realtime=v1'
       },
       body: pc.localDescription.sdp
     });
@@ -155,10 +171,6 @@ async function startRecording() {
 
     // — Apply remote SDP
     await pc.setRemoteDescription({ type: 'answer', sdp: answer });
-    console.log('✅ Remote SDP applied');
-    console.log('⏯️ DC readyState now:', dc.readyState);
-
-    updateStatus('Recording… speak now!', 'green');
 
   } catch (err) {
     console.error('❗ startRecording error:', err);

@@ -23,7 +23,7 @@ function updateStatusMessage(message, color = '#333') {
 }
 
 async function fetchEphemeralToken() {
-  // 1) Grab the user’s API key from sessionStorage
+  // 1) Grab the user’s API key
   const apiKey = sessionStorage.getItem('user_api_key');
   if (!apiKey) {
     throw new Error('No API key in sessionStorage under "user_api_key"');
@@ -36,19 +36,25 @@ async function fetchEphemeralToken() {
     body: JSON.stringify({ userKey: apiKey })
   });
 
-  // 3) Parse & log raw JSON here
+  // 3) Parse & log the raw JSON so we see exactly what came back
   const raw = await resp.json();
   console.log('💡 RAW get-token response →', raw);
 
-  // 4) If not OK, throw so you see it
+  // 4) If the function returned an error status, throw it
   if (!resp.ok) {
     throw new Error(`Token fetch failed: ${JSON.stringify(raw)}`);
   }
 
-  // 5) Destructure flat strings
-  const { token, sessionId } = raw;
+  // 5) Extract flat strings from the raw object
+  //    We expect new shape: { token: string, sessionId: string }
+  //    Fallback old shape: { client_secret: {value}, session_id }
+  const token     = typeof raw.token === 'string' 
+                    ? raw.token 
+                    : raw.client_secret?.value;
+  const sessionId = raw.sessionId ?? raw.session_id;
+
   if (typeof token !== 'string' || typeof sessionId !== 'string') {
-    throw new Error(`Invalid token payload: ${JSON.stringify(raw)}`);
+    throw new Error(`Invalid token payload, expected strings: ${JSON.stringify(raw)}`);
   }
 
   return { token, sessionId };
@@ -60,8 +66,10 @@ async function startRecording() {
     const { token, sessionId } = await fetchEphemeralToken();
     console.log('✅ Using token:', token, 'sessionId:', sessionId);
 
-    // Open signaling WebSocket
-    ws = new WebSocket(`wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`);
+    // Now open your WebSocket with those flat strings:
+    ws = new WebSocket(
+      `wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`
+    );
 
     ws.onopen = async () => {
       updateStatusMessage('Connected. Setting up media...', 'blue');

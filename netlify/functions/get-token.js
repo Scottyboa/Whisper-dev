@@ -1,10 +1,8 @@
 // netlify/functions/get-token.js
 
-// This function creates a realtime transcription session and returns a flat { token, sessionId } shape.
-// Uses Node 18+ native fetch (no external dependencies).
-
+// No external dependencies—uses Node 18+ native fetch
 exports.handler = async function(event) {
-  // 1) CORS preflight support
+  // 1) Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 204,
@@ -17,15 +15,15 @@ exports.handler = async function(event) {
     };
   }
 
-  // 2) Parse incoming API key
+  // 2) Parse incoming JSON for userKey
   let body;
   try {
     body = JSON.parse(event.body || '{}');
-  } catch (e) {
+  } catch (err) {
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Invalid JSON' })
+      body: JSON.stringify({ error: 'Invalid JSON in request body' })
     };
   }
   const apiKey = body.userKey || process.env.OPENAI_API_KEY;
@@ -33,11 +31,11 @@ exports.handler = async function(event) {
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Missing API key' })
+      body: JSON.stringify({ error: 'Missing OpenAI API key' })
     };
   }
 
-  // 3) Create the realtime transcription session
+  // 3) Call the OpenAI realtime transcription_sessions endpoint
   try {
     const openaiRes = await fetch(
       'https://api.openai.com/v1/realtime/transcription_sessions',
@@ -46,35 +44,49 @@ exports.handler = async function(event) {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type':  'application/json',
+          // required beta header (as per docs) 
           'OpenAI-Beta':   'realtime=v1'
         },
         body: JSON.stringify({
-          input_audio_transcription: {
-            model:    'gpt-4o-transcribe',
-            language: 'en'
-          }
+          // configure transcription model & language
+          input_audio_transcription: { model: 'gpt-4o-transcribe', language: 'en' }
         })
       }
     );
 
+    // 4) Read & log the raw OpenAI response for debugging
     const data = await openaiRes.json();
+    console.log('📡 OpenAI create-session response:', JSON.stringify(data));
+
+    // 5) If OpenAI returned an error status, forward it
     if (!openaiRes.ok) {
-      console.error('OpenAI error:', data);
       return {
         statusCode: openaiRes.status,
         headers:    { 'Access-Control-Allow-Origin': '*' },
-        body:       JSON.stringify({ error: data })
+        body:       JSON.stringify({ error: data.error || data })
       };
     }
 
-    // 4) Extract flat strings
-    const token     = data.client_secret?.value;
-    const sessionId = data.session_id;
+    // 6) Pull out token & sessionId with multiple fallbacks
+    //  - token might be in data.client_secret.value or data.client_secret (string)
+    //  - sessionId might be in data.session_id or data.sessionId
+    const token     =
+      typeof data.client_secret === 'string'    ? data.client_secret :
+      typeof data.client_secret?.value === 'string' ? data.client_secret.value :
+      typeof data.token === 'string'            ? data.token :
+      undefined;
+
+    const sessionId =
+      typeof data.session_id === 'string' ? data.session_id :
+      typeof data.sessionId === 'string'   ? data.sessionId :
+      undefined;
+
     if (!token || !sessionId) {
+      console.error('⚠️ Missing token or sessionId in OpenAI response:', data);
       throw new Error('Missing token or sessionId');
     }
 
-    // 5) Return exactly what the client expects
+    // 7) Return exactly what the client needs
     return {
       statusCode: 200,
       headers: {
@@ -85,7 +97,7 @@ exports.handler = async function(event) {
     };
 
   } catch (err) {
-    console.error('get-token handler error:', err);
+    console.error('❌ get-token handler error:', err);
     return {
       statusCode: 502,
       headers:    { 'Access-Control-Allow-Origin': '*' },

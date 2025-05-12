@@ -22,26 +22,40 @@ function updateStatusMessage(message, color = '#333') {
   }
 }
 
-// Fetch ephemeral token & sessionId from your Netlify function
 async function fetchEphemeralToken() {
+  // 1. Pull the user’s OpenAI key out of sessionStorage
   const apiKey = sessionStorage.getItem('user_api_key');
-  if (!apiKey) throw new Error('API key not found in sessionStorage');
+  if (!apiKey) {
+    throw new Error('No API key found in sessionStorage under "user_api_key"');
+  }
 
+  // 2. POST to your Netlify function
   const resp = await fetch('/.netlify/functions/get-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userKey: apiKey })
+    body: JSON.stringify({ userKey: apiKey }),
   });
-  const raw = await resp.json();
-  console.log('RAW get-token response →', raw);
 
-  // Support both new {token, sessionId} and old {client_secret, session_id}
-  const token     = raw.token     ?? raw.client_secret?.value;
+  // 3. Parse & log the raw JSON for debugging
+  const raw = await resp.json();
+  console.log('Raw get-token response →', raw);
+
+  // 4. If HTTP status isn’t 200, throw (so you’ll see the error in console)
+  if (!resp.ok) {
+    throw new Error(`Token fetch failed: ${JSON.stringify(raw)}`);
+  }
+
+  // 5. Normalize the two possible shapes:
+  //    new: { token, sessionId }
+  //    old: { client_secret: { value }, session_id }
+  const token     = raw.token ?? raw.client_secret?.value;
   const sessionId = raw.sessionId ?? raw.session_id;
 
+  // 6. If something’s still missing, blow up with the payload for inspection
   if (!token || !sessionId) {
     throw new Error(`Invalid token payload: ${JSON.stringify(raw)}`);
   }
+
   return { token, sessionId };
 }
 

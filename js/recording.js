@@ -1,8 +1,8 @@
 // recording.js
 // Implements real-time transcription via HTTP signaling and WebRTC DataChannel
 
+// Wire up UI elements: Start, Stop, Pause/Resume buttons
 export function initRecording() {
-  // Wire up Start, Stop, and Pause/Resume buttons
   const startBtn = document.getElementById('startButton');
   const stopBtn = document.getElementById('stopButton');
   const pauseBtn = document.getElementById('pauseResumeButton');
@@ -15,9 +15,9 @@ export function initRecording() {
     pauseBtn.onclick = togglePause;
   }
 
-  // Initial button states
+  // Initial states
   if (startBtn) startBtn.disabled = false;
-  if (stopBtn) stopBtn.disabled = true;
+  if (stopBtn)  stopBtn.disabled  = true;
 }
 
 let pc = null;
@@ -25,7 +25,7 @@ let mediaStream = null;
 let recordingTimerInterval = null;
 let recordingStartTime = 0;
 
-// UI Helpers
+// Update status text and color
 function updateStatusMessage(message, color = '#333') {
   const statusElem = document.getElementById('statusMessage');
   if (statusElem) {
@@ -34,6 +34,7 @@ function updateStatusMessage(message, color = '#333') {
   }
 }
 
+// Fetch ephemeral token & sessionId from Netlify function
 async function fetchEphemeralToken() {
   const apiKey = sessionStorage.getItem('user_api_key');
   if (!apiKey) throw new Error('No API key in sessionStorage under "user_api_key"');
@@ -55,53 +56,50 @@ async function fetchEphemeralToken() {
   return { token, sessionId };
 }
 
-// Start recording: use HTTP signaling instead of WebSocket
+// Start recording: HTTP signaling + WebRTC
 async function startRecording() {
   try {
     updateStatusMessage('Getting ephemeral token…');
     const { token, sessionId } = await fetchEphemeralToken();
     console.log('✅ Using token:', token, 'sessionId:', sessionId);
 
-    // Create RTCPeerConnection & DataChannel
-      pc = new RTCPeerConnection();
-  // Create a channel with an *empty* label so it matches what the server uses
-  const dc = pc.createDataChannel('');
-  dc.onopen = () => updateStatusMessage('Recording… speak now!', 'green');
-  dc.onmessage = (evt) => {
-    const msg = JSON.parse(evt.data);
-    if (msg.type === 'transcript' && msg.data?.text) {
-      const out = document.getElementById('transcription');
-      out.value += msg.data.text + '\n';
-      out.scrollTop = out.scrollHeight;
-    }
-  };
+    // 1) Create RTCPeerConnection & DataChannel (empty label)
+    pc = new RTCPeerConnection();
+    const dc = pc.createDataChannel('');
+    dc.onopen = () => updateStatusMessage('Recording… speak now!', 'green');
+    dc.onmessage = (evt) => {
+      const msg = JSON.parse(evt.data);
+      if (msg.type === 'transcript' && msg.data?.text) {
+        const out = document.getElementById('transcription');
+        out.value += msg.data.text + '\n';
+        out.scrollTop = out.scrollHeight;
+      }
+    };
 
-    // Hook up the mic
+    // 2) Capture mic and add to connection
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
 
-    // Create & set local SDP offer
+    // 3) Create & set local SDP offer
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-  // ─── WAIT FOR ICE GATHERING ──────────────────────────────────────────────
-  // ICE gathering will emit a final null-candidate; we wait until then.
-  await new Promise(resolve => {
-    if (pc.iceGatheringState === 'complete') {
-      return resolve();
-    }
-    function checkState() {
+    // 4) Wait for ICE gathering to complete
+    await new Promise(resolve => {
       if (pc.iceGatheringState === 'complete') {
-        pc.removeEventListener('icegatheringstatechange', checkState);
         resolve();
+      } else {
+        function checkState() {
+          if (pc.iceGatheringState === 'complete') {
+            pc.removeEventListener('icegatheringstatechange', checkState);
+            resolve();
+          }
+        }
+        pc.addEventListener('icegatheringstatechange', checkState);
       }
-    }
-    pc.addEventListener('icegatheringstatechange', checkState);
-  });
+    });
 
-  // Now pc.localDescription.sdp contains ICE candidates.
-
-    // Signal via HTTP
+    // 5) Signal via HTTP
     const signalUrl = 'https://api.openai.com/v1/realtime';
     const signalResponse = await fetch(signalUrl, {
       method: 'POST',
@@ -122,10 +120,10 @@ async function startRecording() {
       throw new Error(`Failed to signal SDP offer: ${signalResponse.status}`);
     }
 
-    // Apply the SDP answer
+    // 6) Apply remote SDP answer
     await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
 
-    // Update buttons
+    // 7) Update UI buttons
     document.getElementById('startButton').disabled = true;
     document.getElementById('stopButton').disabled  = false;
     const pauseBtn = document.getElementById('pauseResumeButton');
@@ -139,7 +137,7 @@ async function startRecording() {
   }
 }
 
-// Stop recording: clean up and reset UI
+// Stop recording: cleanup and reset UI
 function stopRecording() {
   if (pc) {
     pc.close();
@@ -151,7 +149,6 @@ function stopRecording() {
   }
   clearInterval(recordingTimerInterval);
 
-  // Reset buttons
   const startBtn = document.getElementById('startButton');
   const stopBtn  = document.getElementById('stopButton');
   const pauseBtn = document.getElementById('pauseResumeButton');
@@ -165,14 +162,14 @@ function stopRecording() {
   updateStatusMessage('Transcription finished!', 'green');
 }
 
-// Toggle pause/resume: mute/unmute mic track
+// Toggle pause/resume: mute/unmute audio track
 function togglePause() {
   const pauseBtn = document.getElementById('pauseResumeButton');
   if (!pc || !pauseBtn) return;
   const isPause = pauseBtn.textContent === 'Pause Recording';
   pc.getSenders().forEach(s => {
     if (s.track && s.track.kind === 'audio') {
-      s.track.enabled = isPause ? false : true;
+      s.track.enabled = !isPause;
     }
   });
   pauseBtn.textContent = isPause ? 'Resume Recording' : 'Pause Recording';

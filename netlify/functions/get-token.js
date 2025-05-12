@@ -1,8 +1,9 @@
 // netlify/functions/get-token.js
 
-// Creates a realtime session and returns { token, sessionId }.
+// Creates a realtime session and returns { token, sessionId, iceServers }.
 // If fields are missing, returns the raw OpenAI payload for debugging.
 exports.handler = async function(event) {
+  // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 204,
@@ -15,6 +16,7 @@ exports.handler = async function(event) {
     };
   }
 
+  // Parse request body
   let body;
   try {
     body = JSON.parse(event.body || '{}');
@@ -25,6 +27,8 @@ exports.handler = async function(event) {
       body: JSON.stringify({ error: 'Invalid JSON' })
     };
   }
+
+  // Determine API key
   const apiKey = body.userKey || process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return {
@@ -34,6 +38,7 @@ exports.handler = async function(event) {
     };
   }
 
+  // Create the realtime session
   let data;
   try {
     const res = await fetch(
@@ -65,19 +70,27 @@ exports.handler = async function(event) {
     };
   }
 
-  // Attempt to extract flat strings
+  // Extract token and sessionId
   const token =
     typeof data.token === 'string' ? data.token :
     typeof data.client_secret?.value === 'string' ? data.client_secret.value :
     undefined;
- const sessionId =
-   typeof data.sessionId === 'string' ? data.sessionId :      // camelCase fallback
-   typeof data.session_id === 'string' ? data.session_id :    // snake_case fallback
-   typeof data.id === 'string' ? data.id :                    // <— the 'sessions' endpoint uses `id`
-   undefined;
 
+  const sessionId =
+    typeof data.sessionId === 'string'    ? data.sessionId :     // camelCase
+    typeof data.session_id === 'string'   ? data.session_id :    // snake_case
+    typeof data.id === 'string'           ? data.id :            // fallback from endpoint
+    undefined;
+
+  // Extract ICE servers array (could be under iceServers or ice_servers)
+  const iceServers = Array.isArray(data.iceServers)
+    ? data.iceServers
+    : Array.isArray(data.ice_servers)
+      ? data.ice_servers
+      : [];
+
+  // If we didn’t get valid token/sessionId, return raw payload for debugging
   if (!token || !sessionId) {
-    // Return the raw payload so the client can inspect it
     return {
       statusCode: 200,
       headers:    { 'Access-Control-Allow-Origin': '*' },
@@ -85,9 +98,10 @@ exports.handler = async function(event) {
     };
   }
 
+  // All good — return token, sessionId, and ICE servers
   return {
     statusCode: 200,
     headers:    { 'Access-Control-Allow-Origin': '*' },
-    body:       JSON.stringify({ token, sessionId })
+    body:       JSON.stringify({ token, sessionId, iceServers })
   };
 };

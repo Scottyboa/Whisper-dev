@@ -1,8 +1,10 @@
 // netlify/functions/get-token.js
 
-// Creates a realtime session and returns { token, sessionId }.
-// If fields are missing, returns the raw OpenAI payload for debugging.
+// Creates a real-time transcription session and returns { token, sessionId }.
+// Uses OpenAI's v1/realtime/transcription_sessions endpoint with the beta header "assistants=v2".
+
 exports.handler = async function(event) {
+  // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 204,
@@ -15,76 +17,71 @@ exports.handler = async function(event) {
     };
   }
 
-  let body;
+  // Parse request body
+  let params;
   try {
-    body = JSON.parse(event.body || '{}');
-  } catch {
+    params = JSON.parse(event.body || '{}');
+  } catch (e) {
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Invalid JSON' })
+      body: JSON.stringify({ error: 'Invalid JSON in request body' })
     };
   }
-  const apiKey = body.userKey || process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+
+  const userKey = params.userKey;
+  if (!userKey) {
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Missing API key' })
+      body: JSON.stringify({ error: 'Missing userKey in request body' })
     };
   }
 
-  let data;
-  try {
-    const res = await fetch(
-      'https://api.openai.com/v1/realtime/sessions',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type':  'application/json',
-          'openai-beta':   'realtime-v1'
-        },
-        body: JSON.stringify({ model: 'gpt-4o-realtime-preview-2024-12-17' })
-      }
-    );
-    data = await res.json();
-    console.log('📡 OpenAI response:', data);
-    if (!res.ok) {
-      return {
-        statusCode: res.status,
-        headers:    { 'Access-Control-Allow-Origin': '*' },
-        body:       JSON.stringify({ error: data.error || data, data })
-      };
-    }
-  } catch (err) {
+  // Call OpenAI to create a transcription session
+  const response = await fetch('https://api.openai.com/v1/realtime/transcription_sessions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${userKey}`,
+      'Content-Type':  'application/json',
+      'OpenAI-Beta':   'assistants=v2'
+    },
+    body: JSON.stringify({
+      input_audio_format: 'pcm16',
+      input_audio_transcription: {
+        model: 'gpt-4o-mini-transcribe',
+        language: 'en',
+        prompt: 'Transcribe the incoming audio in real time.'
+      },
+      turn_detection: { type: 'server_vad', silence_duration_ms: 300 }
+    })
+  });
+
+  const data = await response.json();
+
+  // Propagate any error from OpenAI
+  if (!response.ok) {
     return {
-      statusCode: 502,
-      headers:    { 'Access-Control-Allow-Origin': '*' },
-      body:       JSON.stringify({ error: err.message })
+      statusCode: response.status,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: 'OpenAI API error', data })
     };
   }
 
-  // Attempt to extract flat strings
-  const token =
-    typeof data.token === 'string' ? data.token :
-    typeof data.client_secret?.value === 'string' ? data.client_secret.value :
-    undefined;
- const sessionId =
-   typeof data.sessionId === 'string' ? data.sessionId :      // camelCase fallback
-   typeof data.session_id === 'string' ? data.session_id :    // snake_case fallback
-   typeof data.id === 'string' ? data.id :                    // <— the 'sessions' endpoint uses `id`
-   undefined;
+  // Extract ephemeral token and the session ID
+  const token     = data.client_secret?.value;
+  const sessionId = data.session?.id;
 
   if (!token || !sessionId) {
-    // Return the raw payload so the client can inspect it
+    // Return raw payload for debugging if missing
     return {
-      statusCode: 200,
-      headers:    { 'Access-Control-Allow-Origin': '*' },
-      body:       JSON.stringify({ error: 'Missing token or sessionId', data })
+      statusCode: 500,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ error: 'Missing token or sessionId', data })
     };
   }
 
+  // Success: return token & sessionId
   return {
     statusCode: 200,
     headers:    { 'Access-Control-Allow-Origin': '*' },

@@ -49,31 +49,31 @@ async function fetchEphemeralToken() {
 }
 
 // Start recording: use HTTP signaling instead of WebSocket
- async function startRecording() {
-   try {
-     updateStatusMessage('Getting ephemeral token…');
-     const { token, sessionId } = await fetchEphemeralToken();
-     console.log('✅ Using token:', token, 'sessionId:', sessionId);
+async function startRecording() {
+  try {
+    updateStatusMessage('Getting ephemeral token…');
+    const { token, sessionId } = await fetchEphemeralToken();
+    console.log('✅ Using token:', token, 'sessionId:', sessionId);
 
-     // 1) Create the RTCPeerConnection & data channel
-     pc = new RTCPeerConnection();
-     const dc = pc.createDataChannel('oai-events');
-     dc.onmessage = (evt) => {
-       const msg = JSON.parse(evt.data);
-       if (msg.type === 'transcript') {
-         document.getElementById('transcript').value += msg.data.text + '\n';
-       }
-     };
+    // 1) Create the RTCPeerConnection & DataChannel
+    pc = new RTCPeerConnection();
+    const dc = pc.createDataChannel('oai-events');
+    dc.onmessage = (evt) => {
+      const msg = JSON.parse(evt.data);
+      if (msg.type === 'transcript') {
+        document.getElementById('transcript').value += msg.data.text + '\n';
+      }
+    };
 
-     // 2) Hook up the mic
-     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-     mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
+    // 2) Hook up the mic
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
 
-     // 3) Create & set local SDP offer
-     const offer = await pc.createOffer();
-     await pc.setLocalDescription(offer);
+    // 3) Create & set the local SDP offer
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
 
-    // 4) Signal via HTTP
+    // 4) Signal via HTTP instead of WebSocket
     const signalUrl = 'https://api.openai.com/v1/realtime';
     const signalResponse = await fetch(signalUrl, {
       method: 'POST',
@@ -84,7 +84,6 @@ async function fetchEphemeralToken() {
       body: offer.sdp
     });
 
-    // Read back the SDP (or error)
     const signalText = await signalResponse.text();
     if (!signalResponse.ok) {
       console.error(
@@ -96,10 +95,14 @@ async function fetchEphemeralToken() {
       throw new Error(`Failed to signal SDP offer: ${signalResponse.status}`);
     }
 
-    // 5) Apply the SDP answer
+    // 5) Apply the SDP answer from OpenAI
     await pc.setRemoteDescription({ type: 'answer', sdp: signalText });
 
     updateStatusMessage('Recording… speak now!', 'green');
+
+  } catch (err) {
+    console.error('startRecording error:', err);
+    updateStatusMessage(`Error: ${err.message}`, 'red');
   }
 }
 

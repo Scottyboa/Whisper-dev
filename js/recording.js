@@ -64,7 +64,7 @@ async function startRecording() {
 
     // Create RTCPeerConnection & DataChannel
     pc = new RTCPeerConnection();
-    const dc = pc.createDataChannel('oai-events');
+    const dc = pc.createDataChannel('');
     dc.onmessage = (evt) => {
       const msg = JSON.parse(evt.data);
       let text = '';

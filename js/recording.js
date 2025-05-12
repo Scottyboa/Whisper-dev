@@ -1,6 +1,6 @@
-// recording.js
+// js/recording.js
 // Real-time transcription via HTTP signaling + WebRTC DataChannel
-// — includes model selection, beta header, session_update, and full debug logging.
+// — includes ICE server handling, model selection, beta header, session_update, and full debug logging.
 
 export function initRecording() {
   console.log('⚙️ initRecording()');
@@ -31,7 +31,7 @@ function appendTranscript(text) {
   console.log(`📝 Transcript: ${text}`);
 }
 
-// 1) Fetch ephemeral token & sessionId from your Netlify function
+// 1) Fetch ephemeral token, sessionId, and ICE servers from Netlify function
 async function fetchEphemeralToken() {
   console.log('🔑 fetchEphemeralToken()');
   const apiKey = sessionStorage.getItem('user_api_key');
@@ -42,14 +42,21 @@ async function fetchEphemeralToken() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userKey: apiKey })
   });
+
   const body = await resp.json();
   console.log('💡 get-token response →', body);
 
-  if (!resp.ok) throw new Error(`Token fetch failed: ${resp.status}`);
-  const { token, sessionId } = body;
-  if (!token || !sessionId) throw new Error(`Invalid token payload`);
-  console.log('✅ Got token & sessionId');
-  return { token, sessionId };
+  if (!resp.ok) {
+    throw new Error(`Token fetch failed: ${resp.status} ${body.error || ''}`);
+  }
+
+  const { token, sessionId, iceServers } = body;
+  if (!token || !sessionId) {
+    throw new Error(`Invalid token/sessionId payload: ${JSON.stringify(body)}`);
+  }
+
+  console.log('✅ Got token, sessionId, and ICE servers:', iceServers);
+  return { token, sessionId, iceServers };
 }
 
 // 2) Start recording / transcription
@@ -58,11 +65,15 @@ async function startRecording() {
   updateStatus('Initializing…');
 
   try {
-    const { token, sessionId } = await fetchEphemeralToken();
+    const { token, sessionId, iceServers } = await fetchEphemeralToken();
 
-    // — Create PeerConnection
-    pc = new RTCPeerConnection();
-    console.log('🎧 PeerConnection created');
+    // — Create PeerConnection with ICE servers (fallback to public STUN)
+    pc = new RTCPeerConnection({
+      iceServers: Array.isArray(iceServers) && iceServers.length
+        ? iceServers
+        : [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+    console.log('🎧 PeerConnection created with config:', pc.getConfiguration());
 
     // — Debug hooks
     pc.onicecandidate             = e => console.log('➿ ICE candidate:', e.candidate);

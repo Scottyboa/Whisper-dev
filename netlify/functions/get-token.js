@@ -3,7 +3,7 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function(event) {
-  // 1. CORS preflight support
+  // 1. Handle CORS preflight so your browser can POST
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 204,
@@ -16,23 +16,24 @@ exports.handler = async function(event) {
     };
   }
 
-  // 2. Parse incoming JSON for userKey
-  let body;
+  // 2. Parse the incoming JSON for userKey
+  let payload;
   try {
-    body = JSON.parse(event.body || '{}');
+    payload = JSON.parse(event.body || '{}');
   } catch (err) {
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Invalid JSON in request body' })
+      body: JSON.stringify({ error: 'Invalid JSON in request' }),
     };
   }
-  const apiKey = body.userKey || process.env.OPENAI_API_KEY;
+
+  const apiKey = payload.userKey || process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return {
       statusCode: 400,
       headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: 'Missing OpenAI API key' })
+      body: JSON.stringify({ error: 'Missing OpenAI API key' }),
     };
   }
 
@@ -45,48 +46,48 @@ exports.handler = async function(event) {
         headers: {
           'Authorization':   `Bearer ${apiKey}`,
           'Content-Type':    'application/json',
-          'openai-beta':     'realtime-v1',
+          'OpenAI-Beta':     'realtime=v1',
         },
         body: JSON.stringify({
-          input_audio_transcription: {
-            model:    'gpt-4o-transcribe',
-            language: 'en'
-          }
+          input_audio_transcription: { model: 'gpt-4o-transcribe', language: 'en' }
         }),
       }
     );
 
     const data = await openaiRes.json();
     if (!openaiRes.ok) {
+      // log the full response for debugging
+      console.error('OpenAI 401 details:', data);
       return {
         statusCode: openaiRes.status,
         headers:    { 'Access-Control-Allow-Origin': '*' },
-        body:       JSON.stringify({ error: data.error || data })
+        body:       JSON.stringify({ error: data }),
       };
     }
 
-    // 4. Extract flat strings
+    // 4. Pull out the flat strings
     const token     = data.client_secret?.value;
     const sessionId = data.session_id;
     if (!token || !sessionId) {
       throw new Error('Unexpected response shape from OpenAI');
     }
 
-    // 5. Return exactly what your client expects
+    // 5. Return exactly what recording.js expects
     return {
       statusCode: 200,
       headers: {
         'Content-Type':                'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ token, sessionId })
+      body: JSON.stringify({ token, sessionId }),
     };
+
   } catch (err) {
-    console.error('get-token error:', err);
+    console.error('get-token failed:', err);
     return {
       statusCode: 502,
       headers:    { 'Access-Control-Allow-Origin': '*' },
-      body:       JSON.stringify({ error: err.message })
+      body:       JSON.stringify({ error: err.message }),
     };
   }
 };

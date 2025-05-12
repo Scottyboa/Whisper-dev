@@ -62,11 +62,20 @@ async function startRecording() {
     const { token, sessionId } = await fetchEphemeralToken();
     console.log('✅ Using token:', token, 'sessionId:', sessionId);
 
-    // 1) Create PeerConnection & DataChannel (empty label)
+    // 1) PeerConnection
     pc = new RTCPeerConnection();
+    console.log('🔧 pc created:', pc);
+
+    // 2) DataChannel
     const dc = pc.createDataChannel('');
-    dc.onopen = () => updateStatusMessage('Recording… speak now!', 'green');
+    console.log('🔧 dc created:', dc.label, dc);
+
+    dc.onopen = () => {
+      console.log('🔗 dc opened');
+      updateStatusMessage('Recording… speak now!', 'green');
+    };
     dc.onmessage = (evt) => {
+      console.log('📨 dc message:', evt.data);
       const msg = JSON.parse(evt.data);
       if (msg.type === 'transcript' && msg.data?.text) {
         const out = document.getElementById('transcription');
@@ -75,15 +84,19 @@ async function startRecording() {
       }
     };
 
-    // 2) Capture microphone
+    // 3) Mic
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    console.log('🎙️ mediaStream tracks:', mediaStream.getTracks());
     mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
 
-    // 3) Create & set the local SDP offer
+    // 4) SDP offer
     const offer = await pc.createOffer();
+    console.log('📝 offer created:', offer);
     await pc.setLocalDescription(offer);
+    console.log('📝 setLocalDescription complete:', pc.localDescription);
 
-    // 4) HTTP signal the offer to the specific session
+    // 5) Signal SDP
+    console.log('🚀 sending SDP to https://api.openai.com/v1/realtime?session_id=' + sessionId);
     const signalUrl = `https://api.openai.com/v1/realtime?session_id=${sessionId}`;
     const signalResponse = await fetch(signalUrl, {
       method: 'POST',
@@ -91,19 +104,21 @@ async function startRecording() {
         'Authorization': `Bearer ${token}`,
         'Content-Type':  'application/sdp'
       },
-      body: offer.sdp
+      body: pc.localDescription.sdp
     });
-
+    console.log('🚀 signalResponse status:', signalResponse.status);
     const answerSdp = await signalResponse.text();
+    console.log('🚀 signalResponse text:', answerSdp);
     if (!signalResponse.ok) {
-      console.error('❌ Signal error:', signalResponse.status, answerSdp);
-      throw new Error(`Failed to signal SDP offer: ${signalResponse.status}`);
+      throw new Error(`SDP signal failed: ${signalResponse.status}`);
     }
 
-    // 5) Apply the SDP answer
+    // 6) Apply answer
+    console.log('🔄 setting remote description');
     await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+    console.log('🔄 remote description set');
 
-    // 6) Toggle buttons
+    // 7) Toggle UI
     document.getElementById('startButton').disabled = true;
     document.getElementById('stopButton').disabled  = false;
     const pauseBtn = document.getElementById('pauseResumeButton');

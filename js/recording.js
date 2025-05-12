@@ -36,11 +36,11 @@ async function fetchEphemeralToken() {
     body: JSON.stringify({ userKey: apiKey })
   });
 
-  // 3) Parse & log
+  // 3) Parse & log raw JSON here
   const raw = await resp.json();
-  console.log('Raw get-token response →', raw);
+  console.log('💡 RAW get-token response →', raw);
 
-  // 4) If we didn’t get 200 OK, throw
+  // 4) If not OK, throw so you see it
   if (!resp.ok) {
     throw new Error(`Token fetch failed: ${JSON.stringify(raw)}`);
   }
@@ -58,7 +58,7 @@ async function startRecording() {
   try {
     updateStatusMessage('Getting ephemeral token…');
     const { token, sessionId } = await fetchEphemeralToken();
-    console.log('Got token:', token, 'sessionId:', sessionId);
+    console.log('✅ Using token:', token, 'sessionId:', sessionId);
 
     // Open signaling WebSocket
     ws = new WebSocket(`wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`);

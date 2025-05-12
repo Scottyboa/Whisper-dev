@@ -49,6 +49,30 @@ async function fetchEphemeralToken() {
 }
 
 // Start recording: use HTTP signaling instead of WebSocket
+ async function startRecording() {
+   try {
+     updateStatusMessage('Getting ephemeral token…');
+     const { token, sessionId } = await fetchEphemeralToken();
+     console.log('✅ Using token:', token, 'sessionId:', sessionId);
+
+     // 1) Create the RTCPeerConnection & data channel
+     pc = new RTCPeerConnection();
+     const dc = pc.createDataChannel('oai-events');
+     dc.onmessage = (evt) => {
+       const msg = JSON.parse(evt.data);
+       if (msg.type === 'transcript') {
+         document.getElementById('transcript').value += msg.data.text + '\n';
+       }
+     };
+
+     // 2) Hook up the mic
+     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+     mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
+
+     // 3) Create & set local SDP offer
+     const offer = await pc.createOffer();
+     await pc.setLocalDescription(offer);
+
     // 4) Signal via HTTP
     const signalUrl = 'https://api.openai.com/v1/realtime';
     const signalResponse = await fetch(signalUrl, {
@@ -76,32 +100,6 @@ async function fetchEphemeralToken() {
     await pc.setRemoteDescription({ type: 'answer', sdp: signalText });
 
     updateStatusMessage('Recording… speak now!', 'green');
-
-    // Signal via HTTP POST
-    const signalResp = await fetch(realtimeUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type':  'application/sdp'
-      },
-      body: offer.sdp
-    });
-    if (!signalResp.ok) throw new Error('Failed to signal SDP offer');
-
-    // Set remote description from SDP answer
-    const answerSdp = await signalResp.text();
-    await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
-
-    // Start timer UI if needed
-    recordingStartTime = Date.now();
-    recordingTimerInterval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
-      updateStatusMessage(`Recording... ${elapsed}s`, 'green');
-    }, 1000);
-
-  } catch (err) {
-    console.error('startRecording error:', err);
-    updateStatusMessage(`Error: ${err.message}`, 'red');
   }
 }
 

@@ -59,11 +59,11 @@ async function fetchEphemeralToken() {
   return { token, sessionId };
 }
 
-// Start transcription: open WS, negotiate WebRTC, stream transcripts
 async function startRecording() {
-  updateStatusMessage('Initializing...', 'blue');
   try {
+    updateStatusMessage('Fetching ephemeral token…');
     const { token, sessionId } = await fetchEphemeralToken();
+    console.log('Using token:', token, 'sessionId:', sessionId);
 
     // Open signaling WebSocket
     ws = new WebSocket(`wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`);

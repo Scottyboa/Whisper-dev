@@ -1,4 +1,6 @@
-// Real-time transcription via WebSocket API (assistants=v2) for browser-only frontend
+// recording.js
+// Real-time transcription via HTTP signaling + WebRTC DataChannel
+// — includes model selection, beta header, session_update, and full debug logging.
 
 export function initRecording() {
   console.log('⚙️ initRecording()');
@@ -6,18 +8,17 @@ export function initRecording() {
   document.getElementById('stopButton').onclick  = stopRecording;
 }
 
-let ws = null;
+let pc = null;
 let mediaStream = null;
-let audioContext = null;
-let processor = null;
 
-// UI helpers
+// UI Helpers
 function updateStatus(msg, color = '#333') {
   const el = document.getElementById('statusMessage');
   if (el) {
     el.textContent = msg;
-    el.style.color = color;
+    el.style.color   = color;
   }
+  console.log(`🛈 Status: ${msg}`);
 }
 
 function appendTranscript(text) {
@@ -26,16 +27,15 @@ function appendTranscript(text) {
     console.warn('⚠️ No #transcription element found');
     return;
   }
-  ta.value += text + '
-';
+  ta.value += text + '\n';
   console.log(`📝 Transcript: ${text}`);
 }
 
-// fetch ephemeral token
+// 1) Fetch ephemeral token & sessionId from your Netlify function
 async function fetchEphemeralToken() {
   console.log('🔑 fetchEphemeralToken()');
   const apiKey = sessionStorage.getItem('user_api_key');
-  if (!apiKey) throw new Error('No API key in sessionStorage');
+  if (!apiKey) throw new Error('No API key in sessionStorage under "user_api_key"');
 
   const resp = await fetch('/.netlify/functions/get-token', {
     method: 'POST',
@@ -44,86 +44,117 @@ async function fetchEphemeralToken() {
   });
   const body = await resp.json();
   console.log('💡 get-token response →', body);
+
   if (!resp.ok) throw new Error(`Token fetch failed: ${resp.status}`);
-  const { token } = body;
-  if (!token) throw new Error('Missing token in response');
-  return token;
+  const { token, sessionId } = body;
+  if (!token || !sessionId) throw new Error(`Invalid token payload`);
+  console.log('✅ Got token & sessionId');
+  return { token, sessionId };
 }
 
-// start recording via WebSocket
+// 2) Start recording / transcription
 async function startRecording() {
   console.log('▶️ startRecording()');
   updateStatus('Initializing…');
+
   try {
-    const token = await fetchEphemeralToken();
+    const { token, sessionId } = await fetchEphemeralToken();
 
-    // open WebSocket with subprotocols for auth & beta header
-    const url = 'wss://api.openai.com/v1/realtime';
-    const protocols = [`Bearer ${token}`, 'OpenAI-Beta: realtime=v1'];
-    ws = new WebSocket(url, protocols);
+    // — Create PeerConnection
+    pc = new RTCPeerConnection();
+    console.log('🎧 PeerConnection created');
 
-    ws.onopen = () => {
-      console.log('🔌 WebSocket open');
-      // send session update to enable transcription
-      const update = {
-        type: 'transcription_session.update',
-        session: {
-          input_audio_transcription: {
-            model: 'gpt-4o-mini-transcribe',
-            language: 'en',
-            prompt: 'Transcribe the incoming audio in real time.'
-          },
-          turn_detection: { type: 'server_vad', silence_duration_ms: 300 }
-        }
-      };
-      console.log('📤 Sending:', update);
-      ws.send(JSON.stringify(update));
-      updateStatus('Recording… speak now!', 'green');
+    // — Debug hooks
+    pc.onicecandidate             = e => console.log('➿ ICE candidate:', e.candidate);
+    pc.oniceconnectionstatechange = () => console.log('➿ ICE connectionState:', pc.iceConnectionState);
+    pc.onconnectionstatechange    = () => console.log('🔗 connectionState:', pc.connectionState);
+    pc.onsignalingstatechange     = () => console.log('📶 signalingState:', pc.signalingState);
+    pc.onicegatheringstatechange  = () => console.log('⌛ iceGatheringState:', pc.iceGatheringState);
 
-      // start mic capture
-      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-        mediaStream = stream;
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const source = audioContext.createMediaStreamSource(stream);
-        processor = audioContext.createScriptProcessor(4096, 1, 1);
-        source.connect(processor);
-        processor.connect(audioContext.destination);
-        processor.onaudioprocess = e => {
-          const input = e.inputBuffer.getChannelData(0);
-          const int16 = new Int16Array(input.length);
-          for (let i = 0; i < input.length; i++) {
-            const s = Math.max(-1, Math.min(1, input[i]));
-            int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-          }
-          const audioBase64 = btoa(String.fromCharCode(...new Uint8Array(int16.buffer)));
-          ws.send(JSON.stringify({ type: 'input_audio_buffer.append', audio: audioBase64 }));
-        };
-        console.log('🎤 Mic attached');
-      }).catch(err => {
-        console.error('❌ Mic error:', err);
-        updateStatus('Mic error', 'red');
-      });
+    // — Create DataChannel
+    const dc = pc.createDataChannel('oai-events');
+    console.log('📁 DataChannel created:', dc.label);
+    dc.onopen    = () => {
+      console.log('🔓 DC open (readyState=', dc.readyState,') — enabling transcription');
+      dc.send(JSON.stringify({
+        type: 'session_update',
+        args: { input_audio_transcription: true }
+      }));
     };
-
-    ws.onmessage = evt => {
-      let msg;
-      try { msg = JSON.parse(evt.data); } catch { return; }
-      if (msg.type === 'conversation.item.input_audio_transcription.delta') {
-        appendTranscript(msg.delta);
-      } else if (msg.type === 'conversation.item.input_audio_transcription.completed') {
-        appendTranscript(msg.transcript);
-        console.log('✅ Transcription complete');
-      } else if (msg.type === 'input_audio_buffer.speech_stopped') {
-        console.log('✋ sound stopped');
-        // optionally commit here
-        ws.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
-      } else if (msg.type === 'error') {
-        console.error('💥 Error event:', msg.error);
+    dc.onclose   = () => console.log('🔒 DC closed (readyState=', dc.readyState,')');
+    dc.onerror   = err => console.error('💥 DC error:', err);
+    dc.onmessage = evt => {
+      console.log('📨 DC message event:', evt.data);
+      try {
+        const msg = JSON.parse(evt.data);
+        if (msg.type === 'transcript') appendTranscript(msg.data.text);
+      } catch(e) {
+        console.error('⚠️ DC parse failed:', e);
       }
     };
 
-    ws.onerror = e => console.error('🔌 WebSocket error:', e);
-    ws.onclose = () => console.log('🔌 WebSocket closed');
+    // — (Optional) SCTP state logging
+    if (pc.sctp) {
+      console.log('⚡ SCTP available!');
+      pc.sctp.onstatechange = () => console.log('⛓️ SCTP state:', pc.sctp.state);
+    }
+
+    // — Attach microphone
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
+    console.log('🎤 Mic attached');
+
+    // — Create & set local SDP offer
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    console.log('📢 Local SDP set (first lines):\n' +
+      offer.sdp.split('\n').slice(0,5).join('\n') + '\n…');
+
+    // — Wait for ICE gathering to complete
+    if (pc.iceGatheringState !== 'complete') {
+      await new Promise(resolve => {
+        const check = () => {
+          console.log('⌛ waiting, iceGatheringState=', pc.iceGatheringState);
+          if (pc.iceGatheringState === 'complete') {
+            pc.removeEventListener('icegatheringstatechange', check);
+            resolve();
+          }
+        };
+        pc.addEventListener('icegatheringstatechange', check);
+      });
+    }
+    console.log('✅ ICE gathering complete');
+
+    // — Signal to OpenAI with model & beta header
+    const model     = 'gpt-4o-mini-transcribe';  // ← choose your realtime-transcribe model
+    const signalUrl = `https://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`;
+    console.log(`📡 Sending SDP to ${signalUrl}`);
+
+    const signalResp = await fetch(signalUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type':  'application/sdp',
+        'OpenAI-Beta':  'realtime=v1'
+      },
+      body: pc.localDescription.sdp
+    });
+
+    const answer = await signalResp.text();
+    console.log('🎯 Received answer SDP (first lines):\n' +
+      answer.split('\n').slice(0,5).join('\n') + '\n…');
+
+    if (!signalResp.ok) {
+      console.error('❌ Signal error:', signalResp.status, answer);
+      throw new Error(`Signal failed: ${signalResp.status}`);
+    }
+
+    // — Apply remote SDP
+    await pc.setRemoteDescription({ type: 'answer', sdp: answer });
+    console.log('✅ Remote SDP applied');
+    console.log('⏯️ DC readyState now:', dc.readyState);
+
+    updateStatus('Recording… speak now!', 'green');
 
   } catch (err) {
     console.error('❗ startRecording error:', err);
@@ -131,25 +162,16 @@ async function startRecording() {
   }
 }
 
-// stop recording
+// 3) Stop recording / cleanup
 function stopRecording() {
   console.log('⏹️ stopRecording()');
-  if (processor) {
-    processor.disconnect();
-    processor = null;
-  }
-  if (audioContext) {
-    audioContext.close();
-    audioContext = null;
-  }
   if (mediaStream) {
     mediaStream.getTracks().forEach(t => t.stop());
     mediaStream = null;
   }
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
-    ws.close();
+  if (pc) {
+    pc.close();
+    pc = null;
   }
-  ws = null;
   updateStatus('Recording stopped.', '#333');
 }

@@ -76,10 +76,14 @@ async function startRecording() {
     console.log('📁 DataChannel created:', dc.label);
     dc.onopen    = () => {
       console.log('🔓 DC open (readyState=', dc.readyState,') — enabling transcription');
-      dc.send(JSON.stringify({
-        type: 'session.update',                   // <-- use a dot, not underscore
-        args: { input_audio_transcription: true }
-      }));
+  dc.send(JSON.stringify({
+    type: 'session.update',
+    args: {
+      session: sessionId,                    // ← tell OpenAI which session
+      input_audio_transcription: true
+    }
+  }));
+  
     };
     dc.onclose   = () => console.log('🔒 DC closed (readyState=', dc.readyState,')');
     dc.onerror   = err => console.error('💥 DC error:', err);

@@ -1,141 +1,122 @@
 // recording.js
-// Implements real-time transcription via WebRTC & OpenAI Realtime Transcription API
+// Implements real-time transcription via HTTP signaling and WebRTC DataChannel
 
-// Exported init function to wire up UI
 export function initRecording() {
-  // Ensure elements with these IDs exist in your HTML (e.g., startButton, stopButton, transcript textarea, statusMessage div)
   document.getElementById('startButton').onclick = startRecording;
-  document.getElementById('stopButton').onclick  = stopRecording;
+  document.getElementById('stopButton').onclick = stopRecording;
 }
 
-// Globals
 let pc = null;
-let ws = null;
 let mediaStream = null;
+let recordingTimerInterval = null;
+let recordingStartTime = 0;
 
-// Utility: update status text/color
+// UI Helpers
 function updateStatusMessage(message, color = '#333') {
-  const el = document.getElementById('statusMessage');
-  if (el) {
-    el.textContent = message;
-    el.style.color = color;
+  const statusElem = document.getElementById('statusMessage');
+  if (statusElem) {
+    statusElem.textContent = message;
+    statusElem.style.color = color;
   }
 }
 
-async function fetchEphemeralToken() {
-  // 1) Grab the user’s API key
-  const apiKey = sessionStorage.getItem('user_api_key');
-  if (!apiKey) {
-    throw new Error('No API key in sessionStorage under "user_api_key"');
+function updateTranscript(text) {
+  const textarea = document.getElementById('transcript');
+  if (textarea) {
+    textarea.value += text + "\n";
   }
+}
 
-  // 2) Call your Netlify function
+// Fetch ephemeral token & sessionId from Netlify function
+async function fetchEphemeralToken() {
+  const apiKey = sessionStorage.getItem('user_api_key');
+  if (!apiKey) throw new Error('No API key in sessionStorage under "user_api_key"');
+
   const resp = await fetch('/.netlify/functions/get-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userKey: apiKey })
   });
-
-  // 3) Parse & log the raw JSON so we see exactly what came back
   const raw = await resp.json();
   console.log('💡 RAW get-token response →', raw);
+  if (!resp.ok) throw new Error(`Token fetch failed: ${JSON.stringify(raw)}`);
 
-  // 4) If the function returned an error status, throw it
-  if (!resp.ok) {
-    throw new Error(`Token fetch failed: ${JSON.stringify(raw)}`);
-  }
-
-  // 5) Extract flat strings from the raw object
-  //    We expect new shape: { token: string, sessionId: string }
-  //    Fallback old shape: { client_secret: {value}, session_id }
-  const token     = typeof raw.token === 'string' 
-                    ? raw.token 
-                    : raw.client_secret?.value;
-  const sessionId = raw.sessionId ?? raw.session_id;
-
+  const { token, sessionId } = raw;
   if (typeof token !== 'string' || typeof sessionId !== 'string') {
-    throw new Error(`Invalid token payload, expected strings: ${JSON.stringify(raw)}`);
+    throw new Error(`Invalid token payload: ${JSON.stringify(raw)}`);
   }
-
   return { token, sessionId };
 }
 
+// Start recording: use HTTP signaling instead of WebSocket
 async function startRecording() {
   try {
-    updateStatusMessage('Getting ephemeral token…');
+    updateStatusMessage('Initializing transcription...');
     const { token, sessionId } = await fetchEphemeralToken();
     console.log('✅ Using token:', token, 'sessionId:', sessionId);
 
-    // Now open your WebSocket with those flat strings:
-    ws = new WebSocket(
-      `wss://realtime.openai.com/ws?session_id=${sessionId}&token=${token}`
-    );
+    const realtimeUrl = 'https://api.openai.com/v1/realtime';
 
-    ws.onopen = async () => {
-      updateStatusMessage('Connected. Setting up media...', 'blue');
-
-      // Set up PeerConnection
-      pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-      pc.onicecandidate = e => {
-        if (e.candidate) ws.send(JSON.stringify({ type: 'ice_candidate', data: e.candidate }));
-      };
-
-      // DataChannel receives transcript messages
-      const dc = pc.createDataChannel('transcripts');
-      dc.onmessage = ({ data }) => {
-        const msg = JSON.parse(data);
-        if (msg.type === 'transcript') {
-          const ta = document.getElementById('transcript');
-          ta.value += msg.data.text + '\n';
-        }
-      };
-
-      // Add mic audio
-      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
-
-      // SDP offer/answer
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      ws.send(JSON.stringify({ type: 'sdp_offer', data: offer }));
-
-      updateStatusMessage('Streaming...', 'green');
-    };
-
-    ws.onmessage = async ({ data }) => {
-      const msg = JSON.parse(data);
-      if (msg.type === 'sdp_answer') {
-        await pc.setRemoteDescription(msg.data);
-      } else if (msg.type === 'ice_candidate') {
-        await pc.addIceCandidate(msg.data);
+    // Create PeerConnection and DataChannel
+    pc = new RTCPeerConnection();
+    const dc = pc.createDataChannel('transcription');
+    dc.onopen = () => updateStatusMessage('Recording... Speak now.', 'green');
+    dc.onmessage = (evt) => {
+      const msg = JSON.parse(evt.data);
+      if (msg.type === 'transcript') {
+        updateTranscript(msg.data.text);
       }
     };
 
-    ws.onerror = err => {
-      console.error('WebSocket error', err);
-      updateStatusMessage('WebSocket error', 'red');
-    };
+    // Capture microphone
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
 
-    ws.onclose = () => {
-      updateStatusMessage('Connection closed', 'gray');
-    };
+    // Create SDP offer
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    // Signal via HTTP POST
+    const signalResp = await fetch(realtimeUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type':  'application/sdp'
+      },
+      body: offer.sdp
+    });
+    if (!signalResp.ok) throw new Error('Failed to signal SDP offer');
+
+    // Set remote description from SDP answer
+    const answerSdp = await signalResp.text();
+    await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+
+    // Start timer UI if needed
+    recordingStartTime = Date.now();
+    recordingTimerInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+      updateStatusMessage(`Recording... ${elapsed}s`, 'green');
+    }, 1000);
+
   } catch (err) {
-    console.error(err);
-    updateStatusMessage(err.message, 'red');
+    console.error('startRecording error:', err);
+    updateStatusMessage(`Error: ${err.message}`, 'red');
   }
 }
 
-// Stop transcription: close everything
+// Stop recording: clean up
 function stopRecording() {
   if (mediaStream) {
-    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream.getTracks().forEach(track => track.stop());
     mediaStream = null;
   }
   if (pc) {
-    pc.close(); pc = null;
+    pc.close();
+    pc = null;
   }
-  if (ws) {
-    ws.close(); ws = null;
+  if (recordingTimerInterval) {
+    clearInterval(recordingTimerInterval);
+    recordingTimerInterval = null;
   }
-  updateStatusMessage('Stopped', 'gray');
+  updateStatusMessage('Recording stopped.', '#333');
 }

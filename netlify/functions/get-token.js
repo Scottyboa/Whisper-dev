@@ -1,8 +1,10 @@
 // netlify/functions/get-token.js
-const fetch = require('node-fetch');
+
+// This function creates a realtime transcription session and returns a flat { token, sessionId } shape.
+// Uses Node 18+ native fetch (no external dependencies).
 
 exports.handler = async function(event) {
-  // 1) CORS preflight
+  // 1) CORS preflight support
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 204,
@@ -35,9 +37,9 @@ exports.handler = async function(event) {
     };
   }
 
-  // 3) Create transcription session
+  // 3) Create the realtime transcription session
   try {
-    const res = await fetch(
+    const openaiRes = await fetch(
       'https://api.openai.com/v1/realtime/transcription_sessions',
       {
         method: 'POST',
@@ -47,29 +49,32 @@ exports.handler = async function(event) {
           'OpenAI-Beta':   'realtime=v1'
         },
         body: JSON.stringify({
-          input_audio_transcription: { model: 'gpt-4o-transcribe', language: 'en' }
+          input_audio_transcription: {
+            model:    'gpt-4o-transcribe',
+            language: 'en'
+          }
         })
       }
     );
 
-    const data = await res.json();
-    if (!res.ok) {
+    const data = await openaiRes.json();
+    if (!openaiRes.ok) {
       console.error('OpenAI error:', data);
       return {
-        statusCode: res.status,
-        headers: { 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ error: data })
+        statusCode: openaiRes.status,
+        headers:    { 'Access-Control-Allow-Origin': '*' },
+        body:       JSON.stringify({ error: data })
       };
     }
 
-    // 4) Pull out flat strings
+    // 4) Extract flat strings
     const token     = data.client_secret?.value;
     const sessionId = data.session_id;
     if (!token || !sessionId) {
-      throw new Error('Missing token or sessionId in OpenAI response');
+      throw new Error('Missing token or sessionId');
     }
 
-    // 5) Return exactly what the client wants
+    // 5) Return exactly what the client expects
     return {
       statusCode: 200,
       headers: {
@@ -80,7 +85,7 @@ exports.handler = async function(event) {
     };
 
   } catch (err) {
-    console.error('Handler error:', err);
+    console.error('get-token handler error:', err);
     return {
       statusCode: 502,
       headers:    { 'Access-Control-Allow-Origin': '*' },

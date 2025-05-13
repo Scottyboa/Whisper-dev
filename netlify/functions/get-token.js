@@ -45,7 +45,7 @@ exports.handler = async function(event) {
           'Content-Type':  'application/json',
           'openai-beta':   'realtime-v1'
         },
-        body: JSON.stringify({ model: 'gpt-4o-transcribe' })
+        body: JSON.stringify({ model: 'gpt-4o-realtime-preview-2024-12-17' })
       }
     );
     data = await res.json();

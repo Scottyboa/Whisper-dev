@@ -104,7 +104,7 @@ dc.onmessage = evt => {
           type: 'session.update',
           session: {
             input_audio_format: 'pcm16',
-            input_audio_transcription: { model: 'gpt-4o-transcribe' },
+            input_audio_transcription: { model },
             turn_detection: { 
               type: 'server_vad', 
               threshold: 0.3, // 0.0–1.0 sensitivity (lower = more noise tolerated)

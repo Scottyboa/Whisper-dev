@@ -73,10 +73,7 @@ async function startRecording() {
       },
       input_audio_format: 'pcm16',
       turn_detection: {
-        type: 'server_vad',            // VAD-driven turn detection
-        threshold: 0.3,                // sensitivity (0.0–1.0; lower = more noise tolerated)
-        prefix_padding_ms: 700,        // ms of audio context before silence cut
-        silence_duration_ms: 2500      // ms of sustained silence to mark end of turn
+        type: 'semantic_vad'
       }
     };
 

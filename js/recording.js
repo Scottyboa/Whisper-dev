@@ -123,11 +123,6 @@ dc.onmessage = evt => {
       console.log('✅ Session updated, ready for transcription');
       break;
 
-    // Partial transcription delta events
-    case 'conversation.item.input_audio_transcription.delta':
-      appendTranscript(msg.delta);
-      break;
-
     // Final transcription text
     case 'conversation.item.input_audio_transcription.completed':
       appendTranscript(msg.transcript);

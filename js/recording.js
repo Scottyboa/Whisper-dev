@@ -211,6 +211,10 @@ dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')'
     console.log('⏯️ DC readyState now:', dc.readyState);
 
     updateStatus('Recording… speak now!', 'green');
+   // Enable Stop & Pause, disable Start
+   document.getElementById('startButton').disabled       = true;
+   document.getElementById('stopButton').disabled        = false;
+   document.getElementById('pauseResumeButton').disabled = false
 
   } catch (err) {
     console.error('❗ startRecording error:', err);
@@ -230,4 +234,10 @@ function stopRecording() {
     pc = null;
   }
   updateStatus('Recording stopped.', '#333');
+ // Reset buttons & pause state
+ document.getElementById('startButton').disabled        = false;
+ document.getElementById('stopButton').disabled         = true;
+ document.getElementById('pauseResumeButton').disabled  = true;
+ isPaused = false;
+ document.getElementById('pauseResumeButton').textContent = 'Pause Recording';
 }

@@ -73,10 +73,10 @@ async function startRecording() {
 
 
 // — Create DataChannel
+// — Create DataChannel
 const dc = pc.createDataChannel('oai-events');
 console.log('📁 DataChannel created:', dc.label);
 
-// send session.update only after session.created event
 let sessionUpdated = false;
 
 dc.onopen = () => {
@@ -87,21 +87,36 @@ dc.onmessage = evt => {
   console.log('📨 DC message event:', evt.data);
   try {
     const msg = JSON.parse(evt.data);
+
     if (msg.type === 'session.created' && !sessionUpdated) {
-      // now update session to enable transcription
+      // Configure for GPT-4o-transcribe realtime transcription
       const controlMsg = {
         type: 'session.update',
-        session: { input_audio_transcription: true }
+        session: {
+          // audio format and transcription model
+          input_audio_format: 'pcm16',
+          input_audio_transcription: { model: 'gpt-4o-transcribe' },
+          // use server-side VAD with typical settings
+          turn_detection: {
+            type: 'server_vad',
+            threshold: 0.5,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 200
+          }
+        }
       };
-      console.log('→ Sending session.update after session.created:', JSON.stringify(controlMsg));
+
+      console.log('→ Sending session.update for GPT-4o-transcribe:', JSON.stringify(controlMsg));
       dc.send(JSON.stringify(controlMsg));
       sessionUpdated = true;
       return;
     }
+
     if (msg.type === 'session.updated') {
       console.log('✅ Session updated, ready for transcription');
       return;
     }
+
     if (msg.type === 'transcript') {
       appendTranscript(msg.data.text);
       return;
@@ -111,9 +126,10 @@ dc.onmessage = evt => {
   }
 };
 
+// log errors and close
+
 dc.onerror = err => console.error('💥 DC error:', err);
 dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')');
-
 
     // — (Optional) SCTP state logging
     if (pc.sctp) {

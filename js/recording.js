@@ -116,7 +116,7 @@ dc.onmessage = evt => {
               type: 'server_vad', 
               threshold: 0.3, // 0.0–1.0 sensitivity (lower = more noise tolerated)
               prefix_padding_ms: 700, // ms of audio context before silence cut
-              silence_duration_ms: 2500 // ms of silence before emitting a turn
+              silence_duration_ms: 2000 // ms of silence before emitting a turn
             }
           }
         };

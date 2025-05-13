@@ -27,7 +27,10 @@ function appendTranscript(text) {
     console.warn('⚠️ No #transcription element found');
     return;
   }
-  ta.value += text + '\n';
+  // append with a space (not a newline)
+  ta.value += text + ' ';
+  // auto-scroll to bottom so you always see the latest
+  ta.scrollTop = ta.scrollHeight;
   console.log(`📝 Transcript: ${text}`);
 }
 

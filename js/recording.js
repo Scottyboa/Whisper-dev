@@ -34,6 +34,23 @@ function appendTranscript(text) {
   console.log(`📝 Transcript: ${text}`);
 }
 
+// Container for the live transcription area
+const transcriptContainer = document.getElementById('transcription');
+// Map from OpenAI chunk ID → its DOM node
+const chunks = {};
+
+function showChunk(id, text) {
+  let node = chunks[id];
+  if (!node) {
+    // first time we see this chunk: create a new <div> under the textarea
+    node = document.createElement('div');
+    node.id = `chunk-${id}`;
+    transcriptContainer.parentNode.insertBefore(node, transcriptContainer.nextSibling);
+    chunks[id] = node;
+  }
+  node.innerText = text;
+}
+
 // 1) Fetch ephemeral token & sessionId from your Netlify function
 async function fetchEphemeralToken() {
   console.log('🔑 fetchEphemeralToken()');
@@ -74,79 +91,82 @@ async function startRecording() {
     pc.onsignalingstatechange     = () => console.log('📶 signalingState:', pc.signalingState);
     pc.onicegatheringstatechange  = () => console.log('⌛ iceGatheringState:', pc.iceGatheringState);
 
+    // — Create DataChannel
+    const dc = pc.createDataChannel('oai-events');
+    console.log('📁 DataChannel created:', dc.label);
 
-// — Create DataChannel
-const dc = pc.createDataChannel('oai-events');
-console.log('📁 DataChannel created:', dc.label);
+    let sessionUpdated = false;
 
-let sessionUpdated = false;
+    dc.onopen = () => {
+      console.log('🔓 DC open (readyState=', dc.readyState, ')');
+    };
 
-dc.onopen = () => {
-  console.log('🔓 DC open (readyState=', dc.readyState, ')');
-};
-
-// Unified handler for transcript events
-dc.onmessage = evt => {
-  console.log('📨 DC message event:', evt.data);
-  let msg;
-  try {
-    msg = JSON.parse(evt.data);
-  } catch (e) {
-    console.error('⚠️ DC parse failed:', e);
-    return;
-  }
-
-  switch (msg.type) {
-    case 'session.created':
-      if (!sessionUpdated) {
-        // configure for GPT-4o real-time transcription
-        const controlMsg = {
-          type: 'session.update',
-          session: {
-            input_audio_format: 'pcm16',
-            input_audio_transcription: { model },
-            turn_detection: { 
-              type: 'server_vad', 
-              threshold: 0.3, // 0.0–1.0 sensitivity (lower = more noise tolerated)
-              prefix_padding_ms: 700, // ms of audio context before silence cut
-              silence_duration_ms: 2500 // ms of silence before emitting a turn
-            }
-          }
-        };
-        console.log('→ Sending session.update:', JSON.stringify(controlMsg));
-        dc.send(JSON.stringify(controlMsg));
-        sessionUpdated = true;
+    // Unified handler for transcript events
+    dc.onmessage = evt => {
+      console.log('📨 DC message event:', evt.data);
+      let msg;
+      try {
+        msg = JSON.parse(evt.data);
+      } catch (e) {
+        console.error('⚠️ DC parse failed:', e);
+        return;
       }
-      break;
 
-    case 'session.updated':
-      console.log('✅ Session updated, ready for transcription');
-      break;
+      switch (msg.type) {
+        case 'session.created':
+          if (!sessionUpdated) {
+            // configure for GPT-4o real-time transcription
+            const controlMsg = {
+              type: 'session.update',
+              session: {
+                input_audio_format: 'pcm16',
+                input_audio_transcription: { model },
+                turn_detection: { 
+                  type: 'server_vad', 
+                  threshold: 0.3, // 0.0–1.0 sensitivity (lower = more noise tolerated)
+                  prefix_padding_ms: 700, // ms of audio context before silence cut
+                  silence_duration_ms: 2500 // ms of silence before emitting a turn
+                }
+              }
+            };
+            console.log('→ Sending session.update:', JSON.stringify(controlMsg));
+            dc.send(JSON.stringify(controlMsg));
+            sessionUpdated = true;
+          }
+          break;
 
-    // Partial transcription delta events
-    case 'conversation.item.input_audio_transcription.delta':
-      appendTranscript(msg.delta);
-      break;
+        case 'session.updated':
+          console.log('✅ Session updated, ready for transcription');
+          break;
 
-    // Final transcription text
-    case 'conversation.item.input_audio_transcription.completed':
-      appendTranscript(msg.transcript);
-      break;
+        // Partial transcription delta events: show live text in its chunk
+        case 'conversation.item.input_audio_transcription.delta': {
+          const chunkId = msg.conversation_item_id;
+          showChunk(chunkId, msg.delta);
+          break;
+        }
 
-    // Fallback for older 'transcript' events
-    case 'transcript':
-      appendTranscript(msg.data.text);
-      break;
+        // Final transcription text: overwrite the same chunk with the completed text
+        case 'conversation.item.input_audio_transcription.completed': {
+          const chunkId = msg.conversation_item_id;
+          showChunk(chunkId, msg.transcript);
+          break;
+        }
 
-    default:
-      // ignore other event types (speech_started, committed, response.* etc.)
-      break;
-  }
-};
+        // Fallback for older 'transcript' events
+        case 'transcript':
+          appendTranscript(msg.data.text);
+          break;
 
-// errors & close
-dc.onerror = err => console.error('💥 DC error:', err);
-dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')');
+        default:
+          // ignore other event types (speech_started, committed, response.* etc.)
+          break;
+      }
+    };
+
+    // errors & close
+    dc.onerror = err => console.error('💥 DC error:', err);
+    dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')');
 
 
     // — (Optional) SCTP state logging
@@ -211,10 +231,10 @@ dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')'
     console.log('⏯️ DC readyState now:', dc.readyState);
 
     updateStatus('Recording… speak now!', 'green');
-   // Enable Stop & Pause, disable Start
-   document.getElementById('startButton').disabled       = true;
-   document.getElementById('stopButton').disabled        = false;
-   document.getElementById('pauseResumeButton').disabled = false
+    // Enable Stop & Pause, disable Start
+    document.getElementById('startButton').disabled       = true;
+    document.getElementById('stopButton').disabled        = false;
+    document.getElementById('pauseResumeButton').disabled = false
 
   } catch (err) {
     console.error('❗ startRecording error:', err);
@@ -234,10 +254,10 @@ function stopRecording() {
     pc = null;
   }
   updateStatus('Recording stopped.', '#333');
- // Reset buttons & pause state
- document.getElementById('startButton').disabled        = false;
- document.getElementById('stopButton').disabled         = true;
- document.getElementById('pauseResumeButton').disabled  = true;
- isPaused = false;
- document.getElementById('pauseResumeButton').textContent = 'Pause Recording';
+  // Reset buttons & pause state
+  document.getElementById('startButton').disabled        = false;
+  document.getElementById('stopButton').disabled         = true;
+  document.getElementById('pauseResumeButton').disabled  = true;
+  isPaused = false;
+  document.getElementById('pauseResumeButton').textContent = 'Pause Recording';
 }

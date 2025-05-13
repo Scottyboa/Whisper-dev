@@ -77,19 +77,17 @@ console.log('📁 DataChannel created:', dc.label);
 
 dc.onopen = () => {
   console.log('🔓 DC open (readyState=', dc.readyState, ') — enabling transcription');
-  dc.send(JSON.stringify({
+  const controlMsg = {
     type: 'session.update',
-    args: {                         // ← must be "args"
-      input_audio_transcription: true
-    }
-  }));
+    session: { input_audio_transcription: true }
+  };
+  console.log('→ DC send payload:', JSON.stringify(controlMsg));
+  dc.send(JSON.stringify(controlMsg));
 };
 
-dc.onclose = () =>
-  console.log('🔒 DC closed (readyState=', dc.readyState, ')');
+dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')');
 
-dc.onerror = err =>
-  console.error('💥 DC error:', err);
+dc.onerror = err => console.error('💥 DC error:', err);
 
 dc.onmessage = evt => {
   console.log('📨 DC message event:', evt.data);

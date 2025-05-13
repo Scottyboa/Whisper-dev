@@ -58,6 +58,13 @@ async function fetchEphemeralToken() {
 // 2) Start recording / transcription
 async function startRecording() {
   console.log('▶️ startRecording()');
+
+  // ← Clear previous transcription output
+  const transcriptionField = document.getElementById('transcription');
+  if (transcriptionField) {
+    transcriptionField.value = '';
+  }
+
   updateStatus('Initializing…');
 
   try {

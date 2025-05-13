@@ -182,7 +182,7 @@ dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')'
     console.log('✅ ICE gathering complete');
 
     // — Signal to OpenAI with model & beta header
-    const model     = 'gpt-4o-mini-transcribe';  // ← choose your realtime-transcribe model
+    const model     = 'gpt-4o-transcribe';  // ← choose your realtime-transcribe model
     const signalUrl = `https://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`;
     console.log(`📡 Sending SDP to ${signalUrl}`);
 

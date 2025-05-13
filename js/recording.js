@@ -116,7 +116,7 @@ dc.onmessage = evt => {
               type: 'server_vad', 
               threshold: 0.3, // 0.0–1.0 sensitivity (lower = more noise tolerated)
               prefix_padding_ms: 700, // ms of audio context before silence cut
-              silence_duration_ms: 2000 // ms of silence before emitting a turn
+              silence_duration_ms: 2500 // ms of silence before emitting a turn
             }
           }
         };
@@ -242,38 +242,4 @@ function stopRecording() {
  document.getElementById('pauseResumeButton').disabled  = true;
  isPaused = false;
  document.getElementById('pauseResumeButton').textContent = 'Pause Recording';
-}async function stopRecording() {
-  console.log('⏹️ stopRecording() — stopping mic, flushing transcription…');
-  updateStatus('Finalizing transcription…', 'orange');
-
-  // 1) turn off the mic immediately
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
-  }
-
-  // 2) wait for the DataChannel to close (i.e. server has sent all pending messages)
-  await new Promise(resolve => {
-    dc.onclose = () => {
-      console.log('🔒 DC closed — all transcription events received');
-      resolve();
-    };
-    // (optional) set a timeout so you never hang forever
-    setTimeout(resolve, 5000);
-  });
-
-  // 3) now it’s safe to close the PeerConnection
-  if (pc) {
-    pc.close();
-    pc = null;
-  }
-
-  updateStatus('Recording stopped.', '#333');
-  // reset buttons & state…
-  document.getElementById('startButton').disabled       = false;
-  document.getElementById('stopButton').disabled        = true;
-  document.getElementById('pauseResumeButton').disabled = true;
-  isPaused = false;
-  document.getElementById('pauseResumeButton').textContent = 'Pause Recording';
 }
-

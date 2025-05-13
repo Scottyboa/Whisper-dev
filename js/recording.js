@@ -71,27 +71,37 @@ async function startRecording() {
     pc.onsignalingstatechange     = () => console.log('📶 signalingState:', pc.signalingState);
     pc.onicegatheringstatechange  = () => console.log('⌛ iceGatheringState:', pc.iceGatheringState);
 
-    // — Create DataChannel
-    const dc = pc.createDataChannel('oai-events');
-    console.log('📁 DataChannel created:', dc.label);
-    dc.onopen    = () => {
-      console.log('🔓 DC open (readyState=', dc.readyState,') — enabling transcription');
-      dc.send(JSON.stringify({
-        type: 'session.update',
-        session: { input_audio_transcription: true }
-      }));
-    };
-    dc.onclose   = () => console.log('🔒 DC closed (readyState=', dc.readyState,')');
-    dc.onerror   = err => console.error('💥 DC error:', err);
-    dc.onmessage = evt => {
-      console.log('📨 DC message event:', evt.data);
-      try {
-        const msg = JSON.parse(evt.data);
-        if (msg.type === 'transcript') appendTranscript(msg.data.text);
-      } catch(e) {
-        console.error('⚠️ DC parse failed:', e);
-      }
-    };
+// — Create DataChannel
+const dc = pc.createDataChannel('oai-events');
+console.log('📁 DataChannel created:', dc.label);
+
+dc.onopen = () => {
+  console.log('🔓 DC open (readyState=', dc.readyState, ') — enabling transcription');
+  dc.send(JSON.stringify({
+    type: 'session.update',
+    args: {                         // ← must be "args"
+      input_audio_transcription: true
+    }
+  }));
+};
+
+dc.onclose = () =>
+  console.log('🔒 DC closed (readyState=', dc.readyState, ')');
+
+dc.onerror = err =>
+  console.error('💥 DC error:', err);
+
+dc.onmessage = evt => {
+  console.log('📨 DC message event:', evt.data);
+  try {
+    const msg = JSON.parse(evt.data);
+    if (msg.type === 'transcript') {
+      appendTranscript(msg.data.text);
+    }
+  } catch (e) {
+    console.error('⚠️ DC parse failed:', e);
+  }
+};
 
     // — (Optional) SCTP state logging
     if (pc.sctp) {

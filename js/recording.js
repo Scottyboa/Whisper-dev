@@ -71,35 +71,49 @@ async function startRecording() {
     pc.onsignalingstatechange     = () => console.log('📶 signalingState:', pc.signalingState);
     pc.onicegatheringstatechange  = () => console.log('⌛ iceGatheringState:', pc.iceGatheringState);
 
+
 // — Create DataChannel
 const dc = pc.createDataChannel('oai-events');
 console.log('📁 DataChannel created:', dc.label);
 
+// send session.update only after session.created event
+let sessionUpdated = false;
+
 dc.onopen = () => {
-  console.log('🔓 DC open (readyState=', dc.readyState, ') — enabling transcription');
-  const controlMsg = {
-    type: 'session.update',
-    session: { input_audio_transcription: true }
-  };
-  console.log('→ DC send payload:', JSON.stringify(controlMsg));
-  dc.send(JSON.stringify(controlMsg));
+  console.log('🔓 DC open (readyState=', dc.readyState, ')');
 };
-
-dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')');
-
-dc.onerror = err => console.error('💥 DC error:', err);
 
 dc.onmessage = evt => {
   console.log('📨 DC message event:', evt.data);
   try {
     const msg = JSON.parse(evt.data);
+    if (msg.type === 'session.created' && !sessionUpdated) {
+      // now update session to enable transcription
+      const controlMsg = {
+        type: 'session.update',
+        session: { input_audio_transcription: true }
+      };
+      console.log('→ Sending session.update after session.created:', JSON.stringify(controlMsg));
+      dc.send(JSON.stringify(controlMsg));
+      sessionUpdated = true;
+      return;
+    }
+    if (msg.type === 'session.updated') {
+      console.log('✅ Session updated, ready for transcription');
+      return;
+    }
     if (msg.type === 'transcript') {
       appendTranscript(msg.data.text);
+      return;
     }
   } catch (e) {
     console.error('⚠️ DC parse failed:', e);
   }
 };
+
+dc.onerror = err => console.error('💥 DC error:', err);
+dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')');
+
 
     // — (Optional) SCTP state logging
     if (pc.sctp) {

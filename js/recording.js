@@ -67,11 +67,22 @@ async function startRecording() {
   try {
     // Define your transcription session config
     const sessionConfig = {
-      input_audio_transcription: { model: 'gpt-4o-transcribe', prompt: '' },
-      turn_detection: { type: 'server_vad', silence_duration_ms: 2500 }
+      input_audio_transcription: {
+        model: 'gpt-4o-transcribe',
+        prompt: ''
+      },
+      input_audio_format: 'pcm16',
+      turn_detection: {
+        type: 'server_vad',            // VAD-driven turn detection
+        threshold: 0.3,                // sensitivity (0.0–1.0; lower = more noise tolerated)
+        prefix_padding_ms: 700,        // ms of audio context before silence cut
+        silence_duration_ms: 2500      // ms of sustained silence to mark end of turn
+      }
     };
+
     const { token } = await fetchTranscriptionToken(sessionConfig);
 
+    // Create PeerConnection
     pc = new RTCPeerConnection();
     console.log('🎧 PeerConnection created');
 
@@ -96,7 +107,7 @@ async function startRecording() {
 
     // Attach mic
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaStream.getTracks().forEach(t => pc.addTrack(t, mediaStream));
+    mediaStream.getTracks().forEach(track => pc.addTrack(track, mediaStream));
     console.log('🎤 Mic attached');
 
     // SDP offer/answer

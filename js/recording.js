@@ -73,7 +73,6 @@ async function startRecording() {
 
 
 // — Create DataChannel
-// — Create DataChannel
 const dc = pc.createDataChannel('oai-events');
 console.log('📁 DataChannel created:', dc.label);
 
@@ -83,53 +82,64 @@ dc.onopen = () => {
   console.log('🔓 DC open (readyState=', dc.readyState, ')');
 };
 
+// Unified handler for transcript events
 dc.onmessage = evt => {
   console.log('📨 DC message event:', evt.data);
+  let msg;
   try {
-    const msg = JSON.parse(evt.data);
-
-    if (msg.type === 'session.created' && !sessionUpdated) {
-      // Configure for GPT-4o-transcribe realtime transcription
-      const controlMsg = {
-        type: 'session.update',
-        session: {
-          // audio format and transcription model
-          input_audio_format: 'pcm16',
-          input_audio_transcription: { model: 'gpt-4o-transcribe' },
-          // use server-side VAD with typical settings
-          turn_detection: {
-            type: 'server_vad',
-            threshold: 0.5,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 200
-          }
-        }
-      };
-
-      console.log('→ Sending session.update for GPT-4o-transcribe:', JSON.stringify(controlMsg));
-      dc.send(JSON.stringify(controlMsg));
-      sessionUpdated = true;
-      return;
-    }
-
-    if (msg.type === 'session.updated') {
-      console.log('✅ Session updated, ready for transcription');
-      return;
-    }
-
-    if (msg.type === 'transcript') {
-      appendTranscript(msg.data.text);
-      return;
-    }
+    msg = JSON.parse(evt.data);
   } catch (e) {
     console.error('⚠️ DC parse failed:', e);
+    return;
+  }
+
+  switch (msg.type) {
+    case 'session.created':
+      if (!sessionUpdated) {
+        // configure for GPT-4o real-time transcription
+        const controlMsg = {
+          type: 'session.update',
+          session: {
+            input_audio_format: 'pcm16',
+            input_audio_transcription: { model: 'gpt-4o-transcribe' },
+            turn_detection: { type: 'server_vad', threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 200 }
+          }
+        };
+        console.log('→ Sending session.update:', JSON.stringify(controlMsg));
+        dc.send(JSON.stringify(controlMsg));
+        sessionUpdated = true;
+      }
+      break;
+
+    case 'session.updated':
+      console.log('✅ Session updated, ready for transcription');
+      break;
+
+    // Partial transcription delta events
+    case 'conversation.item.input_audio_transcription.delta':
+      appendTranscript(msg.delta);
+      break;
+
+    // Final transcription text
+    case 'conversation.item.input_audio_transcription.completed':
+      appendTranscript(msg.transcript);
+      break;
+
+    // Fallback for older 'transcript' events
+    case 'transcript':
+      appendTranscript(msg.data.text);
+      break;
+
+    default:
+      // ignore other event types (speech_started, committed, response.* etc.)
+      break;
   }
 };
 
-// log errors and close
-
+// errors & close
 dc.onerror = err => console.error('💥 DC error:', err);
 dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')');
+
 
     // — (Optional) SCTP state logging
     if (pc.sctp) {

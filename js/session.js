@@ -1,9 +1,8 @@
 // root/js/session.js
 
 /**
- * Session handles the WebRTC + HTTP signaling for OpenAI’s Realtime API.
- * Import this as:
- *   import { Session } from './session.js';
+ * Session handles WebRTC + HTTP signaling for OpenAI’s Realtime API.
+ * Enhanced with detailed debug logging for troubleshooting.
  */
 export class Session {
   constructor(apiKey) {
@@ -16,25 +15,18 @@ export class Session {
   }
 
   /**
-   * Start a generic realtime session (not used by recording.js)
-   */
-  async start(stream, sessionConfig) {
-    await this.startInternal(stream, sessionConfig, '/v1/realtime/sessions');
-  }
-
-  /**
    * Start a transcription session.
-   * @param {MediaStream} stream
-   * @param {object} sessionConfig
    */
   async startTranscription(stream, sessionConfig) {
-    await this.startInternal(stream, sessionConfig, '/v1/realtime/transcription_sessions');
+    console.debug('[Session] startTranscription()');
+    return this.startInternal(stream, sessionConfig, '/v1/realtime/transcription_sessions');
   }
 
   /**
    * Tear down the PeerConnection and media tracks.
    */
   stop() {
+    console.debug('[Session] stop()');
     this.dc?.close();
     this.dc = null;
     this.pc?.close();
@@ -45,10 +37,10 @@ export class Session {
   }
 
   /**
-   * Mute or unmute the outbound audio (used for Pause/Resume).
-   * @param {boolean} muted
+   * Mute or unmute the outbound audio (pause/resume).
    */
   mute(muted) {
+    console.debug(`[Session] mute(${muted})`);
     this.muted = muted;
     this.pc.getSenders().forEach(sender => {
       if (sender.track) sender.track.enabled = !muted;
@@ -56,98 +48,122 @@ export class Session {
   }
 
   /**
-   * Internal setup: create offer, signal, and set remote answer.
-   * @private
+   * Internal logic: create offer, perform signaling, and apply answer.
    */
   async startInternal(stream, sessionConfig, tokenEndpoint) {
+    console.debug('[Session] startInternal()', { tokenEndpoint, sessionConfig });
     this.ms = stream;
     this.pc = new RTCPeerConnection();
 
-    // Wire up events
+    // Detailed RTC event logging
+    this.pc.onicecandidate = event => console.debug('[Session] ICE candidate:', event.candidate);
+    this.pc.onsignalingstatechange = () => console.debug('[Session] signalingState:', this.pc.signalingState);
+    this.pc.onicegatheringstatechange = () => console.debug('[Session] iceGatheringState:', this.pc.iceGatheringState);
+    this.pc.onconnectionstatechange = () => console.debug('[Session] connectionState:', this.pc.connectionState);
     this.pc.ontrack = e => this.ontrack?.(e);
     this.pc.addTrack(stream.getTracks()[0]);
-    this.pc.onconnectionstatechange = () => this.onconnectionstatechange?.(this.pc.connectionState);
 
-    // DataChannel for events and transcripts
-    this.dc = this.pc.createDataChannel('');
-    this.dc.onopen    = () => this.onopen?.();
+    // DataChannel for control & transcripts
+    this.dc = this.pc.createDataChannel('oai-events');
+    this.dc.onopen    = () => console.debug('[Session] DataChannel open');
     this.dc.onmessage = e => {
       let data;
       try { data = JSON.parse(e.data); }
-      catch { return; }
+      catch (err) { console.error('[Session] DC parse error:', err); return; }
+      console.debug('[Session] DC message:', data);
       this.onmessage?.(data);
     };
 
-    // Create SDP offer
+    // SDP offer
     const offer = await this.pc.createOffer();
+    console.debug('[Session] SDP offer:', offer.sdp.slice(0, 120) + '…');
     await this.pc.setLocalDescription(offer);
 
-    // Exchange SDP via HTTP
+    // HTTP signaling
     try {
       const answer = await this.signal(offer, sessionConfig, tokenEndpoint);
+      console.debug('[Session] Received SDP answer');
       await this.pc.setRemoteDescription(answer);
     } catch (err) {
+      console.error('[Session] Signaling error:', err);
       this.onerror?.(err);
     }
   }
 
   /**
-   * Perform HTTP signaling:
-   * 1) POST to /v1/realtime{tokenEndpoint} to get a client_secret
-   * 2) POST raw SDP to /v1/realtime with that secret
-   * @private
+   * Exchange SDP via Fetch: obtain token, then send raw SDP.
    */
   async signal(offer, sessionConfig, tokenEndpoint) {
+    console.debug('[Session] signal()', { tokenEndpoint });
     const urlRoot     = 'https://api.openai.com';
     const realtimeUrl = `${urlRoot}/v1/realtime`;
-    let sdpResponse;
+    let resp;
 
     if (this.useSessionToken) {
-      // 1) fetch a short‐lived session token
-      const sessionRes = await fetch(`${urlRoot}${tokenEndpoint}`, {
-        method: 'POST',
+      console.debug('[Session] Requesting session token');
+      const tokenRes = await fetch(`${urlRoot}${tokenEndpoint}`, {
+        method:  'POST',
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'openai-beta':   'realtime-v1',
-          'Content-Type':  'application/json',
+          'Content-Type':  'application/json'
         },
-        body: JSON.stringify(sessionConfig),
+        body:    JSON.stringify(sessionConfig)
       });
-      if (!sessionRes.ok) throw new Error('Failed to request session token');
-      const { client_secret: { value: clientSecret } } = await sessionRes.json();
+      console.debug('[Session] tokenRes status:', tokenRes.status);
+      const tokenJson = await tokenRes.clone().json().catch(() => ({}));
+      console.debug('[Session] tokenRes json:', tokenJson);
+      if (!tokenRes.ok) {
+        const errText = await tokenRes.text();
+        console.error('[Session] token error text:', errText);
+        throw new Error(`Token request failed: ${tokenRes.status}`);
+      }
+      const clientSecret = tokenJson.client_secret?.value;
+      console.debug('[Session] Obtained clientSecret');
 
-      // 2) send SDP offer with that token
-      sdpResponse = await fetch(realtimeUrl, {
+      console.debug('[Session] POSTing SDP to realtime endpoint');
+      resp = await fetch(realtimeUrl, {
         method:  'POST',
         headers: {
           'Authorization': `Bearer ${clientSecret}`,
-          'Content-Type':  'application/sdp',
+          'Content-Type':  'application/sdp'
         },
-        body:    offer.sdp,
-      });
-      if (!sdpResponse.ok) throw new Error('Failed to signal');
+        body:    offer.sdp
+      }).catch(err => { console.error('[Session] SDP fetch failed:', err); throw err; });
+      console.debug('[Session] SDP response status:', resp.status);
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error('[Session] SDP error text:', errText);
+        throw new Error(`Signal failed: ${resp.status}`);
+      }
     } else {
-      // Fallback: send API key + form data
+      console.debug('[Session] Fallback: direct SDP with API key');
       const form = new FormData();
       form.append('session', JSON.stringify(sessionConfig));
       form.append('sdp', offer.sdp);
-
-      sdpResponse = await fetch(realtimeUrl, {
+      resp = await fetch(realtimeUrl, {
         method:  'POST',
         headers: { 'Authorization': `Bearer ${this.apiKey}` },
-        body:    form,
-      });
-      if (!sdpResponse.ok) throw new Error('Failed to signal');
+        body:    form
+      }).catch(err => { console.error('[Session] fallback SDP error:', err); throw err; });
+      console.debug('[Session] fallback SDP status:', resp.status);
+      if (!resp.ok) {
+        const errText = await resp.text();
+        console.error('[Session] fallback error text:', errText);
+        throw new Error(`Fallback signal failed: ${resp.status}`);
+      }
     }
 
-    return { type: 'answer', sdp: await sdpResponse.text() };
+    const answerSdp = await resp.text();
+    console.debug('[Session] Answer SDP snippet:', answerSdp.slice(0,120) + '…');
+    return { type: 'answer', sdp: answerSdp };
   }
 
   /**
-   * Send an arbitrary control message over the DataChannel.
-   * @param {object} message
+   * Send a control message over the DataChannel.
    */
   sendMessage(message) {
+    console.debug('[Session] sendMessage()', message);
     this.dc.send(JSON.stringify(message));
   }
 }

@@ -1,23 +1,23 @@
 // netlify/functions/get-token.js
 
-// Creates a realtime transcription session and returns { token, sessionId }.
+// Creates a realtime session and returns { token, sessionId }.
 // If fields are missing, returns the raw OpenAI payload for debugging.
 exports.handler = async function(event) {
-  // Handle CORS preflight
+  // 1) CORS preflight support
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 204,
       headers: {
         'Access-Control-Allow-Origin':  '*',
         'Access-Control-Allow-Methods': 'OPTIONS, POST',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
       body: ''
     };
   }
 
-  // Parse incoming body
-  let body;
+  // 2) Parse incoming JSON
+  let body = {};
   try {
     body = JSON.parse(event.body || '{}');
   } catch {
@@ -28,7 +28,7 @@ exports.handler = async function(event) {
     };
   }
 
-  // Determine API key
+  // 3) Determine API key to use
   const apiKey = body.userKey || process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return {
@@ -38,11 +38,11 @@ exports.handler = async function(event) {
     };
   }
 
+  // 4) Call OpenAI to create a realtime session
   let data;
   try {
-    // ← UPDATED: use the transcription_sessions endpoint and pass model in input_audio_transcription
     const res = await fetch(
-      'https://api.openai.com/v1/realtime/transcription_sessions',
+      'https://api.openai.com/v1/realtime/sessions',
       {
         method: 'POST',
         headers: {
@@ -51,21 +51,18 @@ exports.handler = async function(event) {
           'openai-beta':   'realtime-v1'
         },
         body: JSON.stringify({
-          input_audio_transcription: {
-            model: 'gpt-4o-transcribe'
-          }
+          model: 'gpt-4o-realtime-preview-2024-12-17'
         })
       }
     );
-
     data = await res.json();
-    console.log('📡 OpenAI response:', data);
+    console.log('📡 OpenAI /sessions response:', data);
 
     if (!res.ok) {
       return {
         statusCode: res.status,
         headers:    { 'Access-Control-Allow-Origin': '*' },
-        body:       JSON.stringify({ error: data.error || data, data })
+        body:       JSON.stringify({ error: data.error || data })
       };
     }
   } catch (err) {
@@ -76,7 +73,7 @@ exports.handler = async function(event) {
     };
   }
 
-  // Extract token and sessionId from response
+  // 5) Extract token + sessionId with fallbacks
   const token =
     typeof data.token === 'string' ? data.token :
     typeof data.client_secret?.value === 'string' ? data.client_secret.value :
@@ -84,12 +81,12 @@ exports.handler = async function(event) {
 
   const sessionId =
     typeof data.sessionId === 'string' ? data.sessionId :
-    typeof data.session_id === 'string'  ? data.session_id :
+    typeof data.session_id === 'string' ? data.session_id :
     typeof data.id === 'string'          ? data.id :
     undefined;
 
-  // If we couldn’t find token or sessionId, return raw payload for debugging
   if (!token || !sessionId) {
+    // Let the client inspect the full payload if something’s off
     return {
       statusCode: 200,
       headers:    { 'Access-Control-Allow-Origin': '*' },
@@ -97,7 +94,7 @@ exports.handler = async function(event) {
     };
   }
 
-  // Return the ephemeral token and session ID
+  // 6) Return the minimal { token, sessionId }
   return {
     statusCode: 200,
     headers:    { 'Access-Control-Allow-Origin': '*' },

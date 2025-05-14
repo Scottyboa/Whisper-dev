@@ -1,161 +1,151 @@
-// recording.js
+// root/js/recording.js
+
 import { Session } from './session.js';
 
+const startButton        = document.getElementById('startButton');
+const stopButton         = document.getElementById('stopButton');
+const pauseResumeButton  = document.getElementById('pauseResumeButton');
+const recordTimerEl      = document.getElementById('recordTimer');
+const transcribeTimerEl  = document.getElementById('transcribeTimer');
+const transcriptionEl    = document.getElementById('transcription');
+const statusMessageEl    = document.getElementById('statusMessage');
+
+let session             = null;
+let mediaStream         = null;
+let isPaused            = false;
+let recordTimerInterval = null;
+let transcribeTimerInterval = null;
+let recordStartTime     = 0;
+let transcribeStartTime = 0;
+
+/**
+ * Initialize button handlers
+ */
 export function initRecording() {
-  const startButton          = document.getElementById('startButton');
-  const stopButton           = document.getElementById('stopButton');
-  const pauseResumeButton    = document.getElementById('pauseResumeButton');
-  const transcriptionEl      = document.getElementById('transcription');
-  const statusMessage        = document.getElementById('statusMessage');
-  const recordTimerEl        = document.getElementById('recordTimer');
-  const transcribeTimerEl    = document.getElementById('transcribeTimer');
-  const langSelect           = document.getElementById('lang-select-transcribe');
+  startButton.onclick       = startRecording;
+  stopButton.onclick        = stopRecording;
+  pauseResumeButton.onclick = togglePauseResume;
+  updateButtons(false);
+  statusMessageEl.textContent = 'Welcome! Click "Start Recording" to begin.';
+}
 
-  let session             = null;
-  let stream              = null;
-  let recordTimerId       = null;
-  let transcribeTimerId   = null;
-  let recordStartTs       = 0;
-  let transcribeStartTs   = 0;
-  let isPaused            = false;
+/**
+ * Enable/disable buttons based on recording state
+ */
+function updateButtons(recording) {
+  startButton.disabled      = recording;
+  stopButton.disabled       = !recording;
+  pauseResumeButton.disabled= !recording;
+  pauseResumeButton.textContent = 'Pause Recording';
+  isPaused = false;
+}
 
-  function updateState(started) {
-    startButton.disabled       = started;
-    stopButton.disabled        = !started;
-    pauseResumeButton.disabled = !started;
-
-    if (!started) {
-      // reset pause button text & timers
-      pauseResumeButton.textContent = 'Pause Recording';
-      isPaused = false;
-      clearInterval(recordTimerId);
-      clearInterval(transcribeTimerId);
-      recordTimerEl.textContent     = 'Recording Timer: 0 sec';
-      transcribeTimerEl.textContent = 'Completion Timer: 0 sec';
-    }
+/**
+ * Kick off a new recording + transcription session
+ */
+async function startRecording() {
+  const apiKey = sessionStorage.getItem('openai-api-key');
+  if (!apiKey) {
+    statusMessageEl.textContent = 'Error: API key not found in sessionStorage.';
+    return;
   }
 
-  function updateRecordTimer() {
-    const secs = Math.floor((Date.now() - recordStartTs) / 1000);
-    recordTimerEl.textContent = `Recording Timer: ${secs} sec`;
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    statusMessageEl.textContent = 'Could not access microphone.';
+    return;
   }
 
-  function updateTranscribeTimer() {
-    const secs = Math.floor((Date.now() - transcribeStartTs) / 1000);
-    transcribeTimerEl.textContent = `Completion Timer: ${secs} sec`;
+  // Reset UI & timers
+  transcriptionEl.value    = '';
+  recordStartTime          = Date.now();
+  clearInterval(transcribeTimerInterval);
+  transcribeStartTime      = 0;
+  recordTimerEl.textContent    = 'Recording Timer: 0 sec';
+  transcribeTimerEl.textContent= 'Completion Timer: 0 sec';
+  recordTimerInterval      = setInterval(updateRecordTimer, 1000);
+
+  // Start OpenAI session
+  session = new Session(apiKey);
+  session.onconnectionstatechange = state => {
+    statusMessageEl.textContent = state;
+  };
+  session.onmessage = handleMessage;
+  session.onerror   = e => {
+    console.error(e);
+    statusMessageEl.textContent = 'Error: ' + e.message;
+    stopRecording();
+  };
+
+  // Hard-coded defaults: GPT-4-based transcription + server_vad
+  const config = {
+    input_audio_transcription: { model: 'gpt-4o-transcribe' },
+    turn_detection:           { type:  'server_vad'      }
+  };
+
+  updateButtons(true);
+  await session.startTranscription(mediaStream, config);
+}
+
+/**
+ * Stop everything and clear intervals
+ */
+function stopRecording() {
+  updateButtons(false);
+  session?.stop();
+  session = null;
+
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
   }
 
-  async function startRecording() {
-    const apiKey = sessionStorage.getItem('user_api_key');
-    if (!apiKey) {
-      alert('Please set your OpenAI API key before recording.');
-      return;
-    }
+  clearInterval(recordTimerInterval);
+  clearInterval(transcribeTimerInterval);
+}
 
-    // clear out old transcript
-    transcriptionEl.value = '';
-    statusMessage.textContent = 'Initializing microphone…';
-    updateState(true);
-
-    // start record timer
-    recordStartTs = Date.now();
-    recordTimerEl.textContent = 'Recording Timer: 0 sec';
-    recordTimerId = setInterval(updateRecordTimer, 500);
-
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (err) {
-      statusMessage.textContent = 'Microphone access denied.';
-      console.error('getUserMedia error:', err);
-      updateState(false);
-      return;
-    }
-
-    // set up the realtime-transcription session
-    session = new Session(apiKey);
-    session.onopen = () => {
-      statusMessage.textContent = 'Transcription session started.';
-      transcribeStartTs = Date.now();
-      transcribeTimerEl.textContent = 'Completion Timer: 0 sec';
-      transcribeTimerId = setInterval(updateTranscribeTimer, 500);
-    };
-    session.onmessage = handleMessage;
-    session.onerror = (err) => {
-      statusMessage.textContent = `Error: ${err.message}`;
-      console.error('Session error:', err);
-      stopRecording();
-    };
-
-    const config = {
-      input_audio_transcription: {
-        model: 'gpt-4o-transcribe',
-        language: langSelect.value
-      }
-    };
-
-    try {
-      await session.startTranscription(stream, config);
-    } catch (err) {
-      statusMessage.textContent = `Failed to start transcription: ${err.message}`;
-      console.error(err);
-      stopRecording();
-    }
+/**
+ * Toggle pause/resume by muting the Session
+ */
+function togglePauseResume() {
+  if (!session) return;
+  if (!isPaused) {
+    session.mute(true);
+    pauseResumeButton.textContent = 'Resume Recording';
+    isPaused = true;
+  } else {
+    session.mute(false);
+    pauseResumeButton.textContent = 'Pause Recording';
+    isPaused = false;
   }
+}
 
-  function handleMessage(parsed) {
-    console.log('⟵', parsed);
-    let data = null;
-    switch (parsed.type) {
-      case 'transcription_session.created':
-        console.log('Session created:', parsed.session.id);
-        break;
-      case 'input_audio_buffer.speech_started':
-        data = { transcript: '…', partial: true };
-        handleTranscript(data);
-        break;
-      case 'conversation.item.input_audio_transcription.completed':
-        data = { transcript: parsed.transcript, partial: false };
-        handleTranscript(data);
-        break;
-      default:
-        break;
-    }
-  }
-
-  function handleTranscript({ transcript, partial }) {
-    const lastNL = transcriptionEl.value.lastIndexOf('\n');
-    if (lastNL >= 0) {
-      transcriptionEl.value = transcriptionEl.value.substring(0, lastNL + 1);
-    }
-    transcriptionEl.value += transcript;
-    if (!partial) {
-      transcriptionEl.value += '\n';
-    }
+/**
+ * Append completed transcripts and kick off completion timer
+ */
+function handleMessage(parsed) {
+  if (parsed.type === 'conversation.item.input_audio_transcription.completed') {
+    // Append text + newline
+    transcriptionEl.value += parsed.transcript + '\n';
     transcriptionEl.scrollTop = transcriptionEl.scrollHeight;
-  }
 
-  function togglePause() {
-    if (!session) return;
-    isPaused = !isPaused;
-    session.mute(isPaused);
-    pauseResumeButton.textContent = isPaused ? 'Resume Recording' : 'Pause Recording';
-    statusMessage.textContent = isPaused ? 'Recording paused.' : 'Recording resumed.';
-  }
-
-  function stopRecording() {
-    updateState(false);
-    statusMessage.textContent = 'Stopping…';
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-    }
-    if (session) {
-      session.stop();
-      session = null;
+    // Start completion timer on first transcript
+    if (!transcribeStartTime) {
+      transcribeStartTime = Date.now();
+      transcribeTimerInterval = setInterval(updateTranscribeTimer, 1000);
     }
   }
+}
 
-  startButton.addEventListener('click',    startRecording);
-  pauseResumeButton.addEventListener('click', togglePause);
-  stopButton.addEventListener('click',     stopRecording);
+/** Update the recording timer every second */
+function updateRecordTimer() {
+  const secs = Math.floor((Date.now() - recordStartTime) / 1000);
+  recordTimerEl.textContent = `Recording Timer: ${secs} sec`;
+}
+
+/** Update the completion timer every second */
+function updateTranscribeTimer() {
+  const secs = Math.floor((Date.now() - transcribeStartTime) / 1000);
+  transcribeTimerEl.textContent = `Completion Timer: ${secs} sec`;
 }

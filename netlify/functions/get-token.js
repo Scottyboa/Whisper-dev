@@ -1,8 +1,9 @@
 // netlify/functions/get-token.js
 
-// Creates a realtime session and returns { token, sessionId }.
+// Creates a realtime transcription session and returns { token, sessionId }.
 // If fields are missing, returns the raw OpenAI payload for debugging.
 exports.handler = async function(event) {
+  // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 204,
@@ -15,6 +16,7 @@ exports.handler = async function(event) {
     };
   }
 
+  // Parse incoming body
   let body;
   try {
     body = JSON.parse(event.body || '{}');
@@ -25,6 +27,8 @@ exports.handler = async function(event) {
       body: JSON.stringify({ error: 'Invalid JSON' })
     };
   }
+
+  // Determine API key
   const apiKey = body.userKey || process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return {
@@ -36,9 +40,9 @@ exports.handler = async function(event) {
 
   let data;
   try {
-    // ← Changed model here to transcription-only
+    // ← UPDATED: use the transcription_sessions endpoint and pass model in input_audio_transcription
     const res = await fetch(
-      'https://api.openai.com/v1/realtime/sessions',
+      'https://api.openai.com/v1/realtime/transcription_sessions',
       {
         method: 'POST',
         headers: {
@@ -46,11 +50,17 @@ exports.handler = async function(event) {
           'Content-Type':  'application/json',
           'openai-beta':   'realtime-v1'
         },
-        body: JSON.stringify({ model: 'gpt-4o-transcribe' })
+        body: JSON.stringify({
+          input_audio_transcription: {
+            model: 'gpt-4o-transcribe'
+          }
+        })
       }
     );
+
     data = await res.json();
     console.log('📡 OpenAI response:', data);
+
     if (!res.ok) {
       return {
         statusCode: res.status,
@@ -66,19 +76,20 @@ exports.handler = async function(event) {
     };
   }
 
-  // Attempt to extract flat strings
+  // Extract token and sessionId from response
   const token =
     typeof data.token === 'string' ? data.token :
     typeof data.client_secret?.value === 'string' ? data.client_secret.value :
     undefined;
+
   const sessionId =
     typeof data.sessionId === 'string' ? data.sessionId :
-    typeof data.session_id === 'string' ? data.session_id :
-    typeof data.id === 'string' ? data.id :
+    typeof data.session_id === 'string'  ? data.session_id :
+    typeof data.id === 'string'          ? data.id :
     undefined;
 
+  // If we couldn’t find token or sessionId, return raw payload for debugging
   if (!token || !sessionId) {
-    // Return the raw payload so the client can inspect it
     return {
       statusCode: 200,
       headers:    { 'Access-Control-Allow-Origin': '*' },
@@ -86,6 +97,7 @@ exports.handler = async function(event) {
     };
   }
 
+  // Return the ephemeral token and session ID
   return {
     statusCode: 200,
     headers:    { 'Access-Control-Allow-Origin': '*' },

@@ -1,12 +1,12 @@
-// transcription.js
-import { Session } from './sessions.js';
+// recording.js
+import { Session } from './session.js';
 
 let session = null;
 let sessionConfig = null;
 let recordInterval = null;
 let vadTime = 0;
 
-export function initTranscription() {
+export function initRecording() {             // ← renamed here
   const startBtn = document.getElementById('startButton');
   const stopBtn = document.getElementById('stopButton');
   const pauseBtn = document.getElementById('pauseResumeButton');
@@ -27,7 +27,6 @@ export function initTranscription() {
   }
 
   async function startRecording() {
-    // get API key (prompt once, then save)
     let apiKey = localStorage.getItem('openaiApiKey');
     if (!apiKey) {
       apiKey = prompt('Enter your OpenAI API key:');
@@ -43,14 +42,12 @@ export function initTranscription() {
     statusEl.textContent = 'Connecting…';
     updateButtons(true);
 
-    // start record timer
     const startTs = Date.now();
     recordTimerEl.textContent = 'Recording Timer: 0 sec';
     recordInterval = setInterval(() => {
       recordTimerEl.textContent = `Recording Timer: ${Math.floor((Date.now() - startTs) / 1000)} sec`;
     }, 1000);
 
-    // configure and start session
     session = new Session(apiKey);
     session.onconnectionstatechange = s => statusEl.textContent = `Connection: ${s}`;
     session.onmessage = handleMessage;
@@ -82,8 +79,7 @@ export function initTranscription() {
     let text, isPartial;
     switch (parsed.type) {
       case 'input_audio_buffer.speech_started':
-        text = '…'; isPartial = true;
-        break;
+        text = '…'; isPartial = true; break;
       case 'input_audio_buffer.speech_stopped':
         text = '***'; isPartial = true;
         vadTime = performance.now() - (sessionConfig.turn_detection.silence_duration_ms || 0);
@@ -96,7 +92,6 @@ export function initTranscription() {
       default:
         return;
     }
-    // append into textarea
     const lastNL = transcriptEl.value.lastIndexOf('\n');
     transcriptEl.value = transcriptEl.value.slice(0, lastNL + 1) + text + (isPartial ? '' : '\n');
     transcriptEl.scrollTop = transcriptEl.scrollHeight;

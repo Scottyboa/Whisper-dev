@@ -61,14 +61,14 @@ class Session {
       // Session-token flow not used here
       throw new Error("Session-token flow is disabled");
     } else {
-      const formData = new FormData();
-      formData.append("session", JSON.stringify(sessionConfig));
-      formData.append("sdp", offer.sdp);
-      sdpResponse = await fetch(realtimeUrl, {
-        method: "POST",
-        body: formData,
-        headers: { Authorization: `Bearer ${this.apiKey}` },
-      });
+sdpResponse = await fetch("https://api.openai.com/v1/realtime", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${this.apiKey}`,       // your ephemeral client_secret
+    "Content-Type": "application/sdp"
+  },
+  body: offer.sdp,                                // note: raw SDP string
+});
       if (!sdpResponse.ok) {
         throw new Error("Failed to signal");
       }

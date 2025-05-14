@@ -1,170 +1,154 @@
-/* root/js/recording.js */
-import { Session } from './session.js';
+/* root/js/session.js */
 
-// DOM element references (your custom IDs)
-const startButton = document.getElementById('startButton');
-const stopButton = document.getElementById('stopButton');
-const pauseResumeButton = document.getElementById('pauseResumeButton');
-const transcriptionEl = document.getElementById('transcription');
-const statusMessageEl = document.getElementById('statusMessage');
-const recordTimerEl = document.getElementById('recordTimer');
-const transcribeTimerEl = document.getElementById('transcribeTimer');
-
-// State variables
-let session = null;
-let recordInterval = null;
-let recordStartTime = 0;
-let isPaused = false;
-
-/**
- * Wire up buttons and initialize UI state
- */
-export function initRecording() {
-  startButton.onclick = startRecording;
-  stopButton.onclick = stopRecording;
-  pauseResumeButton.onclick = togglePause;
-  updateUI(false);
-}
-
-/**
- * Enable/disable UI controls
- */
-function updateUI(isRecording) {
-  startButton.disabled = isRecording;
-  stopButton.disabled = !isRecording;
-  pauseResumeButton.disabled = !isRecording;
-  pauseResumeButton.textContent = isPaused ? 'Resume Recording' : 'Pause Recording';
-  if (!isRecording) pauseResumeButton.textContent = 'Pause Recording';
-}
-
-/**
- * Kick off microphone capture and transcription session
- */
-async function startRecording() {
-  const apiKey = sessionStorage.getItem('user_api_key');
-  if (!apiKey) {
-    alert('API key not found. Please enter your API key on the index page.');
-    return;
+export class Session {
+  constructor(apiKey) {
+    this.apiKey = apiKey;
+    this.useSessionToken = true;
+    this.mediaStream = null;
+    this.peerConnection = null;
+    this.dataChannel = null;
+    this.muted = false;
   }
 
-  try {
-    // 1) Capture audio
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-    // 2) Initialize OpenAI Session
-    session = new Session(apiKey);
-    session.onconnectionstatechange = state => updateStatus(state);
-    session.onopen = () => updateStatus('Connected');
-    session.onmessage = handleMessage;
-    session.onerror = err => handleError(err);
-
-    // 3) Reset UI fields and timers
-    transcriptionEl.value = '';
-    recordStartTime = Date.now();
-    recordTimerEl.textContent = 'Recording Timer: 0 sec';
-    transcribeTimerEl.textContent = 'Completion Timer: 0 sec';
-
-    // 4) Update recording timer every second
-    recordInterval = setInterval(() => {
-      const secs = Math.floor((Date.now() - recordStartTime) / 1000);
-      recordTimerEl.textContent = `Recording Timer: ${secs} sec`;
-    }, 1000);
-
-    // 5) Build config matching developer sample (no DOM selects here)
-    const sessionConfig = {
-      input_audio_transcription: { model: 'gpt-4o-transcribe' },
-      turn_detection: { type: 'server_vad' }
-    };
-
-    // 6) Start transcription
-    await session.startTranscription(stream, sessionConfig);
-
-    // 7) Transition UI to 'recording' mode
-    isPaused = false;
-    updateUI(true);
-    updateStatus('Initializing');
-  } catch (err) {
-    console.error('Start error:', err);
-    updateStatus('Error starting recording');
+  async startMicrophone(stream, sessionConfig) {
+    await this.startInternal(stream, sessionConfig, "/v1/realtime/sessions");
   }
-}
 
-/**
- * Cleanly stop the session and reset UI
- */
-function stopRecording() {
-  if (session) {
-    session.stop();
-    session = null;
+  async startTranscription(stream, sessionConfig) {
+    await this.startInternal(stream, sessionConfig, "/v1/realtime/transcription_sessions");
   }
-  clearInterval(recordInterval);
-  updateUI(false);
-  updateStatus('Stopped');
-}
 
-/**
- * Pause/resume audio sending to the API
- */
-function togglePause() {
-  if (!session) return;
-  isPaused = !isPaused;
-  session.mute(isPaused);
-  updateUI(true);
-  updateStatus(isPaused ? 'Paused' : 'Recording');
-}
+  stop() {
+    if (this.dataChannel) {
+      this.dataChannel.close();
+      this.dataChannel = null;
+    }
+    if (this.peerConnection) {
+      this.peerConnection.close();
+      this.peerConnection = null;
+    }
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
+    this.muted = false;
+  }
 
-/**
- * Handle messages from the OpenAI data channel
- */
-function handleMessage(parsed) {
-  console.log('Received:', parsed);
-  switch (parsed.type) {
-    case 'transcription_session.created':
-      updateStatus('Session created');
-      break;
-    case 'input_audio_buffer.speech_started':
-      appendTranscript('...', true);
-      break;
-    case 'input_audio_buffer.speech_stopped':
-      appendTranscript('***', true);
-      break;
-    // Developer sample comments out delta to avoid duplicate text
-    // case 'conversation.item.input_audio_transcription.delta':
-    //   break;
-    case 'conversation.item.input_audio_transcription.completed':
-      appendTranscript(parsed.transcript, false);
-      if (parsed.latencyMs != null) {
-        const secs = Math.round(parsed.latencyMs / 1000);
-        transcribeTimerEl.textContent = `Completion Timer: ${secs} sec`;
+  mute(muted) {
+    this.muted = muted;
+    if (this.peerConnection) {
+      this.peerConnection.getSenders().forEach(sender => {
+        if (sender.track) sender.track.enabled = !muted;
+      });
+    }
+  }
+
+  async startInternal(stream, sessionConfig, endpoint) {
+    this.mediaStream = stream;
+
+    // Create the RTCPeerConnection (same as dev sample)
+    this.peerConnection = new RTCPeerConnection();
+
+    // DEBUG: Log ICE and signaling state changes for comprehensive debugging
+    this.peerConnection.addEventListener('icecandidate', evt => {
+      console.log('🧊 ICE candidate:', evt.candidate);
+    });
+    this.peerConnection.addEventListener('icegatheringstatechange', () => {
+      console.log('🧊 ICE gathering state:', this.peerConnection.iceGatheringState);
+    });
+    this.peerConnection.addEventListener('iceconnectionstatechange', () => {
+      console.log('🧊 ICE connection state:', this.peerConnection.iceConnectionState);
+      this.oniceconnectionstatechange?.(this.peerConnection.iceConnectionState);
+    });
+    this.peerConnection.addEventListener('signalingstatechange', () => {
+      console.log('🎛️ Signaling state:', this.peerConnection.signalingState);
+    });
+
+    // Forward track events
+    this.peerConnection.addEventListener('track', e => this.ontrack?.(e));
+    this.peerConnection.addTrack(stream.getAudioTracks()[0], stream);
+    this.peerConnection.addEventListener('connectionstatechange', () =>
+      this.onconnectionstatechange?.(this.peerConnection.connectionState)
+    );
+
+    // Data channel for real-time messages
+    this.dataChannel = this.peerConnection.createDataChannel('oai_events');
+    this.dataChannel.addEventListener('open', () => this.onopen?.());
+    this.dataChannel.addEventListener('message', e => {
+      try {
+        const msg = JSON.parse(e.data);
+        this.onmessage?.(msg);
+      } catch (err) {
+        console.error('Data channel JSON parse error:', err);
       }
-      break;
-    default:
-      break;
+    });
+
+    // Create offer and set local description
+    const offer = await this.peerConnection.createOffer();
+    await this.peerConnection.setLocalDescription(offer);
+
+    // Signal to OpenAI and set remote description
+    const answer = await this.signal(offer.sdp, sessionConfig, endpoint);
+    await this.peerConnection.setRemoteDescription(answer);
   }
-}
 
-/**
- * Append or finalize transcript lines
- */
-function appendTranscript(text, partial) {
-  const lastNL = transcriptionEl.value.lastIndexOf('\n');
-  const base = transcriptionEl.value.substring(0, lastNL + 1);
-  transcriptionEl.value = base + text + (partial ? '' : '\n');
-  transcriptionEl.scrollTop = transcriptionEl.scrollHeight;
-}
+  async signal(sdp, sessionConfig, endpoint) {
+    const apiRoot = 'https://api.openai.com';
 
-/**
- * Log errors and update UI
- */
-function handleError(err) {
-  console.error('Transcription error:', err);
-  updateStatus('Error: ' + err.message);
-  stopRecording();
-}
+    if (this.useSessionToken) {
+      // 1) Request ephemeral session token
+      const sessionUrl = `${apiRoot}${endpoint}`;
+      const sessionResp = await fetch(sessionUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'openai-beta': 'realtime-v1',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(sessionConfig)
+      });
+      if (!sessionResp.ok) {
+        throw new Error(`Session token request failed: ${sessionResp.status} ${sessionResp.statusText}`);
+      }
+      const sessionData = await sessionResp.json();
+      const clientSecret = sessionData.client_secret.value;
 
-/**
- * Update the status message DOM
- */
-function updateStatus(msg) {
-  statusMessageEl.textContent = msg;
+      // 2) Signal SDP using the session token
+      const signalResp = await fetch(`${apiRoot}/v1/realtime`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${clientSecret}`,
+          'Content-Type': 'application/sdp'
+        },
+        body: sdp
+      });
+      if (!signalResp.ok) {
+        throw new Error(`Signaling failed: ${signalResp.status} ${signalResp.statusText}`);
+      }
+      const answerSdp = await signalResp.text();
+      return new RTCSessionDescription({ type: 'answer', sdp: answerSdp });
+    } else {
+      // Fallback: FormData without session token
+      const form = new FormData();
+      form.append('session', JSON.stringify(sessionConfig));
+      form.append('sdp', sdp);
+      const resp = await fetch(`${apiRoot}/v1/realtime`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${this.apiKey}` },
+        body: form
+      });
+      if (!resp.ok) {
+        throw new Error(`Signaling failed: ${resp.status} ${resp.statusText}`);
+      }
+      const answerSdp = await resp.text();
+      return new RTCSessionDescription({ type: 'answer', sdp: answerSdp });
+    }
+  }
+
+  /**
+   * Send a control message over the data channel
+   */
+  sendMessage(message) {
+    this.dataChannel?.send(JSON.stringify(message));
+  }
 }

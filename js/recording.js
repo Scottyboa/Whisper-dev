@@ -58,6 +58,7 @@ async function fetchEphemeralToken() {
 // 2) Start recording / transcription
 async function startRecording() {
   console.log('▶️ startRecording()');
+ const model = 'gpt-4o-transcribe';
 
   // ← Clear previous transcription output
   const transcriptionField = document.getElementById('transcription');
@@ -68,7 +69,8 @@ async function startRecording() {
   updateStatus('Initializing…');
 
   try {
-    const { token, sessionId } = await fetchEphemeralToken();
+        const { token, sessionId } = await fetchEphemeralToken();
+  
 
     // — Create PeerConnection
     pc = new RTCPeerConnection();
@@ -103,23 +105,27 @@ async function startRecording() {
       }
 
       switch (msg.type) {
-        case 'session.created':
+                case 'session.created':
           if (!sessionUpdated) {
-            // configure for GPT-4o real-time transcription
+            // update to use only gpt-4o-transcribe (no preview)
             const controlMsg = {
               type: 'session.update',
               session: {
                 input_audio_format: 'pcm16',
-                input_audio_transcription: { model },
-                turn_detection: { 
-                  type: 'server_vad', 
-                  threshold: 0.3, // 0.0–1.0 sensitivity (lower = more noise tolerated)
-                  prefix_padding_ms: 700, // ms of audio context before silence cut
-                  silence_duration_ms: 2500 // ms of silence before emitting a turn
+                input_audio_transcription: {
+                  model,
+                  // optionally stream partials:
+                  streaming: { partials: true }
+                },
+                turn_detection: {
+                  type: 'server_vad',
+                  threshold: 0.3,
+                  prefix_padding_ms: 700,
+                  silence_duration_ms: 2500
                 }
               }
             };
-            console.log('→ Sending session.update:', JSON.stringify(controlMsg));
+            console.log('→ Sending session.update:', controlMsg);
             dc.send(JSON.stringify(controlMsg));
             sessionUpdated = true;
           }

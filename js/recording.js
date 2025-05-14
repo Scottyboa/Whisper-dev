@@ -1,6 +1,6 @@
 // recording.js
 // Real-time transcription via HTTP signaling + WebRTC DataChannel
-// — includes model selection, beta header, session_update, and full debug logging.
+// — includes model selection, beta header, and full debug logging.
 
 export function initRecording() {
   console.log('⚙️ initRecording()');
@@ -27,9 +27,7 @@ function appendTranscript(text) {
     console.warn('⚠️ No #transcription element found');
     return;
   }
-  // append with a space (not a newline)
   ta.value += text + ' ';
-  // auto-scroll to bottom so you always see the latest
   ta.scrollTop = ta.scrollHeight;
   console.log(`📝 Transcript: ${text}`);
 }
@@ -58,7 +56,7 @@ async function fetchEphemeralToken() {
 // 2) Start recording / transcription
 async function startRecording() {
   console.log('▶️ startRecording()');
- const model = 'gpt-4o-transcribe';
+  const model = 'gpt-4o-transcribe';  // single declaration up top
 
   // ← Clear previous transcription output
   const transcriptionField = document.getElementById('transcription');
@@ -69,8 +67,7 @@ async function startRecording() {
   updateStatus('Initializing…');
 
   try {
-        const { token, sessionId } = await fetchEphemeralToken();
-  
+    const { token, sessionId } = await fetchEphemeralToken();
 
     // — Create PeerConnection
     pc = new RTCPeerConnection();
@@ -105,18 +102,14 @@ async function startRecording() {
       }
 
       switch (msg.type) {
-                case 'session.created':
+        case 'session.created':
           if (!sessionUpdated) {
-            // update to use only gpt-4o-transcribe (no preview)
+            // optional in-flight tweak, but your session is already gpt-4o-transcribe
             const controlMsg = {
               type: 'session.update',
               session: {
                 input_audio_format: 'pcm16',
-                input_audio_transcription: {
-                  model,
-                  // optionally stream partials:
-                  streaming: { partials: true }
-                },
+                input_audio_transcription: { model, streaming: { partials: true } },
                 turn_detection: {
                   type: 'server_vad',
                   threshold: 0.3,
@@ -135,27 +128,22 @@ async function startRecording() {
           console.log('✅ Session updated, ready for transcription');
           break;
 
-        // Final transcription text
         case 'conversation.item.input_audio_transcription.completed':
           appendTranscript(msg.transcript);
           break;
 
-        // Fallback for older 'transcript' events
         case 'transcript':
           appendTranscript(msg.data.text);
           break;
 
         default:
-          // ignore other event types (speech_started, committed, response.* etc.)
           break;
       }
     };
 
-    // errors & close
     dc.onerror = err => console.error('💥 DC error:', err);
     dc.onclose = () => console.log('🔒 DC closed (readyState=', dc.readyState, ')');
 
-    // — (Optional) SCTP state logging
     if (pc.sctp) {
       console.log('⚡ SCTP available!');
       pc.sctp.onstatechange = () => console.log('⛓️ SCTP state:', pc.sctp.state);
@@ -187,9 +175,8 @@ async function startRecording() {
     }
     console.log('✅ ICE gathering complete');
 
-    // — Signal to OpenAI with model & beta header
-    const model     = 'gpt-4o-transcribe';  // ← choose your realtime-transcribe model
-    const signalUrl = 'https://api.openai.com/v1/realtime';
+    // — Signal to OpenAI with session_id (no ?model)
+    const signalUrl = `https://api.openai.com/v1/realtime?session_id=${encodeURIComponent(sessionId)}`;
     console.log(`📡 Sending SDP to ${signalUrl}`);
 
     const signalResp = await fetch(signalUrl, {
@@ -197,6 +184,7 @@ async function startRecording() {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type':  'application/sdp',
+        'OpenAI-Beta':   'realtime=v1'     // restore this header for realtime
       },
       body: pc.localDescription.sdp
     });
@@ -216,10 +204,9 @@ async function startRecording() {
     console.log('⏯️ DC readyState now:', dc.readyState);
 
     updateStatus('Recording… speak now!', 'green');
-   // Enable Stop & Pause, disable Start
-   document.getElementById('startButton').disabled       = true;
-   document.getElementById('stopButton').disabled        = false;
-   document.getElementById('pauseResumeButton').disabled = false
+    document.getElementById('startButton').disabled       = true;
+    document.getElementById('stopButton').disabled        = false;
+    document.getElementById('pauseResumeButton').disabled = false;
 
   } catch (err) {
     console.error('❗ startRecording error:', err);
@@ -239,7 +226,6 @@ function stopRecording() {
     pc = null;
   }
   updateStatus('Recording stopped.', '#333');
-  // Reset buttons & pause state
   document.getElementById('startButton').disabled        = false;
   document.getElementById('stopButton').disabled         = true;
   document.getElementById('pauseResumeButton').disabled  = true;

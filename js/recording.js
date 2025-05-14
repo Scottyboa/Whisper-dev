@@ -44,10 +44,10 @@ function updateButtons(recording) {
  * Kick off a new recording + transcription session
  */
 async function startRecording() {
-  const apiKey = sessionStorage.getItem('openai-api-key');
-  if (!apiKey) {
-    statusMessageEl.textContent = 'Error: API key not found in sessionStorage.';
-    return;
+  const apiKey = sessionStorage.getItem('user_api_key');
+   if (!apiKey) {
+    statusMessageEl.textContent = 'Error: API key not found in sessionStorage (user_api_key).';
+     return;
   }
 
   try {

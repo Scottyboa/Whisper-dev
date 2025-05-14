@@ -197,8 +197,6 @@ async function startRecording() {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type':  'application/sdp',
-        'OpenAI-Beta':  'realtime=v1'
-        'Content-Type':  'application/sdp'
       },
       body: pc.localDescription.sdp
     });

@@ -189,7 +189,7 @@ async function startRecording() {
 
     // — Signal to OpenAI with model & beta header
     const model     = 'gpt-4o-transcribe';  // ← choose your realtime-transcribe model
-    const signalUrl = `https://api.openai.com/v1/realtime?model=${encodeURIComponent(model)}`;
+    const signalUrl = 'https://api.openai.com/v1/realtime';
     console.log(`📡 Sending SDP to ${signalUrl}`);
 
     const signalResp = await fetch(signalUrl, {

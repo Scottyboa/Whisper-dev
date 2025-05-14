@@ -1,5 +1,5 @@
 // transcription.js
-import { Session } from './session.js';
+import { Session } from './sessions.js';
 
 let session = null;
 let sessionConfig = null;

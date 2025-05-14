@@ -1,135 +1,153 @@
-// js/session.js
+// root/js/session.js
 
-// Utility to pull your OpenAI key out of sessionStorage
-function getAPIKey() {
-  return sessionStorage.getItem('user_api_key');
-}
-
+/**
+ * Session handles the WebRTC + HTTP signaling for OpenAI’s Realtime API.
+ * Import this as:
+ *   import { Session } from './session.js';
+ */
 export class Session {
   constructor(apiKey) {
-    // allow passing key explicitly or default to sessionStorage
-    this.apiKey = apiKey || getAPIKey();
+    this.apiKey = apiKey;
     this.useSessionToken = true;
     this.ms = null;
-    this.pc = null;        
+    this.pc = null;
     this.dc = null;
     this.muted = false;
   }
 
-  // for raw audio/video sessions
-  async start(stream, sessionConfig) {  
-    await this._startInternal(stream, sessionConfig, "/v1/realtime/sessions");
+  /**
+   * Start a generic realtime session (not used by recording.js)
+   */
+  async start(stream, sessionConfig) {
+    await this.startInternal(stream, sessionConfig, '/v1/realtime/sessions');
   }
 
-  // for transcription (gpt-4o-transcribe)
+  /**
+   * Start a transcription session.
+   * @param {MediaStream} stream
+   * @param {object} sessionConfig
+   */
   async startTranscription(stream, sessionConfig) {
-    await this._startInternal(stream, sessionConfig, "/v1/realtime/transcription_sessions");
+    await this.startInternal(stream, sessionConfig, '/v1/realtime/transcription_sessions');
   }
 
-  // cleanly tear everything down
-  stop() {  
-    if (this.dc) {
-      this.dc.close();
-      this.dc = null;
-    }
-    if (this.pc) {
-      this.pc.close();
-      this.pc = null;
-    }
-    if (this.ms) {
-      this.ms.getTracks().forEach(t => t.stop());
-      this.ms = null;
-    }
+  /**
+   * Tear down the PeerConnection and media tracks.
+   */
+  stop() {
+    this.dc?.close();
+    this.dc = null;
+    this.pc?.close();
+    this.pc = null;
+    this.ms?.getTracks().forEach(t => t.stop());
+    this.ms = null;
     this.muted = false;
   }
 
-  // enable/disable sending audio
+  /**
+   * Mute or unmute the outbound audio (used for Pause/Resume).
+   * @param {boolean} muted
+   */
   mute(muted) {
     this.muted = muted;
-    if (this.pc) {
-      this.pc.getSenders().forEach(sender => sender.track.enabled = !muted);
-    }
+    this.pc.getSenders().forEach(sender => {
+      if (sender.track) sender.track.enabled = !muted;
+    });
   }
 
-  // internal wiring for WebRTC + DataChannel
-  async _startInternal(stream, sessionConfig, tokenEndpoint) {
+  /**
+   * Internal setup: create offer, signal, and set remote answer.
+   * @private
+   */
+  async startInternal(stream, sessionConfig, tokenEndpoint) {
     this.ms = stream;
-    this.pc = new RTCPeerConnection({
-      iceServers: [{ urls: ['stun:stun.openai.com:443'] }]
-    });
+    this.pc = new RTCPeerConnection();
 
-    // forward events if you've set them
+    // Wire up events
     this.pc.ontrack = e => this.ontrack?.(e);
+    this.pc.addTrack(stream.getTracks()[0]);
     this.pc.onconnectionstatechange = () => this.onconnectionstatechange?.(this.pc.connectionState);
 
-    // add your audio track
-    this.pc.addTrack(stream.getTracks()[0], stream);
-
-    // create a DataChannel for transcript messages
-    this.dc = this.pc.createDataChannel("transcripts");
+    // DataChannel for events and transcripts
+    this.dc = this.pc.createDataChannel('');
     this.dc.onopen    = () => this.onopen?.();
     this.dc.onmessage = e => {
-      try {
-        const msg = JSON.parse(e.data);
-        this.onmessage?.(msg);
-      } catch(err) {
-        console.warn("Invalid DataChannel message:", e.data);
-      }
+      let data;
+      try { data = JSON.parse(e.data); }
+      catch { return; }
+      this.onmessage?.(data);
     };
 
-    // SDP offer/answer handshake
+    // Create SDP offer
     const offer = await this.pc.createOffer();
     await this.pc.setLocalDescription(offer);
+
+    // Exchange SDP via HTTP
     try {
-      const answer = await this._signal(offer, sessionConfig, tokenEndpoint);
+      const answer = await this.signal(offer, sessionConfig, tokenEndpoint);
       await this.pc.setRemoteDescription(answer);
     } catch (err) {
       this.onerror?.(err);
     }
   }
 
-  // fetches an ephemeral client_secret & does the SDP POST
-  async _signal(offer, sessionConfig, tokenEndpoint) {
-    const apiKey      = this.apiKey;
-    const urlRoot     = "https://api.openai.com";
-    const sessionUrl  = `${urlRoot}${tokenEndpoint}`;
+  /**
+   * Perform HTTP signaling:
+   * 1) POST to /v1/realtime{tokenEndpoint} to get a client_secret
+   * 2) POST raw SDP to /v1/realtime with that secret
+   * @private
+   */
+  async signal(offer, sessionConfig, tokenEndpoint) {
+    const urlRoot     = 'https://api.openai.com';
     const realtimeUrl = `${urlRoot}/v1/realtime`;
+    let sdpResponse;
 
-    // 1) create /v1/realtime/transcription_sessions (or sessions)
-    const sessResp = await fetch(sessionUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "openai-beta": "realtime-v1",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(sessionConfig),
-    });
-    if (!sessResp.ok) {
-      throw new Error(`Session token error: ${sessResp.status}`);
-    }
-    const { client_secret } = await sessResp.json();
+    if (this.useSessionToken) {
+      // 1) fetch a short‐lived session token
+      const sessionRes = await fetch(`${urlRoot}${tokenEndpoint}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'openai-beta':   'realtime-v1',
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify(sessionConfig),
+      });
+      if (!sessionRes.ok) throw new Error('Failed to request session token');
+      const { client_secret: { value: clientSecret } } = await sessionRes.json();
 
-    // 2) send SDP offer and get answer SDP back
-    const sdpResp = await fetch(realtimeUrl, {
-      method: "POST",
-      body: offer.sdp,
-      headers: {
-        Authorization: `Bearer ${client_secret.value || client_secret}`,
-        "Content-Type": "application/sdp"
-      },
-    });
-    if (!sdpResp.ok) {
-      throw new Error(`SDP signal failed: ${sdpResp.status}`);
+      // 2) send SDP offer with that token
+      sdpResponse = await fetch(realtimeUrl, {
+        method:  'POST',
+        headers: {
+          'Authorization': `Bearer ${clientSecret}`,
+          'Content-Type':  'application/sdp',
+        },
+        body:    offer.sdp,
+      });
+      if (!sdpResponse.ok) throw new Error('Failed to signal');
+    } else {
+      // Fallback: send API key + form data
+      const form = new FormData();
+      form.append('session', JSON.stringify(sessionConfig));
+      form.append('sdp', offer.sdp);
+
+      sdpResponse = await fetch(realtimeUrl, {
+        method:  'POST',
+        headers: { 'Authorization': `Bearer ${this.apiKey}` },
+        body:    form,
+      });
+      if (!sdpResponse.ok) throw new Error('Failed to signal');
     }
-    const answerSdp = await sdpResp.text();
-    return { type: "answer", sdp: answerSdp };
+
+    return { type: 'answer', sdp: await sdpResponse.text() };
   }
 
-  // helper to send any JSON message over the data channel
-  sendMessage(msg) {
-    if (this.dc && this.dc.readyState === "open") {
-      this.dc.send(JSON.stringify(msg));
-    }
+  /**
+   * Send an arbitrary control message over the DataChannel.
+   * @param {object} message
+   */
+  sendMessage(message) {
+    this.dc.send(JSON.stringify(message));
   }
 }

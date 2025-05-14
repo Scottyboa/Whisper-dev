@@ -1,199 +1,110 @@
-// recording.js
-// Real-time transcription via WebRTC DataChannel using OpenAI Realtime API.
-
-// Session class encapsulates signaling and DataChannel handling
-class Session {
-  constructor(apiKey) {
-    this.apiKey = apiKey;
-    this.useSessionToken = false; // we'll use an ephemeral token directly
-    this.ms = null;
-    this.pc = null;
-    this.dc = null;
-  }
-
-  async startTranscription(stream, sessionConfig) {
-    await this.startInternal(stream, sessionConfig, "/v1/realtime/transcription_sessions");
-  }
-
-  stop() {
-    if (this.dc) {
-      this.dc.close();
-      this.dc = null;
-    }
-    if (this.pc) {
-      this.pc.close();
-      this.pc = null;
-    }
-    if (this.ms) {
-      this.ms.getTracks().forEach(t => t.stop());
-      this.ms = null;
-    }
-  }
-
-  async startInternal(stream, sessionConfig, tokenEndpoint) {
-    this.ms = stream;
-    this.pc = new RTCPeerConnection();
-    this.pc.onconnectionstatechange = () => this.onconnectionstatechange?.(this.pc.connectionState);
-    this.pc.addTrack(stream.getTracks()[0]);
-
-    this.dc = this.pc.createDataChannel("oai-events");
-    this.dc.onopen = () => this.onopen?.();
-    this.dc.onmessage = e => this.onmessage?.(JSON.parse(e.data));
-    this.dc.onerror = err => this.onerror?.(err);
-
-    const offer = await this.pc.createOffer();
-    await this.pc.setLocalDescription(offer);
-
-    try {
-      const answer = await this.signal(offer, sessionConfig, tokenEndpoint);
-      await this.pc.setRemoteDescription(answer);
-    } catch (e) {
-      this.onerror?.(e);
-    }
-  }
-
-  async signal(offer, sessionConfig, tokenEndpoint) {
-    const urlRoot = "https://api.openai.com";
-    const realtimeUrl = `${urlRoot}/v1/realtime`;
-    let sdpResponse;
-
-    if (this.useSessionToken) {
-      // Session-token flow not used here
-      throw new Error("Session-token flow is disabled");
-    } else {
-sdpResponse = await fetch("https://api.openai.com/v1/realtime", {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${this.apiKey}`,       // your ephemeral client_secret
-    "Content-Type": "application/sdp"
-  },
-  body: offer.sdp,                                // note: raw SDP string
-});
-      if (!sdpResponse.ok) {
-        throw new Error("Failed to signal");
-      }
-    }
-
-    const sdp = await sdpResponse.text();
-    return { type: "answer", sdp };
-  }
-
-  sendMessage(message) {
-    this.dc.send(JSON.stringify(message));
-  }
-}
-
-// UI Helpers (unchanged)
-function updateStatus(msg, color = '#333') {
-  const el = document.getElementById('statusMessage');
-  if (el) {
-    el.textContent = msg;
-    el.style.color   = color;
-  }
-  console.log(`🛈 Status: ${msg}`);
-}
-
-function appendTranscript(text) {
-  const ta = document.getElementById('transcription');
-  if (!ta) {
-    console.warn('⚠️ No #transcription element found');
-    return;
-  }
-  ta.value += text + ' ';
-  ta.scrollTop = ta.scrollHeight;
-  console.log(`📝 Transcript: ${text}`);
-}
-
-// Fetch ephemeral token & sessionId from Netlify function
-async function fetchEphemeralToken() {
-  const apiKey = sessionStorage.getItem('user_api_key');
-  if (!apiKey) throw new Error('No API key in sessionStorage under "user_api_key"');
-
-  const resp = await fetch('/.netlify/functions/get-token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userKey: apiKey })
-  });
-  const body = await resp.json();
-  if (!resp.ok) throw new Error(`Token fetch failed: ${resp.status}`);
-  const { token } = body;
-  if (!token) throw new Error('Invalid token payload');
-  return { token };
-}
+// transcription.js
+import { Session } from './session.js';
 
 let session = null;
+let sessionConfig = null;
+let recordInterval = null;
+let vadTime = 0;
 
-// Initialize event handlers for UI buttons
-export function initRecording() {
-  document.getElementById('startButton').onclick = startRecording;
-  document.getElementById('stopButton').onclick  = stopRecording;
-}
+export function initTranscription() {
+  const startBtn = document.getElementById('startButton');
+  const stopBtn = document.getElementById('stopButton');
+  const pauseBtn = document.getElementById('pauseResumeButton');
+  const transcriptEl = document.getElementById('transcription');
+  const statusEl = document.getElementById('statusMessage');
+  const recordTimerEl = document.getElementById('recordTimer');
+  const transcribeTimerEl = document.getElementById('transcribeTimer');
 
-// Start recording and transcription
-async function startRecording() {
-  const transcriptionField = document.getElementById('transcription');
-  if (transcriptionField) transcriptionField.value = '';
+  startBtn.addEventListener('click', startRecording);
+  stopBtn.addEventListener('click', stopRecording);
+  pauseBtn.addEventListener('click', togglePause);
 
-  updateStatus('Initializing…');
+  function updateButtons(active) {
+    startBtn.disabled = active;
+    stopBtn.disabled = !active;
+    pauseBtn.disabled = !active;
+    if (!active) pauseBtn.textContent = 'Pause Recording';
+  }
 
-  try {
-    const { token } = await fetchEphemeralToken();
-    session = new Session(token);
+  async function startRecording() {
+    // get API key (prompt once, then save)
+    let apiKey = localStorage.getItem('openaiApiKey');
+    if (!apiKey) {
+      apiKey = prompt('Enter your OpenAI API key:');
+      if (!apiKey) return alert('API key required');
+      localStorage.setItem('openaiApiKey', apiKey);
+    }
 
-    session.onconnectionstatechange = state => updateStatus(state);
-    session.onerror = e => updateStatus(`Error: ${e.message}`, 'red');
+    const model = 'gpt-4o-transcribe';
+    const turnType = 'silence';
 
-    let sessionUpdated = false;
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    transcriptEl.value = '';
+    statusEl.textContent = 'Connecting…';
+    updateButtons(true);
 
-    session.onmessage = msg => {
-      switch (msg.type) {
-        case 'session.created':
-          if (!sessionUpdated) {
-            const controlMsg = {
-              type: 'session.update',
-              session: {
-                input_audio_format: 'pcm16',
-                input_audio_transcription: { model: 'gpt-4o-transcribe' },
-                turn_detection: {
-                  type: 'server_vad',
-                  threshold: 0.3,
-                  prefix_padding_ms: 700,
-                  silence_duration_ms: 2500
-                }
-              }
-            };
-            session.sendMessage(controlMsg);
-            sessionUpdated = true;
-          }
-          break;
-        case 'session.updated':
-          updateStatus('Recording… speak now!', 'green');
-          document.getElementById('startButton').disabled = true;
-          document.getElementById('stopButton').disabled  = false;
-          break;
-        case 'conversation.item.input_audio_transcription.completed':
-          appendTranscript(msg.transcript);
-          break;
-        default:
-          break;
-      }
+    // start record timer
+    const startTs = Date.now();
+    recordTimerEl.textContent = 'Recording Timer: 0 sec';
+    recordInterval = setInterval(() => {
+      recordTimerEl.textContent = `Recording Timer: ${Math.floor((Date.now() - startTs) / 1000)} sec`;
+    }, 1000);
+
+    // configure and start session
+    session = new Session(apiKey);
+    session.onconnectionstatechange = s => statusEl.textContent = `Connection: ${s}`;
+    session.onmessage = handleMessage;
+    session.onerror = handleError;
+
+    sessionConfig = {
+      input_audio_transcription: { model },
+      turn_detection: { type: turnType }
     };
-
-    const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    await session.startTranscription(mediaStream, {});
-
-  } catch (err) {
-    updateStatus(`Error: ${err.message}`, 'red');
+    await session.startTranscription(stream, sessionConfig);
   }
-}
 
-// Stop recording and cleanup
-function stopRecording() {
-  if (session) {
-    session.stop();
+  function togglePause() {
+    if (!session) return;
+    const doMute = pauseBtn.textContent === 'Pause Recording';
+    session.mute(doMute);
+    pauseBtn.textContent = doMute ? 'Resume Recording' : 'Pause Recording';
+  }
+
+  function stopRecording() {
+    clearInterval(recordInterval);
+    session?.stop();
     session = null;
+    updateButtons(false);
+    statusEl.textContent = 'Stopped';
   }
-  updateStatus('Recording stopped.');
-  document.getElementById('startButton').disabled = false;
-  document.getElementById('stopButton').disabled  = true;
+
+  function handleMessage(parsed) {
+    let text, isPartial;
+    switch (parsed.type) {
+      case 'input_audio_buffer.speech_started':
+        text = '…'; isPartial = true;
+        break;
+      case 'input_audio_buffer.speech_stopped':
+        text = '***'; isPartial = true;
+        vadTime = performance.now() - (sessionConfig.turn_detection.silence_duration_ms || 0);
+        break;
+      case 'conversation.item.input_audio_transcription.completed':
+        text = parsed.transcript; isPartial = false;
+        const latency = Math.floor(performance.now() - vadTime);
+        transcribeTimerEl.textContent = `Completion Timer: ${latency} ms`;
+        break;
+      default:
+        return;
+    }
+    // append into textarea
+    const lastNL = transcriptEl.value.lastIndexOf('\n');
+    transcriptEl.value = transcriptEl.value.slice(0, lastNL + 1) + text + (isPartial ? '' : '\n');
+    transcriptEl.scrollTop = transcriptEl.scrollHeight;
+  }
+
+  function handleError(err) {
+    console.error(err);
+    alert('Error: ' + err.message);
+    stopRecording();
+  }
 }

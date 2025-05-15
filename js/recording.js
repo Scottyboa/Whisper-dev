@@ -120,8 +120,6 @@ class Session {
 
 // --- UI & Control Logic ---
 const APP_PREFIX        = "realtime/transcribe/";
-const $                 = document.querySelector.bind(document);
-const apiKeyEl          = $("#openai-api-key");
 const MODEL = "gpt-4o-transcribe";
 const TURN_DETECTION_TYPE = "server_vad";
  const transcriptEl      = document.getElementById("transcription");
@@ -131,7 +129,7 @@ const TURN_DETECTION_TYPE = "server_vad";
  const statusEl          = document.getElementById("statusMessage");
 
 
-const prefs = [/* only API key now */];
+
 let session = null;
 let sessionConfig = null;
 let vadTime = 0;
@@ -147,10 +145,15 @@ function initState() {
 
 function updateState(started) {
   statusEl.textContent = "";
-  prefs.forEach(p => p.disabled = started);
   startMicBtn.disabled  = started;
-  startFileBtn.disabled = started;
   stopBtn.disabled      = !started;
+}
+
+function toggleMute() {
+  if (!session) return;
+  isMuted = !isMuted;
+  session.mute(isMuted);
+  pauseBtn.textContent = isMuted ? "Resume Recording" : "Pause Recording";
 }
 
 async function startMicrophone() {
@@ -162,27 +165,6 @@ async function startMicrophone() {
     return;
   }
   await start(stream);
-}
-
-function handleFileSelect(e) {
-  const file = e.target.files[0];
-  if (file) audioInputEl.src = URL.createObjectURL(file);
-  startFile();
-}
-
-async function startFile() {
-  if (!apiKeyEl.value) {
-    alert("Please enter your OpenAI API Key (https://platform.openai.com/settings/organization/api-keys)");
-    return;
-  }
-  audioInputEl.currentTime = 0;
-  audioInputEl.onended = () => setTimeout(stop, 3000);
-  if (audioInputEl.readyState !== HTMLMediaElement.HAVE_METADATA) {
-    await new Promise(r => audioInputEl.onloadedmetadata = r);
-  }
-  const stream = audioInputEl.captureStream();
-  await start(stream);
-  await audioInputEl.play();
 }
 
 async function start(stream) {
@@ -215,7 +197,6 @@ async function start(stream) {
 
 function stop() {
   updateState(false);
-  audioInputEl.pause();
   session?.stop();
   session = null;
 }

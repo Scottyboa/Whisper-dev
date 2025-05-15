@@ -1,139 +1,263 @@
-// root/js/recording.js
+// js/recording.js
 
-const API_BASE     = "https://api.openai.com";
-const SESSION_URL  = `${API_BASE}/v1/realtime/transcription_sessions`;
-const REALTIME_URL = `${API_BASE}/v1/realtime`;
+// --- Session class for Realtime Transcription ---
+class Session {
+  constructor(apiKey) {
+    this.apiKey = apiKey;
+    this.useSessionToken = true;
+    this.ms = null;
+    this.pc = null;
+    this.dc = null;
+    this.muted = false;
+  }
 
-export function initRecording() {
-  const startBtn       = document.getElementById("startButton");
-  const stopBtn        = document.getElementById("stopButton");
-  const statusMsg      = document.getElementById("statusMessage");
-  const transcriptArea = document.getElementById("transcription");
+  async start(stream, sessionConfig) {
+    await this.startInternal(stream, sessionConfig, "/v1/realtime/sessions");
+  }
 
-  let pc, dc, stream, sessionId, clientSecret, apiKey;
+  async startTranscription(stream, sessionConfig) {
+    await this.startInternal(stream, sessionConfig, "/v1/realtime/transcription_sessions");
+  }
 
-  // Idle state
-  startBtn.disabled = false;
-  stopBtn.disabled  = true;
+  stop() {
+    this.dc?.close();
+    this.dc = null;
+    this.pc?.close();
+    this.pc = null;
+    this.ms?.getTracks().forEach(t => t.stop());
+    this.ms = null;
+    this.muted = false;
+  }
 
-  startBtn.addEventListener("click", startRecording);
-  stopBtn.addEventListener("click", stopRecording);
+  mute(muted) {
+    this.muted = muted;
+    this.pc?.getSenders().forEach(sender => {
+      if (sender.track) sender.track.enabled = !muted;
+    });
+  }
 
-  async function startRecording() {
-    transcriptArea.value = "";
-    updateStatus("Starting…");
-
-    apiKey = sessionStorage.getItem("user_api_key");
-    if (!apiKey) {
-      return updateStatus("Error: API key missing");
-    }
-
-    // 1️⃣ Get microphone stream
-    try {
-      updateStatus("Accessing microphone…");
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (err) {
-      return updateStatus("Mic error: " + err.message);
-    }
-
-    // 2️⃣ Build PeerConnection & DataChannel
-    pc = new RTCPeerConnection();
-    pc.onicecandidate = evt => console.log("ICE candidate", evt.candidate);
-    pc.onconnectionstatechange = () => updateStatus(pc.connectionState);
-    pc.addTrack(stream.getTracks()[0], stream);
-
-    dc = pc.createDataChannel("");
-    dc.onopen = () => {
-      console.log("▶️ DataChannel open");
-      updateStatus("Connected");
-      startBtn.disabled = true;
-      stopBtn.disabled  = false;
+  async startInternal(stream, sessionConfig, tokenEndpoint) {
+    this.ms = stream;
+    this.pc = new RTCPeerConnection();
+    this.pc.ontrack = e => this.ontrack?.(e);
+    this.pc.onconnectionstatechange = () => this.onconnectionstatechange?.(this.pc.connectionState);
+    this.dc = this.pc.createDataChannel("");
+    this.dc.onopen = e => this.onopen?.(e);
+    this.dc.onmessage = e => {
+      try {
+        const parsed = JSON.parse(e.data);
+        this.onmessage?.(parsed);
+      } catch (err) {
+        console.error("Invalid message", err);
+      }
     };
-    dc.onmessage = e => handleEvent(JSON.parse(e.data));
-    dc.onclose   = () => console.log("❌ DataChannel closed");
 
-    // 3️⃣ Create SDP offer
-    updateStatus("Creating SDP…");
-    let offer;
+    this.pc.addTrack(stream.getTracks()[0], stream);
+
+    const offer = await this.pc.createOffer();
+    await this.pc.setLocalDescription(offer);
+
     try {
-      offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      console.log("Offer SDP v=0");
-    } catch (err) {
-      cleanup();
-      return updateStatus("Offer error: " + err.message);
+      const answer = await this.signal(offer, sessionConfig, tokenEndpoint);
+      await this.pc.setRemoteDescription(answer);
+    } catch (e) {
+      this.onerror?.(e);
+      throw e;
     }
+  }
 
-    // 4️⃣ Signal (session token + SDP exchange)
-    updateStatus("Signaling & SDP exchange…");
-    try {
-      // 4a) create transcription session
-      const sessionResp = await fetch(SESSION_URL, {
+  async signal(offer, sessionConfig, tokenEndpoint) {
+    const urlRoot = "https://api.openai.com";
+    const realtimeUrl = `${urlRoot}/v1/realtime`;
+    let sdpResponse;
+
+    if (this.useSessionToken) {
+      const sessionUrl = `${urlRoot}${tokenEndpoint}`;
+      const sessionResponse = await fetch(sessionUrl, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "openai-beta":   "realtime-v1",
-          "Content-Type":  "application/json"
+          Authorization: `Bearer ${this.apiKey}`,
+          "openai-beta": "realtime-v1",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          input_audio_transcription: { model: "gpt-4o-transcribe" }
-        })
+        body: JSON.stringify(sessionConfig)
       });
-      if (!sessionResp.ok) throw new Error(`HTTP ${sessionResp.status}`);
-      const sessionData  = await sessionResp.json();
-      sessionId          = sessionData.id;
-      clientSecret       = sessionData.client_secret.value;
-      console.log("Session created", sessionId);
+      if (!sessionResponse.ok) throw new Error("Failed to request session token");
+      const sessionData = await sessionResponse.json();
+      const clientSecret = sessionData.client_secret.value;
 
-      // 4b) post SDP to /v1/realtime
-      const sdpResp = await fetch(REALTIME_URL, {
+      sdpResponse = await fetch(realtimeUrl, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${clientSecret}`,
-          "Content-Type":  "application/sdp"
+          Authorization: `Bearer ${clientSecret}`,
+          "Content-Type": "application/sdp"
         },
-        body: pc.localDescription.sdp
+        body: offer.sdp
       });
-      if (!sdpResp.ok) throw new Error(`HTTP ${sdpResp.status}`);
-      const answerSdp = await sdpResp.text();
-      console.log("Answer SDP received");
-      await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
-    } catch (err) {
-      cleanup();
-      return updateStatus("Signal error: " + err.message);
+      if (!sdpResponse.ok) throw new Error("Failed to signal");
+    } else {
+      const formData = new FormData();
+      formData.append("session", JSON.stringify(sessionConfig));
+      formData.append("sdp", offer.sdp);
+
+      sdpResponse = await fetch(realtimeUrl, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+        body: formData
+      });
+      if (!sdpResponse.ok) throw new Error("Failed to signal");
     }
+
+    const answerSdp = await sdpResponse.text();
+    return { type: "answer", sdp: answerSdp };
   }
 
-  function handleEvent(msg) {
-    switch (msg.type) {
-      case "conversation.item.input_audio_transcription.delta":
-        transcriptArea.value = msg.delta.text;
-        break;
-      case "conversation.item.audio_transcription.completed":
-        transcriptArea.value += msg.data.transcription.text + "\n";
-        break;
-      case "session.end":
-        updateStatus("Session ended");
-        cleanup();
-        break;
-    }
-  }
-
-  function stopRecording() {
-    cleanup();
-    updateStatus("Stopped");
-  }
-
-  function cleanup() {
-    dc?.close();    dc = null;
-    pc?.close();    pc = null;
-    stream?.getTracks().forEach(t => t.stop());
-    stream = null;
-    startBtn.disabled = false;
-    stopBtn.disabled  = true;
-  }
-
-  function updateStatus(txt) {
-    statusMsg.textContent = txt;
+  sendMessage(message) {
+    this.dc.send(JSON.stringify(message));
   }
 }
+
+// --- UI & Control Logic ---
+const APP_PREFIX        = "realtime/transcribe/";
+const $                 = document.querySelector.bind(document);
+const apiKeyEl          = $("#openai-api-key");
+const modelEl           = $("#model");
+const promptEl          = $("#prompt");
+const turnDetectionEl   = $("#turn-detection");
+const transcriptEl      = $("#transcript");
+const startMicBtn       = $("#start-microphone");
+const startFileBtn      = $("#start-file");
+const stopBtn           = $("#stop");
+const statusEl          = $("#status");
+const audioInputEl      = $("#audio-file");
+const filePickerEl      = $("#audio-file-picker");
+
+const prefs = [apiKeyEl, modelEl, promptEl, turnDetectionEl];
+let session = null;
+let sessionConfig = null;
+let vadTime = 0;
+
+function initState() {
+  prefs.forEach(p => {
+    const fqid = p.id !== "openai-api-key" ? APP_PREFIX + p.id : p.id;
+    const v = localStorage.getItem(fqid);
+    if (v) p.value = v;
+    p.addEventListener("change", () => localStorage.setItem(fqid, p.value));
+  });
+
+  updateState(false);
+  startMicBtn.addEventListener("click", startMicrophone);
+  startFileBtn.addEventListener("click", startFile);
+  filePickerEl.addEventListener("change", handleFileSelect);
+  stopBtn.addEventListener("click", stop);
+}
+
+function updateState(started) {
+  statusEl.textContent = "";
+  prefs.forEach(p => p.disabled = started);
+  startMicBtn.disabled  = started;
+  startFileBtn.disabled = started;
+  stopBtn.disabled      = !started;
+}
+
+async function startMicrophone() {
+  if (!apiKeyEl.value) {
+    alert("Please enter your OpenAI API Key (https://platform.openai.com/settings/organization/api-keys)");
+    return;
+  }
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    alert("Microphone error: " + err.message);
+    return;
+  }
+  await start(stream);
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) audioInputEl.src = URL.createObjectURL(file);
+  startFile();
+}
+
+async function startFile() {
+  if (!apiKeyEl.value) {
+    alert("Please enter your OpenAI API Key (https://platform.openai.com/settings/organization/api-keys)");
+    return;
+  }
+  audioInputEl.currentTime = 0;
+  audioInputEl.onended = () => setTimeout(stop, 3000);
+  if (audioInputEl.readyState !== HTMLMediaElement.HAVE_METADATA) {
+    await new Promise(r => audioInputEl.onloadedmetadata = r);
+  }
+  const stream = audioInputEl.captureStream();
+  await start(stream);
+  await audioInputEl.play();
+}
+
+async function start(stream) {
+  updateState(true);
+  transcriptEl.value = "";
+
+  session = new Session(apiKeyEl.value);
+  session.onconnectionstatechange = state => statusEl.textContent = state;
+  session.onmessage = handleMessage;
+  session.onerror = handleError;
+
+  sessionConfig = {
+    input_audio_transcription: { model: modelEl.value, prompt: promptEl.value || undefined },
+    turn_detection: { type: turnDetectionEl.value }
+  };
+
+  try {
+    await session.startTranscription(stream, sessionConfig);
+  } catch (err) {
+    alert("Connection error: " + err.message);
+    stop();
+  }
+}
+
+function stop() {
+  updateState(false);
+  audioInputEl.pause();
+  session?.stop();
+  session = null;
+}
+
+function handleMessage(parsed) {
+  switch (parsed.type) {
+    case "transcription_session.created":
+      sessionConfig = parsed.session;
+      break;
+    case "input_audio_buffer.speech_started":
+      handleTranscript({ transcript: "...", partial: true });
+      break;
+    case "input_audio_buffer.speech_stopped":
+      handleTranscript({ transcript: "***", partial: true });
+      vadTime = performance.now() - (sessionConfig.turn_detection.silence_duration_ms || 0);
+      break;
+    case "conversation.item.input_audio_transcription.delta":
+      // Optionally show partial delta
+      break;
+    case "conversation.item.input_audio_transcription.completed":
+      const elapsed = performance.now() - vadTime;
+      handleTranscript({ transcript: parsed.transcript, partial: false });
+      break;
+  }
+}
+
+function handleTranscript({ transcript, partial }) {
+  const cut = transcriptEl.value.lastIndexOf("\n");
+  transcriptEl.value = transcriptEl.value.substring(0, cut + 1) + transcript;
+  if (!partial) transcriptEl.value += "\n";
+  transcriptEl.scrollTop = transcriptEl.scrollHeight;
+}
+
+function handleError(e) {
+  console.error(e);
+  stop();
+}
+
+// Initialize on load
+initState();

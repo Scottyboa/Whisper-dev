@@ -41,6 +41,7 @@ class Session {
     this.pc = new RTCPeerConnection();
     this.pc.ontrack = e => this.ontrack?.(e);
     this.pc.onconnectionstatechange = () => this.onconnectionstatechange?.(this.pc.connectionState);
+
     this.dc = this.pc.createDataChannel("");
     this.dc.onopen = e => this.onopen?.(e);
     this.dc.onmessage = e => {
@@ -241,7 +242,6 @@ function handleMessage(parsed) {
       // Optionally show partial delta
       break;
     case "conversation.item.input_audio_transcription.completed":
-      const elapsed = performance.now() - vadTime;
       handleTranscript({ transcript: parsed.transcript, partial: false });
       break;
   }
@@ -259,5 +259,7 @@ function handleError(e) {
   stop();
 }
 
-// Initialize on load
-initState();
+// Export the initialization function to be called from main.js
+export function initRecording() {
+  initState();
+}

@@ -1,7 +1,7 @@
 // root/js/recording.js
 
 const SESSIONS_URL = "https://api.openai.com/v1/realtime/transcription_sessions";
-const WEBRTC_URL   = "https://api.openai.com/v1/realtime?intent=transcription";
+const WEBRTC_URL = "https://api.openai.com/v1/realtime?use-case=transcription";
 
 export function initRecording() {
   const startBtn       = document.getElementById("startButton");

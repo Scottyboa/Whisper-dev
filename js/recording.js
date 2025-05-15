@@ -62,7 +62,15 @@ export function initRecording() {
     pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
     });
-    pc.onicecandidate = evt => console.log("ICE candidate", evt.candidate);
+     pc.onicecandidate = evt => {
+  console.log("ICE candidate", evt.candidate);
+  if (evt.candidate && dc && dc.readyState === "open") {
+    dc.send(JSON.stringify({
+      type: "ice.candidate",
+      candidate: evt.candidate.toJSON()
+    }));
+  }
+};
     pc.onconnectionstatechange = () => console.log("PC state:", pc.connectionState);
     pc.addTrack(stream.getTracks()[0], stream);
 

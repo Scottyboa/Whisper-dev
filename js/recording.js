@@ -48,9 +48,15 @@ export function initRecording() {
       sessionId    = data.id;
       ephemeralKey = data.client_secret.value;
       updateUI("Session created; opening mic…");
-
-      // 2️⃣ Grab mic & setup WebRTC
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  try {
+    updateUI("Requesting mic access…");
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    updateUI("Mic access granted; setting up WebRTC…");
+  } catch (err) {
+    updateUI("Error accessing mic: " + err.message);
+    console.error(err);
+    return;
+  }
       pc = new RTCPeerConnection();
       localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 

@@ -60,7 +60,16 @@ export function initRecording() {
 
     // 3️⃣ Setup PeerConnection + DataChannel
     // Match DEV: default PeerConnection (no custom ICE servers)
-    pc = new RTCPeerConnection();
+    // Use STUN server so host candidates include reflexive address
+    pc = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    });
+
+    // Mirror DEV: update UI on connection state changes
+    pc.onconnectionstatechange = () => updateStatus(pc.connectionState);
+
+    // Log ICE candidates (they’ll be auto-trickled)
+    pc.onicecandidate = evt => console.log("ICE candidate", evt.candidate);
     pc.onicecandidate = evt => console.log("ICE candidate", evt.candidate);
     pc.onconnectionstatechange = () => console.log("PC state:", pc.connectionState);
     pc.addTrack(stream.getTracks()[0], stream);

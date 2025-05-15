@@ -122,9 +122,9 @@ class Session {
 const APP_PREFIX        = "realtime/transcribe/";
 const $                 = document.querySelector.bind(document);
 const apiKeyEl          = $("#openai-api-key");
-const modelEl           = $("#model");
+const MODEL = "gpt-4o-transcribe";
 const promptEl          = $("#prompt");
-const turnDetectionEl   = $("#turn-detection");
+const TURN_DETECTION_TYPE = "server_vad";
 const transcriptEl      = $("#transcript");
 const startMicBtn       = $("#start-microphone");
 const startFileBtn      = $("#start-file");
@@ -133,18 +133,14 @@ const statusEl          = $("#status");
 const audioInputEl      = $("#audio-file");
 const filePickerEl      = $("#audio-file-picker");
 
-const prefs = [apiKeyEl, modelEl, promptEl, turnDetectionEl];
+const prefs = [];
 let session = null;
 let sessionConfig = null;
 let vadTime = 0;
 
-function initState() {
-  prefs.forEach(p => {
-    const fqid = p.id !== "openai-api-key" ? APP_PREFIX + p.id : p.id;
-    const v = localStorage.getItem(fqid);
-    if (v) p.value = v;
-    p.addEventListener("change", () => localStorage.setItem(fqid, p.value));
-  });
+ function initState() {
+   updateState(false);
+ }
 
   updateState(false);
   startMicBtn.addEventListener("click", startMicrophone);
@@ -162,10 +158,6 @@ function updateState(started) {
 }
 
 async function startMicrophone() {
-  if (!apiKeyEl.value) {
-    alert("Please enter your OpenAI API Key (https://platform.openai.com/settings/organization/api-keys)");
-    return;
-  }
   let stream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -201,14 +193,20 @@ async function start(stream) {
   updateState(true);
   transcriptEl.value = "";
 
-  session = new Session(apiKeyEl.value);
+    // pull the key from sessionStorage, exactly how index.html stored it:
+  const apiKey = sessionStorage.getItem("user_api_key");
+  if (!apiKey) {
+    alert("Missing API key—please re-enter it on the home page.");
+    return stop();
+  }
+  session = new Session(apiKey);
   session.onconnectionstatechange = state => statusEl.textContent = state;
   session.onmessage = handleMessage;
   session.onerror = handleError;
 
   sessionConfig = {
-    input_audio_transcription: { model: modelEl.value, prompt: promptEl.value || undefined },
-    turn_detection: { type: turnDetectionEl.value }
+    input_audio_transcription: { model: MODEL },
+    turn_detection: { type: TURN_DETECTION_TYPE }
   };
 
   try {

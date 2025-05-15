@@ -182,10 +182,17 @@ async function start(stream) {
   session.onmessage = handleMessage;
   session.onerror = handleError;
 
-  sessionConfig = {
-    input_audio_transcription: { model: MODEL },
-    turn_detection: { type: TURN_DETECTION_TYPE }
-  };
+sessionConfig = {
+  input_audio_transcription: {
+    model: "gpt-4o-transcribe"
+  },
+  turn_detection: {
+    type: "server_vad",
+    threshold: 0.4,
+    prefix_padding_ms: 400,
+    silence_duration_ms: 2000
+  }
+};
 
   try {
     await session.startTranscription(stream, sessionConfig);

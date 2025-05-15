@@ -1,8 +1,8 @@
 // root/js/recording.js
 
-const API_BASE    = "https://api.openai.com";
-const SESSION_URL = `${API_BASE}/v1/realtime/transcription_sessions`;
-const REALTIME_URL= `${API_BASE}/v1/realtime`;
+const API_BASE     = "https://api.openai.com";
+const SESSION_URL  = `${API_BASE}/v1/realtime/transcription_sessions`;
+const REALTIME_URL = `${API_BASE}/v1/realtime`;
 
 export function initRecording() {
   const startBtn       = document.getElementById("startButton");
@@ -10,9 +10,9 @@ export function initRecording() {
   const statusMsg      = document.getElementById("statusMessage");
   const transcriptArea = document.getElementById("transcription");
 
-  let pc, dc, stream, sessionId, clientSecret;
+  let pc, dc, stream, sessionId, clientSecret, apiKey;
 
-  // Initial button state
+  // Idle state
   startBtn.disabled = false;
   stopBtn.disabled  = true;
 
@@ -23,10 +23,12 @@ export function initRecording() {
     transcriptArea.value = "";
     updateStatus("Starting…");
 
-    const apiKey = sessionStorage.getItem("user_api_key");
-    if (!apiKey) return updateStatus("Error: API key missing");
+    apiKey = sessionStorage.getItem("user_api_key");
+    if (!apiKey) {
+      return updateStatus("Error: API key missing");
+    }
 
-    // 1️⃣ Get mic
+    // 1️⃣ Get microphone stream
     try {
       updateStatus("Accessing microphone…");
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -34,92 +36,56 @@ export function initRecording() {
       return updateStatus("Mic error: " + err.message);
     }
 
-// 4️⃣ Signal (exactly like the Dev’s `signal()`)
-//    — first request the session token …
-updateStatus("Signaling & SDP exchange…");
-
-let sessionData;
-try {
-  const sessionResp = await fetch(SESSION_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "openai-beta":   "realtime-v1",
-      "Content-Type":  "application/json"
-    },
-    body: JSON.stringify({
-      input_audio_transcription: { model: "gpt-4o-transcribe" }
-    })
-  });
-  if (!sessionResp.ok) throw new Error(`HTTP ${sessionResp.status}`);
-  sessionData    = await sessionResp.json();
-  sessionId      = sessionData.id;
-  clientSecret   = sessionData.client_secret.value;
-} catch (err) {
-  cleanup();
-  return updateStatus("Session error: " + err.message);
-}
-
-//    …then immediately POST the SDP to /v1/realtime
-try {
-  const sdpResp = await fetch(REALTIME_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${clientSecret}`,
-      "Content-Type":  "application/sdp"
-    },
-    body: pc.localDescription.sdp
-  });
-  if (!sdpResp.ok) throw new Error(`HTTP ${sdpResp.status}`);
-  const answerSdp = await sdpResp.text();
-  await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
-} catch (err) {
-  cleanup();
-  return updateStatus("SDP error: " + err.message);
-}
-
-      console.log("Session created", sessionId);
-    } catch (err) {
-      cleanup();
-      return updateStatus("Session error: " + err.message);
-    }
-
-    // 3️⃣ Setup PeerConnection + DataChannel
-    // Match DEV: default PeerConnection (no custom ICE servers)
-    // Use STUN server so host candidates include reflexive address
-    pc = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-    });
-
-    // Mirror DEV: update UI on connection state changes
+    // 2️⃣ Build PeerConnection & DataChannel
+    pc = new RTCPeerConnection();
+    pc.onicecandidate = evt => console.log("ICE candidate", evt.candidate);
     pc.onconnectionstatechange = () => updateStatus(pc.connectionState);
-
-    // Log ICE candidates (they’ll be auto-trickled)
-    pc.onicecandidate = evt => console.log("ICE candidate", evt.candidate);
-    pc.onicecandidate = evt => console.log("ICE candidate", evt.candidate);
-    pc.onconnectionstatechange = () => console.log("PC state:", pc.connectionState);
     pc.addTrack(stream.getTracks()[0], stream);
 
-    // empty label to match dev example
     dc = pc.createDataChannel("");
-dc.onopen = () => {
-  console.log("▶️ DataChannel open");
-  updateStatus("Connected");
-  startBtn.disabled = true;
-  stopBtn.disabled  = false;
-};
-
+    dc.onopen = () => {
+      console.log("▶️ DataChannel open");
+      updateStatus("Connected");
+      startBtn.disabled = true;
+      stopBtn.disabled  = false;
+    };
     dc.onmessage = e => handleEvent(JSON.parse(e.data));
     dc.onclose   = () => console.log("❌ DataChannel closed");
 
-    // 4️⃣ Offer & immediate SDP POST (trickle ICE)
+    // 3️⃣ Create SDP offer
+    updateStatus("Creating SDP…");
+    let offer;
     try {
-      updateStatus("Creating SDP…");
-      const offer = await pc.createOffer();
+      offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      console.log("Offer SDP", offer.sdp.split("\n")[0]);
+      console.log("Offer SDP v=0");
+    } catch (err) {
+      cleanup();
+      return updateStatus("Offer error: " + err.message);
+    }
 
-      updateStatus("Exchanging SDP…");
+    // 4️⃣ Signal (session token + SDP exchange)
+    updateStatus("Signaling & SDP exchange…");
+    try {
+      // 4a) create transcription session
+      const sessionResp = await fetch(SESSION_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "openai-beta":   "realtime-v1",
+          "Content-Type":  "application/json"
+        },
+        body: JSON.stringify({
+          input_audio_transcription: { model: "gpt-4o-transcribe" }
+        })
+      });
+      if (!sessionResp.ok) throw new Error(`HTTP ${sessionResp.status}`);
+      const sessionData  = await sessionResp.json();
+      sessionId          = sessionData.id;
+      clientSecret       = sessionData.client_secret.value;
+      console.log("Session created", sessionId);
+
+      // 4b) post SDP to /v1/realtime
       const sdpResp = await fetch(REALTIME_URL, {
         method: "POST",
         headers: {
@@ -134,7 +100,7 @@ dc.onopen = () => {
       await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
     } catch (err) {
       cleanup();
-      return updateStatus("SDP error: " + err.message);
+      return updateStatus("Signal error: " + err.message);
     }
   }
 
@@ -159,9 +125,10 @@ dc.onopen = () => {
   }
 
   function cleanup() {
-    dc?.close(); dc = null;
-    pc?.close(); pc = null;
-    stream?.getTracks().forEach(t => t.stop()); stream = null;
+    dc?.close();    dc = null;
+    pc?.close();    pc = null;
+    stream?.getTracks().forEach(t => t.stop());
+    stream = null;
     startBtn.disabled = false;
     stopBtn.disabled  = true;
   }

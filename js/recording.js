@@ -123,27 +123,26 @@ const APP_PREFIX        = "realtime/transcribe/";
 const $                 = document.querySelector.bind(document);
 const apiKeyEl          = $("#openai-api-key");
 const MODEL = "gpt-4o-transcribe";
-const promptEl          = $("#prompt");
 const TURN_DETECTION_TYPE = "server_vad";
-const transcriptEl      = $("#transcript");
-const startMicBtn       = $("#start-microphone");
-const startFileBtn      = $("#start-file");
-const stopBtn           = $("#stop");
-const statusEl          = $("#status");
-const audioInputEl      = $("#audio-file");
-const filePickerEl      = $("#audio-file-picker");
+ const transcriptEl      = document.getElementById("transcription");
+ const startMicBtn       = document.getElementById("startButton");
+ const stopBtn           = document.getElementById("stopButton");
+ const pauseBtn          = document.getElementById("pauseResumeButton");
+ const statusEl          = document.getElementById("statusMessage");
 
-const prefs = [];
+
+const prefs = [/* only API key now */];
 let session = null;
 let sessionConfig = null;
 let vadTime = 0;
 
- function initState() {
-   updateState(false);
-   startMicBtn.addEventListener("click", startMicrophone);
-   startFileBtn.addEventListener("click", startFile);
-   filePickerEl.addEventListener("change", handleFileSelect);
-   stopBtn.addEventListener("click", stop);
+function initState() {
+  // initial button states
+  updateState(false);
+
+  startMicBtn.addEventListener("click", startMicrophone);
+  pauseBtn .addEventListener("click", toggleMute);    // if you have a pause/resume
+  stopBtn  .addEventListener("click", stop);
 }
 
 function updateState(started) {

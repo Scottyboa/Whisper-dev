@@ -63,7 +63,7 @@ export function initRecording() {
       };
 
       // 3️⃣ DataChannel for events
-      dc = pc.createDataChannel("openai-events");
+      dc = pc.createDataChannel("oai-events");
       dc.onopen = () => {
         updateUI("Connected; sending session.connect…");
         dc.send(JSON.stringify({

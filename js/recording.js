@@ -5,14 +5,14 @@ const SESSION_URL = `${API_BASE}/v1/realtime/transcription_sessions`;
 const REALTIME_URL= `${API_BASE}/v1/realtime`;
 
 export function initRecording() {
-  const startBtn      = document.getElementById("startButton");
-  const stopBtn       = document.getElementById("stopButton");
-  const statusMsg     = document.getElementById("statusMessage");
-  const transcriptArea= document.getElementById("transcription");
+  const startBtn       = document.getElementById("startButton");
+  const stopBtn        = document.getElementById("stopButton");
+  const statusMsg      = document.getElementById("statusMessage");
+  const transcriptArea = document.getElementById("transcription");
 
   let pc, dc, stream, sessionId, clientSecret;
 
-  // Idle state
+  // Initial button state
   startBtn.disabled = false;
   stopBtn.disabled  = true;
 
@@ -26,7 +26,7 @@ export function initRecording() {
     const apiKey = sessionStorage.getItem("user_api_key");
     if (!apiKey) return updateStatus("Error: API key missing");
 
-    // 🥁 1) Get mic
+    // 1️⃣ Get mic
     try {
       updateStatus("Accessing microphone…");
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -34,9 +34,8 @@ export function initRecording() {
       return updateStatus("Mic error: " + err.message);
     }
 
-    // 🥁 2) Create session & fetch client_secret
+    // 2️⃣ Create session & fetch client_secret
     updateStatus("Creating session…");
-    let sessionData;
     try {
       const resp = await fetch(SESSION_URL, {
         method: "POST",
@@ -50,29 +49,24 @@ export function initRecording() {
         })
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      sessionData   = await resp.json();
-      sessionId     = sessionData.id;
-      clientSecret  = sessionData.client_secret.value;
-      console.log("Session:", sessionId);
+      const sessionData = await resp.json();
+      sessionId    = sessionData.id;
+      clientSecret = sessionData.client_secret.value;
+      console.log("Session created", sessionId);
     } catch (err) {
       cleanup();
       return updateStatus("Session error: " + err.message);
     }
 
-    // 🥁 3) Build PeerConnection + track + DataChannel
+    // 3️⃣ Setup PeerConnection + DataChannel
     pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
     });
-    pc.oniceconnectionstatechange = () => {
-      console.log("ICE state:", pc.iceConnectionState);
-      updateStatus("ICE: " + pc.iceConnectionState);
-    };
-    pc.onconnectionstatechange = () =>
-      console.log("PC state:", pc.connectionState);
-
+    pc.onicecandidate = evt => console.log("ICE candidate", evt.candidate);
+    pc.onconnectionstatechange = () => console.log("PC state:", pc.connectionState);
     pc.addTrack(stream.getTracks()[0], stream);
 
-    // empty string label to match the dev sample
+    // empty label to match dev example
     dc = pc.createDataChannel("");
     dc.onopen = () => {
       console.log("▶️ DataChannel open");
@@ -88,27 +82,14 @@ export function initRecording() {
     dc.onmessage = e => handleEvent(JSON.parse(e.data));
     dc.onclose   = () => console.log("❌ DataChannel closed");
 
-    // 🥁 4) Create offer & wait for ICE gathering
-    updateStatus("Creating SDP…");
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-
-    // Wait for all ICE candidates to be gathered
-    if (pc.iceGatheringState !== "complete") {
-      await new Promise(resolve => {
-        function checkState() {
-          if (pc.iceGatheringState === "complete") {
-            pc.removeEventListener("icegatheringstatechange", checkState);
-            resolve();
-          }
-        }
-        pc.addEventListener("icegatheringstatechange", checkState);
-      });
-    }
-
-    // 🥁 5) Send SDP to OpenAI & apply answer
-    updateStatus("Exchanging SDP…");
+    // 4️⃣ Offer & immediate SDP POST (trickle ICE)
     try {
+      updateStatus("Creating SDP…");
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      console.log("Offer SDP", offer.sdp.split("\n")[0]);
+
+      updateStatus("Exchanging SDP…");
       const sdpResp = await fetch(REALTIME_URL, {
         method: "POST",
         headers: {

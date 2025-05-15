@@ -3,6 +3,14 @@ import { initTranscribeLanguage } from './languageLoaderUsage.js';
 import { initRecording } from './recording.js';
 import { initNoteGeneration } from './noteGeneration.js';
 
+// Initialize recording on its own listener
+import { initRecording as initRecordingModule } from './recording.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+  initRecordingModule();
+});
+
+// Existing initialization
 document.addEventListener('DOMContentLoaded', () => {
   initTranscribeLanguage();   // your language selector setup
   initRecording();            // speech-to-text (“Start/Pause/Stop”) hooks
@@ -14,10 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeElement = document.activeElement;
     // Check if the active element is an input, textarea, or a contentEditable element.
     if (
-      activeElement &&
-      (activeElement.tagName === 'INPUT' ||
-       activeElement.tagName === 'TEXTAREA' ||
-       activeElement.isContentEditable)
+      activeElement.tagName === 'INPUT' ||
+      activeElement.tagName === 'TEXTAREA' ||
+      activeElement.isContentEditable
     ) {
       return;
     }

@@ -34,24 +34,50 @@ export function initRecording() {
       return updateStatus("Mic error: " + err.message);
     }
 
-    // 2️⃣ Create session & fetch client_secret
-    updateStatus("Creating session…");
-    try {
-      const resp = await fetch(SESSION_URL, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "openai-beta":   "realtime-v1",
-          "Content-Type":  "application/json"
-        },
-        body: JSON.stringify({
-          input_audio_transcription: { model: "gpt-4o-transcribe" }
-        })
-      });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const sessionData = await resp.json();
-      sessionId    = sessionData.id;
-      clientSecret = sessionData.client_secret.value;
+// 4️⃣ Signal (exactly like the Dev’s `signal()`)
+//    — first request the session token …
+updateStatus("Signaling & SDP exchange…");
+
+let sessionData;
+try {
+  const sessionResp = await fetch(SESSION_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "openai-beta":   "realtime-v1",
+      "Content-Type":  "application/json"
+    },
+    body: JSON.stringify({
+      input_audio_transcription: { model: "gpt-4o-transcribe" }
+    })
+  });
+  if (!sessionResp.ok) throw new Error(`HTTP ${sessionResp.status}`);
+  sessionData    = await sessionResp.json();
+  sessionId      = sessionData.id;
+  clientSecret   = sessionData.client_secret.value;
+} catch (err) {
+  cleanup();
+  return updateStatus("Session error: " + err.message);
+}
+
+//    …then immediately POST the SDP to /v1/realtime
+try {
+  const sdpResp = await fetch(REALTIME_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${clientSecret}`,
+      "Content-Type":  "application/sdp"
+    },
+    body: pc.localDescription.sdp
+  });
+  if (!sdpResp.ok) throw new Error(`HTTP ${sdpResp.status}`);
+  const answerSdp = await sdpResp.text();
+  await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+} catch (err) {
+  cleanup();
+  return updateStatus("SDP error: " + err.message);
+}
+
       console.log("Session created", sessionId);
     } catch (err) {
       cleanup();
@@ -76,17 +102,13 @@ export function initRecording() {
 
     // empty label to match dev example
     dc = pc.createDataChannel("");
-    dc.onopen = () => {
-      console.log("▶️ DataChannel open");
-      updateStatus("Connected—sending session.connect…");
-      dc.send(JSON.stringify({
-        type:    "session.connect",
-        session: { id: sessionId, client_secret: clientSecret }
-      }));
-      updateStatus("Transcribing…");
-      startBtn.disabled = true;
-      stopBtn.disabled  = false;
-    };
+dc.onopen = () => {
+  console.log("▶️ DataChannel open");
+  updateStatus("Connected");
+  startBtn.disabled = true;
+  stopBtn.disabled  = false;
+};
+
     dc.onmessage = e => handleEvent(JSON.parse(e.data));
     dc.onclose   = () => console.log("❌ DataChannel closed");
 

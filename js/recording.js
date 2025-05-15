@@ -80,21 +80,44 @@ export function initRecording() {
       };
       dc.onmessage = handleEvent;
 
-      // 4️⃣ SDP offer/answer
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
+      // 5️⃣ SDP Offer
+      try {
+        updateUI("Creating SDP offer…");
+        const offer = await pc.createOffer();
+        console.log("Offer SDP:", offer.sdp.substring(0,100));
+        updateUI("Setting local description…");
+        await pc.setLocalDescription(offer);
+        updateUI("Local description set; sending to server…");
+      } catch(err) {
+        console.error("SDP offer error:", err);
+        updateUI("SDP offer/setup error: " + err.message);
+        return;
+      }
 
-      const sdpResp = await fetch(WEBRTC_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/sdp",
-          "Authorization": `Bearer ${ephemeralKey}`
-        },
-        body: offer.sdp
-      });
-      if (!sdpResp.ok) throw new Error(`SDP exchange failed (${sdpResp.status})`);
-      const answerSdp = await sdpResp.text();
-      await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+      // 6️⃣ SDP Exchange
+      try {
+        console.log("Calling fetch to", WEBRTC_URL);
+        updateUI("Exchanging SDP with OpenAI…");
+        const sdpResp = await fetch(WEBRTC_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/sdp",
+            "Authorization": `Bearer ${ephemeralKey}`
+          },
+          body: pc.localDescription.sdp
+        });
+        console.log("SDP fetch status:", sdpResp.status);
+        if (!sdpResp.ok) throw new Error(`HTTP ${sdpResp.status}`);
+        const answerSdp = await sdpResp.text();
+        console.log("Answer SDP:", answerSdp.substring(0,100));
+        updateUI("Applying remote description…");
+        await pc.setRemoteDescription({ type: "answer", sdp: answerSdp });
+        updateUI("WebRTC connected; waiting for transcription…");
+      } catch(err) {
+        console.error("SDP exchange error:", err);
+        updateUI("SDP exchange error: " + err.message);
+        return;
+      }
 
       // Toggle buttons
       startBtn.disabled       = true;

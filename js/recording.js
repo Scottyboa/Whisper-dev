@@ -87,6 +87,18 @@ export function initRecording() {
         console.log("Offer SDP:", offer.sdp.substring(0,100));
         updateUI("Setting local description…");
         await pc.setLocalDescription(offer);
++  // 🚧 Wait for ICE gathering to complete before sending to OpenAI
++  if (pc.iceGatheringState !== "complete") {
++    await new Promise(resolve => {
++      function check() {
++        if (pc.iceGatheringState === "complete") {
++          pc.removeEventListener("icegatheringstatechange", check);
++          resolve();
++        }
++      }
++      pc.addEventListener("icegatheringstatechange", check);
++    });
++  }
         updateUI("Local description set; sending to server…");
       } catch(err) {
         console.error("SDP offer error:", err);

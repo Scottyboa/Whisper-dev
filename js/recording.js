@@ -140,13 +140,10 @@ let vadTime = 0;
 
  function initState() {
    updateState(false);
- }
-
-  updateState(false);
-  startMicBtn.addEventListener("click", startMicrophone);
-  startFileBtn.addEventListener("click", startFile);
-  filePickerEl.addEventListener("change", handleFileSelect);
-  stopBtn.addEventListener("click", stop);
+   startMicBtn.addEventListener("click", startMicrophone);
+   startFileBtn.addEventListener("click", startFile);
+   filePickerEl.addEventListener("change", handleFileSelect);
+   stopBtn.addEventListener("click", stop);
 }
 
 function updateState(started) {

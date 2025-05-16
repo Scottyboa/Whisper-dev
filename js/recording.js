@@ -1,6 +1,53 @@
 // js/recording.js
 
 // --- Session class for Realtime Transcription ---
++// ——— WebSocket-based fallback for firewalled networks ———
+class WebSocketSession {
+  constructor(apiKey) {
+    this.apiKey = apiKey;
+    this.ws = null;
+    this.mediaRecorder = null;
+  }
+
+  async startTranscription(stream, sessionConfig) {
+    const url = "wss://api.openai.com/v1/realtime?intent=transcription";
+    this.ws = new WebSocket(url, [
+      "realtime",
+      `openai-insecure-api-key.${this.apiKey}`,
+      "openai-beta.realtime-v1"
+    ]);
+    this.ws.binaryType = "arraybuffer";
+
+    this.ws.onopen = () => {
+     this.ws.send(JSON.stringify({
+        type: "session_create",
+        config: sessionConfig
+      }));
+      this.mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm; codecs=opus" });
+      this.mediaRecorder.ondataavailable = e => {
+        if (this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(e.data);
+        }
+      };
+      this.mediaRecorder.start(100);  // 100 ms chunks
+    };
+    this.ws.onmessage = evt => {
+      let data = (typeof evt.data === "string")
+        ? JSON.parse(evt.data)
+        : { audio: evt.data };
+      this.onmessage?.(data);
+    };
+    this.ws.onerror = err => this.onerror?.(err);
+  }
+
+  stop() {
+    this.mediaRecorder?.stop();
+    this.ws?.close();
+  }
+}
+// ——————————————————————————————————————————————
+
+
 class Session {
   constructor(apiKey) {
     this.apiKey = apiKey;
@@ -177,8 +224,12 @@ async function start(stream) {
     alert("Missing API key—please re-enter it on the home page.");
     return stop();
   }
-  session = new Session(apiKey);
-  session.onconnectionstatechange = state => statusEl.textContent = state;
+  const USE_WEBSOCKETS = true;    // ← set false to fall back to WebRTC
+  session = USE_WEBSOCKETS
+    ? new WebSocketSession(apiKey)
+    : new Session(apiKey);
+  session.onmessage = handleMessage;
+  session.onerror = handleError;
   session.onmessage = handleMessage;
   session.onerror = handleError;
 

@@ -45,10 +45,6 @@ class WebSocketSession {
     this.ws?.close();
   }
 }
-
-// expose for sanity‐checking in the console
-window.WebSocketSession = WebSocketSession;
-
 // ——————————————————————————————————————————————
 
 

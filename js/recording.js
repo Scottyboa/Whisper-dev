@@ -69,6 +69,13 @@ proc.onaudioprocess = (evt) => {
   stop() {
     this.ws?.close();
   }
+ sendMessage(message) {
+   if (this.ws?.readyState === WebSocket.OPEN) {
+     this.ws.send(JSON.stringify(message));
+   } else {
+     console.warn("WS not open; cannot send:", message);
+   }
+ }
 }
 // ——————————————————————————————————————————————
 
@@ -285,17 +292,10 @@ sessionConfig = {
 }
 
  function stop() {
-   updateState(false);
-  if (!session) return;
+     if (!session) return;
   isStopping = true;                                      // ← mark that we’re finishing up
   // flush the final buffer
-  const stopMsg = { type: "input_audio_buffer.stop" };
-  if (typeof session.sendMessage === "function") {
-    // for WebRTC Session
-    session.sendMessage(stopMsg);
-  } else if (session.ws?.readyState === WebSocket.OPEN) {
-    // for WebSocketSession
-    session.ws.send(JSON.stringify(stopMsg));
+  session.sendMessage({ type: "input_audio_buffer.stop" });
   }
      // 2️⃣ immediately shut off the mic tracks (browser indicator goes out)
   if (mediaStream) {
@@ -322,21 +322,17 @@ function handleMessage(parsed) {
       // Optionally show partial delta
       break;
       case "conversation.item.input_audio_transcription.completed":
-    // if we’ve got a “***” placeholder, replace it; otherwise just append
-    const placeholder = /\*{3}(?!.*\*{3})/;
-    if ( placeholder.test(transcriptEl.value) ) {
-      transcriptEl.value = transcriptEl.value.replace(placeholder, parsed.transcript);
-    } else {
-      transcriptEl.value += parsed.transcript;
-    }
+  // replace the sole “***” placeholder with the real transcript
+  transcriptEl.value = transcriptEl.value.replace(/\*{3}(?!.*\*{3})/, parsed.transcript);
   // add a space so next chunk doesn’t jam right up against this one
   transcriptEl.value += " ";
 
   // now do your stopping teardown
    if (isStopping) {
-     isStopping = false;
-     session.stop();
-     session = null;
+         session.stop();
+    session = null;
+    isStopping = false;
+    updateState(false);     // re-enable Start/disable Stop
    }
    break;
 

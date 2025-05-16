@@ -286,35 +286,24 @@ sessionConfig = {
 }
 
 function stop() {
-   if (!session) return;
-   isStopping = true;
+  if (!session) return;
+  isStopping = true;
 
-   // --- ARTIFICIAL VAD CUTOFF: shrink waiting time to 0ms ---
-   const forcedSilenceConfig = {
-     ...sessionConfig,
-     turn_detection: {
-       ...sessionConfig.turn_detection,
-       silence_duration_ms: 0
-     }
-   };
-   const updateMsg = {
-     type: "transcription_session.update",
-     session: forcedSilenceConfig
-   };
+  const stopSessionMsg = { type: "transcription_session.stop" };
 
-   if (typeof session.sendMessage === "function") {
-     session.sendMessage(updateMsg);
-     session.sendMessage({ type: "input_audio_buffer.stop" });
-   } else if (session.ws?.readyState === WebSocket.OPEN) {
-     session.ws.send(JSON.stringify(updateMsg));
-     session.ws.send(JSON.stringify({ type: "input_audio_buffer.stop" }));
-   }
+  if (typeof session.sendMessage === "function") {
+    // WebRTC path
+    session.sendMessage(stopSessionMsg);
+  } else if (session.ws?.readyState === WebSocket.OPEN) {
+    // WebSocket path
+    session.ws.send(JSON.stringify(stopSessionMsg));
+  }
 
-   // shut off mic indicator
-   if (mediaStream) {
-     mediaStream.getTracks().forEach(t => t.stop());
-     mediaStream = null;
-   }
+  // shut off the mic indicator
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
  }
 
 function handleMessage(parsed) {

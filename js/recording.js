@@ -302,7 +302,6 @@ sessionConfig = {
     mediaStream.getTracks().forEach(t => t.stop());
     mediaStream = null;
   }
- }
 
 function handleMessage(parsed) {
   switch (parsed.type) {

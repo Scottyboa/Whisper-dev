@@ -296,27 +296,31 @@ function handleMessage(parsed) {
       sessionConfig = parsed.session;
       break;
     case "input_audio_buffer.speech_started":
-      handleTranscript({ transcript: "...", partial: true });
-      break;
+  // user just started speaking: show “…” placeholder
+  transcriptEl.value += "...";
+   break;
     case "input_audio_buffer.speech_stopped":
-      handleTranscript({ transcript: "***", partial: true });
-      vadTime = performance.now() - (sessionConfig.turn_detection.silence_duration_ms || 0);
-      break;
+  // VAD detected end-of-speech: turn “…” into “***”
+  transcriptEl.value = transcriptEl.value.replace(/\.{3}(?!.*\.{3})/, "***");
+   vadTime = performance.now() - (sessionConfig.turn_detection.silence_duration_ms || 0);
+   break;
     case "conversation.item.input_audio_transcription.delta":
       // Optionally show partial delta
       break;
       case "conversation.item.input_audio_transcription.completed":
-   // always append the final chunk
-   handleTranscript({ transcript: parsed.transcript, partial: false });
+  // replace the sole “***” placeholder with the real transcript
+  transcriptEl.value = transcriptEl.value.replace(/\*{3}(?!.*\*{3})/, parsed.transcript);
+  // add a space so next chunk doesn’t jam right up against this one
+  transcriptEl.value += " ";
 
-   // if we’re in the process of stopping, now’s the time to tear down
+  // now do your stopping teardown
    if (isStopping) {
      isStopping = false;
      session.stop();
      session = null;
-     // (optional) call a callback here, e.g. onAllTranscriptsDone();
    }
    break;
+
   }
 }
 

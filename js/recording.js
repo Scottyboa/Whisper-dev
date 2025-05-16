@@ -289,7 +289,7 @@ function stop() {
    if (!session) return;
    isStopping = true;
    // flush the final buffer (but do NOT close the socket)
-   const stopMsg = { type: "input_audio_buffer.stop" };
+   const stopMsg = { type: "transcription_session.stop" };
   if (session.ws?.readyState === WebSocket.OPEN) {
     session.ws.send(JSON.stringify(stopMsg));
   } else {

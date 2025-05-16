@@ -309,9 +309,9 @@ function handleMessage(parsed) {
 }
 
 function handleTranscript({ transcript, partial }) {
-  const cut = transcriptEl.value.lastIndexOf("\n");
-  transcriptEl.value = transcriptEl.value.substring(0, cut + 1) + transcript;
-  if (!partial) transcriptEl.value += "\n";
+  // simply append each final chunk with a space
+  transcriptEl.value += transcript;
+  if (!partial) transcriptEl.value += ' ';
   transcriptEl.scrollTop = transcriptEl.scrollHeight;
 }
 

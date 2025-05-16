@@ -208,105 +208,267 @@ let vadTime = 0;
 let isStopping = false;
 let mediaStream    = null; 
 
+// Possible states: 'idle', 'recording', 'paused', 'resuming', 'stopped'
+function updateUI(state) {
+  // Clear any status message on state change
+  statusEl.textContent = "";
+
+  // Default: disable all, then enable the ones we want
+  startMicBtn.disabled  = true;
+  stopBtn.disabled      = true;
+  pauseBtn.disabled     = true;
+
+  switch(state) {
+    case 'idle':
+      startMicBtn.disabled = false;
+      // stop & pause remain disabled
+      break;
+
+    case 'recording':
+      // Start greyed out
+      stopBtn.disabled  = false;
+      pauseBtn.disabled = false;
+      break;
+
+    case 'paused':
+      startMicBtn.disabled = false;
+      // Stop stays enabled so user can finish or restart
+      stopBtn.disabled      = false;
+      // pauseBtn will have become the "Resume" button
+      pauseBtn.disabled     = false;
+      break;
+
+    case 'resuming':
+      // during reconnect, prevent any button clicks
+      break;
+
+    case 'stopped':
+      startMicBtn.disabled = false;
+      // stop & pause stay disabled
+      break;
+  }
+}
+
 function initState() {
-  // initial button states
-  updateState(false);
+  updateUI('idle');
 
   startMicBtn.addEventListener("click", startMicrophone);
-  pauseBtn .addEventListener("click", toggleMute);    // if you have a pause/resume
-  stopBtn  .addEventListener("click", stop);
+  pauseBtn.addEventListener("click", handlePauseClick);
+  stopBtn .addEventListener("click", handleStopClick);
 }
 
-function updateState(started) {
-  statusEl.textContent = "";
-  startMicBtn.disabled  = started;
-  stopBtn.disabled      = !started;
-  pauseBtn.disabled     = !started;
-}
+// Track that we’re in the process of pausing
+let isPausing = false;
 
-function toggleMute() {
-  if (!session) return;
-  isMuted = !isMuted;
-  session.mute(isMuted);
-  pauseBtn.textContent = isMuted ? "Resume Recording" : "Pause Recording";
-}
+// 4A) Resume logic
+async function handleResumeClick() {
+  // 1) Flip button back to Pause, disable it and Stop
+  pauseBtn.textContent = "Pause Recording";
+  pauseBtn.disabled = true;
+  stopBtn.disabled  = true;
+  updateUI('resuming');
 
-async function startMicrophone() {
+  // 2) Re-open mic
   let stream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (err) {
     alert("Microphone error: " + err.message);
+    updateUI('idle');
     return;
   }
-  mediaStream = stream;    // ← keep this for later teardown
+  mediaStream = stream;
+
+  // 3) Re-establish websocket session
+  const apiKey = sessionStorage.getItem("user_api_key");
+  if (!apiKey) {
+    alert("Missing API key—please re-enter it on the home page.");
+    teardownSession();
+    updateUI('idle');
+    return;
+  }
+  session = new WebSocketSession(apiKey);
+  session.onmessage = handleMessage;
+  session.onerror   = handleError;
+
+  // 4) Restart transcription without clearing transcript
+  try {
+    await session.startTranscription(stream, sessionConfig);
+    updateUI('recording');  // Pause & Stop enabled
+  } catch (err) {
+    alert("Connection error: " + err.message);
+    teardownSession();
+    updateUI('stopped');
+  }
+}
+
+// 4B) Pause logic (now also detects Resume)
+function handlePauseClick() {
+  // If already paused, delegate to Resume
+  if (pauseBtn.textContent === "Resume Recording") {
+    return handleResumeClick();
+  }
+  if (!session) return;
+
+  // Begin Pause
+  pauseBtn.disabled = true;
+  isPausing = true;
+
+  const silenceThresh = sessionConfig.turn_detection.silence_duration_ms;
+  const sinceVad = performance.now() - vadTime;
+
+  if (sinceVad > silenceThresh) {
+    // VAD A: immediate teardown
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+    session.stop();
+    session = null;
+
+    pauseBtn.textContent = "Resume Recording";
+    updateUI('paused');
+    isPausing = false;
+  } else {
+    // VAD B: commit chunk, then wait for final transcript
+    const commitEvt = { type: "input_audio_buffer.commit" };
+    if (session.ws?.readyState === WebSocket.OPEN) {
+      session.ws.send(JSON.stringify(commitEvt));
+    } else {
+      session.sendMessage(commitEvt);
+    }
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+    statusEl.textContent = "Pausing…";
+    // final transcript arrival will complete Pause in handleMessage()
+  }
+}
+
+
+
+// --- New teardown helper to reset any existing session/microphone ---
+function teardownSession() {
+  // 1) Stop & clear any session
+  if (session) {
+    session.stop();
+    session = null;
+  }
+  // 2) Stop & clear microphone
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
+  // 3) Reset any in-flight flags
+  isStopping = false;
+  isPausing  = false;
+  // 4) Restore Pause button to its default label
+  pauseBtn.textContent = "Pause Recording";
+}
+
+// --- Step 2: Enhanced Start Logic ---
+async function startMicrophone() {
+  // Clicking START at any time resets everything
+  teardownSession();
+  transcriptEl.value = "";           // clear old transcript
+  updateUI('resuming');              // disable all buttons
+
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    alert("Microphone error: " + err.message);
+    updateUI('idle');
+    return;
+  }
+  mediaStream = stream;
   await start(stream);
 }
 
 async function start(stream) {
-  updateState(true);
-  transcriptEl.value = "";
-
-    // pull the key from sessionStorage, exactly how index.html stored it:
+  // Retrieve API key
   const apiKey = sessionStorage.getItem("user_api_key");
   if (!apiKey) {
     alert("Missing API key—please re-enter it on the home page.");
-    return stop();
+    teardownSession();
+    updateUI('idle');
+    return;
   }
-   const USE_WEBSOCKETS = true;   // ← set false to fall back to WebRTC
-    console.log("▶▶ USE_WEBSOCKETS =", USE_WEBSOCKETS);    
- if (USE_WEBSOCKETS) {
-   console.log("▶▶ instantiating WebSocketSession");
-   session = new WebSocketSession(apiKey);
- } else {
-   console.log("▶▶ instantiating WebRTC Session");
-   session = new Session(apiKey);
- }
-  session.onmessage = handleMessage;
-  session.onerror = handleError;
 
-sessionConfig = {
-  input_audio_transcription: {
-    model: "gpt-4o-transcribe"
-  },
-  turn_detection: {
-    type: "server_vad",
-    threshold: 0.4,
-    prefix_padding_ms: 400,
-    silence_duration_ms: 2000
-  }
-};
+  // Instantiate a fresh session
+  const USE_WEBSOCKETS = true;
+  session = USE_WEBSOCKETS
+    ? new WebSocketSession(apiKey)
+    : new Session(apiKey);
+
+  session.onmessage = handleMessage;
+  session.onerror   = handleError;
+
+  // Configure transcription
+  sessionConfig = {
+    input_audio_transcription: { model: MODEL },
+    turn_detection: {
+      type: TURN_DETECTION_TYPE,
+      threshold: 0.4,
+      prefix_padding_ms: 400,
+      silence_duration_ms: 2000
+    }
+  };
 
   try {
     await session.startTranscription(stream, sessionConfig);
+    // Once mic + websocket are fully active:
+    updateUI('recording');         // enable Stop & Pause
   } catch (err) {
     alert("Connection error: " + err.message);
-    stop();
+    teardownSession();
+    updateUI('idle');
   }
 }
 
-function stop() {
-   if (!session) return;
-   isStopping = true;
+// Track that we’re in the process of stopping
+let isStopping = false;
 
-   // 1) Flush whatever audio you’ve appended → commit into a user message
-   const commitEvt = { type: "input_audio_buffer.commit" };
-   if (session.ws?.readyState === WebSocket.OPEN) {
-     session.ws.send(JSON.stringify(commitEvt));
-   } else {
-     session.sendMessage(commitEvt);
-   }
+function handleStopClick() {
+  // ── Scenario 2: user clicked Stop while paused (Resume button showing) ──
+  if (pauseBtn.textContent === "Resume Recording") {
+    // No extra teardown needed (already disconnected on Pause)
+    // Reset UI to Idle/Stopped
+    pauseBtn.textContent = "Pause Recording";
+    updateUI('stopped');
+    return;
+  }
 
-   // 2) Immediately kill the mic so the browser indicator turns off
-   if (mediaStream) {
-     mediaStream.getTracks().forEach(t => t.stop());
-     mediaStream = null;
-   }
+  // ── Scenario 1: user clicked Stop during active recording/resume ──
+  isStopping = true;
+  // Immediately flip UI into the “Stopped” state:
+  // Start enabled; Stop & Pause disabled
+  updateUI('stopped');
 
-   // 3) Let the user know we’re waiting on that final snippet
-   statusEl.textContent = "Finishing transcription…";
-   stopBtn.disabled = true;
- }
+  // Check VAD to see if we need to commit a final chunk
+  const silenceThresh = sessionConfig.turn_detection.silence_duration_ms;
+  const sinceVad     = performance.now() - vadTime;
+
+  if (sinceVad > silenceThresh) {
+    // VAD Scenario A (Silence): no uncommitted frames
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+    session.stop();
+    session = null;
+    // Done—nothing more to wait for
+    isStopping = false;
+  } else {
+    // VAD Scenario B (Mid-sentence): commit last chunk, then wait
+    const commitEvt = { type: "input_audio_buffer.commit" };
+    if (session.ws?.readyState === WebSocket.OPEN) {
+      session.ws.send(JSON.stringify(commitEvt));
+    } else {
+      session.sendMessage(commitEvt);
+    }
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+    statusEl.textContent = "Stopping…";
+    // Final teardown & UI reset happen in your handleMessage() isStopping branch
+  }
+}
+
  
 
 function handleMessage(parsed) {
@@ -328,28 +490,36 @@ function handleMessage(parsed) {
       // Optionally show partial delta
       break;
       case "conversation.item.input_audio_transcription.completed":
-        // if we have a *** placeholder from VAD, replace it;
-    // otherwise just append the new transcript
-    const placeholderRE = /\*{3}(?!.*\*{3})/;
-    if (placeholderRE.test(transcriptEl.value)) {
-      transcriptEl.value = transcriptEl.value.replace(placeholderRE, parsed.transcript);
-    } else {
-      transcriptEl.value += parsed.transcript;
-    }
-    // always make sure there's a trailing space
-    transcriptEl.value += " ";
+  // 1) Append the incoming transcript chunk
+  if (/\*{3}(?!.*\*{3})/.test(transcriptEl.value)) {
+    transcriptEl.value = transcriptEl.value.replace(/\*{3}(?!.*\*{3})/, parsed.transcript);
+  } else {
+    transcriptEl.value += parsed.transcript;
+  }
+  transcriptEl.value += " ";
 
-    if (isStopping) {
-      isStopping = false;
-      // only now tear down the session & socket
-      session.stop();
-      session = null;
-      // and reset your UI
-      updateState(false);
-      pauseBtn.textContent = "Pause Recording";
-      statusEl.textContent = "Ready to start again.";
-    }
-   break;
+  // 2) If we’re pausing, finish pause teardown
+  if (isPausing) {
+    isPausing = false;
+    session.stop();
+    session = null;
+
+    pauseBtn.textContent = "Resume Recording";
+    updateUI('paused');
+    statusEl.textContent = "";
+  }
+  // 3) Else if we’re stopping, finish stop teardown
+  else if (isStopping) {
+    isStopping = false;
+    session.stop();
+    session = null;
+
+    pauseBtn.textContent = "Pause Recording";
+    updateUI('stopped');
+    statusEl.textContent = "Ready to start again.";
+  }
+  break;
+
 
   }
 }

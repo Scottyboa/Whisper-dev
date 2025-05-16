@@ -206,6 +206,7 @@ let session = null;
 let sessionConfig = null;
 let vadTime = 0;
 let isStopping = false;
+let mediaStream    = null; 
 
 function initState() {
   // initial button states

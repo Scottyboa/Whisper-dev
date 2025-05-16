@@ -322,8 +322,13 @@ function handleMessage(parsed) {
       // Optionally show partial delta
       break;
       case "conversation.item.input_audio_transcription.completed":
-  // replace the sole “***” placeholder with the real transcript
-  transcriptEl.value = transcriptEl.value.replace(/\*{3}(?!.*\*{3})/, parsed.transcript);
+    // if we’ve got a “***” placeholder, replace it; otherwise just append
+    const placeholder = /\*{3}(?!.*\*{3})/;
+    if ( placeholder.test(transcriptEl.value) ) {
+      transcriptEl.value = transcriptEl.value.replace(placeholder, parsed.transcript);
+    } else {
+      transcriptEl.value += parsed.transcript;
+    }
   // add a space so next chunk doesn’t jam right up against this one
   transcriptEl.value += " ";
 

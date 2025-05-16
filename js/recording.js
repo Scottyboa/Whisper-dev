@@ -288,24 +288,29 @@ sessionConfig = {
 function stop() {
    if (!session) return;
    isStopping = true;
-   // flush the final buffer (but do NOT close the socket)
-   const stopMsg = { type: "transcription_session.stop" };
-  if (session.ws?.readyState === WebSocket.OPEN) {
-    session.ws.send(JSON.stringify(stopMsg));
-  } else {
-    session.sendMessage(stopMsg);
-  }
-   //  shut off the mic immediately
+
+   // 1) Flush whatever audio you’ve appended → commit into a user message
+   const commitEvt = { type: "input_audio_buffer.commit" };
+   if (session.ws?.readyState === WebSocket.OPEN) {
+     session.ws.send(JSON.stringify(commitEvt));
+   } else {
+     session.sendMessage(commitEvt);
+   }
+
+   // 2) Immediately kill the mic so the browser indicator turns off
    if (mediaStream) {
      mediaStream.getTracks().forEach(t => t.stop());
      mediaStream = null;
    }
-  statusEl.textContent = "Finishing transcription…";
-  stopBtn.disabled = true;
+
+   // 3) Let the user know we’re waiting on that final snippet
+   statusEl.textContent = "Finishing transcription…";
+   stopBtn.disabled = true;
  }
  
 
 function handleMessage(parsed) {
+  console.log("🛰 WS event:", parsed);
   switch (parsed.type) {
     case "transcription_session.created":
       sessionConfig = parsed.session;

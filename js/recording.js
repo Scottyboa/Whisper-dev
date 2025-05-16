@@ -384,14 +384,6 @@ function stop() {
   setTimeout(cleanupAfterStop, 500);
 }
 
-/**
- * If stop() wasn’t fully handled by handleMessage(),
- * this will tear everything down and reset the UI.
- */
- * Fallback UI-reset if stop() wasn’t fully handled by handleMessage().
- * Does *not* kill the session or clear isStopping—cleanup still happens when
- * the final “completed” message arrives.
- */
 function cleanupUIAfterStop() {
   if (!isStopping) return;
   // Only reset the buttons & status so you’re not stuck:

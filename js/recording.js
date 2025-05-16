@@ -206,6 +206,9 @@ let session = null;
 let sessionConfig = null;
 let vadTime = 0;
 let isStopping = false;
+let isPausing  = false;   // NEW: are we in the middle of a pause?
+let isPaused   = false;   // NEW: have we fully paused?
+let isResuming = false;   // NEW: will the next start() be a resume?
 let mediaStream    = null; 
 
 function initState() {
@@ -213,7 +216,7 @@ function initState() {
   updateState(false);
 
   startMicBtn.addEventListener("click", startMicrophone);
-  pauseBtn .addEventListener("click", toggleMute);    // if you have a pause/resume
+  pauseBtn .addEventListener("click", togglePauseResume);
   stopBtn  .addEventListener("click", stop);
 }
 
@@ -224,11 +227,63 @@ function updateState(started) {
   pauseBtn.disabled     = !started;
 }
 
-function toggleMute() {
+/**
+ * User clicked the Pause/Resume button.
+ */
+function togglePauseResume() {
+  if (!isPaused) {
+    // Going from Recording → Pausing
+    pauseSession();
+  } else {
+    // Going from Paused → Resuming
+    resumeSession();
+  }
+}
+
+/**
+ * Do everything stop() does, **without** tearing down UI or clearing the transcript.
+ */
+function pauseSession() {
   if (!session) return;
-  isMuted = !isMuted;
-  session.mute(isMuted);
-  pauseBtn.textContent = isMuted ? "Resume Recording" : "Pause Recording";
+  isPausing = true;
+
+  // 1) flush last audio chunk
+  const commitEvt = { type: "input_audio_buffer.commit" };
+  if (session.ws?.readyState === WebSocket.OPEN) {
+    session.ws.send(JSON.stringify(commitEvt));
+  } else {
+    session.sendMessage(commitEvt);
+  }
+
+  // 2) kill the mic
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
+
+  // 3) tweak UI into “paused” state
+  statusEl.textContent    = "Paused. Click Resume to continue.";
+  pauseBtn.textContent    = "Resume Recording";
+  startMicBtn.disabled     = true;
+  stopBtn.disabled         = false;
+  pauseBtn.disabled        = false;
+  isPaused                = true;
+}
+
+/**
+ * Start a fresh transcription session, but do **not** clear `transcriptEl.value`.
+ */
+function resumeSession() {
+  // mark that our next start() should *not* wipe the textarea
+  isResuming = true;
+  isPaused   = false;
+
+  // swap button label back
+  pauseBtn.textContent = "Pause Recording";
+  statusEl.textContent = "Resuming…";
+
+  // re-acquire the mic and open a new session
+  startMicrophone();
 }
 
 async function startMicrophone() {
@@ -245,7 +300,12 @@ async function startMicrophone() {
 
 async function start(stream) {
   updateState(true);
-  transcriptEl.value = "";
+  // only clear on the *very first* Start, not on Resume
+  if (!isResuming) {
+    transcriptEl.value = "";
+  } else {
+    isResuming = false;
+  }
 
     // pull the key from sessionStorage, exactly how index.html stored it:
   const apiKey = sessionStorage.getItem("user_api_key");
@@ -339,15 +399,26 @@ function handleMessage(parsed) {
     // always make sure there's a trailing space
     transcriptEl.value += " ";
 
+    // If this was a Pause, finalize and stop the session,
+    // but *do not* reset the transcript or buttons:
+    if (isPausing) {
+      session.stop();
+      session = null;
+      isPausing = false;
+      // leave startBtn disabled, stopBtn enabled, pauseBtn now = Resume
+      return;
+    }
+
+    // original Stop logic—this *does* reset the UI for a fresh Start:
     if (isStopping) {
       isStopping = false;
       // only now tear down the session & socket
       session.stop();
       session = null;
       // and reset your UI
-      updateState(false);
-      pauseBtn.textContent = "Pause Recording";
-      statusEl.textContent = "Ready to start again.";
+       updateState(false);
+       pauseBtn.textContent = "Pause Recording";
+       statusEl.textContent = "Ready to start again.";
     }
    break;
 

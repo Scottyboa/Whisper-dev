@@ -224,10 +224,15 @@ async function start(stream) {
     alert("Missing API key—please re-enter it on the home page.");
     return stop();
   }
-  const USE_WEBSOCKETS = true;    // ← set false to fall back to WebRTC
-  session = USE_WEBSOCKETS
-    ? new WebSocketSession(apiKey)
-    : new Session(apiKey);
+   const USE_WEBSOCKETS = true;   // ← set false to fall back to WebRTC
+    console.log("▶▶ USE_WEBSOCKETS =", USE_WEBSOCKETS);    
+ if (USE_WEBSOCKETS) {
+   console.log("▶▶ instantiating WebSocketSession");
+   session = new WebSocketSession(apiKey);
+ } else {
+   console.log("▶▶ instantiating WebRTC Session");
+   session = new Session(apiKey);
+ }
   session.onmessage = handleMessage;
   session.onerror = handleError;
 

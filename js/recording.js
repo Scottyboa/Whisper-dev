@@ -1,7 +1,7 @@
 // js/recording.js
 
 // --- Session class for Realtime Transcription ---
-+// ——— WebSocket-based fallback for firewalled networks ———
+// ——— WebSocket-based fallback for firewalled networks ———
 class WebSocketSession {
   constructor(apiKey) {
     this.apiKey = apiKey;

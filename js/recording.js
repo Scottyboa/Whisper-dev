@@ -205,6 +205,7 @@ const TURN_DETECTION_TYPE = "server_vad";
 let session = null;
 let sessionConfig = null;
 let vadTime = 0;
+let isStopping = false;
 
 function initState() {
   // initial button states
@@ -281,11 +282,13 @@ sessionConfig = {
   }
 }
 
-function stop() {
-  updateState(false);
-  session?.stop();
-  session = null;
-}
+ function stop() {
+   updateState(false);
+  if (!session) return;
+  isStopping = true;                                      // ← mark that we’re finishing up
+  session.sendMessage({ type: "input_audio_buffer.stop" }); // ← flush final VAD chunk
+  // don’t close the session here—wait for the `.completed` event
+ }
 
 function handleMessage(parsed) {
   switch (parsed.type) {
@@ -302,9 +305,18 @@ function handleMessage(parsed) {
     case "conversation.item.input_audio_transcription.delta":
       // Optionally show partial delta
       break;
-    case "conversation.item.input_audio_transcription.completed":
-      handleTranscript({ transcript: parsed.transcript, partial: false });
-      break;
+      case "conversation.item.input_audio_transcription.completed":
+   // always append the final chunk
+   handleTranscript({ transcript: parsed.transcript, partial: false });
+
+   // if we’re in the process of stopping, now’s the time to tear down
+   if (isStopping) {
+     isStopping = false;
+     session.stop();
+     session = null;
+     // (optional) call a callback here, e.g. onAllTranscriptsDone();
+   }
+   break;
   }
 }
 

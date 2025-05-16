@@ -388,17 +388,13 @@ function stop() {
  * If stop() wasn’t fully handled by handleMessage(),
  * this will tear everything down and reset the UI.
  */
-function cleanupAfterStop() {
-  // Only run if still waiting on a “completed”
+ * Fallback UI-reset if stop() wasn’t fully handled by handleMessage().
+ * Does *not* kill the session or clear isStopping—cleanup still happens when
+ * the final “completed” message arrives.
+ */
+function cleanupUIAfterStop() {
   if (!isStopping) return;
-  isStopping = false;
-
-  if (session) {
-    session.stop();
-    session = null;
-  }
-
-  // Reset buttons & status
+  // Only reset the buttons & status so you’re not stuck:
   updateState(false);
   pauseBtn.textContent = "Pause Recording";
   statusEl.textContent = "Ready to start again.";

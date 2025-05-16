@@ -19,10 +19,12 @@ class WebSocketSession {
     this.ws.binaryType = "arraybuffer";
 
     this.ws.onopen = () => {
-     this.ws.send(JSON.stringify({
-        type: "session_create",
-        config: sessionConfig
-      }));
+   console.log("WS> onopen → sending transcription_session.update");
+  // ✅ correct WS event for transcription
+  this.ws.send(JSON.stringify({
+    type: "transcription_session.update",
+    session: sessionConfig
+  }));
       this.mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm; codecs=opus" });
       this.mediaRecorder.ondataavailable = e => {
         if (this.ws.readyState === WebSocket.OPEN) {

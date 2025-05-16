@@ -288,8 +288,15 @@ sessionConfig = {
    updateState(false);
   if (!session) return;
   isStopping = true;                                      // ← mark that we’re finishing up
-  session.sendMessage({ type: "input_audio_buffer.stop" }); // ← flush final VAD chunk
-  // don’t close the session here—wait for the `.completed` event
+  // flush the final buffer
+  const stopMsg = { type: "input_audio_buffer.stop" };
+  if (typeof session.sendMessage === "function") {
+    // for WebRTC Session
+    session.sendMessage(stopMsg);
+  } else if (session.ws?.readyState === WebSocket.OPEN) {
+    // for WebSocketSession
+    session.ws.send(JSON.stringify(stopMsg));
+  }
      // 2️⃣ immediately shut off the mic tracks (browser indicator goes out)
   if (mediaStream) {
     mediaStream.getTracks().forEach(t => t.stop());

@@ -286,25 +286,24 @@ sessionConfig = {
 }
 
 function stop() {
-  if (!session) return;
-  isStopping = true;
-
-  const stopSessionMsg = { type: "transcription_session.stop" };
-
-  if (typeof session.sendMessage === "function") {
-    // WebRTC path
-    session.sendMessage(stopSessionMsg);
-  } else if (session.ws?.readyState === WebSocket.OPEN) {
-    // WebSocket path
-    session.ws.send(JSON.stringify(stopSessionMsg));
-  }
-
-  // shut off the mic indicator
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
-  }
+   if (!session) return;
+   isStopping = true;
+   // flush the final buffer (but do NOT close the socket)
+   const stopMsg = { type: "input_audio_buffer.stop" };
+  if (session.ws?.readyState === WebSocket.OPEN) {
+    session.ws.send(JSON.stringify(stopMsg));
+  } else {
+    session.sendMessage(stopMsg);
++  }
+   //  shut off the mic immediately
+   if (mediaStream) {
+     mediaStream.getTracks().forEach(t => t.stop());
+     mediaStream = null;
+   }
+  statusEl.textContent = "Finishing transcription…";
+  stopBtn.disabled = true;
  }
+ 
 
 function handleMessage(parsed) {
   switch (parsed.type) {
@@ -324,21 +323,21 @@ function handleMessage(parsed) {
       // Optionally show partial delta
       break;
       case "conversation.item.input_audio_transcription.completed":
-  // replace the sole “***” placeholder with the real transcript
-  transcriptEl.value = transcriptEl.value.replace(/\*{3}(?!.*\*{3})/, parsed.transcript);
-  // add a space so next chunk doesn’t jam right up against this one
-  transcriptEl.value += " ";
+    // swap out the “***” for the real text
+    transcriptEl.value = transcriptEl.value
+      .replace(/\*{3}(?!.*\*{3})/, parsed.transcript)
+      + " ";
 
-  // now do your stopping teardown
-  // only now tear down the session _and_ reset the UI
-  if (isStopping) {
-    isStopping = false;
-    session.stop();
-    session = null;
-    updateState(false);         // ← re-enable Start / disable Stop
-    pauseBtn.textContent = "Pause Recording"; // reset if you want
-    statusEl.textContent = "Ready to start again.";
-  }
+    if (isStopping) {
+      isStopping = false;
+      // only now tear down the session & socket
+      session.stop();
+      session = null;
+      // and reset your UI
+      updateState(false);
+      pauseBtn.textContent = "Pause Recording";
+      statusEl.textContent = "Ready to start again.";
+    }
    break;
 
   }

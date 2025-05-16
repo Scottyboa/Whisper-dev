@@ -6,7 +6,6 @@ class WebSocketSession {
   constructor(apiKey) {
     this.apiKey = apiKey;
     this.ws = null;
-    this.mediaRecorder = null;
   }
 
   async startTranscription(stream, sessionConfig) {
@@ -25,14 +24,39 @@ class WebSocketSession {
     type: "transcription_session.update",
     session: sessionConfig
   }));
-      this.mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm; codecs=opus" });
-      this.mediaRecorder.ondataavailable = e => {
-        if (this.ws.readyState === WebSocket.OPEN) {
-          this.ws.send(e.data);
-        }
-      };
-      this.mediaRecorder.start(100);  // 100 ms chunks
-    };
+
+// ——— Raw PCM @24 kHz capture via AudioContext ———
+const audioCtx = new AudioContext({ sampleRate: 24000 });
+const source   = audioCtx.createMediaStreamSource(stream);
+const proc     = audioCtx.createScriptProcessor(4096, 1, 1);
+source.connect(proc);
+proc.connect(audioCtx.destination);
+
+proc.onaudioprocess = (evt) => {
+  // 1) Float32 → Int16
+  const float32 = evt.inputBuffer.getChannelData(0);
+  const pcm16   = new Int16Array(float32.length);
+  for (let i = 0; i < float32.length; i++) {
+    const s = Math.max(-1, Math.min(1, float32[i]));
+    pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+  }
+  // 2) Base64‐encode
+  const bytes  = new Uint8Array(pcm16.buffer);
+  let binary   = "";
+  for (let b of bytes) binary += String.fromCharCode(b);
+  const b64    = btoa(binary);
+  // 3) Send as append event
+  if (this.ws.readyState === WebSocket.OPEN) {
+    this.ws.send(JSON.stringify({
+      type: "input_audio_buffer.append",
+      audio: b64
+    }));
+  }
+};
+// ————————————————————————————————————————
+};
+
+
     this.ws.onmessage = evt => {
       let data = (typeof evt.data === "string")
         ? JSON.parse(evt.data)
@@ -43,7 +67,6 @@ class WebSocketSession {
   }
 
   stop() {
-    this.mediaRecorder?.stop();
     this.ws?.close();
   }
 }

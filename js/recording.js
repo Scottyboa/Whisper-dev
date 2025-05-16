@@ -237,6 +237,7 @@ async function startMicrophone() {
     alert("Microphone error: " + err.message);
     return;
   }
+  mediaStream = stream;    // ← keep this for later teardown
   await start(stream);
 }
 
@@ -288,6 +289,11 @@ sessionConfig = {
   isStopping = true;                                      // ← mark that we’re finishing up
   session.sendMessage({ type: "input_audio_buffer.stop" }); // ← flush final VAD chunk
   // don’t close the session here—wait for the `.completed` event
+     // 2️⃣ immediately shut off the mic tracks (browser indicator goes out)
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
  }
 
 function handleMessage(parsed) {

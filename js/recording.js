@@ -346,6 +346,19 @@ sessionConfig = {
 }
 
 function stop() {
+  // If the user hits Stop while we’re paused, just clear paused flags and reset UI:
+  if (isPaused) {
+    // Clear our pause/resume state
+    isPaused   = false;
+    isPausing  = false;
+    isResuming = false;
+
+    // Tear down UI exactly like a normal Stop
+    updateState(false);
+    pauseBtn.textContent = "Pause Recording";
+    statusEl.textContent = "Ready to start again.";
+    return;
+  }
   if (!session) return;
   isStopping = true;
 

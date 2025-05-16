@@ -346,27 +346,50 @@ sessionConfig = {
 }
 
 function stop() {
-   if (!session) return;
-   isStopping = true;
+  if (!session) return;
+  isStopping = true;
 
-   // 1) Flush whatever audio you’ve appended → commit into a user message
-   const commitEvt = { type: "input_audio_buffer.commit" };
-   if (session.ws?.readyState === WebSocket.OPEN) {
-     session.ws.send(JSON.stringify(commitEvt));
-   } else {
-     session.sendMessage(commitEvt);
-   }
+  // 1) Flush whatever audio you’ve appended
+  const commitEvt = { type: "input_audio_buffer.commit" };
+  if (session.ws?.readyState === WebSocket.OPEN) {
+    session.ws.send(JSON.stringify(commitEvt));
+  } else {
+    session.sendMessage(commitEvt);
+  }
 
-   // 2) Immediately kill the mic so the browser indicator turns off
-   if (mediaStream) {
-     mediaStream.getTracks().forEach(t => t.stop());
-     mediaStream = null;
-   }
+  // 2) Kill the mic immediately
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
 
-   // 3) Let the user know we’re waiting on that final snippet
-   statusEl.textContent = "Finishing transcription…";
-   stopBtn.disabled = true;
- }
+  // 3) Update UI to “Finishing…”
+  statusEl.textContent = "Finishing transcription…";
+  stopBtn.disabled = true;
+
+  // 4) Fallback cleanup if no “completed” event fires
+  setTimeout(cleanupAfterStop, 500);
+}
+
+/**
+ * If stop() wasn’t fully handled by handleMessage(),
+ * this will tear everything down and reset the UI.
+ */
+function cleanupAfterStop() {
+  // Only run if still waiting on a “completed”
+  if (!isStopping) return;
+  isStopping = false;
+
+  if (session) {
+    session.stop();
+    session = null;
+  }
+
+  // Reset buttons & status
+  updateState(false);
+  pauseBtn.textContent = "Pause Recording";
+  statusEl.textContent = "Ready to start again.";
+}
  
 
 function handleMessage(parsed) {

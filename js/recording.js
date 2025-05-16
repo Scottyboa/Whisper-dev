@@ -18,73 +18,19 @@ class WebSocketSession {
     ]);
     this.ws.binaryType = "arraybuffer";
 
-this.ws.onopen = () => {
-  // send your transcription_session.update as before
+    this.ws.onopen = () => {
+   console.log("WS> onopen → sending transcription_session.update");
+  // ✅ correct WS event for transcription
   this.ws.send(JSON.stringify({
     type: "transcription_session.update",
     session: sessionConfig
   }));
-
- // ——— set up raw PCM capture ———
- // 1) AudioContext at 24 kHz
- const audioCtx = new AudioContext({ sampleRate: 24000 });
- // 2) Source from the mic stream
- const source = audioCtx.createMediaStreamSource(stream);
- // 3) Processor to grab PCM frames
- const processor = audioCtx.createScriptProcessor(4096, 1, 1);
- source.connect(processor);
- processor.connect(audioCtx.destination);
-
- processor.onaudioprocess = (evt) => {
-   // Get the Float32 mono buffer
-   const float32 = evt.inputBuffer.getChannelData(0);
-   // Convert to Int16 PCM (little-endian)
-   const pcm16 = new Int16Array(float32.length);
-   for (let i = 0; i < float32.length; i++) {
-     let s = Math.max(-1, Math.min(1, float32[i]));
-     pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-   }
-
-   // Base64-encode the raw bytes
-   const byteBuffer = new Uint8Array(pcm16.buffer);
-   let binary = "";
-   for (let i = 0; i < byteBuffer.byteLength; i++) {
-     binary += String.fromCharCode(byteBuffer[i]);
-   }
-   const b64 = btoa(binary);
-
-   // Send as JSON append event
-   if (this.ws.readyState === WebSocket.OPEN) {
-     this.ws.send(JSON.stringify({
-       type: "input_audio_buffer.append",
-       audio: b64
-     }));
-   }
- };
- // ————————————————————————————
-};
-
       this.mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm; codecs=opus" });
- this.mediaRecorder.ondataavailable = async (e) => {
-   if (this.ws.readyState !== WebSocket.OPEN) return;
-
-  // Read the Blob into an ArrayBuffer…
-  const buffer = await e.data.arrayBuffer();
-  // Convert to base64
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  const b64 = btoa(binary);
-
-  // Wrap in the JSON append event
-  this.ws.send(JSON.stringify({
-    type: "input_audio_buffer.append",
-    audio: b64
-  }));
- };
-
+      this.mediaRecorder.ondataavailable = e => {
+        if (this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(e.data);
+        }
+      };
       this.mediaRecorder.start(100);  // 100 ms chunks
     };
     this.ws.onmessage = evt => {

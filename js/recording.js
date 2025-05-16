@@ -69,13 +69,6 @@ proc.onaudioprocess = (evt) => {
   stop() {
     this.ws?.close();
   }
- sendMessage(message) {
-   if (this.ws?.readyState === WebSocket.OPEN) {
-     this.ws.send(JSON.stringify(message));
-   } else {
-     console.warn("WS not open; cannot send:", message);
-   }
- }
 }
 // ——————————————————————————————————————————————
 
@@ -292,16 +285,24 @@ sessionConfig = {
 }
 
  function stop() {
-     if (!session) return;
+   updateState(false);
+  if (!session) return;
   isStopping = true;                                      // ← mark that we’re finishing up
   // flush the final buffer
-  session.sendMessage({ type: "input_audio_buffer.stop" });
+  const stopMsg = { type: "input_audio_buffer.stop" };
+  if (typeof session.sendMessage === "function") {
+    // for WebRTC Session
+    session.sendMessage(stopMsg);
+  } else if (session.ws?.readyState === WebSocket.OPEN) {
+    // for WebSocketSession
+    session.ws.send(JSON.stringify(stopMsg));
   }
      // 2️⃣ immediately shut off the mic tracks (browser indicator goes out)
   if (mediaStream) {
     mediaStream.getTracks().forEach(t => t.stop());
     mediaStream = null;
   }
+ }
 
 function handleMessage(parsed) {
   switch (parsed.type) {
@@ -328,10 +329,9 @@ function handleMessage(parsed) {
 
   // now do your stopping teardown
    if (isStopping) {
-         session.stop();
-    session = null;
-    isStopping = false;
-    updateState(false);     // re-enable Start/disable Stop
+     isStopping = false;
+     session.stop();
+     session = null;
    }
    break;
 

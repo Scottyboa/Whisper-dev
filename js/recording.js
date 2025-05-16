@@ -26,11 +26,26 @@ class WebSocketSession {
     session: sessionConfig
   }));
       this.mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm; codecs=opus" });
-      this.mediaRecorder.ondataavailable = e => {
-        if (this.ws.readyState === WebSocket.OPEN) {
-          this.ws.send(e.data);
-        }
-      };
+ this.mediaRecorder.ondataavailable = async (e) => {
+   if (this.ws.readyState !== WebSocket.OPEN) return;
+
+  // Read the Blob into an ArrayBuffer…
+  const buffer = await e.data.arrayBuffer();
+  // Convert to base64
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const b64 = btoa(binary);
+
+  // Wrap in the JSON append event
+  this.ws.send(JSON.stringify({
+    type: "input_audio_buffer.append",
+    audio: b64
+  }));
+ };
+
       this.mediaRecorder.start(100);  // 100 ms chunks
     };
     this.ws.onmessage = evt => {

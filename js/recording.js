@@ -285,23 +285,36 @@ sessionConfig = {
   }
 }
 
- function stop() {
-     if (!session) return;
-  isStopping = true;                                      // ← mark that we’re finishing up
-  // flush the final buffer
-  const stopMsg = { type: "input_audio_buffer.stop" };
-  if (typeof session.sendMessage === "function") {
-    // for WebRTC Session
-    session.sendMessage(stopMsg);
-  } else if (session.ws?.readyState === WebSocket.OPEN) {
-    // for WebSocketSession
-    session.ws.send(JSON.stringify(stopMsg));
-  }
-     // 2️⃣ immediately shut off the mic tracks (browser indicator goes out)
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
-  }
+function stop() {
+   if (!session) return;
+   isStopping = true;
+
+   // --- ARTIFICIAL VAD CUTOFF: shrink waiting time to 0ms ---
+   const forcedSilenceConfig = {
+     ...sessionConfig,
+     turn_detection: {
+       ...sessionConfig.turn_detection,
+       silence_duration_ms: 0
+     }
+   };
+   const updateMsg = {
+     type: "transcription_session.update",
+     session: forcedSilenceConfig
+   };
+
+   if (typeof session.sendMessage === "function") {
+     session.sendMessage(updateMsg);
+     session.sendMessage({ type: "input_audio_buffer.stop" });
+   } else if (session.ws?.readyState === WebSocket.OPEN) {
+     session.ws.send(JSON.stringify(updateMsg));
+     session.ws.send(JSON.stringify({ type: "input_audio_buffer.stop" }));
+   }
+
+   // shut off mic indicator
+   if (mediaStream) {
+     mediaStream.getTracks().forEach(t => t.stop());
+     mediaStream = null;
+   }
  }
 
 function handleMessage(parsed) {

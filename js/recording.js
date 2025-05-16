@@ -294,7 +294,7 @@ function stop() {
     session.ws.send(JSON.stringify(stopMsg));
   } else {
     session.sendMessage(stopMsg);
-+  }
+  }
    //  shut off the mic immediately
    if (mediaStream) {
      mediaStream.getTracks().forEach(t => t.stop());

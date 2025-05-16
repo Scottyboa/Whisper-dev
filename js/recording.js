@@ -423,9 +423,6 @@ async function start(stream) {
   }
 }
 
-// Track that we’re in the process of stopping
-let isStopping = false;
-
 function handleStopClick() {
   // ── Scenario 2: user clicked Stop while paused (Resume button showing) ──
   if (pauseBtn.textContent === "Resume Recording") {
@@ -533,7 +530,7 @@ function handleTranscript({ transcript, partial }) {
 
 function handleError(e) {
   console.error(e);
-  stop();
+  handleStopClick(); 
 }
 
 // Export the initialization function to be called from main.js

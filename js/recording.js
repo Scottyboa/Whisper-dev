@@ -230,8 +230,6 @@ async function start(stream) {
     : new Session(apiKey);
   session.onmessage = handleMessage;
   session.onerror = handleError;
-  session.onmessage = handleMessage;
-  session.onerror = handleError;
 
 sessionConfig = {
   input_audio_transcription: {

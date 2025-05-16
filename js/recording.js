@@ -221,6 +221,7 @@ function updateState(started) {
   statusEl.textContent = "";
   startMicBtn.disabled  = started;
   stopBtn.disabled      = !started;
+  pauseBtn.disabled     = !started;
 }
 
 function toggleMute() {
@@ -285,8 +286,7 @@ sessionConfig = {
 }
 
  function stop() {
-   updateState(false);
-  if (!session) return;
+     if (!session) return;
   isStopping = true;                                      // ← mark that we’re finishing up
   // flush the final buffer
   const stopMsg = { type: "input_audio_buffer.stop" };
@@ -328,11 +328,15 @@ function handleMessage(parsed) {
   transcriptEl.value += " ";
 
   // now do your stopping teardown
-   if (isStopping) {
-     isStopping = false;
-     session.stop();
-     session = null;
-   }
+  // only now tear down the session _and_ reset the UI
+  if (isStopping) {
+    isStopping = false;
+    session.stop();
+    session = null;
+    updateState(false);         // ← re-enable Start / disable Stop
+    pauseBtn.textContent = "Pause Recording"; // reset if you want
+    statusEl.textContent = "Ready to start again.";
+  }
    break;
 
   }

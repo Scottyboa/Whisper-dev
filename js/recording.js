@@ -261,46 +261,31 @@ function initState() {
 let isPausing = false;
 
 // 4A) Resume logic
-async function handleResumeClick() {
-  // 1) Flip button back to Pause, disable it and Stop
-  pauseBtn.textContent = "Pause Recording";
-  pauseBtn.disabled = true;
-  stopBtn.disabled  = true;
-  updateUI('resuming');
+ async function handleResumeClick() {
+   // Flip back to Pause, show loading UI
+   pauseBtn.textContent = "Pause Recording";
+   updateUI('resuming');
 
-  // 2) Re-open mic
-  let stream;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch (err) {
-    alert("Microphone error: " + err.message);
-    updateUI('idle');
-    return;
-  }
-  mediaStream = stream;
+   // 1) Get mic stream
+   let stream;
+   try {
+     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+   } catch (err) {
+     alert("Microphone error: " + err.message);
+     updateUI('idle');
+     return;
+   }
+   mediaStream = stream;
 
-  // 3) Re-establish websocket session
-  const apiKey = sessionStorage.getItem("user_api_key");
-  if (!apiKey) {
-    alert("Missing API key—please re-enter it on the home page.");
-    teardownSession();
-    updateUI('idle');
-    return;
-  }
-  session = new WebSocketSession(apiKey);
-  session.onmessage = handleMessage;
-  session.onerror   = handleError;
-
-  // 4) Restart transcription without clearing transcript
-  try {
-    await session.startTranscription(stream, sessionConfig);
-    updateUI('recording');  // Pause & Stop enabled
-  } catch (err) {
-    alert("Connection error: " + err.message);
-    teardownSession();
-    updateUI('stopped');
-  }
-}
+   // 2) Re-use your start() helper to re-open websocket & resume transcription
+   try {
+     await start(stream);
+   } catch (err) {
+     alert("Connection error: " + err.message);
+     teardownSession();
+     updateUI('stopped');
+   }
+ }
 
 // 4B) Pause logic (now also detects Resume)
 function handlePauseClick() {

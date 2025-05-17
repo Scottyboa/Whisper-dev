@@ -399,12 +399,7 @@ async function start(stream) {
 
   // Configure transcription
   sessionConfig = {
-    input_audio_transcription: { model: MODEL },
-    turn_detection: {
-      type: TURN_DETECTION_TYPE,
-      threshold: 0.4,
-      prefix_padding_ms: 400,
-      silence_duration_ms: 2000
+    input_audio_transcription: { model: MODEL }
     }
   };
 

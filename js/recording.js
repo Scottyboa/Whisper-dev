@@ -485,7 +485,7 @@ function handleMessage(parsed) {
        // remove the old partial (or "...") and write the new one
         transcriptEl.value = transcriptEl.value
                              .slice(0, chunkStartIndex)
-                             + parsed.transcript;
+                              parsed.transcript;
         lastPartial = parsed.transcript;
         transcriptEl.scrollTop = transcriptEl.scrollHeight;
       }

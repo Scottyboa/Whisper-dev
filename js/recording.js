@@ -202,7 +202,15 @@ const TURN_DETECTION_TYPE = "server_vad";
 
 
 
-let session = null;
+ let session = null;
+
+// ── New globals for partial-vs-final logic ──
+// index in transcriptEl.value where the current chunk began
+let chunkStartIndex = 0;
+// text of the last partial we injected
+let lastPartial = "";
+// are we awaiting a final result for the current chunk?
+let isPending = false;
 let sessionConfig = null;
 let vadTime = 0;
 let isStopping = false;
@@ -465,9 +473,23 @@ function handleMessage(parsed) {
       sessionConfig = parsed.session;
       break;
     case "input_audio_buffer.speech_started":
-  // user just started speaking: show “…” placeholder
+  // mark where this chunk begins, show the “listening…” indicator
+  chunkStartIndex = transcriptEl.value.length;
   transcriptEl.value += "...";
-   break;
+  isPending = true;
+  lastPartial = "";
+  break;
+          // ── 2) Live “delta” updates (insert this block here) ──
+    case "conversation.item.input_audio_transcription.delta":
+      if (isPending) {
+       // remove the old partial (or "...") and write the new one
+        transcriptEl.value = transcriptEl.value
+                             .slice(0, chunkStartIndex)
+                             + parsed.transcript;
+        lastPartial = parsed.transcript;
+        transcriptEl.scrollTop = transcriptEl.scrollHeight;
+      }
+      break;
     case "input_audio_buffer.speech_stopped":
   // VAD detected end-of-speech: turn “…” into “***”
   transcriptEl.value = transcriptEl.value.replace(/\.{3}(?!.*\.{3})/, "***");
@@ -477,30 +499,35 @@ function handleMessage(parsed) {
       // Optionally show partial delta
       break;
       case "conversation.item.input_audio_transcription.completed":
-  // 1) Append the incoming transcript chunk
-  if (/\*{3}(?!.*\*{3})/.test(transcriptEl.value)) {
-    transcriptEl.value = transcriptEl.value.replace(/\*{3}(?!.*\*{3})/, parsed.transcript);
+  // ── 1) Swap partial (if any) for final text ──
+  if (isPending) {
+    // remove the last partial or "..." and insert the final transcript + space
+    transcriptEl.value = transcriptEl.value
+      .slice(0, chunkStartIndex)
+      + parsed.transcript + " ";
+    isPending = false;
+    lastPartial = "";
   } else {
-    transcriptEl.value += parsed.transcript;
+    // fallback: just append if no partial was pending
+    transcriptEl.value += parsed.transcript + " ";
   }
-  transcriptEl.value += " ";
+  // keep the textarea scrolled to the bottom
+  transcriptEl.scrollTop = transcriptEl.scrollHeight;
 
-  // 2) If we’re pausing, finish pause teardown
+  // ── 2) Pause teardown ──
   if (isPausing) {
     isPausing = false;
     session.stop();
     session = null;
-
     pauseBtn.textContent = "Resume Recording";
     updateUI('paused');
     statusEl.textContent = "";
   }
-  // 3) Else if we’re stopping, finish stop teardown
+  // ── 3) Stop teardown ──
   else if (isStopping) {
     isStopping = false;
     session.stop();
     session = null;
-
     pauseBtn.textContent = "Pause Recording";
     updateUI('stopped');
     statusEl.textContent = "Ready to start again.";

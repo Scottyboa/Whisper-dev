@@ -8,7 +8,6 @@ class WebSocketSession {
     this.ws = null;
   }
 
-
   async startTranscription(stream, sessionConfig) {
     const url = "wss://api.openai.com/v1/realtime?intent=transcription";
     this.ws = new WebSocket(url, [
@@ -71,9 +70,6 @@ proc.onaudioprocess = (evt) => {
     this.ws?.close();
   }
 }
-
-let currentPartial = "";
-let commitTimer    = null;
 // ——————————————————————————————————————————————
 
 
@@ -353,13 +349,6 @@ function teardownSession() {
   isPausing  = false;
   // 4) Restore Pause button to its default label
   pauseBtn.textContent = "Pause Recording";
-  // ── cancel auto-commit ──
-  if (commitTimer) {
-    clearTimeout(commitTimer);
-    commitTimer = null;
-  }
-  // ── clear any leftover partial ──
-  currentPartial = "";
 }
 
 // --- Step 2: Enhanced Start Logic ---
@@ -401,24 +390,20 @@ async function start(stream) {
   session.onerror   = handleError;
 
   // Configure transcription
-    // Only model, no server-VAD
   sessionConfig = {
-    input_audio_transcription: { model: MODEL }
+    input_audio_transcription: { model: MODEL },
+    turn_detection: {
+      type: TURN_DETECTION_TYPE,
+      threshold: 0.4,
+      prefix_padding_ms: 400,
+      silence_duration_ms: 2000
+    }
   };
 
   try {
     await session.startTranscription(stream, sessionConfig);
     // Once mic + websocket are fully active:
     updateUI('recording');         // enable Stop & Pause
-      // ── auto-commit every 7 minutes ──
-  commitTimer = setTimeout(() => {
-    const evt = { type: "input_audio_buffer.commit" };
-    if (session.ws?.readyState === WebSocket.OPEN) {
-      session.ws.send(JSON.stringify(evt));
-    } else {
-      session.sendMessage(evt);
-    }
-  }, 7 * 60 * 1000);
   } catch (err) {
     alert("Connection error: " + err.message);
     teardownSession();
@@ -488,51 +473,39 @@ function handleMessage(parsed) {
   transcriptEl.value = transcriptEl.value.replace(/\.{3}(?!.*\.{3})/, "***");
    vadTime = performance.now() - (sessionConfig.turn_detection.silence_duration_ms || 0);
    break;
-     case "conversation.item.input_audio_transcription.delta": {
-   // 1) remove previous partial
-   transcriptEl.value = transcriptEl.value.replace(currentPartial, "");
-   // 2) store & append new partial
-   currentPartial = parsed.transcript || "";
-   transcriptEl.value += currentPartial;
-   break;
- }
-       case "conversation.item.input_audio_transcription.completed": {
-   // 1) strip out the delta
-   transcriptEl.value = transcriptEl.value.replace(currentPartial, "");
-   currentPartial = "";
+    case "conversation.item.input_audio_transcription.delta":
+      // Optionally show partial delta
+      break;
+      case "conversation.item.input_audio_transcription.completed":
+  // 1) Append the incoming transcript chunk
+  if (/\*{3}(?!.*\*{3})/.test(transcriptEl.value)) {
+    transcriptEl.value = transcriptEl.value.replace(/\*{3}(?!.*\*{3})/, parsed.transcript);
+  } else {
+    transcriptEl.value += parsed.transcript;
+  }
+  transcriptEl.value += " ";
 
-   // 2) append final transcript + space
-   transcriptEl.value += parsed.transcript + " ";
+  // 2) If we’re pausing, finish pause teardown
+  if (isPausing) {
+    isPausing = false;
+    session.stop();
+    session = null;
 
-   // 3) reset 7-min auto-commit
-   if (commitTimer) clearTimeout(commitTimer);
-   commitTimer = setTimeout(() => {
-     const evt = { type: "input_audio_buffer.commit" };
-     if (session.ws?.readyState === WebSocket.OPEN) {
-       session.ws.send(JSON.stringify(evt));
-     } else {
-       session.sendMessage(evt);
-     }
-   }, 7 * 60 * 1000);
+    pauseBtn.textContent = "Resume Recording";
+    updateUI('paused');
+    statusEl.textContent = "";
+  }
+  // 3) Else if we’re stopping, finish stop teardown
+  else if (isStopping) {
+    isStopping = false;
+    session.stop();
+    session = null;
 
-   // 4) your existing pause/stop teardown:
-   if (isPausing) {
-     isPausing = false;
-     session.stop();
-     session = null;
-     pauseBtn.textContent = "Resume Recording";
-     updateUI('paused');
-     statusEl.textContent = "";
-   } else if (isStopping) {
-     isStopping = false;
-     session.stop();
-     session = null;
-     pauseBtn.textContent = "Pause Recording";
-     updateUI('stopped');
-     statusEl.textContent = "Ready to start again.";
-   }
-   break;
- }
+    pauseBtn.textContent = "Pause Recording";
+    updateUI('stopped');
+    statusEl.textContent = "Ready to start again.";
+  }
+  break;
 
 
   }

@@ -194,6 +194,39 @@ class Session {
 const APP_PREFIX        = "realtime/transcribe/";
 const MODEL = "gpt-4o-transcribe";
 const TURN_DETECTION_TYPE = "server_vad";
+const MIN_CHUNK_DURATION_MS        = 10 * 1000;    // 10 s
+const DEFAULT_SILENCE_DURATION_MS  = 2 * 1000;     // 2 s
+const AGGRESSIVE_SILENCE_DURATION_MS = 200;        // 200 ms
+const MAX_CHUNK_DURATION_MS        = 2 * 60 * 1000; // 2 min
+let _vadDefaultTimer   = null;
+let _vadAggressiveTimer = null;
+
+/** Send updated VAD settings to the server. */
+function sendVADConfigUpdate() {
+  const update = { type: "transcription_session.update", session: sessionConfig };
+  if (session.ws?.readyState === WebSocket.OPEN) {
+    session.ws.send(JSON.stringify(update));
+  } else {
+    session.sendMessage(update);
+  }
+}
+
+/** Schedule our two timers for each chunk. */
+function scheduleChunkTimers() {
+  clearTimeout(_vadDefaultTimer);
+  clearTimeout(_vadAggressiveTimer);
+  // 1) After min duration, revert to default 2 s VAD
+  _vadDefaultTimer = setTimeout(() => {
+    sessionConfig.turn_detection.silence_duration_ms = DEFAULT_SILENCE_DURATION_MS;
+    sendVADConfigUpdate();
+  }, MIN_CHUNK_DURATION_MS);
+  // 2) After max duration, force aggressive 200 ms VAD
+  _vadAggressiveTimer = setTimeout(() => {
+    sessionConfig.turn_detection.silence_duration_ms = AGGRESSIVE_SILENCE_DURATION_MS;
+    sendVADConfigUpdate();
+  }, MAX_CHUNK_DURATION_MS);
+}
+
  const transcriptEl      = document.getElementById("transcription");
  const startMicBtn       = document.getElementById("startButton");
  const stopBtn           = document.getElementById("stopButton");
@@ -334,6 +367,9 @@ function handlePauseClick() {
 
 // --- New teardown helper to reset any existing session/microphone ---
 function teardownSession() {
+  // clear any pending VAD timers
+  clearTimeout(_vadDefaultTimer);
+  clearTimeout(_vadAggressiveTimer);
   // 1) Stop & clear any session
   if (session) {
     session.stop();
@@ -390,28 +426,33 @@ async function start(stream) {
   session.onerror   = handleError;
 
   // Configure transcription
-  sessionConfig = {
-    input_audio_transcription: { model: MODEL },
-    turn_detection: {
-      type: TURN_DETECTION_TYPE,
+    sessionConfig = {
+     input_audio_transcription: { model: MODEL },
+     turn_detection: {
+       type: TURN_DETECTION_TYPE,
       threshold: 0.4,
       prefix_padding_ms: 400,
-      silence_duration_ms: 2000
-    }
-  };
+      // start with no VAD until MIN_CHUNK_DURATION_MS
+      silence_duration_ms: MIN_CHUNK_DURATION_MS
+     }
+   };
 
   try {
     await session.startTranscription(stream, sessionConfig);
     // Once mic + websocket are fully active:
     updateUI('recording');         // enable Stop & Pause
-  } catch (err) {
-    alert("Connection error: " + err.message);
-    teardownSession();
+    scheduleChunkTimers();         // kick off our adaptive‐chunking timers
+   } catch (err) {
+     alert("Connection error: " + err.message);
+     teardownSession();
     updateUI('idle');
   }
 }
 
 function handleStopClick() {
+  // clear any pending VAD timers
+  clearTimeout(_vadDefaultTimer);
+  clearTimeout(_vadAggressiveTimer);
   // ── Scenario 2: user clicked Stop while paused (Resume button showing) ──
   if (pauseBtn.textContent === "Resume Recording") {
     // No extra teardown needed (already disconnected on Pause)
@@ -477,6 +518,8 @@ function handleMessage(parsed) {
       // Optionally show partial delta
       break;
       case "conversation.item.input_audio_transcription.completed":
+            // we just finished a chunk → schedule timers for the next one
+      scheduleChunkTimers();
   // 1) Append the incoming transcript chunk
   if (/\*{3}(?!.*\*{3})/.test(transcriptEl.value)) {
     transcriptEl.value = transcriptEl.value.replace(/\*{3}(?!.*\*{3})/, parsed.transcript);

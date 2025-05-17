@@ -314,15 +314,14 @@ function handlePauseClick() {
   pauseBtn.disabled = true;
   isPausing = true;
 
-  const silenceThresh = sessionConfig.turn_detection.silence_duration_ms;
-  const sinceVad = performance.now() - vadTime;
+    // Decide by whether transcript ends in "..." or "***"
+  const endsWithDelta    = /\.{3}$/.test(transcriptEl.value);
+  const endsWithComplete = /\*{3}$/.test(transcriptEl.value);
 
-  if (sinceVad > silenceThresh) {
-    // VAD A: immediate teardown
-    setTimeout(() => {
-  mediaStream.getTracks().forEach(t => t.stop());
-  mediaStream = null;
-}, 1000);
+  if (!endsWithDelta && !endsWithComplete) {
+    // Scenario A: nothing pending → immediate teardown
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
     session.stop();
     session = null;
 
@@ -330,7 +329,7 @@ function handlePauseClick() {
     updateUI('paused');
     isPausing = false;
   } else {
-    // VAD B: commit chunk, then wait for final transcript
+    // Scenario B: pending chunk → commit then delayed mic stop
     const commitEvt = { type: "input_audio_buffer.commit" };
     if (session.ws?.readyState === WebSocket.OPEN) {
       session.ws.send(JSON.stringify(commitEvt));
@@ -338,11 +337,11 @@ function handlePauseClick() {
       session.sendMessage(commitEvt);
     }
     setTimeout(() => {
-  mediaStream.getTracks().forEach(t => t.stop());
-  mediaStream = null;
-}, 1000);
+      mediaStream.getTracks().forEach(t => t.stop());
+      mediaStream = null;
+    }, 1000);
     statusEl.textContent = "Pausing…";
-    // final transcript arrival will complete Pause in handleMessage()
+    // final transcript will trigger the rest in handleMessage()
   }
 }
 
@@ -444,21 +443,19 @@ function handleStopClick() {
   updateUI('stopped');
 
   // Check VAD to see if we need to commit a final chunk
-  const silenceThresh = sessionConfig.turn_detection.silence_duration_ms;
-  const sinceVad     = performance.now() - vadTime;
+    // Decide by whether transcript ends in "..." or "***"
+  const endsWithDelta    = /\.{3}$/.test(transcriptEl.value);
+  const endsWithComplete = /\*{3}$/.test(transcriptEl.value);
 
-  if (sinceVad > silenceThresh) {
-    // VAD Scenario A (Silence): no uncommitted frames
-    setTimeout(() => {
-  mediaStream.getTracks().forEach(t => t.stop());
-  mediaStream = null;
-}, 1000);
+  if (!endsWithDelta && !endsWithComplete) {
+    // Scenario A: no pending chunk at end → immediate teardown
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
     session.stop();
     session = null;
-    // Done—nothing more to wait for
     isStopping = false;
   } else {
-    // VAD Scenario B (Mid-sentence): commit last chunk, then wait
+    // Scenario B: chunk pending at end → commit then delayed mic stop
     const commitEvt = { type: "input_audio_buffer.commit" };
     if (session.ws?.readyState === WebSocket.OPEN) {
       session.ws.send(JSON.stringify(commitEvt));
@@ -466,9 +463,9 @@ function handleStopClick() {
       session.sendMessage(commitEvt);
     }
     setTimeout(() => {
-  mediaStream.getTracks().forEach(t => t.stop());
-  mediaStream = null;
-}, 1000);
+      mediaStream.getTracks().forEach(t => t.stop());
+      mediaStream = null;
+    }, 1000);
     statusEl.textContent = "Stopping…";
     // Final teardown & UI reset happen in your handleMessage() isStopping branch
   }

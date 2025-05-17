@@ -208,6 +208,46 @@ let vadTime = 0;
 let isStopping = false;
 let mediaStream    = null; 
 
+const MIN_CHUNK_DURATION_MS        = 10 * 1000;     // 10 sec
+const DEFAULT_SILENCE_DURATION_MS  = 2  * 1000;     //  2 sec (server default)
+const FAILSAFE_SILENCE_DURATION_MS = 200;           // 200 ms for forced break
+const MAX_CHUNK_DURATION_MS        = 2  * 60 * 1000; // 2 min
+
+function updateVADConfig(newSilenceMs) {
+  if (!session || !sessionConfig) return;
+  sessionConfig.turn_detection.silence_duration_ms = newSilenceMs;
+  const msg = {
+    type: "transcription_session.update",
+    session: { turn_detection: sessionConfig.turn_detection }
+  };
+  if (session.ws?.readyState === WebSocket.OPEN) {
+    session.ws.send(JSON.stringify(msg));
+  } else {
+    session.sendMessage(msg);
+  }
+}
+
+let _minTimer = null;
+let _failsafeTimer = null;
+
+function resetChunkTimers() {
+  clearTimeout(_minTimer);
+  clearTimeout(_failsafeTimer);
+
+  // 1) Prevent premature VAD: set very high threshold
+  updateVADConfig(MIN_CHUNK_DURATION_MS + DEFAULT_SILENCE_DURATION_MS);
+
+  // 2) After MIN, restore natural VAD
+  _minTimer = setTimeout(() => {
+    updateVADConfig(DEFAULT_SILENCE_DURATION_MS);
+  }, MIN_CHUNK_DURATION_MS);
+
+  // 3) After MAX, enforce quick cutoff
+  _failsafeTimer = setTimeout(() => {
+    updateVADConfig(FAILSAFE_SILENCE_DURATION_MS);
+  }, MAX_CHUNK_DURATION_MS);
+}
+
 // Possible states: 'idle', 'recording', 'paused', 'resuming', 'stopped'
 function updateUI(state) {
   // Clear any status message on state change
@@ -334,6 +374,8 @@ function handlePauseClick() {
 
 // --- New teardown helper to reset any existing session/microphone ---
 function teardownSession() {
+  clearTimeout(_minTimer);
+  clearTimeout(_failsafeTimer);
   // 1) Stop & clear any session
   if (session) {
     session.stop();
@@ -400,16 +442,19 @@ async function start(stream) {
     }
   };
 
-  try {
+    try {
     await session.startTranscription(stream, sessionConfig);
     // Once mic + websocket are fully active:
     updateUI('recording');         // enable Stop & Pause
+
+    // ← Insert here to begin first chunk’s timers:
+    resetChunkTimers();
   } catch (err) {
     alert("Connection error: " + err.message);
     teardownSession();
     updateUI('idle');
   }
-}
+
 
 function handleStopClick() {
   // ── Scenario 2: user clicked Stop while paused (Resume button showing) ──
@@ -505,6 +550,10 @@ function handleMessage(parsed) {
     updateUI('stopped');
     statusEl.textContent = "Ready to start again.";
   }
+      // ← INSERT these two lines to restart timers for the next chunk:
+      if (!isPausing && !isStopping) {
+        resetChunkTimers();
+      }
   break;
 
 

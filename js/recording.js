@@ -424,8 +424,8 @@ async function start(stream) {
       type: TURN_DETECTION_TYPE,
       threshold: 0.4,
       prefix_padding_ms: 400,
-     // hold off on VAD until at least 10 s lock-in + 2 s normal silence
-      silence_duration_ms: MIN_CHUNK_MS + DEFAULT_SILENCE_MS
+     // hold off on VAD until at least 10 s lock-in
+      silence_duration_ms: MIN_CHUNK_MS 
     }
   };
 

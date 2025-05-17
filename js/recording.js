@@ -319,8 +319,10 @@ function handlePauseClick() {
 
   if (sinceVad > silenceThresh) {
     // VAD A: immediate teardown
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
+    setTimeout(() => {
+  mediaStream.getTracks().forEach(t => t.stop());
+  mediaStream = null;
+}, 1000);
     session.stop();
     session = null;
 
@@ -335,8 +337,10 @@ function handlePauseClick() {
     } else {
       session.sendMessage(commitEvt);
     }
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
+    setTimeout(() => {
+  mediaStream.getTracks().forEach(t => t.stop());
+  mediaStream = null;
+}, 1000);
     statusEl.textContent = "Pausing…";
     // final transcript arrival will complete Pause in handleMessage()
   }
@@ -445,8 +449,10 @@ function handleStopClick() {
 
   if (sinceVad > silenceThresh) {
     // VAD Scenario A (Silence): no uncommitted frames
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
+    setTimeout(() => {
+  mediaStream.getTracks().forEach(t => t.stop());
+  mediaStream = null;
+}, 1000);
     session.stop();
     session = null;
     // Done—nothing more to wait for
@@ -459,8 +465,10 @@ function handleStopClick() {
     } else {
       session.sendMessage(commitEvt);
     }
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
+    setTimeout(() => {
+  mediaStream.getTracks().forEach(t => t.stop());
+  mediaStream = null;
+}, 1000);
     statusEl.textContent = "Stopping…";
     // Final teardown & UI reset happen in your handleMessage() isStopping branch
   }

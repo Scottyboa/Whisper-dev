@@ -551,7 +551,21 @@ function handleMessage(parsed) {
   clearTimeout(maxChunkTimer);
   break;
 
-
+    // ── NEW: catch the final transcript payload ──
+    case "conversation.item.created":
+      // Only process user‐role, completed message items
+      if (
+        parsed.item.role === "user" &&
+        parsed.item.type === "message" &&
+        parsed.item.status === "completed" &&
+        parsed.item.content
+      ) {
+        // remove any trailing “…” or “***” placeholder
+        transcriptEl.value = transcriptEl.value.replace(/\.\.\.$|\*{3}$/, "");
+        // append the actual transcript text
+        transcriptEl.value += parsed.item.content + "\n";
+      }
+      break;
   }
 }
 

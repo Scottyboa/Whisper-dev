@@ -231,7 +231,7 @@ function updateUI(state) {
       break;
 
     case 'paused':
-      startMicBtn.disabled = false;
+      startMicBtn.disabled = true;
       // Stop stays enabled so user can finish or restart
       stopBtn.disabled      = false;
       // pauseBtn will have become the "Resume" button

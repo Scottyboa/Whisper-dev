@@ -8,9 +8,6 @@ class WebSocketSession {
     this.ws = null;
   }
 
- // Track live-delta text and auto-commit timer
- let currentPartial = "";
- let commitTimer    = null;
 
   async startTranscription(stream, sessionConfig) {
     const url = "wss://api.openai.com/v1/realtime?intent=transcription";
@@ -74,6 +71,9 @@ proc.onaudioprocess = (evt) => {
     this.ws?.close();
   }
 }
+
+let currentPartial = "";
+let commitTimer    = null;
 // ——————————————————————————————————————————————
 
 

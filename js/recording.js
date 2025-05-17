@@ -412,7 +412,7 @@ async function start(stream) {
     teardownSession();
     updateUI('idle');
   }
-}
+
 
 function handleStopClick() {
   // ── Scenario 2: user clicked Stop while paused (Resume button showing) ──

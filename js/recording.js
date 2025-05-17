@@ -202,39 +202,11 @@ const TURN_DETECTION_TYPE = "server_vad";
 
 
 
-const MIN_CHUNK_MS         = 10_000;   // 10 s lock-in before any cutoff
-const DEFAULT_SILENCE_MS   = 2_000;    // 2 s normal VAD threshold
-const MAX_CHUNK_MS         = 120_000;  // 2 min hard-stop window
-const MAX_CHUNK_SILENCE_MS =   200;    // 200 ms VAD after max chunk
-
-// — Timers to control when we update server VAD settings:
-let minChunkTimer = null;
-let maxChunkTimer = null;
-
-function updateVADConfig(newSilenceMs) {
-  const newConfig = {
-    input_audio_transcription: sessionConfig.input_audio_transcription,
-    turn_detection: {
-      type:               TURN_DETECTION_TYPE,
-      threshold:          sessionConfig.turn_detection.threshold,
-      prefix_padding_ms:  sessionConfig.turn_detection.prefix_padding_ms,
-      silence_duration_ms: newSilenceMs
-    }
-  };
-  const msg = { type: "transcription_session.update", session: newConfig };
-  if (session.ws?.readyState === WebSocket.OPEN) {
-    session.ws.send(JSON.stringify(msg));
-  } else {
-    session.sendMessage(msg);
-  }
-  sessionConfig = newConfig;
-}
-
-let session           = null;
-let sessionConfig     = null;
-let vadTime           = 0;
-let isStopping        = false;
-let mediaStream       = null;
+let session = null;
+let sessionConfig = null;
+let vadTime = 0;
+let isStopping = false;
+let mediaStream    = null; 
 
 // Possible states: 'idle', 'recording', 'paused', 'resuming', 'stopped'
 function updateUI(state) {
@@ -424,8 +396,7 @@ async function start(stream) {
       type: TURN_DETECTION_TYPE,
       threshold: 0.4,
       prefix_padding_ms: 400,
-     // hold off on VAD until at least 10 s lock-in
-      silence_duration_ms: MIN_CHUNK_MS 
+      silence_duration_ms: 2000
     }
   };
 
@@ -496,19 +467,6 @@ function handleMessage(parsed) {
     case "input_audio_buffer.speech_started":
   // user just started speaking: show “…” placeholder
   transcriptEl.value += "...";
-  // ── Reset any old timers ──
-  clearTimeout(minChunkTimer);
-  clearTimeout(maxChunkTimer);
-
-  // After 10 s, restore normal 2 s VAD
-  minChunkTimer = setTimeout(() => {
-    updateVADConfig(DEFAULT_SILENCE_MS);
-  }, MIN_CHUNK_MS);
-
-  // But if 2 min elapse, force a 200 ms cutoff
-  maxChunkTimer = setTimeout(() => {
-    updateVADConfig(MAX_CHUNK_SILENCE_MS);
-  }, MAX_CHUNK_MS);
    break;
     case "input_audio_buffer.speech_stopped":
   // VAD detected end-of-speech: turn “…” into “***”
@@ -547,25 +505,9 @@ function handleMessage(parsed) {
     updateUI('stopped');
     statusEl.textContent = "Ready to start again.";
   }
-  clearTimeout(minChunkTimer);
-  clearTimeout(maxChunkTimer);
   break;
 
-    // ── NEW: catch the final transcript payload ──
-    case "conversation.item.created":
-      // Only process user‐role, completed message items
-      if (
-        parsed.item.role === "user" &&
-        parsed.item.type === "message" &&
-        parsed.item.status === "completed" &&
-        parsed.item.content
-      ) {
-        // remove any trailing “…” or “***” placeholder
-        transcriptEl.value = transcriptEl.value.replace(/\.\.\.$|\*{3}$/, "");
-        // append the actual transcript text
-        transcriptEl.value += parsed.item.content + "\n";
-      }
-      break;
+
   }
 }
 

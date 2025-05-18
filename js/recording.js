@@ -52,6 +52,7 @@ proc.onaudioprocess = (evt) => {
   const bytes  = new Uint8Array(pcm16.buffer);
   let binary   = "";
   for (let b of bytes) binary += String.fromCharCode(b);
+  const b64 = btoa(binary);    // ← missing in your code
   // ─── Buffer this chunk for future replay ───────────────────────────
   ringBuffer.push(b64);
   if (ringBuffer.length > RING_BUFFER_MAX_CHUNKS) ringBuffer.shift();
@@ -306,15 +307,12 @@ function updateVADConfig(silenceMs) {
   if (!sessionConfig) return;
   sessionConfig.turn_detection.silence_duration_ms = silenceMs;
   const msg = { type: "transcription_session.update", session: sessionConfig };
-  // Broadcast to both sessions during overlap
-  [session, nextSession].forEach(s => {
-    if (!s) return;
-    if (s.ws?.readyState === WebSocket.OPEN) {
-      s.ws.send(JSON.stringify(msg));
-    } else if (typeof s.sendMessage === "function") {
-      s.sendMessage(msg);
-    }
-  });
+  // Send only to the active session
+  if (session.ws?.readyState === WebSocket.OPEN) {
+    session.ws.send(JSON.stringify(msg));
+  } else {
+    session.sendMessage(msg);
+  }
 }
 
  const transcriptEl      = document.getElementById("transcription");
@@ -469,7 +467,7 @@ function teardownSession() {
   clearTimeout(minChunkTimer);
   clearTimeout(maxChunkTimer);
   clearTimeout(rolloverTimer);
-  clearTimeout(overlapTimer);
+  clearTimeout(rolloverTimer);
   minChunkTimer = null;
   maxChunkTimer = null;
 

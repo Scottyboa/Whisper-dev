@@ -25,6 +25,16 @@ class WebSocketSession {
     session: sessionConfig
   }));
 
+      // ─── Schedule our adaptive‐chunk VAD updates ────────────────────────
+      minChunkTimer = setTimeout(
+        () => updateVADConfig(DEFAULT_SILENCE_DURATION_MS),
+        MIN_CHUNK_DURATION_MS
+      );
+      maxChunkTimer = setTimeout(
+        () => updateVADConfig(AGGRESSIVE_SILENCE_DURATION_MS),
+        MAX_CHUNK_DURATION_MS
+      );
+
 // ——— Raw PCM @24 kHz capture via AudioContext ———
 const audioCtx = new AudioContext({ sampleRate: 24000 });
 const source   = audioCtx.createMediaStreamSource(stream);
@@ -203,6 +213,19 @@ const MIN_CHUNK_DURATION_MS    = 10 * 1000;      // 10 seconds
 const MAX_CHUNK_DURATION_MS    = 2  * 60 * 1000; // 2 minutes
 const DEFAULT_SILENCE_DURATION_MS   = 2000;      // 2 seconds
 const AGGRESSIVE_SILENCE_DURATION_MS = 200;       // 200 ms
+
+// ─── Helper to push a new VAD config to the server ─────────────────────────
+function updateVADConfig(silenceMs) {
+  if (!sessionConfig) return;
+  sessionConfig.turn_detection.silence_duration_ms = silenceMs;
+  const msg = { type: "transcription_session.update", session: sessionConfig };
+  if (session.ws?.readyState === WebSocket.OPEN) {
+    session.ws.send(JSON.stringify(msg));
+  } else if (typeof session.sendMessage === "function") {
+    session.sendMessage(msg);
+  }
+}
+
  const transcriptEl      = document.getElementById("transcription");
  const startMicBtn       = document.getElementById("startButton");
  const stopBtn           = document.getElementById("stopButton");
@@ -424,28 +447,6 @@ async function start(stream) {
     // Once mic + websocket are fully active:
     updateUI('recording');         // enable Stop & Pause
 
-    // ─── Adaptive VAD updates ──────────────────────────────────────────────────
-    function updateVADConfig(silenceMs) {
-      sessionConfig.turn_detection.silence_duration_ms = silenceMs;
-      const msg = { type: "transcription_session.update", session: sessionConfig };
-      if (session.ws?.readyState === WebSocket.OPEN) {
-        session.ws.send(JSON.stringify(msg));
-      } else if (typeof session.sendMessage === 'function') {
-        session.sendMessage(msg);
-      }
-   }
-
-    // After 10 s, revert to default VAD (2 s silence)
-    minChunkTimer = setTimeout(
-      () => updateVADConfig(DEFAULT_SILENCE_DURATION_MS),
-      MIN_CHUNK_DURATION_MS
-    );
-
-    // After 2 min, force aggressive VAD (200 ms silence)
-    maxChunkTimer = setTimeout(
-      () => updateVADConfig(AGGRESSIVE_SILENCE_DURATION_MS),
-      MAX_CHUNK_DURATION_MS
-    );
   } catch (err) {
     alert("Connection error: " + err.message);
     teardownSession();

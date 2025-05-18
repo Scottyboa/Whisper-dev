@@ -228,6 +228,20 @@ let handshakeStart = null;
 let handshakeMs    = null;
 let rolloverTimer  = null;
 
+// ─── Helper: wait for a specific WS event (e.g. commit-completed) ────
+function waitForEvent(ws, eventType) {
+  return new Promise(resolve => {
+    const listener = messageEvent => {
+      const evt = JSON.parse(messageEvent.data);
+      if (evt.type === eventType) {
+        ws.removeEventListener('message', listener);
+        resolve(evt);
+      }
+    };
+    ws.addEventListener('message', listener);
+  });
+}
+
 // ─── Ring buffer for the last ~2 s of raw PCM frames ─────────────────────
 // 4096 samples @24 kHz ≈ 0.17 s per chunk → buffer ≈12 chunks for 2 s
 const RING_BUFFER_MAX_CHUNKS = Math.ceil(2000 / (4096/24000*1000));
@@ -286,7 +300,11 @@ function scheduleRollover() {
 
 // ─── Perform a parallel‐stream session swap ───────────────────────────────
 async function doRollover() {
-  // 1) Tear down the old session
+  // 1️⃣ Commit any in-flight audio on the old session…
+  session.ws.send(JSON.stringify({ type: "input_audio_buffer.commit" }));
+  // 2️⃣ …and wait for the server to emit the “.completed” event
+  await waitForEvent(session.ws, "conversation.item.input_audio_transcription.completed");
+  // 3️⃣ Now it’s safe to stop the old session without dropping audio
   session.stop();
 
   // 2) Spin up a brand-new one, replaying the buffer automatically in onopen

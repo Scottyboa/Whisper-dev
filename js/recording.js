@@ -520,33 +520,25 @@ function handleStopClick() {
   // Start enabled; Stop & Pause disabled
   updateUI('stopped');
 
-  // Check VAD to see if we need to commit a final chunk
-    // Decide by whether transcript ends in "..." or "***"
-  const endsWithDelta    = /\.{3}$/.test(transcriptEl.value);
-  const endsWithComplete = /\*{3}$/.test(transcriptEl.value);
+  // 1) flip the UI into “stopped” mode
+  isStopping = true;
+  updateUI('stopped');
 
-  if (!endsWithDelta && !endsWithComplete) {
-    // Scenario A: no pending chunk at end → immediate teardown
+  // 2) always commit any in-flight audio
+  const commitEvt = { type: "input_audio_buffer.commit" };
+  if (session.ws?.readyState === WebSocket.OPEN) {
+    session.ws.send(JSON.stringify(commitEvt));
+  } else {
+    session.sendMessage(commitEvt);
+  }
+
+  // 3) stop the mic after a short delay (give the commit time to round-trip)
+  setTimeout(() => {
     mediaStream.getTracks().forEach(t => t.stop());
     mediaStream = null;
-    session.stop();
-    session = null;
-    isStopping = false;
-  } else {
-    // Scenario B: chunk pending at end → commit then delayed mic stop
-    const commitEvt = { type: "input_audio_buffer.commit" };
-    if (session.ws?.readyState === WebSocket.OPEN) {
-      session.ws.send(JSON.stringify(commitEvt));
-    } else {
-      session.sendMessage(commitEvt);
-    }
-    setTimeout(() => {
-      mediaStream.getTracks().forEach(t => t.stop());
-      mediaStream = null;
-    }, 1000);
-    statusEl.textContent = "Stopping…";
-    // Final teardown & UI reset happen in your handleMessage() isStopping branch
-  }
+  }, 1000);
+  statusEl.textContent = "Stopping…";
+  // final session.stop()/teardown happens when you catch the completed event
 }
 
  

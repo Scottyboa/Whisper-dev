@@ -65,7 +65,12 @@ proc.onaudioprocess = (evt) => {
     };
     this.ws.onerror = err => this.onerror?.(err);
   }
-
+  // ─── allow the same sendMessage(...) calls as the RTC Session class
+  sendMessage(message) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(message));
+    }
+  }
   stop() {
     this.ws?.close();
   }
@@ -499,7 +504,7 @@ function handleMessage(parsed) {
   console.log("🛰 WS event:", parsed);
   switch (parsed.type) {
     case "transcription_session.created":
-      sessionConfig = parsed.session;
+      // ← don’t overwrite our original config (it would pull in parsed.session.id)
       break;
     case "input_audio_buffer.speech_started":
   // user just started speaking: show “…” placeholder

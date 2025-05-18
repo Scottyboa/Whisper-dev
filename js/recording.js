@@ -7,7 +7,11 @@ let activeSession    = null;
 
 // Send a PCM chunk to whichever session is active
 function sendAudioChunk(pcm16) {
-  if (!activeSession) return;
+  // only if there’s an open socket
+  if (
+    !activeSession ||
+    activeSession.ws.readyState !== WebSocket.OPEN
+  ) return;
   const bytes = new Uint8Array(pcm16.buffer);
   let bin = "";
   for (let b of bytes) bin += String.fromCharCode(b);
@@ -252,6 +256,12 @@ function scheduleRollover() {
 
 // ─── Perform a parallel‐stream session swap ───────────────────────────────
 async function doRollover() {
+  // 0) tell the old session to flush its final chunk
+  if (session?.ws?.readyState === WebSocket.OPEN) {
+    session.ws.send(JSON.stringify({
+      type: "input_audio_buffer.commit"
+    }));
+  }
   // 1) Spin up the next session in background
   const apiKey = sessionStorage.getItem("user_api_key");
   nextSession = new WebSocketSession(apiKey);
@@ -472,6 +482,10 @@ function teardownSession() {
   isPausing  = false;
   // 4) Restore Pause button to its default label
   pauseBtn.textContent = "Pause Recording";
+  // stop routing any more audio
+  activeSession = null;
+  // clear any buffered frames too
+  audioRingBuffer = [];
 }
 
 // --- Step 2: Enhanced Start Logic ---

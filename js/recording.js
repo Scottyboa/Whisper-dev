@@ -25,16 +25,6 @@ class WebSocketSession {
     session: sessionConfig
   }));
 
-      // ─── Schedule our adaptive‐chunk VAD updates ────────────────────────
-      minChunkTimer = setTimeout(
-        () => updateVADConfig(DEFAULT_SILENCE_DURATION_MS),
-        MIN_CHUNK_DURATION_MS
-      );
-      maxChunkTimer = setTimeout(
-        () => updateVADConfig(AGGRESSIVE_SILENCE_DURATION_MS),
-        MAX_CHUNK_DURATION_MS
-      );
-
 // ——— Raw PCM @24 kHz capture via AudioContext ———
 const audioCtx = new AudioContext({ sampleRate: 24000 });
 const source   = audioCtx.createMediaStreamSource(stream);
@@ -214,16 +204,68 @@ const MAX_CHUNK_DURATION_MS    = 2  * 60 * 1000; // 2 minutes
 const DEFAULT_SILENCE_DURATION_MS   = 2000;      // 2 seconds
 const AGGRESSIVE_SILENCE_DURATION_MS = 200;       // 200 ms
 
-// ─── Helper to push a new VAD config to the server ─────────────────────────
+// ─── Helper to push a new VAD config … (etc) …
+
+// ─── Rollover session constants & state ───────────────────────────────────
+const SESSION_MAX_MS      = 10  * 60 * 1000;  // 10 min hard cap
+const ROLLOVER_BASE_MS    =  8  * 60 * 1000;  // start overlap at 8 min
+const HANDSHAKE_SAFETY_MS =        2000;     // 2 s buffer margin
+const OVERLAP_DURATION_MS =        2000;     // 2 s parallel stream
+
+// Rollover state
+let handshakeStart = null;
+let handshakeMs    = null;
+let rolloverTimer  = null;
+let overlapTimer   = null;
+let nextSession    = null
+
+// ─── Schedule the next rollover based on measured handshake ───────────────
+function scheduleRollover() {
+  const delay = Math.max(
+    0,
+    ROLLOVER_BASE_MS - handshakeMs - HANDSHAKE_SAFETY_MS
+  );
+  rolloverTimer = setTimeout(doRollover, delay);
+}
+
+// ─── Perform a parallel‐stream session swap ───────────────────────────────
+async function doRollover() {
+  // 1) Spin up the next session in background
+  const apiKey = sessionStorage.getItem("user_api_key");
+  nextSession = new WebSocketSession(apiKey);
+  nextSession.onmessage = handleMessage;
+  nextSession.onerror   = handleError;
+
+  // Prepare to measure its handshake too
+  handshakeStart = performance.now();
+  handshakeMs    = null;
+
+  // Start sending audio to the new session
+  await nextSession.startTranscription(mediaStream, sessionConfig);
+
+  // 2) After OVERLAP_DURATION_MS, retire the old session
+  overlapTimer = setTimeout(() => {
+    session.stop();
+    session = nextSession;
+    nextSession = null;
+    // when this new session emits "transcription_session.created",
+    // scheduleRollover() will fire again for the next cycle.
+  }, OVERLAP_DURATION_MS);
+}
+
 function updateVADConfig(silenceMs) {
   if (!sessionConfig) return;
   sessionConfig.turn_detection.silence_duration_ms = silenceMs;
   const msg = { type: "transcription_session.update", session: sessionConfig };
-  if (session.ws?.readyState === WebSocket.OPEN) {
-    session.ws.send(JSON.stringify(msg));
-  } else if (typeof session.sendMessage === "function") {
-    session.sendMessage(msg);
-  }
+  // Broadcast to both sessions during overlap
+  [session, nextSession].forEach(s => {
+    if (!s) return;
+    if (s.ws?.readyState === WebSocket.OPEN) {
+      s.ws.send(JSON.stringify(msg));
+    } else if (typeof s.sendMessage === "function") {
+      s.sendMessage(msg);
+    }
+  });
 }
 
  const transcriptEl      = document.getElementById("transcription");
@@ -372,6 +414,8 @@ function teardownSession() {
   // Clear any pending VAD‐update timers
   clearTimeout(minChunkTimer);
   clearTimeout(maxChunkTimer);
+  clearTimeout(rolloverTimer);
+  clearTimeout(overlapTimer);
   minChunkTimer = null;
   maxChunkTimer = null;
 
@@ -443,7 +487,13 @@ async function start(stream) {
   };
 
   try {
-        await session.startTranscription(stream, sessionConfig);
+   // ─── Begin handshake timer & clear any prior rollover ───────────────
+    handshakeStart = performance.now();
+    handshakeMs    = null;
+    clearTimeout(rolloverTimer);
+    clearTimeout(overlapTimer);
+
+    await session.startTranscription(stream, sessionConfig);
     // Once mic + websocket are fully active:
     updateUI('recording');         // enable Stop & Pause
 
@@ -504,13 +554,37 @@ function handleStopClick() {
 function handleMessage(parsed) {
   console.log("🛰 WS event:", parsed);
   switch (parsed.type) {
-    case "transcription_session.created":
-      // ← don’t overwrite our original config (it would pull in parsed.session.id)
+     case "transcription_session.created":
+      // don’t overwrite our config; measure handshake & schedule rollover
+      if (handshakeStart !== null && handshakeMs === null) {
+        handshakeMs = performance.now() - handshakeStart;
+        scheduleRollover();
+      }
       break;
     case "input_audio_buffer.speech_started":
-  // user just started speaking: show “…” placeholder
-  transcriptEl.value += "...";
-   break;
+      // user just started speaking: show “…” placeholder
+      transcriptEl.value += "...";
+
+      // ─── Reset and start our per‐chunk timers ─────────────────────────
+      clearTimeout(minChunkTimer);
+      clearTimeout(maxChunkTimer);
+
+      // 1) Block VAD until minimum chunk length (10 s of silence required)
+      updateVADConfig(MIN_CHUNK_DURATION_MS);
+
+      // 2) After 10 s, revert to normal 2 s‐silence cutoff
+      minChunkTimer = setTimeout(
+        () => updateVADConfig(DEFAULT_SILENCE_DURATION_MS),
+        MIN_CHUNK_DURATION_MS
+      );
+
+      // 3) Failsafe: after 2 min total, force aggressive 200 ms cutoff
+      maxChunkTimer = setTimeout(
+        () => updateVADConfig(AGGRESSIVE_SILENCE_DURATION_MS),
+        MAX_CHUNK_DURATION_MS
+      );
+
+      break;
     case "input_audio_buffer.speech_stopped":
   // VAD detected end-of-speech: turn “…” into “***”
   transcriptEl.value = transcriptEl.value.replace(/\.{3}(?!.*\.{3})/, "***");

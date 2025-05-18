@@ -8,7 +8,7 @@ class WebSocketSession {
     this.ws = null;
   }
 
-  async startTranscription(stream, sessionConfig) {
+  async startTranscription(stream, sessionConfig, autoStream = true) {
     const url = "wss://api.openai.com/v1/realtime?intent=transcription";
     this.ws = new WebSocket(url, [
       "realtime",
@@ -25,45 +25,19 @@ class WebSocketSession {
     session: sessionConfig
   }));
 
-  // ─── Replay buffered frames so we don’t lose the last ~2 s ──────────
-  for (let frame of ringBuffer) {
-    this.ws.send(JSON.stringify({
-      type: "input_audio_buffer.append",
-      audio: frame
-    }));
-  }
+      // only replay + attach mic if we’re actually “live”
+      if (autoStream) {
+        // replay buffered frames (≈2 s)…
+        for (let frame of ringBuffer) {
+          this.ws.send(JSON.stringify({
+            type: "input_audio_buffer.append",
+            audio: frame
+          }));
+        }
 
-// ——— Raw PCM @24 kHz capture via AudioContext ———
-const audioCtx = new AudioContext({ sampleRate: 24000 });
-const source   = audioCtx.createMediaStreamSource(stream);
-const proc     = audioCtx.createScriptProcessor(4096, 1, 1);
-source.connect(proc);
-proc.connect(audioCtx.destination);
-
-proc.onaudioprocess = (evt) => {
-  // 1) Float32 → Int16
-  const float32 = evt.inputBuffer.getChannelData(0);
-  const pcm16   = new Int16Array(float32.length);
-  for (let i = 0; i < float32.length; i++) {
-    const s = Math.max(-1, Math.min(1, float32[i]));
-    pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-  }
-  // 2) Base64‐encode
-  const bytes  = new Uint8Array(pcm16.buffer);
-  let binary   = "";
-  for (let b of bytes) binary += String.fromCharCode(b);
-  const b64 = btoa(binary);    // ← missing in your code
-  // ─── Buffer this chunk for future replay ───────────────────────────
-  ringBuffer.push(b64);
-  if (ringBuffer.length > RING_BUFFER_MAX_CHUNKS) ringBuffer.shift();
-  // 3) Send as append event
-  if (this.ws.readyState === WebSocket.OPEN) {
-    this.ws.send(JSON.stringify({
-      type: "input_audio_buffer.append",
-      audio: b64
-    }));
-  }
-};
+        // and now hook up the live mic → server
+        this.attachMediaStream(stream);
+      }
 // ————————————————————————————————————————
 };
 
@@ -76,6 +50,43 @@ proc.onaudioprocess = (evt) => {
     };
     this.ws.onerror = err => this.onerror?.(err);
   }
+
+   /**
+    * Attach a live MediaStream to this.ws,
+    * encoding + sending PCM chunks exactly as before.
+    */
+   attachMediaStream(stream) {
+     const audioCtx = new AudioContext({ sampleRate: 24000 });
+     const source   = audioCtx.createMediaStreamSource(stream);
+     const proc     = audioCtx.createScriptProcessor(4096, 1, 1);
+     source.connect(proc);
+     proc.connect(audioCtx.destination);
+
+     proc.onaudioprocess = (evt) => {
+       // 1) Float32 → Int16 → base64
+       const float32 = evt.inputBuffer.getChannelData(0);
+       const pcm16   = new Int16Array(float32.length);
+       for (let i = 0; i < float32.length; i++) {
+         const s = Math.max(-1, Math.min(1, float32[i]));
+         pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+       }
+       const bytes = new Uint8Array(pcm16.buffer);
+       let binary = "";
+       for (let b of bytes) binary += String.fromCharCode(b);
+       const b64 = btoa(binary);
+
+       // 2) Buffer & send
+       ringBuffer.push(b64);
+       if (ringBuffer.length > RING_BUFFER_MAX_CHUNKS) ringBuffer.shift();
+       if (this.ws.readyState === WebSocket.OPEN) {
+         this.ws.send(JSON.stringify({
+           type: "input_audio_buffer.append",
+           audio: b64
+         }));
+       }
+     };
+   }
+
   // ─── allow the same sendMessage(...) calls as the RTC Session class
   sendMessage(message) {
     if (this.ws?.readyState === WebSocket.OPEN) {
@@ -227,6 +238,9 @@ const OVERLAP_DURATION_MS =        2000;     // 2 s parallel stream
 let handshakeStart = null;
 let handshakeMs    = null;
 let rolloverTimer  = null;
+// ─── New state for pre-handshake & swap ─────────────────────────────
+let handshakeTimer = null;    // to kick off the “warm” session early
+let newSession     = null;    // placeholder for our soon-to-be-live session
 
 // ─── Helper: wait for a specific WS event (e.g. commit-completed) ────
 function waitForEvent(ws, eventType) {
@@ -291,6 +305,24 @@ function stopRecordTimer() {
 
 // ─── Schedule the next rollover based on measured handshake ───────────────
 function scheduleRollover() {
+  // 1️⃣  Start the “warm” session a little early (no audio yet)
+  const preStartDelay = Math.max(
+    0,
+    ROLLOVER_BASE_MS
+    - handshakeMs
+    - HANDSHAKE_SAFETY_MS
+    - OVERLAP_DURATION_MS
+  );
+  handshakeTimer = setTimeout(() => {
+    const apiKey = sessionStorage.getItem("user_api_key");
+    newSession = new WebSocketSession(apiKey);
+    newSession.onmessage = handleMessage;
+    newSession.onerror   = handleError;
+    // handshake + session.update, but no audio until swap
+    newSession.startTranscription(mediaStream, sessionConfig, false);
+  }, preStartDelay);
+
+  // 2️⃣  Schedule the actual swap at the 8 min mark
   const delay = Math.max(
     0,
     ROLLOVER_BASE_MS - handshakeMs - HANDSHAKE_SAFETY_MS
@@ -300,25 +332,32 @@ function scheduleRollover() {
 
 // ─── Perform a parallel‐stream session swap ───────────────────────────────
 async function doRollover() {
-  // 1️⃣ Commit any in-flight audio on the old session…
+  // 1️⃣ Finalize & close the old session
   session.ws.send(JSON.stringify({ type: "input_audio_buffer.commit" }));
   // 2️⃣ …and wait for the server to emit the “.completed” event
   await waitForEvent(session.ws, "conversation.item.input_audio_transcription.completed");
   // 3️⃣ Now it’s safe to stop the old session without dropping audio
   session.stop();
 
-  // 2) Spin up a brand-new one, replaying the buffer automatically in onopen
-  const apiKey = sessionStorage.getItem("user_api_key");
-  session = new WebSocketSession(apiKey);
-  session.onmessage = handleMessage;
-  session.onerror   = handleError;
+  // 2️⃣ Activate the already-handshaken session:
+  //    a) replay buffered audio into newSession…
+  for (let frame of ringBuffer) {
+    newSession.ws.send(JSON.stringify({
+      type: "input_audio_buffer.append",
+      audio: frame
+    }));
+  }
+  //    b) then start live mic → newSession
+  newSession.attachMediaStream(mediaStream);
 
-  // reset handshake measurement
+  // 3️⃣ Switch over & reset
+  session        = newSession;
+  newSession     = null;
   handshakeStart = performance.now();
   handshakeMs    = null;
 
-  // start the fresh session
-  await session.startTranscription(mediaStream, sessionConfig);
+  // 4️⃣ Ready for the next rollover cycle
+  scheduleRollover();
 }
 
 function updateVADConfig(silenceMs) {

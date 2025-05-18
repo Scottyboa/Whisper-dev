@@ -194,6 +194,10 @@ class Session {
 const APP_PREFIX        = "realtime/transcribe/";
 const MODEL = "gpt-4o-transcribe";
 const TURN_DETECTION_TYPE = "server_vad";
+const MIN_CHUNK_DURATION_MS    = 10 * 1000;      // 10 seconds
+const MAX_CHUNK_DURATION_MS    = 2  * 60 * 1000; // 2 minutes
+const DEFAULT_SILENCE_DURATION_MS   = 2000;      // 2 seconds
+const AGGRESSIVE_SILENCE_DURATION_MS = 200;       // 200 ms
  const transcriptEl      = document.getElementById("transcription");
  const startMicBtn       = document.getElementById("startButton");
  const stopBtn           = document.getElementById("stopButton");
@@ -207,6 +211,9 @@ let sessionConfig = null;
 let vadTime = 0;
 let isStopping = false;
 let mediaStream    = null; 
+let minChunkTimer = null;
+let maxChunkTimer = null;
+
 
 // Possible states: 'idle', 'recording', 'paused', 'resuming', 'stopped'
 function updateUI(state) {
@@ -334,7 +341,13 @@ function handlePauseClick() {
 
 // --- New teardown helper to reset any existing session/microphone ---
 function teardownSession() {
-  // 1) Stop & clear any session
+  // Clear any pending VAD‐update timers
+  clearTimeout(minChunkTimer);
+  clearTimeout(maxChunkTimer);
+  minChunkTimer = null;
+  maxChunkTimer = null;
+
+ // 1) Stop & clear any session
   if (session) {
     session.stop();
     session = null;
@@ -392,18 +405,42 @@ async function start(stream) {
   // Configure transcription
   sessionConfig = {
     input_audio_transcription: { model: MODEL },
-    turn_detection: {
+        turn_detection: {
       type: TURN_DETECTION_TYPE,
       threshold: 0.4,
       prefix_padding_ms: 400,
-      silence_duration_ms: 2000
+      // initial high threshold to block VAD for first 10 s
+      silence_duration_ms: MIN_CHUNK_DURATION_MS + DEFAULT_SILENCE_DURATION_MS
     }
   };
 
   try {
-    await session.startTranscription(stream, sessionConfig);
+        await session.startTranscription(stream, sessionConfig);
     // Once mic + websocket are fully active:
     updateUI('recording');         // enable Stop & Pause
+
+    // ─── Adaptive VAD updates ──────────────────────────────────────────────────
+    function updateVADConfig(silenceMs) {
+      sessionConfig.turn_detection.silence_duration_ms = silenceMs;
+      const msg = { type: "transcription_session.update", session: sessionConfig };
+      if (session.ws?.readyState === WebSocket.OPEN) {
+        session.ws.send(JSON.stringify(msg));
+      } else if (typeof session.sendMessage === 'function') {
+        session.sendMessage(msg);
+      }
+   }
+
+    // After 10 s, revert to default VAD (2 s silence)
+    minChunkTimer = setTimeout(
+      () => updateVADConfig(DEFAULT_SILENCE_DURATION_MS),
+      MIN_CHUNK_DURATION_MS
+    );
+
+    // After 2 min, force aggressive VAD (200 ms silence)
+    maxChunkTimer = setTimeout(
+      () => updateVADConfig(AGGRESSIVE_SILENCE_DURATION_MS),
+      MAX_CHUNK_DURATION_MS
+    );e
   } catch (err) {
     alert("Connection error: " + err.message);
     teardownSession();

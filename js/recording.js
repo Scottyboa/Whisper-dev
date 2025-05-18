@@ -217,7 +217,49 @@ let handshakeStart = null;
 let handshakeMs    = null;
 let rolloverTimer  = null;
 let overlapTimer   = null;
-let nextSession    = null
+let nextSession    = null;
+
+
+// ─── Recording-timer state & helpers ─────────────────────────────────────
+let recordTimerInterval = null;
+let recordStartTime     = null;
+let recordElapsedMs     = 0;
+const recordTimerElem   = document.getElementById("recordTimer");  // :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
+
+function formatTimeFull(ms) {
+  const totalSec = Math.floor(ms/1000);
+  const hours    = Math.floor(totalSec/3600);
+  const mins     = Math.floor((totalSec % 3600)/60);
+  const secs     = totalSec % 60;
+  let parts = [];
+  if (hours) parts.push(hours + " hour" + (hours>1?"s":""));
+  if (mins  || hours) parts.push(mins  + " min"  + (mins!==1?"s":""));
+  parts.push(secs + " sec");
+  return parts.join(" ");
+}
+
+function updateRecordTimer() {
+  const elapsed = recordElapsedMs + (Date.now() - recordStartTime);
+  recordTimerElem.textContent = "Recording Timer: " + formatTimeFull(elapsed);
+}
+
+function startRecordTimer(reset = false) {
+  if (reset) recordElapsedMs = 0;
+  recordStartTime = Date.now();
+  clearInterval(recordTimerInterval);
+  updateRecordTimer();
+  recordTimerInterval = setInterval(updateRecordTimer, 1000);
+}
+
+function stopRecordTimer() {
+  clearInterval(recordTimerInterval);
+ if (recordStartTime) {
+    recordElapsedMs += Date.now() - recordStartTime;
+    recordStartTime = null;
+  }
+}
+
+
 
 // ─── Schedule the next rollover based on measured handshake ───────────────
 function scheduleRollover() {
@@ -357,6 +399,8 @@ let isPausing = false;
    // 2) Re-use your start() helper to re-open websocket & resume transcription
    try {
      await start(stream);
+     // resume timer (preserves past elapsed)
+    startRecordTimer(false);
    } catch (err) {
      alert("Connection error: " + err.message);
      teardownSession();
@@ -366,6 +410,9 @@ let isPausing = false;
 
 // 4B) Pause logic (now also detects Resume)
 function handlePauseClick() {
+  // stop UI timer on Pause
+  stopRecordTimer();
+
   // If already paused, delegate to Resume
   if (pauseBtn.textContent === "Resume Recording") {
     return handleResumeClick();
@@ -423,7 +470,10 @@ function teardownSession() {
   maxChunkTimer = null;
 
 
-   // 1) Stop & clear both sessions (primary + any “next” warm‐up)
+   // 0) Stop UI timer if running
+  stopRecordTimer();
+  
+  // 1) Stop & clear any session)
   if (session) {
     session.stop();
     session = null;
@@ -461,6 +511,8 @@ async function startMicrophone() {
   }
   mediaStream = stream;
   await start(stream);
+  // Fresh run: reset & start UI timer at 0
+  startRecordTimer(true);
 }
 
 async function start(stream) {
@@ -513,7 +565,10 @@ async function start(stream) {
 }
 
 function handleStopClick() {
-  // ── Scenario 2: user clicked Stop while paused (Resume button showing) ──
+  // stop our UI timer (freeze at current value)
+  stopRecordTimer();
+
+  // ── Scenario 2: user clicked Stop while paused ...
   if (pauseBtn.textContent === "Resume Recording") {
     // No extra teardown needed (already disconnected on Pause)
     // Reset UI to Idle/Stopped

@@ -25,6 +25,14 @@ class WebSocketSession {
     session: sessionConfig
   }));
 
+  // ─── Replay buffered frames so we don’t lose the last ~2 s ──────────
+  for (let frame of ringBuffer) {
+    this.ws.send(JSON.stringify({
+      type: "input_audio_buffer.append",
+      audio: frame
+    }));
+  }
+
 // ——— Raw PCM @24 kHz capture via AudioContext ———
 const audioCtx = new AudioContext({ sampleRate: 24000 });
 const source   = audioCtx.createMediaStreamSource(stream);
@@ -44,7 +52,9 @@ proc.onaudioprocess = (evt) => {
   const bytes  = new Uint8Array(pcm16.buffer);
   let binary   = "";
   for (let b of bytes) binary += String.fromCharCode(b);
-  const b64    = btoa(binary);
+  // ─── Buffer this chunk for future replay ───────────────────────────
+  ringBuffer.push(b64);
+  if (ringBuffer.length > RING_BUFFER_MAX_CHUNKS) ringBuffer.shift();
   // 3) Send as append event
   if (this.ws.readyState === WebSocket.OPEN) {
     this.ws.send(JSON.stringify({
@@ -216,8 +226,11 @@ const OVERLAP_DURATION_MS =        2000;     // 2 s parallel stream
 let handshakeStart = null;
 let handshakeMs    = null;
 let rolloverTimer  = null;
-let overlapTimer   = null;
-let nextSession    = null;
+
+// ─── Ring buffer for the last ~2 s of raw PCM frames ─────────────────────
+// 4096 samples @24 kHz ≈ 0.17 s per chunk → buffer ≈12 chunks for 2 s
+const RING_BUFFER_MAX_CHUNKS = Math.ceil(2000 / (4096/24000*1000));
+let ringBuffer = [];
 
 
 // ─── Recording-timer state & helpers ─────────────────────────────────────
@@ -272,27 +285,21 @@ function scheduleRollover() {
 
 // ─── Perform a parallel‐stream session swap ───────────────────────────────
 async function doRollover() {
-  // 1) Spin up the next session in background
-  const apiKey = sessionStorage.getItem("user_api_key");
-  nextSession = new WebSocketSession(apiKey);
-  nextSession.onmessage = handleMessage;
-  nextSession.onerror   = handleError;
+  // 1) Tear down the old session
+  session.stop();
 
-  // Prepare to measure its handshake too
+  // 2) Spin up a brand-new one, replaying the buffer automatically in onopen
+  const apiKey = sessionStorage.getItem("user_api_key");
+  session = new WebSocketSession(apiKey);
+  session.onmessage = handleMessage;
+  session.onerror   = handleError;
+
+  // reset handshake measurement
   handshakeStart = performance.now();
   handshakeMs    = null;
 
-  // Start sending audio to the new session
-  await nextSession.startTranscription(mediaStream, sessionConfig);
-
-  // 2) After OVERLAP_DURATION_MS, retire the old session
-  overlapTimer = setTimeout(() => {
-    session.stop();
-    session = nextSession;
-    nextSession = null;
-    // when this new session emits "transcription_session.created",
-    // scheduleRollover() will fire again for the next cycle.
-  }, OVERLAP_DURATION_MS);
+  // start the fresh session
+  await session.startTranscription(mediaStream, sessionConfig);
 }
 
 function updateVADConfig(silenceMs) {
@@ -440,14 +447,11 @@ function handlePauseClick() {
   } else {
     // Scenario B: pending chunk → commit then delayed mic stop
     const commitEvt = { type: "input_audio_buffer.commit" };
-      [session, nextSession].forEach(s => {
-      if (!s) return;
-      if (s.ws?.readyState === WebSocket.OPEN) {
-        s.ws.send(JSON.stringify(commitEvt));
-      } else if (typeof s.sendMessage === "function") {
-        s.sendMessage(commitEvt);
-      }
-    });
+    if (session.ws?.readyState === WebSocket.OPEN) {
+      session.ws.send(JSON.stringify(commitEvt));
+    } else {
+      session.sendMessage(commitEvt);
+    }
     setTimeout(() => {
        mediaStream.getTracks().forEach(t => t.stop());
        mediaStream = null;
@@ -477,10 +481,6 @@ function teardownSession() {
   if (session) {
     session.stop();
     session = null;
-  }
-  if (nextSession) {
-    nextSession.stop();
-    nextSession = null;
   }
   // 2) Stop & clear microphone
   if (mediaStream) {
@@ -598,14 +598,11 @@ function handleStopClick() {
   } else {
     // Scenario B: chunk pending at end → commit then delayed mic stop
     const commitEvt = { type: "input_audio_buffer.commit" };
-    // send commit to both sessions
-    [session, nextSession].forEach(s => {
-      if (!s) return;
-      if (s.ws?.readyState === WebSocket.OPEN) {
-        s.ws.send(JSON.stringify(commitEvt));
-      } else if (typeof s.sendMessage === "function") {
-        s.sendMessage(commitEvt);
-      }
+    if (session.ws?.readyState === WebSocket.OPEN) {
+      session.ws.send(JSON.stringify(commitEvt));
+    } else {
+      session.sendMessage(commitEvt);
+    }
     });
     setTimeout(() => {
       mediaStream.getTracks().forEach(t => t.stop());

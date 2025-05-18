@@ -410,7 +410,7 @@ async function start(stream) {
       threshold: 0.4,
       prefix_padding_ms: 400,
       // initial high threshold to block VAD for first 10 s
-      silence_duration_ms: MIN_CHUNK_DURATION_MS + DEFAULT_SILENCE_DURATION_MS
+      silence_duration_ms: MIN_CHUNK_DURATION_MS
     }
   };
 

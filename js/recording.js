@@ -1,5 +1,79 @@
 // js/recording.js
 
+ // ─ Shared AudioWorklet Pipeline for Zero-Gap Rollover ─
+ const RING_BUFFER_MAX_CHUNKS = Math.ceil(2000 / (512/48000*1000)); // ~2 s @ 48 kHz
+ let ringBuffer = [];            // holds base64 PCM frames
+ let activeSession = null;
+ let audioCtx, workletNode, mediaStream;
+
+ // 1) Inline PCM worklet code via Blob
+ const pcmWorkletCode = `
+   class PCMProcessor extends AudioWorkletProcessor {
+     process(inputs) {
+       const inBuf = inputs[0][0];
+       if (!inBuf) return true;
+       const pcm16 = new Int16Array(inBuf.length);
+       for (let i = 0; i < inBuf.length; i++) {
+         const s = Math.max(-1, Math.min(1, inBuf[i]));
+         pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+       }
+       this.port.postMessage(pcm16);
+       return true;
+     }
+   }
+   registerProcessor('pcm-processor', PCMProcessor);
+ `;
+
+ // 2) Initialize AudioContext + Worklet
+ (async function initAudioPipeline() {
+   audioCtx = new AudioContext({ sampleRate: 48000 });
+   const blob = new Blob([pcmWorkletCode], { type: 'application/javascript' });
+   await audioCtx.audioWorklet.addModule(URL.createObjectURL(blob));
+   workletNode = new AudioWorkletNode(audioCtx, 'pcm-processor', {
+     processorOptions: { bufferSize: 512 }
+   });
+   workletNode.port.onmessage = evt => {
+     const pcm16 = evt.data;
+     const b64 = btoa(String.fromCharCode(...new Uint8Array(pcm16.buffer)));
+     // maintain ring buffer
+     ringBuffer.push(b64);
+     if (ringBuffer.length > RING_BUFFER_MAX_CHUNKS) ringBuffer.shift();
+     // live-send to active session
+     if (activeSession?.ws?.readyState === WebSocket.OPEN) {
+       activeSession.ws.send(JSON.stringify({
+         type: "input_audio_buffer.append",
+         audio: b64
+       }));
+     }
+   };
+ })();
+
+ // Switch sessions and replay buffered audio
+ function setActiveSession(session) {
+   activeSession = session;
+   if (session?.ws?.readyState === WebSocket.OPEN) {
+     for (let frame of ringBuffer) {
+       session.ws.send(JSON.stringify({
+         type: "input_audio_buffer.append",
+         audio: frame
+       }));
+     }
+   }
+ }
+
+ // Start/stop mic → worklet
+ async function startCapture() {
+   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+   const src = audioCtx.createMediaStreamSource(stream);
+   src.connect(workletNode);
+   workletNode.connect(audioCtx.destination);
+   return stream;
+ }
+ function stopCapture(stream) {
+   stream.getTracks().forEach(t => t.stop());
+ }
+ // ─ End pipeline setup ─
+
 // --- Session class for Realtime Transcription ---
 // ——— WebSocket-based fallback for firewalled networks ———
 class WebSocketSession {
@@ -332,39 +406,18 @@ function scheduleRollover() {
 }
 
 // ─── Perform a parallel‐stream session swap ───────────────────────────────
-async function doRollover() {
-  // 1️⃣ Finalize & close the old session
-  session.ws.send(JSON.stringify({ type: "input_audio_buffer.commit" }));
-  // 2️⃣ …and wait for the server to emit the “.completed” event
-  await waitForEvent(session.ws, "conversation.item.input_audio_transcription.completed");
-  // 3️⃣ Now it’s safe to stop the old session without dropping audio
-  session.stop();
-
- // 2️⃣ Wait for the new session to be open
- if (newSession.ws.readyState !== WebSocket.OPEN) {
-   await new Promise(resolve => newSession.ws.addEventListener("open", resolve));
+ async function doRollover() {
+   // Pre-handshake of newSession must be done elsewhere...
+   await waitForEvent(newSession.ws, 'open');
+   // 1) Replay & switch live to newSession
+   setActiveSession(newSession);
+   // 2) Tear down old WS
+   session.stop();
+   session = newSession;
+   newSession = null;
+   handshakeStart = performance.now();
+   scheduleRollover();
  }
-
-  // 2️⃣ Activate the already-handshaken session:
-  //    a) replay buffered audio into newSession…
-  for (let frame of ringBuffer) {
-    newSession.ws.send(JSON.stringify({
-      type: "input_audio_buffer.append",
-      audio: frame
-    }));
-  }
-  //    b) then start live mic → newSession
-  newSession.attachMediaStream(mediaStream);
-
-  // 3️⃣ Switch over & reset
-  session        = newSession;
-  newSession     = null;
-  handshakeStart = performance.now();
-  handshakeMs    = null;
-
-  // 4️⃣ Ready for the next rollover cycle
-  scheduleRollover();
-}
 
 function updateVADConfig(silenceMs) {
   if (!sessionConfig) return;
@@ -525,55 +578,30 @@ function handlePauseClick() {
 
 
 // --- New teardown helper to reset any existing session/microphone ---
-function teardownSession() {
-  // Clear any pending VAD‐update timers
-  clearTimeout(minChunkTimer);
-  clearTimeout(maxChunkTimer);
-  clearTimeout(rolloverTimer);
-  minChunkTimer = null;
-  maxChunkTimer = null;
-
-
-   // 0) Stop UI timer if running
-  stopRecordTimer();
-  
-  // 1) Stop & clear any session)
-  if (session) {
-    session.stop();
-    session = null;
-  }
-  // 2) Stop & clear microphone
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
-  }
-  // 3) Reset any in-flight flags
-  isStopping = false;
-  isPausing  = false;
-  // 4) Restore Pause button to its default label
-  pauseBtn.textContent = "Pause Recording";
-}
+ function teardownSession() {
+   clearAllTimers();
+   session?.stop();
+   session = null;
+   if (mediaStream) {
+     stopCapture(mediaStream);
+     mediaStream = null;
+   }
+   pauseBtn.textContent = "Pause Recording";
+   updateUI('idle');
+ }
 
 // --- Step 2: Enhanced Start Logic ---
-async function startMicrophone() {
-  // Clicking START at any time resets everything
-  teardownSession();
-  transcriptEl.value = "";           // clear old transcript
-  updateUI('resuming');              // disable all buttons
-
-  let stream;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch (err) {
-    alert("Microphone error: " + err.message);
-    updateUI('idle');
-    return;
-  }
-  mediaStream = stream;
-  await start(stream);
-  // Fresh run: reset & start UI timer at 0
-  startRecordTimer(true);
-}
+ async function startMicrophone() {
+   teardownSession();
+   updateUI('resuming');
+   // 1) Hook mic → shared worklet pipeline
+   mediaStream = await startCapture();
+   // 2) Start a new transcription WS session
+   await startSession(mediaStream);
+   // 3) Route live & buffered audio
+   setActiveSession(session);
+   startRecordTimer(true);
+ }
 
 async function start(stream) {
   // Retrieve API key
@@ -623,55 +651,13 @@ async function start(stream) {
   }
 }
 
-function handleStopClick() {
-  // stop our UI timer (freeze at current value)
-  stopRecordTimer();
-
-  // ── Scenario 2: user clicked Stop while paused ...
-  if (pauseBtn.textContent === "Resume Recording") {
-    // No extra teardown needed (already disconnected on Pause)
-    // Reset UI to Idle/Stopped
-    pauseBtn.textContent = "Pause Recording";
-    updateUI('stopped');
-    return;
-  }
-
-  // ── Scenario 1: user clicked Stop during active recording/resume ──
-  isStopping = true;
-  // Immediately flip UI into the “Stopped” state:
-  // Start enabled; Stop & Pause disabled
-  updateUI('stopped');
-
-  // Check VAD to see if we need to commit a final chunk
-    // Decide by whether transcript ends in "..." or "***"
-  const endsWithDelta    = /\.{3}$/.test(transcriptEl.value);
-  const endsWithComplete = /\*{3}$/.test(transcriptEl.value);
-
-  if (!endsWithDelta && !endsWithComplete) {
-    // Scenario A: no pending chunk at end → immediate teardown
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
-    session.stop();
-    session = null;
-    isStopping = false;
-  } else {
-    // Scenario B: chunk pending at end → commit then delayed mic stop
-    const commitEvt = { type: "input_audio_buffer.commit" };
-    if (session.ws?.readyState === WebSocket.OPEN) {
-      session.ws.send(JSON.stringify(commitEvt));
-    } else {
-      session.sendMessage(commitEvt);
-    }
-  
-    setTimeout(() => {
-      mediaStream.getTracks().forEach(t => t.stop());
-      mediaStream = null;
-    }, 1000);
-    statusEl.textContent = "Stopping…";
-    // Final teardown & UI reset happen in your handleMessage() isStopping branch,
-    // which will now see session===null if both were stopped.
-  }
-}
+ function handleStopClick() {
+   stopRecordTimer();
+   isStopping = true;
+   updateUI('stopped');
+   session.ws.send(JSON.stringify({ type: "input_audio_buffer.commit" }));
+   teardownSession();
+ }
 
  
 

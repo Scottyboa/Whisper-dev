@@ -367,36 +367,40 @@ function initState() {
 let isPausing = false;
 
 // 4A) Resume logic
- async function handleResumeClick() {
-   // Flip back to Pause, show loading UI
-   pauseBtn.textContent = "Pause Recording";
-   updateUI('resuming');
+async function handleResumeClick() {
+  // 0) Clear out any old session + ensure worklet is alive
+  teardownSession();
+  await initAudioPipeline();
 
-   // 1) Get mic stream
-   let stream;
-   try {
-     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-   } catch (err) {
-     alert("Microphone error: " + err.message);
-     updateUI('idle');
-     return;
-   }
-   mediaStream = stream;
-    // hook mic into worklet
+  // 1) Show “resuming” UI
+  pauseBtn.textContent = "Pause Recording";
+  updateUI('resuming');
+
+  // 2) Grab a fresh mic stream
+ let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    alert("Microphone error: " + err.message);
+    updateUI('idle');
+    return;
+  }
+  mediaStream = stream;
+
+  // 3) Hook the mic into our global worklet pipeline
   const src = audioContext.createMediaStreamSource(mediaStream);
   src.connect(workletNode);
 
-   // 2) Re-use your start() helper to re-open websocket & resume transcription
-   try {
-     await start(stream);
-   } catch (err) {
-     alert("Connection error: " + err.message);
+  // 4) Re-open the WebSocketSession (via your start helper)
+  try {
+    await start(stream);
+  } catch (err) {
+    alert("Connection error: " + err.message);
     teardownSession();
-  // ensure shared pipeline
-  await initAudioPipeline();
-     updateUI('stopped');
-   }
- }
+    updateUI('stopped');
+    return;
+  }
+}
 
 // 4B) Pause logic (now also detects Resume)
 function handlePauseClick() {

@@ -467,7 +467,6 @@ function teardownSession() {
   clearTimeout(minChunkTimer);
   clearTimeout(maxChunkTimer);
   clearTimeout(rolloverTimer);
-  clearTimeout(rolloverTimer);
   minChunkTimer = null;
   maxChunkTimer = null;
 
@@ -549,7 +548,6 @@ async function start(stream) {
     handshakeStart = performance.now();
     handshakeMs    = null;
     clearTimeout(rolloverTimer);
-    clearTimeout(overlapTimer);
 
     await session.startTranscription(stream, sessionConfig);
     // Once mic + websocket are fully active:
@@ -601,7 +599,7 @@ function handleStopClick() {
     } else {
       session.sendMessage(commitEvt);
     }
-    });
+  
     setTimeout(() => {
       mediaStream.getTracks().forEach(t => t.stop());
       mediaStream = null;

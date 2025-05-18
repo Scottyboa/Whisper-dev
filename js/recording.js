@@ -393,14 +393,17 @@ function handlePauseClick() {
   } else {
     // Scenario B: pending chunk → commit then delayed mic stop
     const commitEvt = { type: "input_audio_buffer.commit" };
-    if (session.ws?.readyState === WebSocket.OPEN) {
-      session.ws.send(JSON.stringify(commitEvt));
-    } else {
-      session.sendMessage(commitEvt);
-    }
+      [session, nextSession].forEach(s => {
+      if (!s) return;
+      if (s.ws?.readyState === WebSocket.OPEN) {
+        s.ws.send(JSON.stringify(commitEvt));
+      } else if (typeof s.sendMessage === "function") {
+        s.sendMessage(commitEvt);
+      }
+    });
     setTimeout(() => {
-      mediaStream.getTracks().forEach(t => t.stop());
-      mediaStream = null;
+       mediaStream.getTracks().forEach(t => t.stop());
+       mediaStream = null;
     }, 1000);
     statusEl.textContent = "Pausing…";
     // final transcript will trigger the rest in handleMessage()
@@ -419,10 +422,15 @@ function teardownSession() {
   minChunkTimer = null;
   maxChunkTimer = null;
 
- // 1) Stop & clear any session
+
+   // 1) Stop & clear both sessions (primary + any “next” warm‐up)
   if (session) {
     session.stop();
     session = null;
+  }
+  if (nextSession) {
+    nextSession.stop();
+    nextSession = null;
   }
   // 2) Stop & clear microphone
   if (mediaStream) {
@@ -535,17 +543,22 @@ function handleStopClick() {
   } else {
     // Scenario B: chunk pending at end → commit then delayed mic stop
     const commitEvt = { type: "input_audio_buffer.commit" };
-    if (session.ws?.readyState === WebSocket.OPEN) {
-      session.ws.send(JSON.stringify(commitEvt));
-    } else {
-      session.sendMessage(commitEvt);
-    }
+    // send commit to both sessions
+    [session, nextSession].forEach(s => {
+      if (!s) return;
+      if (s.ws?.readyState === WebSocket.OPEN) {
+        s.ws.send(JSON.stringify(commitEvt));
+      } else if (typeof s.sendMessage === "function") {
+        s.sendMessage(commitEvt);
+      }
+    });
     setTimeout(() => {
       mediaStream.getTracks().forEach(t => t.stop());
       mediaStream = null;
     }, 1000);
     statusEl.textContent = "Stopping…";
-    // Final teardown & UI reset happen in your handleMessage() isStopping branch
+    // Final teardown & UI reset happen in your handleMessage() isStopping branch,
+    // which will now see session===null if both were stopped.
   }
 }
 

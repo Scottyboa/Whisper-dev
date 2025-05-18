@@ -440,7 +440,7 @@ async function start(stream) {
     maxChunkTimer = setTimeout(
       () => updateVADConfig(AGGRESSIVE_SILENCE_DURATION_MS),
       MAX_CHUNK_DURATION_MS
-    );e
+    );
   } catch (err) {
     alert("Connection error: " + err.message);
     teardownSession();

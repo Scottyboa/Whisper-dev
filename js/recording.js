@@ -652,13 +652,10 @@ function handleMessage(parsed) {
       // Optionally show partial delta
       break;
       case "conversation.item.input_audio_transcription.completed":
-  // 1) Append the incoming transcript chunk
-  if (/\*{3}(?!.*\*{3})/.test(transcriptEl.value)) {
-    transcriptEl.value = transcriptEl.value.replace(/\*{3}(?!.*\*{3})/, parsed.transcript);
-  } else {
-    transcriptEl.value += parsed.transcript;
-  }
-  transcriptEl.value += " ";
+    // — strip off the trailing “…” or “***” and insert the final transcript —
+    transcriptEl.value = transcriptEl.value.replace(/(\.{3}|\*{3})$/, "");
+    transcriptEl.value += parsed.transcript + " ";
+    transcriptEl.scrollTop = transcriptEl.scrollHeight;
 
   // 2) If we’re pausing, finish pause teardown
   if (isPausing) {
@@ -686,12 +683,7 @@ function handleMessage(parsed) {
   }
 }
 
-function handleTranscript({ transcript, partial }) {
-  // simply append each final chunk with a space
-  transcriptEl.value += transcript;
-  if (!partial) transcriptEl.value += ' ';
-  transcriptEl.scrollTop = transcriptEl.scrollHeight;
-}
+  
 
 function handleError(e) {
   console.error(e);

@@ -257,8 +257,9 @@ function waitForEvent(ws, eventType) {
 }
 
 // ─── Ring buffer for the last ~2 s of raw PCM frames ─────────────────────
-// 4096 samples @24 kHz ≈ 0.17 s per chunk → buffer ≈12 chunks for 2 s
-const RING_BUFFER_MAX_CHUNKS = Math.ceil(2000 / (4096/24000*1000));
+// 4096 samples @24 kHz ≈ 0.17 s per chunk
+// → buffer ≈30 chunks for ~5 s (covers safety + overlap + jitter)
+const RING_BUFFER_MAX_CHUNKS = Math.ceil(5000 / (4096/24000*1000));
 let ringBuffer = [];
 
 
@@ -338,6 +339,11 @@ async function doRollover() {
   await waitForEvent(session.ws, "conversation.item.input_audio_transcription.completed");
   // 3️⃣ Now it’s safe to stop the old session without dropping audio
   session.stop();
+
+ // 2️⃣ Wait for the new session to be open
+ if (newSession.ws.readyState !== WebSocket.OPEN) {
+   await new Promise(resolve => newSession.ws.addEventListener("open", resolve));
+ }
 
   // 2️⃣ Activate the already-handshaken session:
   //    a) replay buffered audio into newSession…

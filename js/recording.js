@@ -3,10 +3,16 @@
 // --- Session class for Realtime Transcription ---
 // ——— WebSocket-based fallback for firewalled networks ———
 class WebSocketSession {
-  constructor(apiKey) {
-    this.apiKey = apiKey;
-    this.ws = null;
+   stop() {
+     this.ws?.close();
+   }
+    // ─── allow sendMessage(...) on WebSocketSession just like Session ─────────
+  sendMessage(message) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(message));
+    }
   }
+ }
 
   async startTranscription(stream, sessionConfig) {
     const url = "wss://api.openai.com/v1/realtime?intent=transcription";
@@ -204,11 +210,9 @@ let _vadAggressiveTimer = null;
 /** Send updated VAD settings to the server. */
 function sendVADConfigUpdate() {
   const update = { type: "transcription_session.update", session: sessionConfig };
-  if (session.ws?.readyState === WebSocket.OPEN) {
-    session.ws.send(JSON.stringify(update));
-  } else {
-    session.sendMessage(update);
-  }
+    // Always use the unified sendMessage(...) API
+  session.sendMessage(update);
+ }
 }
 
 /** Schedule our two timers for each chunk. */
@@ -349,11 +353,9 @@ function handlePauseClick() {
   } else {
     // Scenario B: pending chunk → commit then delayed mic stop
     const commitEvt = { type: "input_audio_buffer.commit" };
-    if (session.ws?.readyState === WebSocket.OPEN) {
-      session.ws.send(JSON.stringify(commitEvt));
-    } else {
-      session.sendMessage(commitEvt);
-    }
+        // And here too
+    session.sendMessage(commitEvt);
+ }
     setTimeout(() => {
       mediaStream.getTracks().forEach(t => t.stop());
       mediaStream = null;
@@ -502,8 +504,10 @@ function handleStopClick() {
 function handleMessage(parsed) {
   console.log("🛰 WS event:", parsed);
   switch (parsed.type) {
-    case "transcription_session.created":
-      sessionConfig = parsed.session;
+        case "transcription_session.created":
+      // Don’t overwrite our client-side sessionConfig (it must stay free of `session.id`)
+      // If you need the session ID for anything, you can stash it separately here:
+      //    const sessionId = parsed.session.id;
       break;
     case "input_audio_buffer.speech_started":
   // user just started speaking: show “…” placeholder

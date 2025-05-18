@@ -4,7 +4,7 @@
  const RING_BUFFER_MAX_CHUNKS = Math.ceil(2000 / (512/48000*1000)); // ~2 s @ 48 kHz
  let ringBuffer = [];            // holds base64 PCM frames
  let activeSession = null;
- let audioCtx, workletNode, mediaStream;
+ let audioCtx, workletNode, mediaStream;    // ← keep only one mediaStream var here
 
  // 1) Inline PCM worklet code via Blob
  const pcmWorkletCode = `
@@ -99,19 +99,7 @@ class WebSocketSession {
     session: sessionConfig
   }));
 
-      // only replay + attach mic if we’re actually “live”
-      if (autoStream) {
-        // replay buffered frames (≈2 s)…
-        for (let frame of ringBuffer) {
-          this.ws.send(JSON.stringify({
-            type: "input_audio_buffer.append",
-            audio: frame
-          }));
-        }
-
-        // and now hook up the live mic → server
-        this.attachMediaStream(stream);
-      }
+      // audio routing is now handled by the shared AudioWorklet + setActiveSession
 // ————————————————————————————————————————
 };
 
@@ -125,43 +113,7 @@ class WebSocketSession {
     this.ws.onerror = err => this.onerror?.(err);
   }
 
-   /**
-    * Attach a live MediaStream to this.ws,
-    * encoding + sending PCM chunks exactly as before.
-    */
-   attachMediaStream(stream) {
-     const audioCtx = new AudioContext({ sampleRate: 24000 });
-     const source   = audioCtx.createMediaStreamSource(stream);
-     const proc     = audioCtx.createScriptProcessor(4096, 1, 1);
-     source.connect(proc);
-     proc.connect(audioCtx.destination);
-
-     proc.onaudioprocess = (evt) => {
-       // 1) Float32 → Int16 → base64
-       const float32 = evt.inputBuffer.getChannelData(0);
-       const pcm16   = new Int16Array(float32.length);
-       for (let i = 0; i < float32.length; i++) {
-         const s = Math.max(-1, Math.min(1, float32[i]));
-         pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-       }
-       const bytes = new Uint8Array(pcm16.buffer);
-       let binary = "";
-       for (let b of bytes) binary += String.fromCharCode(b);
-       const b64 = btoa(binary);
-
-       // 2) Buffer & send
-       ringBuffer.push(b64);
-       if (ringBuffer.length > RING_BUFFER_MAX_CHUNKS) ringBuffer.shift();
-       if (this.ws.readyState === WebSocket.OPEN) {
-         this.ws.send(JSON.stringify({
-           type: "input_audio_buffer.append",
-           audio: b64
-         }));
-       }
-     };
-   }
-
-  // ─── allow the same sendMessage(...) calls as the RTC Session class
+   // ─── allow the same sendMessage(...) calls as the RTC Session class
   sendMessage(message) {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
@@ -330,13 +282,6 @@ function waitForEvent(ws, eventType) {
   });
 }
 
-// ─── Ring buffer for the last ~2 s of raw PCM frames ─────────────────────
-// 4096 samples @24 kHz ≈ 0.17 s per chunk
-// → buffer ≈30 chunks for ~5 s (covers safety + overlap + jitter)
-const RING_BUFFER_MAX_CHUNKS = Math.ceil(5000 / (4096/24000*1000));
-let ringBuffer = [];
-
-
 // ─── Recording-timer state & helpers ─────────────────────────────────────
 let recordTimerInterval = null;
 let recordStartTime     = null;
@@ -443,7 +388,6 @@ let session = null;
 let sessionConfig = null;
 let vadTime = 0;
 let isStopping = false;
-let mediaStream    = null; 
 let minChunkTimer = null;
 let maxChunkTimer = null;
 
@@ -603,7 +547,7 @@ function handlePauseClick() {
    startRecordTimer(true);
  }
 
-async function start(stream) {
+async function startSession(stream) {
   // Retrieve API key
   const apiKey = sessionStorage.getItem("user_api_key");
   if (!apiKey) {

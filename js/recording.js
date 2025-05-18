@@ -1,57 +1,5 @@
 // js/recording.js
-// ——— Global low-latency pipeline & routing ———
-let audioContext     = null;
-let workletNode      = null;
-let audioRingBuffer  = [];
-let activeSession    = null;
 
-// Send a PCM chunk to whichever session is active
-function sendAudioChunk(pcm16) {
-  // only if there’s an open socket
-  if (
-    !activeSession ||
-    activeSession.ws.readyState !== WebSocket.OPEN
-  ) return;
-  const bytes = new Uint8Array(pcm16.buffer);
-  let bin = "";
-  for (let b of bytes) bin += String.fromCharCode(b);
-  const b64 = btoa(bin);
-  const msg = { type: "input_audio_buffer.append", audio: b64 };
-  activeSession.ws.send(JSON.stringify(msg));
-}
-
-// One-time init of AudioWorklet pipeline, inlined via Blob
-async function initAudioPipeline() {
-  if (audioContext) return;
-  audioContext = new AudioContext({ sampleRate: 24000 });
-  const workletCode = `
-    class PCMProcessor extends AudioWorkletProcessor {
-      process(inputs) {
-        const in0 = inputs[0][0];
-        if (in0) {
-          const pcm = new Int16Array(in0.length);
-          for (let i = 0; i < in0.length; i++) {
-            const s = Math.max(-1, Math.min(1, in0[i]));
-            pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-          }
-          this.port.postMessage(pcm);
-        }
-        return true;
-      }
-    }
-    registerProcessor('pcm-processor', PCMProcessor);
-  `;
-  const blob = new Blob([workletCode], { type: 'application/javascript' });
-  const url  = URL.createObjectURL(blob);
-  await audioContext.audioWorklet.addModule(url);
-  workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
-  workletNode.port.onmessage = e => {
-    const chunk = e.data;
-    sendAudioChunk(chunk);
-    audioRingBuffer.push(chunk);
-    if (audioRingBuffer.length > 200) audioRingBuffer.shift();
-  };
-}
 // --- Session class for Realtime Transcription ---
 // ——— WebSocket-based fallback for firewalled networks ———
 class WebSocketSession {
@@ -76,9 +24,35 @@ class WebSocketSession {
     type: "transcription_session.update",
     session: sessionConfig
   }));
-  // route incoming PCM to *this* session
-  activeSession = this;
 
+// ——— Raw PCM @24 kHz capture via AudioContext ———
+const audioCtx = new AudioContext({ sampleRate: 24000 });
+const source   = audioCtx.createMediaStreamSource(stream);
+const proc     = audioCtx.createScriptProcessor(4096, 1, 1);
+source.connect(proc);
+proc.connect(audioCtx.destination);
+
+proc.onaudioprocess = (evt) => {
+  // 1) Float32 → Int16
+  const float32 = evt.inputBuffer.getChannelData(0);
+  const pcm16   = new Int16Array(float32.length);
+  for (let i = 0; i < float32.length; i++) {
+    const s = Math.max(-1, Math.min(1, float32[i]));
+    pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+  }
+  // 2) Base64‐encode
+  const bytes  = new Uint8Array(pcm16.buffer);
+  let binary   = "";
+  for (let b of bytes) binary += String.fromCharCode(b);
+  const b64    = btoa(binary);
+  // 3) Send as append event
+  if (this.ws.readyState === WebSocket.OPEN) {
+    this.ws.send(JSON.stringify({
+      type: "input_audio_buffer.append",
+      audio: b64
+    }));
+  }
+};
 // ————————————————————————————————————————
 };
 
@@ -234,7 +208,7 @@ const AGGRESSIVE_SILENCE_DURATION_MS = 200;       // 200 ms
 
 // ─── Rollover session constants & state ───────────────────────────────────
 const SESSION_MAX_MS      = 10  * 60 * 1000;  // 10 min hard cap
-const ROLLOVER_BASE_MS    =  1  * 60 * 1000;  // start overlap at 8 min
+const ROLLOVER_BASE_MS    =  8  * 60 * 1000;  // start overlap at 8 min
 const HANDSHAKE_SAFETY_MS =        2000;     // 2 s buffer margin
 const OVERLAP_DURATION_MS =        2000;     // 2 s parallel stream
 
@@ -256,12 +230,6 @@ function scheduleRollover() {
 
 // ─── Perform a parallel‐stream session swap ───────────────────────────────
 async function doRollover() {
-  // 0) tell the old session to flush its final chunk
-  if (session?.ws?.readyState === WebSocket.OPEN) {
-    session.ws.send(JSON.stringify({
-      type: "input_audio_buffer.commit"
-    }));
-  }
   // 1) Spin up the next session in background
   const apiKey = sessionStorage.getItem("user_api_key");
   nextSession = new WebSocketSession(apiKey);
@@ -274,18 +242,11 @@ async function doRollover() {
 
   // Start sending audio to the new session
   await nextSession.startTranscription(mediaStream, sessionConfig);
-  // — flush any buffered PCM into the new session —
-  audioRingBuffer.forEach(chunk => {
-    activeSession = nextSession;
-    sendAudioChunk(chunk);
-  });
-  audioRingBuffer = [];
 
   // 2) After OVERLAP_DURATION_MS, retire the old session
   overlapTimer = setTimeout(() => {
-  session.stop();
-  session = nextSession;
-  activeSession = session;
+    session.stop();
+    session = nextSession;
     nextSession = null;
     // when this new session emits "transcription_session.created",
     // scheduleRollover() will fire again for the next cycle.
@@ -377,40 +338,31 @@ function initState() {
 let isPausing = false;
 
 // 4A) Resume logic
-async function handleResumeClick() {
-  // 0) Clear out any old session + ensure worklet is alive
-  teardownSession();
-  await initAudioPipeline();
+ async function handleResumeClick() {
+   // Flip back to Pause, show loading UI
+   pauseBtn.textContent = "Pause Recording";
+   updateUI('resuming');
 
-  // 1) Show “resuming” UI
-  pauseBtn.textContent = "Pause Recording";
-  updateUI('resuming');
+   // 1) Get mic stream
+   let stream;
+   try {
+     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+   } catch (err) {
+     alert("Microphone error: " + err.message);
+     updateUI('idle');
+     return;
+   }
+   mediaStream = stream;
 
-  // 2) Grab a fresh mic stream
- let stream;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch (err) {
-    alert("Microphone error: " + err.message);
-    updateUI('idle');
-    return;
-  }
-  mediaStream = stream;
-
-  // 3) Hook the mic into our global worklet pipeline
-  const src = audioContext.createMediaStreamSource(mediaStream);
-  src.connect(workletNode);
-
-  // 4) Re-open the WebSocketSession (via your start helper)
-  try {
-    await start(stream);
-  } catch (err) {
-    alert("Connection error: " + err.message);
-    teardownSession();
-    updateUI('stopped');
-    return;
-  }
-}
+   // 2) Re-use your start() helper to re-open websocket & resume transcription
+   try {
+     await start(stream);
+   } catch (err) {
+     alert("Connection error: " + err.message);
+     teardownSession();
+     updateUI('stopped');
+   }
+ }
 
 // 4B) Pause logic (now also detects Resume)
 function handlePauseClick() {
@@ -482,18 +434,12 @@ function teardownSession() {
   isPausing  = false;
   // 4) Restore Pause button to its default label
   pauseBtn.textContent = "Pause Recording";
-  // stop routing any more audio
-  activeSession = null;
-  // clear any buffered frames too
-  audioRingBuffer = [];
 }
 
 // --- Step 2: Enhanced Start Logic ---
 async function startMicrophone() {
   // Clicking START at any time resets everything
-    teardownSession();
-  // ensure shared pipeline
-  await initAudioPipeline();
+  teardownSession();
   transcriptEl.value = "";           // clear old transcript
   updateUI('resuming');              // disable all buttons
 
@@ -506,9 +452,6 @@ async function startMicrophone() {
     return;
   }
   mediaStream = stream;
-  // hook mic into worklet
-  const src = audioContext.createMediaStreamSource(mediaStream);
-  src.connect(workletNode);
   await start(stream);
 }
 
@@ -551,7 +494,6 @@ async function start(stream) {
     clearTimeout(overlapTimer);
 
     await session.startTranscription(stream, sessionConfig);
-    activeSession = session;
     // Once mic + websocket are fully active:
     updateUI('recording');         // enable Stop & Pause
 
@@ -652,10 +594,13 @@ function handleMessage(parsed) {
       // Optionally show partial delta
       break;
       case "conversation.item.input_audio_transcription.completed":
-    // — strip off the trailing “…” or “***” and insert the final transcript —
-    transcriptEl.value = transcriptEl.value.replace(/(\.{3}|\*{3})$/, "");
-    transcriptEl.value += parsed.transcript + " ";
-    transcriptEl.scrollTop = transcriptEl.scrollHeight;
+  // 1) Append the incoming transcript chunk
+  if (/\*{3}(?!.*\*{3})/.test(transcriptEl.value)) {
+    transcriptEl.value = transcriptEl.value.replace(/\*{3}(?!.*\*{3})/, parsed.transcript);
+  } else {
+    transcriptEl.value += parsed.transcript;
+  }
+  transcriptEl.value += " ";
 
   // 2) If we’re pausing, finish pause teardown
   if (isPausing) {
@@ -683,7 +628,12 @@ function handleMessage(parsed) {
   }
 }
 
-  
+function handleTranscript({ transcript, partial }) {
+  // simply append each final chunk with a space
+  transcriptEl.value += transcript;
+  if (!partial) transcriptEl.value += ' ';
+  transcriptEl.scrollTop = transcriptEl.scrollHeight;
+}
 
 function handleError(e) {
   console.error(e);

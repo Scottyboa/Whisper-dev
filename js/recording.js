@@ -388,13 +388,39 @@ function updateUI(state) {
   }
 }
 
-function initState() {
-  updateUI('idle');
+ function initState() {
+   updateUI('idle');
 
-  startMicBtn.addEventListener("click", startMicrophone);
-  pauseBtn.addEventListener("click", handlePauseClick);
-  stopBtn.addEventListener("click", handleStopClick);
-}
+   // 1) Grab the existing display
+   const recordTimerEl = document.getElementById('recordTimer'); 
+
+   // 2) Create a 1 s-tick timer that updates "Recording Timer: XX sec"
+  const timer = createTimer(elapsedMs => {
+     const secs = Math.floor(elapsedMs / 1000);
+     recordTimerEl.textContent = `Recording Timer: ${secs} sec`;
+   }, 1000);
+
+   // 3) Wire your existing buttons to also control the timer
+   startMicBtn.addEventListener("click", () => {
+     timer.start();          // always reset & (re)start from 0
+     startMicrophone();      // your existing start logic
+   });
+
+   pauseBtn.addEventListener("click", () => {
+     // pause vs. resume based on the button label
+     if (pauseBtn.textContent === "Pause Recording") {
+       timer.pause();
+     } else {
+       timer.resume();
+     }
+     handlePauseClick();     // your existing pause/resume logic
+   });
+
+   stopBtn.addEventListener("click", () => {
+     timer.stop();           // halt & reset back to 0
+     handleStopClick();      // your existing stop logic
+   });
+ }
 
 // Track that we’re in the process of pausing
 let isPausing = false;
@@ -700,4 +726,4 @@ function handleError(e) {
 export function initRecording() {
   initState();
 }
-``` :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
+

@@ -559,10 +559,8 @@ async function start(stream) {
 
   // Configure transcription
   sessionConfig = {
-     input_audio_transcription: {
-     model: MODEL,
-     sample_rate_hertz: 24000,
-     audio_channels:   1
+        input_audio_transcription: {
+     model: MODEL
    },
     turn_detection: {
       type: TURN_DETECTION_TYPE,

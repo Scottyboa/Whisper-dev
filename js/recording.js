@@ -1,65 +1,5 @@
 // js/recording.js
-function createTimer(onTick, interval = 1000) {
-  let intervalId = null;
-  let startTs    = 0;
-  let elapsed    = 0;
-  let running    = false;
 
-  function _tick() {
-    const now   = performance.now();
-    const total = elapsed + (now - startTs);
-    onTick(total);
-  }
-
-  return {
-    start() {
-      this.stop();
-      elapsed   = 0;
-      startTs   = performance.now();
-      running   = true;
-      onTick(0);
-      intervalId = setInterval(_tick, interval);
-    },
-    stop() {
-      running   = false;
-      clearInterval(intervalId);
-      intervalId = null;
-      elapsed   = 0;
-      startTs   = 0;
-      onTick(0);
-    },
-    pause() {
-      if (!running) return;
-      clearInterval(intervalId);
-      intervalId = null;
-      elapsed  += (performance.now() - startTs);
-      running   = false;
-    },
-    resume() {
-      if (running) return;
-      startTs   = performance.now();
-      running   = true;
-      intervalId = setInterval(_tick, interval);
-    }
-  };
-}
-
-const SILENCE_DURATION_SEC = 0.2;
-function sendSilence(ws, durationSec = SILENCE_DURATION_SEC) {
-  const sampleCount = Math.floor(24000 * durationSec);
-  const silence     = new Int16Array(sampleCount);     // all zeros
-  const bytes       = new Uint8Array(silence.buffer);
-  let binary        = '';
-  for (let b of bytes) binary += String.fromCharCode(b);
-  const b64 = btoa(binary);
-
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({
-      type:  "input_audio_buffer.append",
-      audio: b64
-    }));
-  }
-}
 // --- Session class for Realtime Transcription ---
 // ——— WebSocket-based fallback for firewalled networks ———
 class WebSocketSession {
@@ -78,45 +18,44 @@ class WebSocketSession {
     this.ws.binaryType = "arraybuffer";
 
     this.ws.onopen = () => {
-      console.log("WS> onopen → sending transcription_session.update");
-      // ✅ correct WS event for transcription
-      this.ws.send(JSON.stringify({
-        type: "transcription_session.update",
-        session: sessionConfig
-      }));
-     // ─── Head‐silence: 200 ms of zeros to mark the start ────────
-     sendSilence(this.ws, 0.2);
+   console.log("WS> onopen → sending transcription_session.update");
+  // ✅ correct WS event for transcription
+  this.ws.send(JSON.stringify({
+    type: "transcription_session.update",
+    session: sessionConfig
+  }));
 
-      // ——— Raw PCM @24 kHz capture via AudioContext ———
-      const audioCtx = new AudioContext({ sampleRate: 24000 });
-      const source   = audioCtx.createMediaStreamSource(stream);
-      const proc     = audioCtx.createScriptProcessor(4096, 1, 1);
-      source.connect(proc);
-      proc.connect(audioCtx.destination);
+// ——— Raw PCM @24 kHz capture via AudioContext ———
+const audioCtx = new AudioContext({ sampleRate: 24000 });
+const source   = audioCtx.createMediaStreamSource(stream);
+const proc     = audioCtx.createScriptProcessor(4096, 1, 1);
+source.connect(proc);
+proc.connect(audioCtx.destination);
 
-      proc.onaudioprocess = (evt) => {
-        // 1) Float32 → Int16
-        const float32 = evt.inputBuffer.getChannelData(0);
-        const pcm16   = new Int16Array(float32.length);
-        for (let i = 0; i < float32.length; i++) {
-          const s = Math.max(-1, Math.min(1, float32[i]));
-          pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-        }
-        // 2) Base64‐encode
-        const bytes  = new Uint8Array(pcm16.buffer);
-        let binary   = "";
-        for (let b of bytes) binary += String.fromCharCode(b);
-        const b64    = btoa(binary);
-        // 3) Send as append event
-        if (this.ws.readyState === WebSocket.OPEN) {
-          this.ws.send(JSON.stringify({
-            type: "input_audio_buffer.append",
-            audio: b64
-          }));
-        }
-      };
-      // ————————————————————————————————————————
-    };
+proc.onaudioprocess = (evt) => {
+  // 1) Float32 → Int16
+  const float32 = evt.inputBuffer.getChannelData(0);
+  const pcm16   = new Int16Array(float32.length);
+  for (let i = 0; i < float32.length; i++) {
+    const s = Math.max(-1, Math.min(1, float32[i]));
+    pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+  }
+  // 2) Base64‐encode
+  const bytes  = new Uint8Array(pcm16.buffer);
+  let binary   = "";
+  for (let b of bytes) binary += String.fromCharCode(b);
+  const b64    = btoa(binary);
+  // 3) Send as append event
+  if (this.ws.readyState === WebSocket.OPEN) {
+    this.ws.send(JSON.stringify({
+      type: "input_audio_buffer.append",
+      audio: b64
+    }));
+  }
+};
+// ————————————————————————————————————————
+};
+
 
     this.ws.onmessage = evt => {
       let data = (typeof evt.data === "string")
@@ -126,17 +65,13 @@ class WebSocketSession {
     };
     this.ws.onerror = err => this.onerror?.(err);
   }
-  // ─── allow the same sendMessage(...) calls as the RTC Session class
-  sendMessage(message) {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message));
-    }
-  }
+
   stop() {
     this.ws?.close();
   }
 }
 // ——————————————————————————————————————————————
+
 
 class Session {
   constructor(apiKey) {
@@ -259,460 +194,236 @@ class Session {
 const APP_PREFIX        = "realtime/transcribe/";
 const MODEL = "gpt-4o-transcribe";
 const TURN_DETECTION_TYPE = "server_vad";
-const MIN_CHUNK_DURATION_MS    = 10 * 1000;      // 10 seconds
-const MAX_CHUNK_DURATION_MS    = 2  * 60 * 1000; // 2 minutes
-const DEFAULT_SILENCE_DURATION_MS   = 2000;      // 2 seconds
-const AGGRESSIVE_SILENCE_DURATION_MS = 200;       // 200 ms
+ const transcriptEl      = document.getElementById("transcription");
+ const startMicBtn       = document.getElementById("startButton");
+ const stopBtn           = document.getElementById("stopButton");
+ const pauseBtn          = document.getElementById("pauseResumeButton");
+ const statusEl          = document.getElementById("statusMessage");
 
-// ─── Helper to push a new VAD config … (etc) …
 
-// ─── Rollover session constants & state ───────────────────────────────────
-const SESSION_MAX_MS      = 10  * 60 * 1000;  // 10 min hard cap
-const ROLLOVER_BASE_MS    =  29  * 60 * 1000;  // start overlap at 8 min
-const HANDSHAKE_SAFETY_MS =        2000;     // 2 s buffer margin
-const OVERLAP_DURATION_MS =        2000;     // 2 s parallel stream
-
-// Rollover state
-let handshakeStart = null;
-let handshakeMs    = null;
-let rolloverTimer  = null;
-let overlapTimer   = null;
-let nextSession    = null;
-
-// ─── Schedule the next rollover based on measured handshake ───────────────
-function scheduleRollover() {
-  const delay = Math.max(
-    0,
-    ROLLOVER_BASE_MS - handshakeMs - HANDSHAKE_SAFETY_MS
-  );
-  rolloverTimer = setTimeout(doRollover, delay);
-}
-
-// ─── Perform a parallel‐stream session swap ───────────────────────────────
-async function doRollover() {
-  // 1) Spin up the next session in background
-  const apiKey = sessionStorage.getItem("user_api_key");
-  nextSession = new WebSocketSession(apiKey);
-  nextSession.onmessage = handleMessage;
-  nextSession.onerror   = handleError;
-
-  // Prepare to measure its handshake too
-  handshakeStart = performance.now();
-  handshakeMs    = null;
-
-  // Start sending audio to the new session
-  await nextSession.startTranscription(mediaStream, sessionConfig);
-
-  // 2) After OVERLAP_DURATION_MS, retire the old session
-  overlapTimer = setTimeout(() => {
-    session.stop();
-    session = nextSession;
-    nextSession = null;
-    // when this new session emits "transcription_session.created",
-    // scheduleRollover() will fire again for the next cycle.
-  }, OVERLAP_DURATION_MS);
-}
-
-function updateVADConfig(silenceMs) {
-  if (!sessionConfig) return;
-  sessionConfig.turn_detection.silence_duration_ms = silenceMs;
-  const msg = { type: "transcription_session.update", session: sessionConfig };
-  // Broadcast to both sessions during overlap
-  [session, nextSession].forEach(s => {
-    if (!s) return;
-    if (s.ws?.readyState === WebSocket.OPEN) {
-      s.ws.send(JSON.stringify(msg));
-    } else if (typeof s.sendMessage === "function") {
-      s.sendMessage(msg);
-    }
-  });
-}
-
-const transcriptEl      = document.getElementById("transcription");
-const startMicBtn       = document.getElementById("startButton");
-const stopBtn           = document.getElementById("stopButton");
-const pauseBtn          = document.getElementById("pauseResumeButton");
-const statusEl          = document.getElementById("statusMessage");
 
 let session = null;
 let sessionConfig = null;
 let vadTime = 0;
 let isStopping = false;
-let mediaStream = null; 
-let minChunkTimer = null;
-let maxChunkTimer = null;
+let isPausing  = false;   // NEW: are we in the middle of a pause?
+let isPaused   = false;   // NEW: have we fully paused?
+let isResuming = false;   // NEW: will the next start() be a resume?
+let mediaStream    = null; 
 
-// Possible states: 'idle', 'recording', 'paused', 'resuming', 'stopped'
-function updateUI(state) {
-  // Clear any status message on state change
+function initState() {
+  // initial button states
+  updateState(false);
+
+  startMicBtn.addEventListener("click", startMicrophone);
+  pauseBtn .addEventListener("click", togglePauseResume);
+  stopBtn  .addEventListener("click", stop);
+}
+
+function updateState(started) {
   statusEl.textContent = "";
+  startMicBtn.disabled  = started;
+  stopBtn.disabled      = !started;
+  pauseBtn.disabled     = !started;
+}
 
-  // Default: disable all, then enable the ones we want
-  startMicBtn.disabled  = true;
-  stopBtn.disabled      = true;
-  pauseBtn.disabled     = true;
-
-  switch(state) {
-    case 'idle':
-      startMicBtn.disabled = false;
-      // stop & pause remain disabled
-      break;
-
-    case 'recording':
-      // Start greyed out
-      stopBtn.disabled  = false;
-      pauseBtn.disabled = false;
-      break;
-
-    case 'paused':
-      startMicBtn.disabled = true;
-      // Stop stays enabled so user can finish or restart
-      stopBtn.disabled      = false;
-      // pauseBtn will have become the "Resume" button
-      pauseBtn.disabled     = false;
-      break;
-
-    case 'resuming':
-      // during reconnect, prevent any button clicks
-      break;
-
-    case 'stopped':
-      startMicBtn.disabled = false;
-      // stop & pause stay disabled
-      break;
+/**
+ * User clicked the Pause/Resume button.
+ */
+function togglePauseResume() {
+  if (!isPaused) {
+    // Going from Recording → Pausing
+    pauseSession();
+  } else {
+    // Going from Paused → Resuming
+    resumeSession();
   }
 }
 
- function initState() {
-   updateUI('idle');
-
-   // 1) Grab the existing display
-   const recordTimerEl = document.getElementById('recordTimer'); 
-
-   // 2) Create a 1 s-tick timer that updates "Recording Timer: XX sec"
-  const timer = createTimer(elapsedMs => {
-     const secs = Math.floor(elapsedMs / 1000);
-     recordTimerEl.textContent = `Recording Timer: ${secs} sec`;
-   }, 1000);
-
-   // 3) Wire your existing buttons to also control the timer
-   startMicBtn.addEventListener("click", () => {
-     timer.start();          // always reset & (re)start from 0
-     startMicrophone();      // your existing start logic
-   });
-
-   pauseBtn.addEventListener("click", () => {
-     // pause vs. resume based on the button label
-     if (pauseBtn.textContent === "Pause Recording") {
-       timer.pause();
-     } else {
-       timer.resume();
-     }
-     handlePauseClick();     // your existing pause/resume logic
-   });
-
-   stopBtn.addEventListener("click", () => {
-     timer.stop();           // halt & reset back to 0
-     handleStopClick();      // your existing stop logic
-   });
- }
-
-// Track that we’re in the process of pausing
-let isPausing = false;
-
-// 4A) Resume logic
-async function handleResumeClick() {
-  // Flip back to Pause, show loading UI
-  pauseBtn.textContent = "Pause Recording";
-  updateUI('resuming');
-
-  // 1) Get mic stream
-  let stream;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch (err) {
-    alert("Microphone error: " + err.message);
-    updateUI('idle');
-    return;
-  }
-  mediaStream = stream;
-
-  // 2) Re-use your start() helper to re-open websocket & resume transcription
-  try {
-    await start(stream);
-  } catch (err) {
-    alert("Connection error: " + err.message);
-    teardownSession();
-    updateUI('stopped');
-  }
-}
-
-// 4B) Pause logic (now also detects Resume)
-function handlePauseClick() {
-  // If already paused, delegate to Resume
-  if (pauseBtn.textContent === "Resume Recording") {
-    return handleResumeClick();
-  }
+/**
+ * Do everything stop() does, **without** tearing down UI or clearing the transcript.
+ */
+function pauseSession() {
   if (!session) return;
-
-  // Begin Pause
-  pauseBtn.disabled = true;
   isPausing = true;
 
-  // Decide by whether transcript ends in "..." or "***"
-  const endsWithDelta    = /\.{3}$/.test(transcriptEl.value);
-  const endsWithComplete = /\*{3}$/.test(transcriptEl.value);
-
-  if (!endsWithDelta && !endsWithComplete) {
-    // Scenario A: nothing pending → immediate teardown
-     if (mediaStream) {
-      mediaStream.getTracks().forEach(t => t.stop());
-    }
-    mediaStream = null;
-    session.stop();
-    session = null;
-
-    pauseBtn.textContent = "Resume Recording";
-    updateUI('paused');
-    isPausing = false;
+  // 1) flush last audio chunk
+  const commitEvt = { type: "input_audio_buffer.commit" };
+  if (session.ws?.readyState === WebSocket.OPEN) {
+    session.ws.send(JSON.stringify(commitEvt));
   } else {
-    // Scenario B: pending chunk → commit then delayed mic stop
-    const commitEvt = { type: "input_audio_buffer.commit" };
-       // Tail‐silence: 200 ms of zeros to mark the end of this speech turn
-   sendSilence(session.ws, 0.2);
-    if (session.ws?.readyState === WebSocket.OPEN) {
-      session.ws.send(JSON.stringify(commitEvt));
-    } else {
-      session.sendMessage(commitEvt);
-    }
-    setTimeout(() => {
-      mediaStream.getTracks().forEach(t => t.stop());
-      mediaStream = null;
-    }, 1000);
-    statusEl.textContent = "Pausing…";
-    // final transcript will trigger the rest in handleMessage()
+    session.sendMessage(commitEvt);
   }
-}
 
-// --- New teardown helper to reset any existing session/microphone ---
-function teardownSession() {
-  // Clear any pending VAD‐update timers
-  clearTimeout(minChunkTimer);
-  clearTimeout(maxChunkTimer);
-  clearTimeout(rolloverTimer);
-  clearTimeout(overlapTimer);
-  minChunkTimer = null;
-  maxChunkTimer = null;
-
-  // 1) Stop & clear any session
-  if (session) {
-    session.stop();
-    session = null;
-  }
-  // 2) Stop & clear microphone
+  // 2) kill the mic
   if (mediaStream) {
     mediaStream.getTracks().forEach(t => t.stop());
     mediaStream = null;
   }
-  // 3) Reset any in-flight flags
-  isStopping = false;
-  isPausing  = false;
-  // 4) Restore Pause button to its default label
-  pauseBtn.textContent = "Pause Recording";
+
+  // 3) tweak UI into “paused” state
+  statusEl.textContent    = "Paused. Click Resume to continue.";
+  pauseBtn.textContent    = "Resume Recording";
+  startMicBtn.disabled     = true;
+  stopBtn.disabled         = false;
+  pauseBtn.disabled        = false;
+  isPaused                = true;
 }
 
-// --- Step 2: Enhanced Start Logic ---
-async function startMicrophone() {
-  // Clicking START at any time resets everything
-  teardownSession();
-  transcriptEl.value = "";           // clear old transcript
-  updateUI('resuming');              // disable all buttons
+/**
+ * Start a fresh transcription session, but do **not** clear `transcriptEl.value`.
+ */
+function resumeSession() {
+  // mark that our next start() should *not* wipe the textarea
+  isResuming = true;
+  isPaused   = false;
 
+  // swap button label back
+  pauseBtn.textContent = "Pause Recording";
+  statusEl.textContent = "Resuming…";
+
+  // re-acquire the mic and open a new session
+  startMicrophone();
+}
+
+async function startMicrophone() {
   let stream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (err) {
     alert("Microphone error: " + err.message);
-    updateUI('idle');
     return;
   }
-  mediaStream = stream;
+  mediaStream = stream;    // ← keep this for later teardown
   await start(stream);
 }
 
 async function start(stream) {
-  // Retrieve API key
+  updateState(true);
+  // only clear on the *very first* Start, not on Resume
+  if (!isResuming) {
+    transcriptEl.value = "";
+  } else {
+    isResuming = false;
+  }
+
+    // pull the key from sessionStorage, exactly how index.html stored it:
   const apiKey = sessionStorage.getItem("user_api_key");
   if (!apiKey) {
     alert("Missing API key—please re-enter it on the home page.");
-    teardownSession();
-    updateUI('idle');
-    return;
+    return stop();
   }
-
-  // Instantiate a fresh session
-  const USE_WEBSOCKETS = true;
-  session = USE_WEBSOCKETS
-    ? new WebSocketSession(apiKey)
-    : new Session(apiKey);
-
+   const USE_WEBSOCKETS = true;   // ← set false to fall back to WebRTC
+    console.log("▶▶ USE_WEBSOCKETS =", USE_WEBSOCKETS);    
+ if (USE_WEBSOCKETS) {
+   console.log("▶▶ instantiating WebSocketSession");
+   session = new WebSocketSession(apiKey);
+ } else {
+   console.log("▶▶ instantiating WebRTC Session");
+   session = new Session(apiKey);
+ }
   session.onmessage = handleMessage;
-  session.onerror   = handleError;
+  session.onerror = handleError;
 
-  // Configure transcription
-  sessionConfig = {
-        input_audio_transcription: {
-     model: MODEL
-   },
-    turn_detection: {
-      type: TURN_DETECTION_TYPE,
-      threshold: 0.4,
-      prefix_padding_ms: 400,
-      // initial high threshold to block VAD for first 10 s
-      silence_duration_ms: MIN_CHUNK_DURATION_MS
-    }
-  };
+sessionConfig = {
+  input_audio_transcription: {
+    model: "gpt-4o-transcribe"
+  },
+  turn_detection: {
+    type: "server_vad",
+    threshold: 0.4,
+    prefix_padding_ms: 400,
+    silence_duration_ms: 2000
+  }
+};
 
   try {
-    // ─── Begin handshake timer & clear any prior rollover ───────────────
-    handshakeStart = performance.now();
-    handshakeMs    = null;
-    clearTimeout(rolloverTimer);
-    clearTimeout(overlapTimer);
-
     await session.startTranscription(stream, sessionConfig);
-    // Once mic + websocket are fully active:
-    updateUI('recording');         // enable Stop & Pause
-
   } catch (err) {
     alert("Connection error: " + err.message);
-    teardownSession();
-    updateUI('idle');
+    stop();
   }
 }
 
-function handleStopClick() {
-  // ── Scenario 2: user clicked Stop while paused (Resume button showing) ──
-  if (pauseBtn.textContent === "Resume Recording") {
-    // No extra teardown needed (already disconnected on Pause)
-    // Reset UI to Idle/Stopped
-    pauseBtn.textContent = "Pause Recording";
-    updateUI('stopped');
-    return;
-  }
+function stop() {
+   if (!session) return;
+   isStopping = true;
 
-  // ── Scenario 1: user clicked Stop during active recording/resume ──
-  isStopping = true;
-  // Immediately flip UI into the “Stopped” state:
-  // Start enabled; Stop & Pause disabled
-  updateUI('stopped');
+   // 1) Flush whatever audio you’ve appended → commit into a user message
+   const commitEvt = { type: "input_audio_buffer.commit" };
+   if (session.ws?.readyState === WebSocket.OPEN) {
+     session.ws.send(JSON.stringify(commitEvt));
+   } else {
+     session.sendMessage(commitEvt);
+   }
 
-  // Check VAD to see if we need to commit a final chunk
-  // Decide by whether transcript ends in "..." or "***"
-  const endsWithDelta    = /\.{3}$/.test(transcriptEl.value);
-  const endsWithComplete = /\*{3}$/.test(transcriptEl.value);
+   // 2) Immediately kill the mic so the browser indicator turns off
+   if (mediaStream) {
+     mediaStream.getTracks().forEach(t => t.stop());
+     mediaStream = null;
+   }
 
-  if (!endsWithDelta && !endsWithComplete) {
-    // Scenario A: no pending chunk at end → immediate teardown
-    mediaStream.getTracks().forEach(t => t.stop());
-    mediaStream = null;
-    session.stop();
-    session = null;
-    isStopping = false;
-  } else {
-    // Scenario B: chunk pending at end → commit then delayed mic stop
-    const commitEvt = { type: "input_audio_buffer.commit" };
-    // Tail‐silence: 200 ms of zeros to mark the end of this speech turn
-   sendSilence(session.ws, 0.2);
-    if (session.ws?.readyState === WebSocket.OPEN) {
-      session.ws.send(JSON.stringify(commitEvt));
-    } else {
-      session.sendMessage(commitEvt);
-    }
-    setTimeout(() => {
-      mediaStream.getTracks().forEach(t => t.stop());
-      mediaStream = null;
-    }, 1000);
-    statusEl.textContent = "Stopping…";
-    // Final teardown & UI reset happen in your handleMessage() isStopping branch
-  }
-}
+   // 3) Let the user know we’re waiting on that final snippet
+   statusEl.textContent = "Finishing transcription…";
+   stopBtn.disabled = true;
+ }
+ 
 
 function handleMessage(parsed) {
   console.log("🛰 WS event:", parsed);
-
-  // 1) Drop all the incremental "delta" updates immediately
-  if (parsed.type === 'conversation.item.input_audio_transcription.delta') {
-    return;
-  }
-
-  // 2) Now handle only the real events
   switch (parsed.type) {
-    case 'transcription_session.created':
-      // Measure handshake & schedule the next rollover
-      if (handshakeStart !== null && handshakeMs === null) {
-        handshakeMs = performance.now() - handshakeStart;
-        scheduleRollover();
-      }
+    case "transcription_session.created":
+      sessionConfig = parsed.session;
       break;
-
-    case 'input_audio_buffer.speech_started':
-      // Show “…” placeholder
-      transcriptEl.value += "...";
-
-      // ─── Reset and start our per‐chunk timers ─────────────────────────
-      clearTimeout(minChunkTimer);
-      clearTimeout(maxChunkTimer);
-
-      // 1) Block VAD until minimum chunk length (10 s)
-      updateVADConfig(MIN_CHUNK_DURATION_MS);
-
-      // 2) After 10 s, revert to normal 2 s‐silence cutoff
-      minChunkTimer = setTimeout(
-        () => updateVADConfig(DEFAULT_SILENCE_DURATION_MS),
-        MIN_CHUNK_DURATION_MS
-      );
-
-      // 3) Failsafe: after 2 min total, force aggressive 200 ms cutoff
-      maxChunkTimer = setTimeout(
-        () => updateVADConfig(AGGRESSIVE_SILENCE_DURATION_MS),
-        MAX_CHUNK_DURATION_MS
-      );
+    case "input_audio_buffer.speech_started":
+  // user just started speaking: show “…” placeholder
+  transcriptEl.value += "...";
+   break;
+    case "input_audio_buffer.speech_stopped":
+  // VAD detected end-of-speech: turn “…” into “***”
+  transcriptEl.value = transcriptEl.value.replace(/\.{3}(?!.*\.{3})/, "***");
+   vadTime = performance.now() - (sessionConfig.turn_detection.silence_duration_ms || 0);
+   break;
+    case "conversation.item.input_audio_transcription.delta":
+      // Optionally show partial delta
       break;
+      case "conversation.item.input_audio_transcription.completed":
+        // if we have a *** placeholder from VAD, replace it;
+    // otherwise just append the new transcript
+    const placeholderRE = /\*{3}(?!.*\*{3})/;
+    if (placeholderRE.test(transcriptEl.value)) {
+      transcriptEl.value = transcriptEl.value.replace(placeholderRE, parsed.transcript);
+    } else {
+      transcriptEl.value += parsed.transcript;
+    }
+    // always make sure there's a trailing space
+    transcriptEl.value += " ";
 
-    case 'input_audio_buffer.speech_stopped':
-      // VAD detected end‐of‐speech: turn “…” into “***”
-      transcriptEl.value = transcriptEl.value.replace(/\.{3}(?!.*\.{3})/, "***");
-      vadTime = performance.now() - (sessionConfig.turn_detection.silence_duration_ms || 0);
-      break;
-
-    case "conversation.item.input_audio_transcription.completed":
-    // **REPLACE** the textarea contents with the latest transcript
-    // (the API sends the full transcript up to this point)
-    transcriptEl.value = parsed.transcript;
-    transcriptEl.scrollTop = transcriptEl.scrollHeight;
-
-    // If we just clicked “Stop”, tear down the session and reset UI:
-    if (isStopping) {
-      isStopping = false;
+    // If this was a Pause, finalize and stop the session,
+    // but *do not* reset the transcript or buttons:
+    if (isPausing) {
       session.stop();
       session = null;
-      updateState(false);
-      pauseBtn.textContent = "Pause Recording";
-      statusEl.textContent = "Ready to start again.";
+      isPausing = false;
+      // leave startBtn disabled, stopBtn enabled, pauseBtn now = Resume
+      return;
     }
-    break;
 
-    case 'error':
-      console.error(parsed.error);
-      break;
+    // original Stop logic—this *does* reset the UI for a fresh Start:
+    if (isStopping) {
+      isStopping = false;
+      // only now tear down the session & socket
+      session.stop();
+      session = null;
+      // and reset your UI
+       updateState(false);
+       pauseBtn.textContent = "Pause Recording";
+       statusEl.textContent = "Ready to start again.";
+    }
+   break;
 
-    default:
-      // ignore everything else
-      break;
   }
 }
-
 
 function handleTranscript({ transcript, partial }) {
   // simply append each final chunk with a space
@@ -723,11 +434,10 @@ function handleTranscript({ transcript, partial }) {
 
 function handleError(e) {
   console.error(e);
-  handleStopClick(); 
+  stop();
 }
 
 // Export the initialization function to be called from main.js
 export function initRecording() {
   initState();
 }
-

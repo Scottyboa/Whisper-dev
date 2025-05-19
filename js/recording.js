@@ -43,6 +43,23 @@ function createTimer(onTick, interval = 1000) {
     }
   };
 }
+
+const SILENCE_DURATION_SEC = 0.2;
+function sendSilence(ws, durationSec = SILENCE_DURATION_SEC) {
+  const sampleCount = Math.floor(24000 * durationSec);
+  const silence     = new Int16Array(sampleCount);     // all zeros
+  const bytes       = new Uint8Array(silence.buffer);
+  let binary        = '';
+  for (let b of bytes) binary += String.fromCharCode(b);
+  const b64 = btoa(binary);
+
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type:  "input_audio_buffer.append",
+      audio: b64
+    }));
+  }
+}
 // --- Session class for Realtime Transcription ---
 // ——— WebSocket-based fallback for firewalled networks ———
 class WebSocketSession {
@@ -67,6 +84,8 @@ class WebSocketSession {
         type: "transcription_session.update",
         session: sessionConfig
       }));
+     // ─── Head‐silence: 200 ms of zeros to mark the start ────────
+     sendSilence(this.ws, 0.2);
 
       // ——— Raw PCM @24 kHz capture via AudioContext ———
       const audioCtx = new AudioContext({ sampleRate: 24000 });
@@ -457,6 +476,8 @@ function handlePauseClick() {
   } else {
     // Scenario B: pending chunk → commit then delayed mic stop
     const commitEvt = { type: "input_audio_buffer.commit" };
+       // Tail‐silence: 200 ms of zeros to mark the end of this speech turn
+   sendSilence(session.ws, 0.2);
     if (session.ws?.readyState === WebSocket.OPEN) {
       session.ws.send(JSON.stringify(commitEvt));
     } else {
@@ -538,7 +559,11 @@ async function start(stream) {
 
   // Configure transcription
   sessionConfig = {
-    input_audio_transcription: { model: MODEL },
+     input_audio_transcription: {
+     model: MODEL,
+     sample_rate_hertz: 24000,
+     audio_channels:   1
+   },
     turn_detection: {
       type: TURN_DETECTION_TYPE,
       threshold: 0.4,
@@ -597,6 +622,8 @@ function handleStopClick() {
   } else {
     // Scenario B: chunk pending at end → commit then delayed mic stop
     const commitEvt = { type: "input_audio_buffer.commit" };
+    // Tail‐silence: 200 ms of zeros to mark the end of this speech turn
+   sendSilence(session.ws, 0.2);
     if (session.ws?.readyState === WebSocket.OPEN) {
       session.ws.send(JSON.stringify(commitEvt));
     } else {

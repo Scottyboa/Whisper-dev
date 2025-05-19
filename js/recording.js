@@ -87,7 +87,7 @@ class WebSocketSession {
     ]);
     this.ws.binaryType = "arraybuffer";
 
-    this.ws.onopen = () => {
+     this.ws.onopen = async () => {
    console.log("WS> onopen → sending transcription_session.update");
   // ✅ correct WS event for transcription
   this.ws.send(JSON.stringify({

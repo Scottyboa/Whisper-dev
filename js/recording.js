@@ -641,38 +641,87 @@ function handleStopClick() {
 function handleMessage(parsed) {
   console.log("🛰 WS event:", parsed);
 
-  // 1) Skip all the incremental "delta" updates
+  // 1) Drop all the incremental "delta" updates immediately
   if (parsed.type === 'conversation.item.input_audio_transcription.delta') {
     return;
   }
 
-  // 2) Handle only the events you care about
+  // 2) Now handle only the real events
   switch (parsed.type) {
     case 'transcription_session.created':
-      // your existing handshake logic…
-      break;
-
-    case 'input_audio_buffer.speech_started':
-      // your existing "…" placeholder logic…
-      break;
-
-    case 'input_audio_buffer.speech_stopped':
-      // your existing "***" replacement logic…
-      break;
-
-    case 'conversation.item.input_audio_transcription.completed':
-      // This is the one final transcript per segment
-      transcriptEl.value += parsed.transcript + ' ';
-
-      // If you have pause/stop state to handle here, keep it:
-      if (isPausing) {
-        // existing pause teardown…
-      } else if (isStopping) {
-        // existing stop teardown…
+      // Measure handshake & schedule the next rollover
+      if (handshakeStart !== null && handshakeMs === null) {
+        handshakeMs = performance.now() - handshakeStart;
+        scheduleRollover();
       }
       break;
 
-    // (Optionally handle errors, commits, etc. if you need them)
+    case 'input_audio_buffer.speech_started':
+      // Show “…” placeholder
+      transcriptEl.value += "...";
+
+      // ─── Reset and start our per‐chunk timers ─────────────────────────
+      clearTimeout(minChunkTimer);
+      clearTimeout(maxChunkTimer);
+
+      // 1) Block VAD until minimum chunk length (10 s)
+      updateVADConfig(MIN_CHUNK_DURATION_MS);
+
+      // 2) After 10 s, revert to normal 2 s‐silence cutoff
+      minChunkTimer = setTimeout(
+        () => updateVADConfig(DEFAULT_SILENCE_DURATION_MS),
+        MIN_CHUNK_DURATION_MS
+      );
+
+      // 3) Failsafe: after 2 min total, force aggressive 200 ms cutoff
+      maxChunkTimer = setTimeout(
+        () => updateVADConfig(AGGRESSIVE_SILENCE_DURATION_MS),
+        MAX_CHUNK_DURATION_MS
+      );
+      break;
+
+    case 'input_audio_buffer.speech_stopped':
+      // VAD detected end‐of‐speech: turn “…” into “***”
+      transcriptEl.value = transcriptEl.value.replace(/\.{3}(?!.*\.{3})/, "***");
+      vadTime = performance.now() - (sessionConfig.turn_detection.silence_duration_ms || 0);
+      break;
+
+    case 'conversation.item.input_audio_transcription.completed':
+      // 1) Append the incoming final transcript chunk
+      if (/\*{3}(?!.*\*{3})/.test(transcriptEl.value)) {
+        // Replace the trailing "***" placeholder
+        transcriptEl.value = transcriptEl.value.replace(
+          /\*{3}(?!.*\*{3})/,
+          parsed.transcript
+        );
+      } else {
+        // Otherwise just append it
+        transcriptEl.value += parsed.transcript;
+      }
+      transcriptEl.value += " ";
+
+      // 2) If we’re pausing, finish pause teardown
+      if (isPausing) {
+        isPausing = false;
+        session.stop();
+        session = null;
+
+        pauseBtn.textContent = "Resume Recording";
+        updateUI('paused');
+        statusEl.textContent = "";
+      }
+      // 3) Else if we’re stopping, finish stop teardown
+      else if (isStopping) {
+        isStopping = false;
+        session.stop();
+        session = null;
+
+        pauseBtn.textContent = "Pause Recording";
+        updateUI('stopped');
+        statusEl.textContent = "Ready to start again.";
+      }
+      break;
+
     case 'error':
       console.error(parsed.error);
       break;

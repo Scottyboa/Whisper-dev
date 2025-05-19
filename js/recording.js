@@ -236,30 +236,6 @@ class Session {
   }
 }
 
-const startBtn  = document.getElementById('startBtn');
-const pauseBtn  = document.getElementById('pauseBtn');
-const resumeBtn = document.getElementById('resumeBtn');
-const stopBtn   = document.getElementById('stopBtn');
-const display   = document.getElementById('timerDisplay');
-
-function formatTime(ms) {
-  const totalSec = Math.floor(ms / 1000);
-  const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
-  const s = String(totalSec % 60).padStart(2, '0');
-  return `${m}:${s}`;
-}
-
-// Create the timer instance
-const timer = createTimer(elapsedMs => {
-  display.textContent = formatTime(elapsedMs);
-}, 1000);
-
-// Wire up your buttons
-startBtn.addEventListener('click',  () => timer.start());
-pauseBtn.addEventListener('click',  () => timer.pause());
-resumeBtn.addEventListener('click', () => timer.resume());
-stopBtn.addEventListener('click',   () => timer.stop());
-
 // --- UI & Control Logic ---
 const APP_PREFIX        = "realtime/transcribe/";
 const MODEL = "gpt-4o-transcribe";

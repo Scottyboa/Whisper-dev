@@ -333,7 +333,7 @@ sessionConfig = {
     type: "server_vad",
     threshold: 0.4,
     prefix_padding_ms: 400,
-    silence_duration_ms: 2000
+    silence_duration_ms: 2200
   }
 };
 

@@ -71,7 +71,7 @@ class WebSocketSession {
 
 
     
-    this.ws.onerror = err => this.onerror?.(err);}
+    this.ws.onerror = err => this.onerror?.(err);
   
   // ─── allow the same sendMessage(...) calls as the RTC Session class
   sendMessage(message) {

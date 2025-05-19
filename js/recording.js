@@ -25,34 +25,69 @@ class WebSocketSession {
     session: sessionConfig
   }));
 
-// ——— Raw PCM @24 kHz capture via AudioContext ———
-const audioCtx = new AudioContext({ sampleRate: 24000 });
-const source   = audioCtx.createMediaStreamSource(stream);
-const proc     = audioCtx.createScriptProcessor(4096, 1, 1);
-source.connect(proc);
-proc.connect(audioCtx.destination);
+  // new AudioWorklet approach
+  const audioCtx = new AudioContext({ sampleRate: 24000 });
 
-proc.onaudioprocess = (evt) => {
-  // 1) Float32 → Int16
-  const float32 = evt.inputBuffer.getChannelData(0);
-  const pcm16   = new Int16Array(float32.length);
-  for (let i = 0; i < float32.length; i++) {
-    const s = Math.max(-1, Math.min(1, float32[i]));
-    pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-  }
-  // 2) Base64‐encode
-  const bytes  = new Uint8Array(pcm16.buffer);
-  let binary   = "";
-  for (let b of bytes) binary += String.fromCharCode(b);
-  const b64    = btoa(binary);
-  // 3) Send as append event
-  if (this.ws.readyState === WebSocket.OPEN) {
-    this.ws.send(JSON.stringify({
-      type: "input_audio_buffer.append",
-      audio: b64
-    }));
-  }
-};
+  // 1) Inline PCMProcessor worklet code
+  const pcmProcessorCode = `
+    class PCMProcessor extends AudioWorkletProcessor {
+      constructor() {
+        super();
+        this._buffer = [];
+        this._bufferSize = 512;
+      }
+
+      process(inputs) {
+       const input = inputs[0]?.[0];
+        if (input) {
+          // accumulate samples
+          this._buffer.push(...input);
+          // whenever we have >=512, slice and post
+          while (this._buffer.length >= this._bufferSize) {
+            const chunk = this._buffer.splice(0, this._bufferSize);
+            const pcm16 = new Int16Array(this._bufferSize);
+            for (let i = 0; i < this._bufferSize; i++) {
+              const s = Math.max(-1, Math.min(1, chunk[i]));
+              pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            this.port.postMessage(pcm16.buffer, [pcm16.buffer]);
+          }
+        }
+       return true; // keep alive
+      }
+    }
+    registerProcessor('pcm-processor', PCMProcessor);
+  `;
+
+ // 2) Create a Blob URL and load it
+  const blob = new Blob([pcmProcessorCode], { type: 'application/javascript' });
+  const url  = URL.createObjectURL(blob);
+  await audioCtx.audioWorklet.addModule(url);
+
+  // 3) Wire up MediaStream → Worklet → (invisible) destination
+  const source       = audioCtx.createMediaStreamSource(stream);
+  const workletNode  = new AudioWorkletNode(audioCtx, 'pcm-processor', {
+    numberOfInputs:  1,
+    numberOfOutputs: 1,
+    outputChannelCount: [1]
+  });
+  source.connect(workletNode);
+  workletNode.connect(audioCtx.destination);
+
+  // 4) Relay each 512-sample chunk over your WebSocket
+  workletNode.port.onmessage = ({ data }) => {
+    const pcm16 = new Int16Array(data);
+    const bytes = new Uint8Array(pcm16.buffer);
+    let binary = '';
+    for (let b of bytes) binary += String.fromCharCode(b);
+    const b64 = btoa(binary);
+    if (this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({
+        type: 'input_audio_buffer.append',
+        audio: b64
+      }));
+    }
+  };
 // ————————————————————————————————————————
 };
 

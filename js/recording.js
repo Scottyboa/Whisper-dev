@@ -703,7 +703,7 @@ function handleMessage(parsed) {
         MAX_CHUNK_DURATION_MS
       );
 
-      break;
+      
     case "input_audio_buffer.speech_stopped":
       // VAD detected end-of-speech: turn “…” into “***”
       transcriptEl.value = transcriptEl.value.replace(/\.{3}(?!.*\.{3})/, "***");

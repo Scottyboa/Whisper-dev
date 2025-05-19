@@ -733,67 +733,6 @@ function handleMessage(parsed) {
 }
 
 
-      // ─── Reset and start our per‐chunk timers ─────────────────────────
-      clearTimeout(minChunkTimer);
-      clearTimeout(maxChunkTimer);
-
-      // 1) Block VAD until minimum chunk length (10 s of silence required)
-      updateVADConfig(MIN_CHUNK_DURATION_MS);
-
-      // 2) After 10 s, revert to normal 2 s‐silence cutoff
-      minChunkTimer = setTimeout(
-        () => updateVADConfig(DEFAULT_SILENCE_DURATION_MS),
-        MIN_CHUNK_DURATION_MS
-      );
-
-      // 3) Failsafe: after 2 min total, force aggressive 200 ms cutoff
-      maxChunkTimer = setTimeout(
-        () => updateVADConfig(AGGRESSIVE_SILENCE_DURATION_MS),
-        MAX_CHUNK_DURATION_MS
-      );
-
-      
-    case "input_audio_buffer.speech_stopped":
-      // VAD detected end-of-speech: turn “…” into “***”
-      transcriptEl.value = transcriptEl.value.replace(/\.{3}(?!.*\.{3})/, "***");
-      vadTime = performance.now() - (sessionConfig.turn_detection.silence_duration_ms || 0);
-      break;
-    case "conversation.item.input_audio_transcription.delta":
-      // Optionally show partial delta
-      break;
-    case "conversation.item.input_audio_transcription.completed":
-      // 1) Append the incoming transcript chunk
-      if (/\*{3}(?!.*\*{3})/.test(transcriptEl.value)) {
-        transcriptEl.value = transcriptEl.value.replace(/\*{3}(?!.*\*{3})/, parsed.transcript);
-      } else {
-        transcriptEl.value += parsed.transcript;
-      }
-      transcriptEl.value += " ";
-
-      // 2) If we’re pausing, finish pause teardown
-      if (isPausing) {
-        isPausing = false;
-        session.stop();
-        session = null;
-
-        pauseBtn.textContent = "Resume Recording";
-        updateUI('paused');
-        statusEl.textContent = "";
-      }
-      // 3) Else if we’re stopping, finish stop teardown
-      else if (isStopping) {
-        isStopping = false;
-        session.stop();
-        session = null;
-
-        pauseBtn.textContent = "Pause Recording";
-        updateUI('stopped');
-        statusEl.textContent = "Ready to start again.";
-      }
-      break;
-  }
-}
-
 function handleTranscript({ transcript, partial }) {
   // simply append each final chunk with a space
   transcriptEl.value += transcript;

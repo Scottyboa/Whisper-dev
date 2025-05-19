@@ -8,8 +8,9 @@ class WebSocketSession {
     this.ws = null;
   }
 
-  async startTranscription(stream, sessionConfig) {
-    const url = "wss://api.openai.com/v1/realtime?intent=transcription";
+    async startTranscription(stream, sessionConfig) {
+    // use the transcription model via the model query param
+    const url = "wss://api.openai.com/v1/realtime?model=gpt-4o-transcribe";
     this.ws = new WebSocket(url, [
       "realtime",
       `openai-insecure-api-key.${this.apiKey}`,
@@ -17,13 +18,19 @@ class WebSocketSession {
     ]);
     this.ws.binaryType = "arraybuffer";
 
-    this.ws.onopen = () => {
-   console.log("WS> onopen → sending transcription_session.update");
-  // ✅ correct WS event for transcription
-  this.ws.send(JSON.stringify({
-    type: "transcription_session.update",
-    session: sessionConfig
-  }));
+     // only send our settings *after* the server has confirmed the session
+    this.ws.onmessage = evt => {
+      const data = typeof evt.data === "string" ? JSON.parse(evt.data) : null;
+      // look for the official handshake
+      if (data?.type === "session.created") {
+       console.log("WS> session.created → sending session.update");
+        this.ws.send(JSON.stringify({
+          type: "session.update",
+          session: sessionConfig
+        }));
+      }
+      this.onmessage?.(data);
+    };
 
 // ——— Raw PCM @24 kHz capture via AudioContext ———
 const audioCtx = new AudioContext({ sampleRate: 24000 });
@@ -57,12 +64,7 @@ proc.onaudioprocess = (evt) => {
 };
 
 
-    this.ws.onmessage = evt => {
-      let data = (typeof evt.data === "string")
-        ? JSON.parse(evt.data)
-        : { audio: evt.data };
-      this.onmessage?.(data);
-    };
+    
     this.ws.onerror = err => this.onerror?.(err);
   }
   // ─── allow the same sendMessage(...) calls as the RTC Session class

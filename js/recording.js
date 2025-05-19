@@ -686,41 +686,22 @@ function handleMessage(parsed) {
       vadTime = performance.now() - (sessionConfig.turn_detection.silence_duration_ms || 0);
       break;
 
-    case 'conversation.item.input_audio_transcription.completed':
-      // 1) Append the incoming final transcript chunk
-      if (/\*{3}(?!.*\*{3})/.test(transcriptEl.value)) {
-        // Replace the trailing "***" placeholder
-        transcriptEl.value = transcriptEl.value.replace(
-          /\*{3}(?!.*\*{3})/,
-          parsed.transcript
-        );
-      } else {
-        // Otherwise just append it
-        transcriptEl.value += parsed.transcript;
-      }
-      transcriptEl.value += " ";
+    case "conversation.item.input_audio_transcription.completed":
+    // **REPLACE** the textarea contents with the latest transcript
+    // (the API sends the full transcript up to this point)
+    transcriptEl.value = parsed.transcript;
+    transcriptEl.scrollTop = transcriptEl.scrollHeight;
 
-      // 2) If we’re pausing, finish pause teardown
-      if (isPausing) {
-        isPausing = false;
-        session.stop();
-        session = null;
-
-        pauseBtn.textContent = "Resume Recording";
-        updateUI('paused');
-        statusEl.textContent = "";
-      }
-      // 3) Else if we’re stopping, finish stop teardown
-      else if (isStopping) {
-        isStopping = false;
-        session.stop();
-        session = null;
-
-        pauseBtn.textContent = "Pause Recording";
-        updateUI('stopped');
-        statusEl.textContent = "Ready to start again.";
-      }
-      break;
+    // If we just clicked “Stop”, tear down the session and reset UI:
+    if (isStopping) {
+      isStopping = false;
+      session.stop();
+      session = null;
+      updateState(false);
+      pauseBtn.textContent = "Pause Recording";
+      statusEl.textContent = "Ready to start again.";
+    }
+    break;
 
     case 'error':
       console.error(parsed.error);

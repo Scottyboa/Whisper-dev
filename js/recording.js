@@ -1,4 +1,73 @@
 // js/recording.js
+// AudioCapture: one shared AudioContext + 512-sample Worklet + subscriber API
+const AudioCapture = (() => {
+  let ctx, node, handlers = new Set(), initPromise;
+  const bufferSize = 512, sampleRate = 24000;
+
+  // Inline worklet code
+  const processorCode = `
+    class PCMProcessor extends AudioWorkletProcessor {
+      constructor() {
+        super();
+        this._buffer = [];
+        this._bufferSize = ${bufferSize};
+      }
+      process(inputs) {
+        const input = inputs[0]?.[0];
+        if (input) {
+          this._buffer.push(...input);
+          while (this._buffer.length >= this._bufferSize) {
+            const chunk = this._buffer.splice(0, this._bufferSize);
+            const pcm16 = new Int16Array(this._bufferSize);
+            for (let i = 0; i < this._bufferSize; i++) {
+              const s = Math.max(-1, Math.min(1, chunk[i]));
+              pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            this.port.postMessage(pcm16.buffer, [pcm16.buffer]);
+          }
+        }
+        return true;
+      }
+    }
+    registerProcessor('pcm-processor', PCMProcessor);
+  `;
+
+  // Initialize AudioContext + Worklet + MediaStream once
+  function init() {
+    if (!initPromise) {
+      initPromise = (async () => {
+        ctx = new AudioContext({ sampleRate });
+        const blob = new Blob([processorCode], { type: 'application/javascript' });
+        const url  = URL.createObjectURL(blob);
+        await ctx.audioWorklet.addModule(url);
+        URL.revokeObjectURL(url);
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const source = ctx.createMediaStreamSource(stream);
+       node = new AudioWorkletNode(ctx, 'pcm-processor', {
+          numberOfInputs: 1,
+          numberOfOutputs: 1,
+          outputChannelCount: [1]
+        });
+        source.connect(node);
+        node.connect(ctx.destination);
+        node.port.onmessage = ({ data }) => {
+          const pcm16 = new Int16Array(data);
+          handlers.forEach(h => h(pcm16));
+        };
+      })();
+    }
+    return initPromise;
+  }
+
+  // Subscribe to receive Int16Array chunks
+  function onAudio(handler) {
+    handlers.add(handler);
+    return () => handlers.delete(handler);
+  }
+
+  return { init, onAudio };
+})();
 
 // --- Session class for Realtime Transcription ---
 // ——— WebSocket-based fallback for firewalled networks ———
@@ -6,6 +75,7 @@ class WebSocketSession {
   constructor(apiKey) {
     this.apiKey = apiKey;
     this.ws = null;
+    this.audioUnsub = null;
   }
 
   async startTranscription(stream, sessionConfig) {
@@ -25,70 +95,24 @@ class WebSocketSession {
     session: sessionConfig
   }));
 
-  // new AudioWorklet approach
-  const audioCtx = new AudioContext({ sampleRate: 24000 });
+     // ── attach to shared AudioCapture ───────────────────
+      await AudioCapture.init();
+      // unsubscribe previous if any
+      if (this.audioUnsub) this.audioUnsub();
 
-  // 1) Inline PCMProcessor worklet code
-  const pcmProcessorCode = `
-    class PCMProcessor extends AudioWorkletProcessor {
-      constructor() {
-        super();
-        this._buffer = [];
-        this._bufferSize = 512;
-      }
-
-      process(inputs) {
-       const input = inputs[0]?.[0];
-        if (input) {
-          // accumulate samples
-          this._buffer.push(...input);
-          // whenever we have >=512, slice and post
-          while (this._buffer.length >= this._bufferSize) {
-            const chunk = this._buffer.splice(0, this._bufferSize);
-            const pcm16 = new Int16Array(this._bufferSize);
-            for (let i = 0; i < this._bufferSize; i++) {
-              const s = Math.max(-1, Math.min(1, chunk[i]));
-              pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-            }
-            this.port.postMessage(pcm16.buffer, [pcm16.buffer]);
-          }
+      // forward each 512-sample chunk to this.ws
+      this.audioUnsub = AudioCapture.onAudio(pcm16 => {
+        const bytes = new Uint8Array(pcm16.buffer);
+        let bin = '';
+        for (let b of bytes) bin += String.fromCharCode(b);
+        const b64 = btoa(bin);
+       if (this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({
+            type: "input_audio_buffer.append",
+            audio: b64
+          }));
         }
-       return true; // keep alive
-      }
-    }
-    registerProcessor('pcm-processor', PCMProcessor);
-  `;
-
- // 2) Create a Blob URL and load it
-  const blob = new Blob([pcmProcessorCode], { type: 'application/javascript' });
-  const url  = URL.createObjectURL(blob);
-  await audioCtx.audioWorklet.addModule(url);
-
-  // 3) Wire up MediaStream → Worklet → (invisible) destination
-  const source       = audioCtx.createMediaStreamSource(stream);
-  const workletNode  = new AudioWorkletNode(audioCtx, 'pcm-processor', {
-    numberOfInputs:  1,
-    numberOfOutputs: 1,
-    outputChannelCount: [1]
-  });
-  source.connect(workletNode);
-  workletNode.connect(audioCtx.destination);
-
-  // 4) Relay each 512-sample chunk over your WebSocket
-  workletNode.port.onmessage = ({ data }) => {
-    const pcm16 = new Int16Array(data);
-    const bytes = new Uint8Array(pcm16.buffer);
-    let binary = '';
-    for (let b of bytes) binary += String.fromCharCode(b);
-    const b64 = btoa(binary);
-    if (this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({
-        type: 'input_audio_buffer.append',
-        audio: b64
-      }));
-    }
-  };
-// ————————————————————————————————————————
+      });
 };
 
 
@@ -107,9 +131,19 @@ class WebSocketSession {
     }
   }
   stop() {
-    this.ws?.close();
-  }
-}
+
+    // stop routing audio
+     if (this.audioUnsub) {
+       this.audioUnsub();
+       this.audioUnsub = null;
+     }
+    // close ws
+     if (this.ws) {
+       this.ws.close();
+       this.ws = null;
+     }
+   }
+ }
 // ——————————————————————————————————————————————
 
 

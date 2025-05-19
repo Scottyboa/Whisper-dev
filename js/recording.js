@@ -640,21 +640,49 @@ function handleStopClick() {
 
 function handleMessage(parsed) {
   console.log("🛰 WS event:", parsed);
-  // skip partial (delta) events entirely
+
+  // 1) Skip all the incremental "delta" updates
   if (parsed.type === 'conversation.item.input_audio_transcription.delta') {
     return;
   }
+
+  // 2) Handle only the events you care about
   switch (parsed.type) {
-    case "transcription_session.created":
-      // don’t overwrite our config; measure handshake & schedule rollover
-      if (handshakeStart !== null && handshakeMs === null) {
-        handshakeMs = performance.now() - handshakeStart;
-        scheduleRollover();
+    case 'transcription_session.created':
+      // your existing handshake logic…
+      break;
+
+    case 'input_audio_buffer.speech_started':
+      // your existing "…" placeholder logic…
+      break;
+
+    case 'input_audio_buffer.speech_stopped':
+      // your existing "***" replacement logic…
+      break;
+
+    case 'conversation.item.input_audio_transcription.completed':
+      // This is the one final transcript per segment
+      transcriptEl.value += parsed.transcript + ' ';
+
+      // If you have pause/stop state to handle here, keep it:
+      if (isPausing) {
+        // existing pause teardown…
+      } else if (isStopping) {
+        // existing stop teardown…
       }
       break;
-    case "input_audio_buffer.speech_started":
-      // user just started speaking: show “…” placeholder
-      transcriptEl.value += "...";
+
+    // (Optionally handle errors, commits, etc. if you need them)
+    case 'error':
+      console.error(parsed.error);
+      break;
+
+    default:
+      // ignore everything else
+      break;
+  }
+}
+
 
       // ─── Reset and start our per‐chunk timers ─────────────────────────
       clearTimeout(minChunkTimer);

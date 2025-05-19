@@ -465,7 +465,9 @@ function handlePauseClick() {
 
   if (!endsWithDelta && !endsWithComplete) {
     // Scenario A: nothing pending → immediate teardown
-    mediaStream.getTracks().forEach(t => t.stop());
+     if (mediaStream) {
+      mediaStream.getTracks().forEach(t => t.stop());
+    }
     mediaStream = null;
     session.stop();
     session = null;
@@ -638,6 +640,10 @@ function handleStopClick() {
 
 function handleMessage(parsed) {
   console.log("🛰 WS event:", parsed);
+  // skip partial (delta) events entirely
+  if (parsed.type === 'conversation.item.input_audio_transcription.delta') {
+    return;
+  }
   switch (parsed.type) {
     case "transcription_session.created":
       // don’t overwrite our config; measure handshake & schedule rollover

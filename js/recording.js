@@ -249,7 +249,7 @@ const AGGRESSIVE_SILENCE_DURATION_MS = 200;       // 200 ms
 
 // ─── Rollover session constants & state ───────────────────────────────────
 const SESSION_MAX_MS      = 10  * 60 * 1000;  // 10 min hard cap
-const ROLLOVER_BASE_MS    =  8  * 60 * 1000;  // start overlap at 8 min
+const ROLLOVER_BASE_MS    =  29  * 60 * 1000;  // start overlap at 8 min
 const HANDSHAKE_SAFETY_MS =        2000;     // 2 s buffer margin
 const OVERLAP_DURATION_MS =        2000;     // 2 s parallel stream
 

@@ -207,7 +207,7 @@ class Session {
 const APP_PREFIX        = "realtime/transcribe/";
 const MODEL = "gpt-4o-transcribe";
 const TURN_DETECTION_TYPE = "server_vad";
-const MIN_CHUNK_DURATION_MS    = 12 * 1000;      // 10 seconds
+const MIN_CHUNK_DURATION_MS    = 10 * 1000;      // 10 seconds
 const MAX_CHUNK_DURATION_MS    = 2  * 60 * 1000; // 2 minutes
 const DEFAULT_SILENCE_DURATION_MS   = 300;      // 2 seconds
 const AGGRESSIVE_SILENCE_DURATION_MS = 200;       // 200 ms

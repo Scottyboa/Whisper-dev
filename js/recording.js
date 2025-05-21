@@ -10,7 +10,7 @@ class WebSocketSession {
 
     async startTranscription(stream, sessionConfig) {
       // 1) open the WS with the right model & subprotocols
-      const url = "wss://api.openai.com/v1/realtime?model=gpt-4o-transcribe";
+      const url = "wss://api.openai.com/v1/realtime?intent=transcription";
       this.ws = new WebSocket(url, [
         "realtime",
         `openai-insecure-api-key.${this.apiKey}`,

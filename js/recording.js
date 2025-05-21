@@ -209,7 +209,7 @@ const MODEL = "gpt-4o-transcribe";
 const TURN_DETECTION_TYPE = "server_vad";
 const MIN_CHUNK_DURATION_MS    = 10 * 1000;      // 10 seconds
 const MAX_CHUNK_DURATION_MS    = 2  * 60 * 1000; // 2 minutes
-const DEFAULT_SILENCE_DURATION_MS   = 300;      // 2 seconds
+const DEFAULT_SILENCE_DURATION_MS   = 450;      // 2 seconds
 const AGGRESSIVE_SILENCE_DURATION_MS = 200;       // 200 ms
 
 // ─── Helper to push a new VAD config … (etc) …
@@ -487,8 +487,8 @@ async function start(stream) {
     input_audio_transcription: { model: MODEL },
         turn_detection: {
       type: TURN_DETECTION_TYPE,
-      threshold: 0.4,
-      prefix_padding_ms: 400,
+      threshold: 0.6,
+      prefix_padding_ms: 800,
       // initial high threshold to block VAD for first 10 s
       silence_duration_ms: MIN_CHUNK_DURATION_MS
     }

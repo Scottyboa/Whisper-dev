@@ -64,10 +64,10 @@
     googletag.enableServices();
   });
 </script>
-  <link␊
-    href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&family=Playfair+Display:wght@400;700&display=swap"
-    rel="stylesheet"␊
-  />␊
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap"
+    rel="stylesheet"
+  />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -93,7 +93,14 @@
       "url": "https://transcribe-notes.netlify.app/transcribe.html",
       "name": "Transcribe Notes – Medical Transcription for Clinicians",
       "description": "An AI-powered medical transcription and clinical note tool for doctors, covering conditions like hypertension, diabetes, COPD, and medication management."
-@@ -104,198 +104,210 @@
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://transcribe-notes.netlify.app/#software",
+      "name": "Transcribe Notes",
+      "applicationCategory": "MedicalApplication",
+      "operatingSystem": "All",
+      "description": "Secure AI-powered medical transcription and note generation for healthcare professionals. Supports documentation of medications such as Atorvastatin, Metformin, Seretide.",
       "url": "https://transcribe-notes.netlify.app/",
       "author": {
         "@id": "https://transcribe-notes.netlify.app/#organization"
@@ -120,21 +127,9 @@
       padding: 0;
     }
     body {
-      font-family: 'Open Sans', sans-serif;
-      background-color: #f4f7f6;
+      font-family: 'Roboto', sans-serif;
+      background-color: #f8f8f8;
       color: #333;
-    }
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2399CCCC'%3E%3Crect x='18' y='0' width='4' height='40'/%3E%3Crect x='0' y='18' width='40' height='4'/%3E%3C/g%3E%3C/svg%3E");
-      opacity: 0.05;
-      pointer-events: none;
-      z-index: -1;
     }
     /* Grid Layout: Single Row, 3 Columns */
     .grid-container {
@@ -147,7 +142,7 @@
     .sidebar {
       grid-column: 1 / 2;
       grid-row: 1 / 2;
-      background-color: #e6efee;
+      background-color: #e0e0e0;
       padding: 0;
       display: flex;
       flex-direction: column;
@@ -158,7 +153,7 @@
     .ad-sidebar {
       grid-column: 3 / 4;
       grid-row: 1 / 2;
-      background-color: #e6efee;
+      background-color: #e0e0e0;
       /* Remove top padding so the ad is pushed up */
       padding: 0 20px 20px;
       display: flex;
@@ -176,8 +171,8 @@
       padding: 0;
     }
     /* Top Bar within main content */
-    .top-bar {␊
-      background-color: #e6efee; /* Matches sidebars */
+    .top-bar {
+      background-color: #e0e0e0; /* Matches sidebars */
       padding: 20px;            /* Increased padding for a thicker bar */
       margin-bottom: 20px;      /* Space below the top bar */
       display: flex;
@@ -221,16 +216,16 @@
       color: #333;
     }
     /* Cost Overview Hyperlink */
-    #openaiUsageLink {␊
-      font-size: 30;␊
-      font-family: 'Playfair Display', serif;
-      text-decoration: underline;␊
-      color: #4a8990;
-      margin: 0;␊
-    }␊
-    #openaiUsageLink:hover {␊
-      color: #347176;
-    }␊
+    #openaiUsageLink {
+      font-size: 30;
+      font-family: inherit;
+      text-decoration: underline;
+      color: blue;
+      margin: 0;
+    }
+    #openaiUsageLink:hover {
+      color: darkblue;
+    }
     /* Auto-resizing Textareas */
     #transcription,
     #generatedNote,
@@ -242,7 +237,7 @@
       font-size: 16px;
       box-sizing: border-box;
       margin-bottom: 20px;
-      font-family: 'Open Sans', sans-serif;
+      font-family: 'Roboto', sans-serif;
       resize: none;
     }
     #transcription {
@@ -266,8 +261,8 @@
       resize: vertical; /* user can resize manually */
     }
     /* Button Styles */
-    button {␊
-      background-color: #4a8990;
+    button {
+      background-color: #5a9;
       color: #fff;
       border: none;
       border-radius: 10px;
@@ -277,8 +272,8 @@
       transition: background-color 0.3s, transform 0.1s;
       margin: 10px;
     }
-    button:hover {␊
-      background-color: #347176;
+    button:hover {
+      background-color: #489;
     }
     button:active {
       transform: scale(0.98);
@@ -304,7 +299,52 @@
       flex-direction: column;
       gap: 10px;
     }
-@@ -348,51 +360,50 @@
+    /* Ad Containers for Right Sidebar */
+    #right-ad-unit-1 {
+      width: 300px;
+      min-height: 250px;
+      background: transparent;
+      margin-bottom: 0;
+    }
+    #right-ad-unit-2 {
+      width: 300px;
+      min-height: 250px;
+      background: transparent;
+      margin-top: 10px;
+    }
+    /* Ad Containers for Left Sidebar */
+    #left-ad-unit-1 {
+      width: 100%;
+      min-height: 150px;
+      background: transparent;
+      margin-bottom: 10px;
+    }
+    #left-ad-unit-2 {
+      width: 100%;
+      min-height: 150px;
+      background: transparent;
+    }
+    /* Hide leftover forced-color-adjust elements */
+    div[style*="forced-color-adjust: initial"] {
+      display: none !important;
+      height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    /* Guide Overlay Styles */
+    #guideView {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      background: white;
+      border: 2px solid #ccc;
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 2000;
+    }
     #guideView.active {
       display: block;
     }
@@ -330,6 +370,7 @@
     <!-- Main Content (center column) -->
     <main class="main-content">
       <!-- Top Bar inside Main Content -->
+<!-- Top Bar inside Main Content -->
 <div class="top-bar">
   <!-- Back to frontpage button stays on the far left -->
   <button id="backToHomeButton" onclick="window.history.back()">Back to frontpage</button>
@@ -355,6 +396,17 @@
 </div>
       <!-- Recording Area -->
       <div class="recording-area">
+<div class="recording-header">
+  <h3 id="recordingAreaTitle">Recording Area</h3>
+  <a id="openaiUsageLink" href="https://platform.openai.com/usage" target="_blank" rel="noopener noreferrer">
+    Cost usage overview
+  </a>
+  <!-- New hyperlink added next to the existing one -->
+  <a id="openaiWalletLink" href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" rel="noopener noreferrer">
+    <!-- The visible text will be set using language translations -->
+  </a>
+</div>
+        <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
         <div id="transcribeTimer" class="timer">Completion Timer: 0 sec</div>
         <textarea id="transcription" placeholder="Transcription result will appear here..."></textarea>
         <div>

@@ -1,7 +1,0 @@
-# netlify.toml
-
-[build]
-  # No build step—just publish your files from the repo root
-  command   = ""
-  publish   = "."          # Serve the repo root as your site
-  functions = "netlify/functions"  # Where to find your serverless code

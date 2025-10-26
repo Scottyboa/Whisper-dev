@@ -501,9 +501,22 @@
       sel.value = stored;
       applyProvider(stored);
 
-      // On change, set key + provider and reload to reinitialize correct module cleanly
-      sel.addEventListener("change", () => {
+      // On change: try soft-switch; if not available, persist state and reload (fallback)
+      sel.addEventListener("change", async () => {
         applyProvider(sel.value);
+        // Soft switch if our app helper exists
+        if (window.__app && typeof window.__app.switchTranscribeProvider === "function") {
+          try {
+            await window.__app.switchTranscribeProvider(sel.value);
+            return; // no reload needed
+          } catch (e) {
+            console.warn("Soft recording switch failed, falling back to reload", e);
+          }
+        }
+        // Fallback: persist UI state then reload
+        if (window.__app && typeof window.__app.saveState === "function") {
+          window.__app.saveState();
+        }
         window.location.reload();
       });
     })();
@@ -518,9 +531,12 @@
       const stored = sessionStorage.getItem("note_provider") || DEFAULT_NOTE_PROVIDER;
       noteSel.value = stored;
       sessionStorage.setItem("note_provider", stored);
-      noteSel.addEventListener("change", () => {
+      // New: live-switch note module without reloading
+      noteSel.addEventListener("change", async () => {
         sessionStorage.setItem("note_provider", noteSel.value);
-        window.location.reload();
+        if (window.__app && typeof window.__app.switchNoteProvider === "function") {
+          await window.__app.switchNoteProvider(noteSel.value);
+        }
       });
     })();
   </script>

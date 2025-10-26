@@ -107,31 +107,40 @@ document.addEventListener('DOMContentLoaded', () => {
   })();
 
   // Live-switch helpers (used by dropdown handlers in transcribe.html)
+  // --- Note Provider Switch (cached import version) ---
+  window.__app.cachedModules = window.__app.cachedModules || {};
   window.__app.switchNoteProvider = async function(next) {
-    // Remove old listeners by replacing the button node (fast & safe).
+    // Remove old listeners safely before reinitializing
     const btn = document.getElementById('generateNoteButton');
     if (btn) {
       const clone = btn.cloneNode(true);
       btn.parentNode.replaceChild(clone, btn);
     }
+
     sessionStorage.setItem('note_provider', (next || 'gpt5').toLowerCase());
-    // Re-init note module with the new provider
+
     const choice = (sessionStorage.getItem('note_provider') || 'gpt5').toLowerCase();
-    const path = choice === 'gpt4' ? './noteGeneration.js' : './notegeneration%20gpt-5.js';
-    try {
-      const mod = await import(/* @vite-ignore */ path + `?t=${Date.now()}`);
-      if (mod && typeof mod.initNoteGeneration === 'function') {
-        mod.initNoteGeneration();
-      }
-    } catch (e) {
-      console.warn('Switch note provider failed, falling back to GPT-4-latest', e);
-      const fallback = await import('./noteGeneration.js' + `?t=${Date.now()}`);
-      fallback.initNoteGeneration();
+    const path = choice === 'gpt4'
+      ? './noteGeneration.js'
+      : './notegeneration%20gpt-5.js';
+
+    // Load the module only once per session, then reuse from cache
+    if (!window.__app.cachedModules[path]) {
+      window.__app.cachedModules[path] = await import(path);
+    }
+
+    const mod = window.__app.cachedModules[path];
+    if (mod && typeof mod.initNoteGeneration === 'function') {
+      mod.initNoteGeneration();
+    } else {
+      console.warn(`Module ${path} missing initNoteGeneration()`);
     }
   };
 
+  // --- Recording Provider Switch (cached import version) ---
+  window.__app.cachedModules = window.__app.cachedModules || {};
   window.__app.switchTranscribeProvider = async function(next) {
-    // Best-effort cleanup: drop existing handlers by replacing the control buttons.
+    // Clean up old button listeners safely
     ['startButton','stopButton','pauseResumeButton'].forEach(id => {
       const b = document.getElementById(id);
       if (b) {
@@ -139,25 +148,31 @@ document.addEventListener('DOMContentLoaded', () => {
         b.parentNode.replaceChild(clone, b);
       }
     });
+
     sessionStorage.setItem('transcribe_provider', (next || 'openai').toLowerCase());
-    // Re-init recording module for the new provider
     const provider = (sessionStorage.getItem('transcribe_provider') || 'openai').toLowerCase();
+
+    // Choose module path
+    const path = provider === 'soniox'
+      ? './SONIOX_UPDATE.js'
+      : './recording.js';
+
     try {
-      let mod;
-      if (provider === 'soniox') {
-        mod = await import('./SONIOX_UPDATE.js' + `?t=${Date.now()}`);
-      } else {
-        mod = await import('./recording.js' + `?t=${Date.now()}`);
+      // Cache and reuse modules
+      if (!window.__app.cachedModules[path]) {
+        window.__app.cachedModules[path] = await import(path);
       }
+
+      const mod = window.__app.cachedModules[path];
       if (mod && typeof mod.initRecording === 'function') {
         mod.initRecording();
       } else {
         throw new Error('initRecording() missing');
       }
     } catch (e) {
-      // Let the caller fall back to reload; preserve state first.
-      saveState();
-      throw e;
+      console.warn('Switch transcribe provider failed, falling back to reload', e);
+      if (typeof window.__app.saveState === 'function') window.__app.saveState();
+      window.location.reload();
     }
   };
 

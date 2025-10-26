@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const choice = (sessionStorage.getItem('note_provider') || 'gpt5').toLowerCase();
     // Map dropdown choice → module path
     const path = choice === 'gpt4'
-      ? './noteGeneration.js'
+      ? './notegeneration.js'
       // file name contains a space; encode it for module import on static hosts
       : './notegeneration%20gpt-5.js';
     try {
@@ -40,12 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
         mod.initNoteGeneration();
       } else {
         console.warn(`Module ${path} missing initNoteGeneration(); falling back to GPT-4-latest`);
-        const fallback = await import('./noteGeneration.js');
+        const fallback = await import('./notegeneration.js');
         fallback.initNoteGeneration();
       }
     } catch (e) {
       console.warn(`Failed to load ${path}; falling back to GPT-4-latest`, e);
-      const fallback = await import('./noteGeneration.js');
+      const fallback = await import('./notegeneration.js');
       fallback.initNoteGeneration();
     }
   })();
@@ -72,3 +72,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+

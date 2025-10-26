@@ -627,6 +627,39 @@
 
   <script type="module" src="./js/promptManager.js"></script>
 
+  <!-- Centralized prompt slot control (bound to transcribe.html) -->
+  <script type="module">
+    import { PromptManager } from "./js/promptManager.js";
+
+    const promptSlotSelect = document.getElementById("promptSlot");
+    const customPromptTextarea = document.getElementById("customPrompt");
+
+    if (promptSlotSelect && customPromptTextarea) {
+      let isLoadingPrompt = false;
+
+      function loadCurrentSlot() {
+        isLoadingPrompt = true;
+        PromptManager.loadPrompt(promptSlotSelect.value);
+        isLoadingPrompt = false;
+      }
+
+      // Initial load
+      loadCurrentSlot();
+
+      // Save on user input
+      customPromptTextarea.addEventListener("input", () => {
+        if (isLoadingPrompt) return;
+        PromptManager.savePrompt(promptSlotSelect.value, customPromptTextarea.value);
+        customPromptTextarea.style.height = "auto";
+        customPromptTextarea.style.height = customPromptTextarea.scrollHeight + "px";
+      });
+
+      // Load new prompt on slot change
+      promptSlotSelect.addEventListener("change", loadCurrentSlot);
+    }
+  </script>
+
+
   <!-- Import the main module to initialize language, recording, note generation, and UI functionalities -->
   <script type="module" src="./js/main.js"></script>
 

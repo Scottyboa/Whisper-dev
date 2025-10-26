@@ -125,7 +125,7 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
         verbosity: "medium"    // try "low" (faster/terse) or "high" (more detail)
       },
       reasoning: {
-        effort: "mminimal"      // try "minimal" (fastest) or omit for default medium
+        effort: "minimal"      // try "minimal" (fastest) or omit for default medium
       }
     })
   });

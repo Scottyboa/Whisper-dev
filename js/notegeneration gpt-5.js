@@ -173,6 +173,16 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
   }
 }
 
+
+// --- Initialization function for dynamic module loading ---
+export function initNoteGeneration() {
+  console.log("Initializing GPT-5 note generation module");
+  const btn = document.getElementById("generateNoteButton");
+  if (btn) {
+    btn.onclick = generateNote;
+  }
+}
+
 async function streamOpenAIResponse(resp, {
   onDelta = () => {},
   onDone = () => {},

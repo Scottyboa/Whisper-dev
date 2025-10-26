@@ -274,3 +274,4 @@ function initNoteGeneration() {
  
 
 export { initNoteGeneration };
+

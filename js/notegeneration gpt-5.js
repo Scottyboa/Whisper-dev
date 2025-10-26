@@ -34,29 +34,11 @@ function base64ToArrayBuffer(base64) {
 // Since encryption is no longer needed, the decryption functions are removed.
 // We now assume that the plain API key is stored in sessionStorage under "user_api_key".
 
-// Returns a storage key for a given prompt slot and API key
-function getPromptStorageKey(slot) {
-  // Now retrieves the key from "user_api_key" directly.
-  const apiKey = sessionStorage.getItem("user_api_key") || "";
-  const hashedApiKey = hashString(apiKey);
-  return "customPrompt_" + hashedApiKey + "_" + slot;
-}
 
 // Auto-resizes a textarea based on its content
 function autoResize(textarea) {
   textarea.style.height = "auto";
   textarea.style.height = textarea.scrollHeight + "px";
-}
-
-// Loads the stored prompt for a given slot into the custom prompt textarea
-function loadPromptForSlot(slot) {
-  const key = getPromptStorageKey(slot);
-  const storedPrompt = localStorage.getItem(key);
-  const customPromptTextarea = document.getElementById("customPrompt");
-  if (customPromptTextarea) {
-    customPromptTextarea.value = storedPrompt ? storedPrompt : "";
-    autoResize(customPromptTextarea);
-  }
 }
 
 // Formats milliseconds into a human-readable string
@@ -143,7 +125,7 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
         verbosity: "medium"    // try "low" (faster/terse) or "high" (more detail)
       },
       reasoning: {
-        effort: "minimal"      // try "minimal" (fastest) or omit for default medium
+        effort: "mminimal"      // try "minimal" (fastest) or omit for default medium
       }
     })
   });
@@ -232,34 +214,16 @@ async function streamOpenAIResponse(resp, {
  
 // Initializes note generation functionality, including prompt slot handling and event listeners.
 function initNoteGeneration() {
-  const promptSlotSelect = document.getElementById("promptSlot");
-  const customPromptTextarea = document.getElementById("customPrompt");
   const generateNoteButton = document.getElementById("generateNoteButton");
-  if (!promptSlotSelect || !customPromptTextarea || !generateNoteButton) return;
-  
-  // Disable the Generate Note button if consent is not accepted.
+  if (!generateNoteButton) return;
+
+  // Disable note generation if consent isn’t accepted
   if (document.cookie.indexOf("user_consent=accepted") === -1) {
     generateNoteButton.disabled = true;
     generateNoteButton.title = "Note generation is disabled until you accept cookies/ads.";
   }
-  
-  // Load the stored prompt for the current slot.
-  loadPromptForSlot(promptSlotSelect.value);
-  
-  // Save prompt changes on input.
-  customPromptTextarea.addEventListener("input", () => {
-    const currentSlot = promptSlotSelect.value;
-    const key = getPromptStorageKey(currentSlot);
-    localStorage.setItem(key, customPromptTextarea.value);
-    autoResize(customPromptTextarea);
-  });
-  
-  // Load the prompt when the slot changes.
-  promptSlotSelect.addEventListener("change", () => {
-    loadPromptForSlot(promptSlotSelect.value);
-  });
-  
-  generateNoteButton.addEventListener("click", generateNote);
-}
+
+  // Attach click handler only
+  generateNoteButton.addEventListener("click", generateNote);}
  
 export { initNoteGeneration };

@@ -242,6 +242,10 @@
     <p id="start-text">To get started, please enter your OpenAI API key:</p>
     <input type="text" id="apiKeyInput" placeholder="Enter API Key here" autocomplete="off">
     <br>
+    <!-- New (Phase 1): Optional Soniox API Key -->
+    <p id="soniox-text">Optionally, enter your Soniox API key:</p>
+    <input type="text" id="sonioxKeyInput" placeholder="Enter Soniox API Key here" autocomplete="off">
+    <br>
     <button id="enterTranscriptionBtn">Enter Transcription Tool</button>
     <br>
     <p class="ad-revenue-message" id="ad-revenue-message">
@@ -293,6 +297,29 @@
       }
       document.cookie = name + "=" + (value || "")  + expires + "; path=/";
     }
+
+    // Phase 1: Store both keys on click; keep OpenAI as default user_api_key (no validation).
+    (function wireEnterButtonOnce() {
+      var btn = document.getElementById("enterTranscriptionBtn");
+      if (!btn) return;
+      if (btn._multiKeyWired) return;  // guard against double-binding
+      btn._multiKeyWired = true;
+
+      btn.addEventListener("click", function () {
+        var openaiKey = ((document.getElementById("apiKeyInput")    || {}).value || "").trim();
+        var sonioxKey = ((document.getElementById("sonioxKeyInput") || {}).value || "").trim();
+
+        // Store both keys (even if empty) for later provider selection
+        sessionStorage.setItem("openai_api_key", openaiKey);
+        sessionStorage.setItem("soniox_api_key", sonioxKey);
+
+        // Back-compat: default active key remains OpenAI for now
+        sessionStorage.setItem("user_api_key", openaiKey);
+
+        // Proceed to the transcription tool regardless of empties
+        window.location.href = "transcribe.html";
+      });
+    })();
 
   document.addEventListener("DOMContentLoaded", function() {
     const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");

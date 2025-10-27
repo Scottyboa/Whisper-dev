@@ -215,138 +215,14 @@ function getDeviceToken() {
 // --- API Key Retrieval ---
 // With encryption removed, we now simply get the API key from sessionStorage.
 function getAPIKey() {
-  return sessionStorage.getItem("user_api_key");
+  return sessionStorage.getItem("lemonfox_api_key");
 }
 
-const SONIOX_BASE = "https://api.soniox.com/v1";
-
-async function uploadToSonioxFile(wavBlob, filename, retries = 5, backoff = 2000) {
-  const apiKey = getAPIKey();
-  if (!apiKey) throw new Error("API key not available");
-  const fd = new FormData();
-  fd.append("file", wavBlob, filename);
-  try {
-    const rsp = await fetch(`${SONIOX_BASE}/files`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-     body: fd,
-    });
-    if (!rsp.ok) throw new Error(`Soniox file upload failed: ${await rsp.text()}`);
-    const j = await rsp.json();
-    return j.id; // file_id
-  } catch (err) {
-    if (retries > 0) {
-      console.warn(`Upload failed, retrying in ${backoff}ms… (${retries} left)`);
-      await new Promise(r => setTimeout(r, backoff));
-      return uploadToSonioxFile(wavBlob, filename, retries - 1, Math.floor(backoff * 1.5));
-    }
-    throw err;
-  }
-}
-
-async function createSonioxTranscription(fileId, context, retries = 5, backoff = 2000) {
-  const apiKey = getAPIKey();
-  if (!apiKey) throw new Error("API key not available");
-  const body = {
-    model: "stt-async-v3",
-    file_id: fileId,
-    // Norwegian first, then English, but Soniox auto-detects if omitted:
-    language_hints: ["no", "en"],
-    // Speaker diarization disabled to keep plain text similar to your current UI:
-    enable_speaker_diarization: false,
-    enable_language_identification: true,
-    context, // optional domain/context string
-  };
-  try {
-    const rsp = await fetch(`${SONIOX_BASE}/transcriptions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-    if (!rsp.ok) throw new Error(`Create transcription failed: ${await rsp.text()}`);
-    const j = await rsp.json();
-    return j.id; // transcription_id
-  } catch (err) {
-    if (retries > 0) {
-      console.warn(`Create failed, retrying in ${backoff}ms… (${retries} left)`);
-      await new Promise(r => setTimeout(r, backoff));
-      return createSonioxTranscription(fileId, context, retries - 1, Math.floor(backoff * 1.5));
-    }
-    throw err;
-  }
-}
-
-async function pollSonioxTranscription(transcriptionId, timeoutMs = 300000, intervalMs = 1500) {
-  const apiKey = getAPIKey();
-  const start = Date.now();
-  while (true) {
-    // Use timeout wrapper so a single stalled poll request doesn't hang indefinitely.
-    let rsp;
-    try {
-      rsp = await fetchWithTimeout(
-        `${SONIOX_BASE}/transcriptions/${transcriptionId}`,
-        { headers: { Authorization: `Bearer ${apiKey}` } },
-        30000 // 30 s per poll attempt
-      );
-    } catch (err) {
-      // If a single poll request times out/aborts, retry this same job ID
-      if (err && err.name === "AbortError") {
-        logDebug(`Poll ${transcriptionId} aborted after 30s; retrying…`);
-        // optional small delay to avoid hot-looping
-        await new Promise(r => setTimeout(r, intervalMs));
-        // check overall timeout before next iteration
-        if (Date.now() - start > timeoutMs) throw new Error("Transcription timed out");
-        continue;
-      }
-      throw err; // real error → surface it
-    }
-    if (!rsp.ok) throw new Error(`Poll failed: ${await rsp.text()}`);
-    const j = await rsp.json();
-    if (j.status === "completed") return;
-    if (j.status === "error") throw new Error(j.error_message || "Transcription error");
-    if (Date.now() - start > timeoutMs) throw new Error("Transcription timed out");
-    await new Promise(r => setTimeout(r, intervalMs));
-  }
-}
 
 async function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-async function fetchSonioxTranscriptText(transcriptionId, retries = 5, delayMs = 2000) {
-  const apiKey = getAPIKey();
-  let attempt = 0;
-
-  while (true) {
-    try {
-      const rsp = await fetch(`${SONIOX_BASE}/transcriptions/${transcriptionId}/transcript`, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-      });
-
-      if (!rsp.ok) {
-        const body = await rsp.text().catch(() => "");
-       throw new Error(
-         `Get transcript failed: ${rsp.status} ${rsp.statusText}` +
-         (body ? ` — ${body}` : "")
-        );
-      }
-
-      const j = await rsp.json();
-      return j.text || "";
-    } catch (err) {
-      attempt += 1;
-      if (attempt > retries) {
-        logError(`Get transcript failed after ${retries} retries:`, err);
-        throw err;
-      }
-      logInfo(`Get transcript attempt ${attempt} failed; retrying in ${delayMs}ms…`);
-      await sleep(delayMs);
-    }
-  }
-}
 
 // + Estimate WAV duration (mono, 16-bit, 16 kHz)
 function estimateWavSeconds(wavBlob) {
@@ -356,52 +232,6 @@ function estimateWavSeconds(wavBlob) {
 }
 
 
-// ─────────────────── Deletion helpers (place right after fetchSonioxTranscriptText) ───────────────────
-async function deleteSonioxTranscription(transcriptionId) {
-  if (!transcriptionId) return;
-  const apiKey = getAPIKey();
-  try {
-    const rsp = await fetch(`${SONIOX_BASE}/transcriptions/${transcriptionId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    if (!rsp.ok) {
-      const msg = await rsp.text();
-      logDebug(`Delete transcription ${transcriptionId} non-OK: ${msg}`);
-    } else {
-      logInfo(`Deleted transcription ${transcriptionId}`);
-    }
-  } catch (e) {
-    logDebug(`Delete transcription ${transcriptionId} failed:`, e);
-  }
-}
-
-async function deleteSonioxFile(fileId) {
-  if (!fileId) return;
-  const apiKey = getAPIKey();
-  try {
-    const rsp = await fetch(`${SONIOX_BASE}/files/${fileId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    if (!rsp.ok) {
-      const msg = await rsp.text();
-      logDebug(`Delete file ${fileId} non-OK: ${msg}`);
-    } else {
-      logInfo(`Deleted file ${fileId}`);
-    }
-  } catch (e) {
-    logDebug(`Delete file ${fileId} failed:`, e);
-  }
-}
-
-async function cleanupSonioxResources({ transcriptionId, fileId }) {
-  // Best-effort cleanup; do not throw.
-  await Promise.allSettled([
-    deleteSonioxTranscription(transcriptionId),
-    deleteSonioxFile(fileId),
-  ]);
-}
 
 // --- OfflineAudioContext Processing ---
 // This function takes interleaved PCM samples (Float32Array), the original sample rate, and the number of channels,
@@ -485,37 +315,39 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
 // Sends the WAV blob to Soniox and returns the transcript text; cleans up after.
  async function transcribeChunkDirectly(wavBlob, chunkNum) {
    // Build a domain/context string like your old prompt, but Soniox expects 'context'
-  const context =
-    "Doctor-patient consultation. Mostly Norwegian; sometimes English. " +
-    "Transcribe clearly. Exclude filler words and false starts. Do not paraphrase or summarize.";
-  let fileId = null;
-  let txId = null;
+  const apiKey = getAPIKey();
+  if (!apiKey) {
+    updateStatusMessage("No Lemonfox API key found — please enter it on the homepage.", "red");
+    return `[Missing API key for chunk ${chunkNum}]`;
+  }
+
+  const fd = new FormData();
+  fd.append("model", "lemonfox-stt");
+  fd.append("language", "no"); // optional
+  fd.append("file", wavBlob, `chunk_${chunkNum}.wav`);
+
   try {
-    const filename = `chunk_${chunkNum}.wav`;
-    // 1) upload the WAV
-    fileId = await uploadToSonioxFile(wavBlob, filename);
-    // 2) create a transcription job on Soniox async model
-    txId = await createSonioxTranscription(fileId, context);
-    // 3) poll until done, timeout scales with audio length
-    const secs = estimateWavSeconds(wavBlob);
-    const timeoutMs = Math.max(300000, Math.ceil(secs * 4000)); // >=5 min, ~4× audio length
-    await pollSonioxTranscription(txId, timeoutMs, 1500);
-    // 4) fetch final text
-    const text = await fetchSonioxTranscriptText(txId);
-    // 5) best-effort cleanup
-    await cleanupSonioxResources({ transcriptionId: txId, fileId });
-    return text || "";
+    const rsp = await fetch("https://api.lemonfox.ai/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: fd,
+    });
+
+    if (!rsp.ok) {
+      const errText = await rsp.text().catch(() => "");
+      throw new Error(`Lemonfox STT failed: ${rsp.status} ${rsp.statusText} — ${errText}`);
+    }
+
+    const j = await rsp.json();
+    const text = j.text || "";
+    logInfo(`Lemonfox chunk ${chunkNum} completed.`);
+    return text;
   } catch (error) {
-     logError(`Error transcribing chunk ${chunkNum}:`, error);
-    // try to clean up anything we created
-    await cleanupSonioxResources({ transcriptionId: txId, fileId });
-     updateStatusMessage(
-       "Transcription error with Soniox API. Check key/credits or try again.",
-       "red"
-     );
-     transcriptionError = true;
-     return `[Error transcribing chunk ${chunkNum}]`;
-   }
+    logError(`Error transcribing chunk ${chunkNum} (Lemonfox):`, error);
+    updateStatusMessage("Transcription error with Lemonfox API. Check key or credits.", "red");
+    transcriptionError = true;
+    return `[Error transcribing chunk ${chunkNum}]`;
+  }
  }
 
 
@@ -828,7 +660,7 @@ function initRecording() {
     // Retrieve the API key before starting.
     const apiKey = getAPIKey();
   if (!apiKey) {
-    alert("Please enter your Soniox API key first.");
+    alert("Please enter your Lemonfox API key first.");
     return;
   }
     resetRecordingState();

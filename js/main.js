@@ -88,9 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
   (async function initNoteByProvider() {
     const choice = (sessionStorage.getItem('note_provider') || 'gpt5').toLowerCase();
     // Map dropdown choice → module path (ALL note modules are in /js)
-    const path = choice === 'gpt4'
-      ? './noteGeneration.js'
-      : './notegeneration%20gpt-5.js';
+    const path =
+      choice === 'gpt4'      ? './noteGeneration.js' :
+      choice === 'lemonfox'  ? './LemonfoxTXT.js'   :
+                               './notegeneration%20gpt-5.js';
     try {
       const mod = await import(path);
       if (mod && typeof mod.initNoteGeneration === 'function') {
@@ -121,9 +122,10 @@ document.addEventListener('DOMContentLoaded', () => {
     sessionStorage.setItem('note_provider', (next || 'gpt5').toLowerCase());
 
     const choice = (sessionStorage.getItem('note_provider') || 'gpt5').toLowerCase();
-  const path = choice === 'gpt4'
-    ? './noteGeneration.js'
-    : './notegeneration%20gpt-5.js';
+    const path =
+      choice === 'gpt4'      ? './noteGeneration.js' :
+      choice === 'lemonfox'  ? './LemonfoxTXT.js'   :
+                               './notegeneration%20gpt-5.js';
 
     // Load the module only once per session, then reuse from cache
     if (!window.__app.cachedModules[path]) {

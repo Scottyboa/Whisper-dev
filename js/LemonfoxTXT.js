@@ -107,7 +107,7 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
     { role: "user",   content: transcriptionText }
   ];
   // Call the Responses API with GPT-5 and streaming
-  const rsp = await fetch("https://eu-api.lemonfox.ai/v1/audio/transcriptions", {
+  const response = await fetch("https://eu-api.lemonfox.ai/v1/chat/completions", 
     method: "POST",
     headers: {
       "Content-Type": "application/json",

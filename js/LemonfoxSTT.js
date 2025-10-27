@@ -323,7 +323,6 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
 
   const fd = new FormData();
   fd.append("model", "lemonfox-stt");
-  fd.append("language", "no"); // optional
   fd.append("file", wavBlob, `chunk_${chunkNum}.wav`);
 
   try {

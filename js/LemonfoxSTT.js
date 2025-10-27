@@ -338,7 +338,16 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
     }
 
     const j = await rsp.json();
-    const text = j.text || "";
+    // Robust text extraction:
+    // If you later set response_format=verbose_json, .text may be absent.
+    // In that case, reconstruct from segments.
+    let text = j.text || "";
+    if (!text && Array.isArray(j.segments)) {
+      text = j.segments
+        .map(s => (s && typeof s.text === "string" ? s.text : ""))
+        .join("")
+        .trim();
+    }
     logInfo(`Lemonfox chunk ${chunkNum} completed.`);
     return text;
   } catch (error) {

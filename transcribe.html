@@ -403,6 +403,7 @@
     <select id="transcribeProvider">
       <option value="openai">OpenAI</option>
       <option value="soniox">Soniox</option>
+      <option value="lemonfox">Lemonfox</option>
     </select>
   </div>
 </div>
@@ -438,6 +439,7 @@
             <select id="noteProvider">
               <option value="gpt5" selected>GPT-5</option>
               <option value="gpt4">GPT-4-latest</option>
+              <option value="lemonfox">Lemonfox</option>
             </select>
           </div>
           <button id="generateNoteButton">Generate Note</button>
@@ -485,6 +487,7 @@
     (function () {
       const OPENAI = "openai";
       const SONIOX = "soniox";
+      const LEMONFOX = "lemonfox";
       const sel = document.getElementById("transcribeProvider");
       if (!sel) return;
 
@@ -492,6 +495,8 @@
         sessionStorage.setItem("transcribe_provider", p);
         const openaiKey = sessionStorage.getItem("openai_api_key") || "";
         const sonioxKey = sessionStorage.getItem("soniox_api_key") || "";
+        const lemonKey = sessionStorage.getItem("lemonfox_api_key") || "";
+        // Pick the active key by provider; default to OpenAI for unknowns
         const chosen = (p === SONIOX) ? sonioxKey : openaiKey;
         sessionStorage.setItem("user_api_key", chosen);
       }

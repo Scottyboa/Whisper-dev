@@ -66,12 +66,14 @@ document.addEventListener('DOMContentLoaded', () => {
   (async function initRecordingByProvider() {
     const provider = (sessionStorage.getItem('transcribe_provider') || 'openai').toLowerCase();
     try {
-      let mod;
-      if (provider === 'soniox') {
-        mod = await import('./SONIOX_UPDATE.js');
-      } else {
-        mod = await import('./recording.js');
-      }
+      const moduleByProvider = {
+        soniox:   './SONIOX_UPDATE.js',
+        lemonfox: './LemonfoxSTT.js',
+        openai:   './recording.js',
+      };
+      const path = moduleByProvider[provider] || './recording.js';
+      console.info('[recording:init] provider:', provider, 'module:', path);
+      const mod = await import(path);
       if (mod && typeof mod.initRecording === 'function') {
         mod.initRecording();
       } else {
@@ -137,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // --- Recording Provider Switch (cached import version) ---
-  window.__app.cachedModules = window.__app.cachedModules || {};
   window.__app.switchTranscribeProvider = async function(next) {
     // Clean up old button listeners safely
     ['startButton','stopButton','pauseResumeButton'].forEach(id => {
@@ -152,9 +153,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const provider = (sessionStorage.getItem('transcribe_provider') || 'openai').toLowerCase();
 
     // Choose module path
-    const path = provider === 'soniox'
-      ? './SONIOX_UPDATE.js'
-      : './recording.js';
+    const moduleByProvider = {
+      soniox:   './SONIOX_UPDATE.js',
+      lemonfox: './LemonfoxSTT.js',
+      openai:   './recording.js',
+    };
+    const path = moduleByProvider[provider] || './recording.js';
+    console.info('[recording:switch] provider:', provider, 'module:', path);
 
     try {
       // Cache and reuse modules

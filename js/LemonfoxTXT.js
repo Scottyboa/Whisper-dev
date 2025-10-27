@@ -84,10 +84,10 @@ async function generateNote() {
     }
   }, 1000);
   
-    // Phase 3: Always use the OpenAI key for note generation (independent of transcription provider)
-  const apiKey = sessionStorage.getItem("openai_api_key");
+  // Lemonfox TXT: use the Lemonfox key (independent of transcription provider)
+  const apiKey = sessionStorage.getItem("lemonfox_api_key");
   if (!apiKey) {
-    alert("No API key available for note generation.");
+    alert("No Lemonfox API key available for note generation.");
     clearInterval(noteTimerInterval);
     return;
   }
@@ -107,26 +107,16 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
     { role: "user",   content: transcriptionText }
   ];
   // Call the Responses API with GPT-5 and streaming
-  const resp = await fetch("https://api.openai.com/v1/responses", {
+  const resp = await fetch("https://api.lemonfox.ai/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gpt-5",
-      input: messages.map(m => ({
-        role: m.role,
-        content: [{ type: "input_text", text: m.content }]
-      })),
-      stream: true,
-      // —— OPTIONAL TUNING PARAMS —— 
-      text: {
-        verbosity: "medium"    // try "low" (faster/terse) or "high" (more detail)
-      },
-      reasoning: {
-        effort: "minimal"      // try "minimal" (fastest) or omit for default medium
-      }
+      model: "llama-70b-chat",
+      messages,
+      stream: true
     })
   });
     await streamOpenAIResponse(resp, {

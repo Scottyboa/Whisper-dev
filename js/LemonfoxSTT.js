@@ -326,7 +326,7 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
   fd.append("file", wavBlob, `chunk_${chunkNum}.wav`);
 
   try {
-    const rsp = await fetch("https://api.lemonfox.ai/v1/audio/transcriptions", {
+    const rsp = await fetch("https://eu-api.lemonfox.ai/v1/audio/transcriptions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
       body: fd,

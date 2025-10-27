@@ -1,8 +1,8 @@
 
-// recording.js
+// LemonfoxSTT.js
 // Updated recording module without encryption/HMAC mechanisms,
 // processing audio chunks using OfflineAudioContext,
-// and implementing a client‑side transcription queue that sends each processed chunk directly to OpenAI's Whisper API.
+// and implementing a client‑side transcription queue that sends each processed chunk directly to Lemonfox STT API
 let transcriptionError = false;
 
 function hashString(str) {

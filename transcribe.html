@@ -496,8 +496,10 @@
         const openaiKey = sessionStorage.getItem("openai_api_key") || "";
         const sonioxKey = sessionStorage.getItem("soniox_api_key") || "";
         const lemonKey = sessionStorage.getItem("lemonfox_api_key") || "";
-        // Pick the active key by provider; default to OpenAI for unknowns
-        const chosen = (p === SONIOX) ? sonioxKey : openaiKey;
+       // Pick the active key by provider; default to OpenAI for unknowns
+        const chosen = (p === SONIOX) ? sonioxKey
+                     : (p === LEMONFOX) ? lemonKey
+                     : openaiKey;
         sessionStorage.setItem("user_api_key", chosen);
       }
 
@@ -547,7 +549,7 @@
   </script>
 
   <!-- Ensure main boot script runs after provider wiring -->
-  <script type="module" src="./main.js"></script>
+  <script type="module" src="./js/main.js"></script>
 
   <!-- Guide Overlay (outside the grid container) -->
   <div id="guideView">
@@ -663,10 +665,6 @@
       promptSlotSelect.addEventListener("change", loadCurrentSlot);
     }
   </script>
-
-
-  <!-- Import the main module to initialize language, recording, note generation, and UI functionalities -->
-  <script type="module" src="./js/main.js"></script>
 
 <script>
   googletag.cmd.push(function() {

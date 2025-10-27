@@ -119,7 +119,7 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
       stream: true
     })
   });
-    await streamOpenAIResponse(resp, {
+    await streamLemonfoxChat(resp, {
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;
       },
@@ -145,14 +145,14 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
   }
 }
 
-async function streamOpenAIResponse(resp, {
+async function streamLemonfoxChat(resp, {
   onDelta = () => {},
   onDone = () => {},
   onError = (e) => { console.error(e); },
 } = {}) {
   if (!resp.ok || !resp.body) {
     const text = await resp.text().catch(() => "");
-    throw new Error(`OpenAI error ${resp.status}: ${text}`);
+    throw new Error(`Lemonfox error ${resp.status}: ${text}`);
   }
 
   const reader = resp.body.getReader();
@@ -165,33 +165,38 @@ async function streamOpenAIResponse(resp, {
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split("\n\n");
-      buffer = parts.pop() ?? "";
 
-      for (const part of parts) {
-        const lines = part.split("\n");
-        let event = null;
-        let dataStr = null;
+      // SSE frames are separated by a blank line
+      const frames = buffer.split("\n\n");
+      buffer = frames.pop() ?? "";
+
+      for (const frame of frames) {
+        // Each frame is a set of "key: value" lines
+        // We only care about "data:" lines
+        const lines = frame.split("\n");
         for (const line of lines) {
-          if (line.startsWith("event:")) event = line.slice(6).trim();
-          if (line.startsWith("data:"))  dataStr = line.slice(5).trim();
-        }
-        if (!dataStr) continue;
-        if (dataStr === "[DONE]") { onDone(); return; }
+          if (!line.startsWith("data:")) continue;
+          const dataStr = line.slice(5).trim();
 
-        let payload;
-        try { payload = JSON.parse(dataStr); } catch { continue; }
+          if (dataStr === "[DONE]") {
+            onDone();
+            return;
+          }
 
-        if (payload.type === "response.output_text.delta" && typeof payload.delta === "string") {
-          onDelta(payload.delta);
-        }
-        if (payload.type === "response.completed") {
-          onDone(payload);
-          return;
-        }
-        if (payload.type === "response.error") {
-          onError(new Error(payload.error?.message || "Unknown streaming error"));
-          return;
+          try {
+            const payload = JSON.parse(dataStr);
+            // OpenAI-compatible chat streaming:
+            // choices[0].delta.content for incremental tokens
+            // Some providers send choices[0].message.content on the first chunk; handle both.
+            const choice = payload?.choices?.[0];
+            const deltaText =
+              choice?.delta?.content ??
+              choice?.message?.content ??
+              "";
+            if (deltaText) onDelta(deltaText);
+          } catch {
+            // ignore keep-alives / non-JSON
+          }
         }
       }
     }

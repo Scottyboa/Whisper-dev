@@ -137,6 +137,20 @@ function updateStatusMessage(message, color = "#333") {
   }
 }
 
+// ────────────────────────────────
+// ADD THIS HELPER JUST BELOW updateStatusMessage()
+// ────────────────────────────────
+async function fetchWithTimeout(resource, options = {}, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(resource, { ...options, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 function formatTime(ms) {
   const totalSec = Math.floor(ms / 1000);
   if (totalSec < 60) {
@@ -269,9 +283,26 @@ async function pollSonioxTranscription(transcriptionId, timeoutMs = 300000, inte
   const apiKey = getAPIKey();
   const start = Date.now();
   while (true) {
-    const rsp = await fetch(`${SONIOX_BASE}/transcriptions/${transcriptionId}`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
+    // Use timeout wrapper so a single stalled poll request doesn't hang indefinitely.
+    let rsp;
+    try {
+      rsp = await fetchWithTimeout(
+        `${SONIOX_BASE}/transcriptions/${transcriptionId}`,
+        { headers: { Authorization: `Bearer ${apiKey}` } },
+        30000 // 30 s per poll attempt
+      );
+    } catch (err) {
+      // If a single poll request times out/aborts, retry this same job ID
+      if (err && err.name === "AbortError") {
+        logDebug(`Poll ${transcriptionId} aborted after 30s; retrying…`);
+        // optional small delay to avoid hot-looping
+        await new Promise(r => setTimeout(r, intervalMs));
+        // check overall timeout before next iteration
+        if (Date.now() - start > timeoutMs) throw new Error("Transcription timed out");
+        continue;
+      }
+      throw err; // real error → surface it
+    }
     if (!rsp.ok) throw new Error(`Poll failed: ${await rsp.text()}`);
     const j = await rsp.json();
     if (j.status === "completed") return;

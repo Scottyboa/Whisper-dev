@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const moduleByProvider = {
         soniox:   './SONIOX_UPDATE.js',
         lemonfox: './LemonfoxSTT.js',
+        voxtral:  './VoxtralminiSTT.js',
         openai:   './recording.js',
       };
       const path = moduleByProvider[provider] || './recording.js';
@@ -158,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const moduleByProvider = {
       soniox:   './SONIOX_UPDATE.js',
       lemonfox: './LemonfoxSTT.js',
+      voxtral:  './VoxtralminiSTT.js',
       openai:   './recording.js',
     };
     const path = moduleByProvider[provider] || './recording.js';

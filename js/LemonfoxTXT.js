@@ -106,8 +106,8 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
     { role: "system", content: finalPromptText },
     { role: "user",   content: transcriptionText }
   ];
-  // Call the Responses API with GPT-5 and streaming
-  const response = await fetch("https://eu-api.lemonfox.ai/v1/chat/completions", 
+  // Call the Lemonfox Chat Completions API with streaming
+  const response = await fetch("https://eu-api.lemonfox.ai/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -119,7 +119,7 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
       stream: true
     })
   });
-    await streamLemonfoxChat(resp, {
+    await streamLemonfoxChat(response, {
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;
       },

@@ -644,8 +644,8 @@ function initRecording() {
   startButton.addEventListener("click", async () => {
     // Retrieve the API key before starting.
     const apiKey = getAPIKey();
-    if (!apiKey || !apiKey.startsWith("sk-")) {
-      alert("Please enter a valid Mistral (Voxtral) API key before starting the recording.");
+   if (!apiKey) {
+      alert("Please enter your Mistral (Voxtral) API key before starting the recording.");
       return;
     }
     resetRecordingState();

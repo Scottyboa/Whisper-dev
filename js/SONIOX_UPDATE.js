@@ -226,11 +226,11 @@ async function uploadToSonioxFile(wavBlob, filename, retries = 5, backoff = 2000
   const fd = new FormData();
   fd.append("file", wavBlob, filename);
   try {
-    const rsp = await fetch(`${SONIOX_BASE}/files`, {
+    const rsp = await fetchWithTimeout(`${SONIOX_BASE}/files`, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
      body: fd,
-    });
+    }, 30000);
     if (!rsp.ok) throw new Error(`Soniox file upload failed: ${await rsp.text()}`);
     const j = await rsp.json();
     return j.id; // file_id
@@ -258,14 +258,14 @@ async function createSonioxTranscription(fileId, context, retries = 5, backoff =
     context, // optional domain/context string
   };
   try {
-    const rsp = await fetch(`${SONIOX_BASE}/transcriptions`, {
+    const rsp = await fetchWithTimeout(`${SONIOX_BASE}/transcriptions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
-    });
+    }, 30000);
     if (!rsp.ok) throw new Error(`Create transcription failed: ${await rsp.text()}`);
     const j = await rsp.json();
     return j.id; // transcription_id
@@ -525,11 +525,11 @@ function enqueueTranscription(wavBlob, chunkNum) {
   transcriptionQueue.push({ chunkNum, wavBlob });
   enqueuedChunks += 1;
 
-  // Prevent simultaneous queue runs.
-  // If a queue is already processing, wait until it's done before re-starting.
-  if (!isProcessingQueue) {
+    // Always schedule a kick; the worker will no-op if already running.
+  // Using a microtask avoids races where isProcessingQueue flips after we check it.
+  queueMicrotask(() => {
     processTranscriptionQueue();
-  }
+  });
 }
 
 
@@ -554,7 +554,16 @@ async function processTranscriptionQueue() {
     wavBlob = null;
   }
   
+
+  // Queue fully drained: flip the flag, then trigger a final UI update
+  // so the completion condition (requires !isProcessingQueue) can fire.
   isProcessingQueue = false;
+
+  // If the user pressed Stop and there's nothing left to process,
+  // ensure the status moves from "Finishing…" to "Transcription finished!"
+  if (manualStop && transcriptionQueue.length === 0) {
+    updateTranscriptionOutput();
+  }
 }
 
 // --- Removed: Polling functions (pollChunkTranscript) since we now transcribe directly ---
@@ -659,7 +668,7 @@ function updateTranscriptionOutput() {
   if (transcriptionElem) {
     transcriptionElem.value = combinedTranscript.trim();
   }
-  if (manualStop && Object.keys(transcriptChunks).length >= expectedChunks) {
+  if (manualStop && transcriptionQueue.length === 0 && !isProcessingQueue) {
     clearInterval(completionTimerInterval);
     if (!transcriptionError) {
       updateStatusMessage("Transcription finished!", "green");
@@ -1019,9 +1028,10 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
   }
 }
 
-   // ─── NOW compute how many chunks we’re actually waiting on ───
-    expectedChunks = enqueuedChunks;
-    if (expectedChunks > 0 && !completionTimerInterval) {
+    // ─── Let any trailing enqueues settle, then start the completion timer ───
+    await Promise.resolve(); // microtask: ensure flush enqueues are visible
+    expectedChunks = enqueuedChunks; // kept for legacy logs; not used for completion gate
+    if (enqueuedChunks > 0 && !completionTimerInterval) {
       completionStartTime = Date.now();
       completionTimerInterval = setInterval(() => {
         const timerElem = document.getElementById("transcribeTimer");

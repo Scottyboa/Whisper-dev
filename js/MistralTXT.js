@@ -114,7 +114,7 @@ All headings should be plain text with a colon.`.trim();
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "mistral-large-latest",
+        model: "mistral-large-2411",
         messages,
         stream: true
       })

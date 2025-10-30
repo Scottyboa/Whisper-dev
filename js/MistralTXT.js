@@ -85,7 +85,7 @@ async function generateNote() {
   }, 1000);
   
     // Phase 3: Always use the OpenAI key for note generation (independent of transcription provider)
-  const apiKey = sessionStorage.getItem("openai_api_key");
+  const apiKey = sessionStorage.getItem("mistral_api_key");
   if (!apiKey) {
     alert("No API key available for note generation.");
     clearInterval(noteTimerInterval);
@@ -101,35 +101,25 @@ All headings should be plain text with a colon.`.trim();
   const finalPromptText = promptText + "\n\n" + baseInstruction;
   
   try {
-  // Prepare the messages array for the Responses API
-  const messages = [
-    { role: "system", content: finalPromptText },
-    { role: "user",   content: transcriptionText }
-  ];
-  // Call the Responses API with GPT-5 and streaming
-  const resp = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-5",
-      input: messages.map(m => ({
-        role: m.role,
-        content: [{ type: "input_text", text: m.content }]
-      })),
-      stream: true,
-      // —— OPTIONAL TUNING PARAMS —— 
-      text: {
-        verbosity: "medium"    // try "low" (faster/terse) or "high" (more detail)
+    // Prepare OpenAI-compatible chat messages
+    const messages = [
+      { role: "system", content: finalPromptText },
+      { role: "user",   content: transcriptionText }
+    ];
+    // Call Mistral's OpenAI-compatible Chat Completions API with streaming
+    const resp = await fetch("https://api.mistral.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
       },
-      reasoning: {
-        effort: "minimal"      // try "minimal" (fastest) or omit for default medium
-      }
-    })
-  });
-    await streamOpenAIResponse(resp, {
+      body: JSON.stringify({
+        model: "mistral-large-latest",
+        messages,
+        stream: true
+      })
+    });
+    await streamMistralChat(resp, {
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;
       },
@@ -155,14 +145,14 @@ All headings should be plain text with a colon.`.trim();
   }
 }
 
-async function streamOpenAIResponse(resp, {
+async function streamMistralChat(resp, {
   onDelta = () => {},
   onDone = () => {},
   onError = (e) => { console.error(e); },
 } = {}) {
   if (!resp.ok || !resp.body) {
     const text = await resp.text().catch(() => "");
-    throw new Error(`OpenAI error ${resp.status}: ${text}`);
+    throw new Error(`Mistral error ${resp.status}: ${text}`);
   }
 
   const reader = resp.body.getReader();
@@ -175,33 +165,28 @@ async function streamOpenAIResponse(resp, {
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split("\n\n");
-      buffer = parts.pop() ?? "";
+      // SSE frames separated by a blank line
+      const frames = buffer.split("\n\n");
+      buffer = frames.pop() ?? "";
 
-      for (const part of parts) {
-        const lines = part.split("\n");
-        let event = null;
-        let dataStr = null;
+      for (const frame of frames) {
+        // Only process "data:" lines
+        const lines = frame.split("\n");
         for (const line of lines) {
-          if (line.startsWith("event:")) event = line.slice(6).trim();
-          if (line.startsWith("data:"))  dataStr = line.slice(5).trim();
-        }
-        if (!dataStr) continue;
-        if (dataStr === "[DONE]") { onDone(); return; }
-
-        let payload;
-        try { payload = JSON.parse(dataStr); } catch { continue; }
-
-        if (payload.type === "response.output_text.delta" && typeof payload.delta === "string") {
-          onDelta(payload.delta);
-        }
-        if (payload.type === "response.completed") {
-          onDone(payload);
-          return;
-        }
-        if (payload.type === "response.error") {
-          onError(new Error(payload.error?.message || "Unknown streaming error"));
-          return;
+          if (!line.startsWith("data:")) continue;
+          const dataStr = line.slice(5).trim();
+          if (dataStr === "[DONE]") { onDone(); return; }
+          try {
+            const payload = JSON.parse(dataStr);
+            const choice = payload?.choices?.[0];
+            const deltaText =
+              choice?.delta?.content ??
+              choice?.message?.content ??
+              "";
+            if (deltaText) onDelta(deltaText);
+          } catch {
+            // ignore keep-alives / non-JSON
+          }
         }
       }
     }

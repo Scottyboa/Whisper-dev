@@ -1,4 +1,4 @@
-*** File: js/speakerVerification.js
+
 // speakerVerification.js
 // Thin browser wrapper for sherpa-onnx speaker verification (WASM).
 // Step 3: module scaffold + safe loaders. Step 4 will wire SONIOX_UPDATE.js to use it.
@@ -40,8 +40,7 @@ async function loadSherpaOnnxIfNeeded(cfg) {
     script.async = true;
     script.src = `${cfg.baseUrl}/${cfg.wasmJs}`;
     script.onload = () => {
-      // Some builds expose global "SherpaOnnx" or "sherpaOnnx".
-      const api = window.SherpaOnnx || window.sherpaOnnx || null;
+      const api = window.SherpaOnnx || window.sherpaOnnx || window.sherpa_onnx || null;
       if (!api) {
         reject(new Error('sherpa-onnx global not found after loading JS'));
         return;
@@ -56,11 +55,26 @@ async function loadSherpaOnnxIfNeeded(cfg) {
   await SV_NS._loadingSherpa;
 }
 
+// Fast-path: if the page already included a CDN build (your transcribe.html does),
+// pick it up without attempting another script load.
+function pickExistingSherpaApiIfAny() {
+  const api = window.SherpaOnnx || window.sherpaOnnx || window.sherpa_onnx || null;
+  if (api) {
+    SV_NS._api = api;
+    SV_NS._sherpaReady = true;
+  }
+}
+
+
 // ---- Initialize a speaker-embedding extractor ------------------------------
 async function initSpeakerVerification(userCfg = {}) {
   const cfg = { ...DEFAULT_CONFIG, ...(userCfg || {}) };
   SV_NS._cfg = cfg;
-  await loadSherpaOnnxIfNeeded(cfg);
+  // Prefer using the already-loaded CDN build if present
+  pickExistingSherpaApiIfAny();
+  if (!SV_NS._sherpaReady) {
+    await loadSherpaOnnxIfNeeded(cfg);
+  }
 
   if (SV_NS._extractor) return; // idempotent
 

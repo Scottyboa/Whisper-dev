@@ -183,6 +183,8 @@ async function fetchWithTimeout(resource, options = {}, timeoutMs = 30000) {
   }
 }
 
+const DEEPGRAM_LISTEN_URL = "https://api.deepgram.com/v1/listen";
+
 function formatTime(ms) {
   const totalSec = Math.floor(ms / 1000);
   if (totalSec < 60) {
@@ -191,6 +193,28 @@ function formatTime(ms) {
     const minutes = Math.floor(totalSec / 60);
     const seconds = totalSec % 60;
     return minutes + " min" + (seconds > 0 ? " " + seconds + " sec" : "");
+  }
+}
+
+// De-duplicate: flush any buffered VAD segments into a single WAV chunk and enqueue
+async function flushPendingVADSegments() {
+  if (pendingVADChunks.length === 0 || pendingVADLock) return;
+  pendingVADLock = true;
+  try {
+    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
+    if (totalSamples > 0) {
+      const combined = new Float32Array(totalSamples);
+      let offset = 0;
+      for (const seg of pendingVADChunks) {
+        combined.set(seg, offset);
+        offset += seg.length;
+      }
+      const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
+      enqueueTranscription(wavBlob, chunkNumber++);
+    }
+    pendingVADChunks = [];
+  } finally {
+    pendingVADLock = false;
   }
 }
 
@@ -340,6 +364,19 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
 
  // --- New: Transcribe Chunk Directly --
 
+// --- Transcription Queue Processing ---
+// Adds a processed chunk to the queue and processes chunks sequentially.
+function enqueueTranscription(wavBlob, chunkNum) {
+  transcriptionQueue.push({ chunkNum, wavBlob });
+  enqueuedChunks += 1;
+
+    // Always schedule a kick; the worker will no-op if already running.
+  // Using a microtask avoids races where isProcessingQueue flips after we check it.
+  queueMicrotask(() => {
+    processTranscriptionQueue();
+  });
+}
+
 // Sends the WAV blob to Deepgram (pre-recorded) and returns the transcript text.
 async function transcribeChunkDirectly(wavBlob, chunkNum) {
   const apiKey = sessionStorage.getItem("user_api_key") || "";
@@ -348,17 +385,17 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
     transcriptionError = true;
     return `[Missing API key for chunk ${chunkNum}]`;
   }
-  // Smart formatting cleans numbers, dates, emails, etc.
-  const url = "https://api.deepgram.com/v1/listen?model=nova-3&smart_format=true";
+  // Nova-3 with smart formatting; set your default language here (e.g., "no" for Norwegian)
+  const url = `${DEEPGRAM_LISTEN_URL}?model=nova-3&smart_format=true&language=no`;
   try {
-    const rsp = await fetch(url, {
+    const rsp = await fetchWithTimeout(url, {
       method: "POST",
       headers: {
         "Authorization": `Token ${apiKey}`,
         "Content-Type": "audio/wav"
       },
       body: wavBlob
-    });
+    }, 60000);
     if (!rsp.ok) {
       const txt = await rsp.text().catch(() => "");
       throw new Error(`Deepgram error ${rsp.status}: ${txt}`);
@@ -373,20 +410,6 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
     return `[Error transcribing chunk ${chunkNum}]`;
   }
 }
-
-// --- Transcription Queue Processing ---
-// Adds a processed chunk to the queue and processes chunks sequentially.
-function enqueueTranscription(wavBlob, chunkNum) {
-  transcriptionQueue.push({ chunkNum, wavBlob });
-  enqueuedChunks += 1;
-
-    // Always schedule a kick; the worker will no-op if already running.
-  // Using a microtask avoids races where isProcessingQueue flips after we check it.
-  queueMicrotask(() => {
-    processTranscriptionQueue();
-  });
-}
-
 
 async function processTranscriptionQueue() {
   // If queue already in progress, wait for it to finish before continuing.
@@ -738,25 +761,7 @@ pauseResumeButton.addEventListener("click", async () => {
       logError("Error resuming Silero VAD:", err);
     }
   } else {
-   // — FLUSH any pending VAD segments before pausing — 
-   // — FLUSH any pending VAD segments before pausing —
-if (pendingVADChunks.length > 0 && !pendingVADLock) {
-  pendingVADLock = true;
-  try {
-    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-    const combined     = new Float32Array(totalSamples);
-    let offset         = 0;
-    for (const seg of pendingVADChunks) {
-      combined.set(seg, offset);
-      offset += seg.length;
-    }
-    const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-    enqueueTranscription(wavBlob, chunkNumber++);
-    pendingVADChunks = [];
-  } finally {
-    pendingVADLock = false;
-  }
-}
+   await flushPendingVADSegments();
 
     // PAUSE: stop VAD and flush any buffered speech
     updateStatusMessage("Pausing recording…", "orange");
@@ -772,24 +777,7 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
  }
     // **new**: cut the mic feed so the browser indicator goes off
     stopMicrophone();
-    // Stop the mic stream so the browser tab indicator turns off
-if (pendingVADChunks.length > 0 && !pendingVADLock) {
-  pendingVADLock = true;
-  try {
-    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-    const combined = new Float32Array(totalSamples);
-    let offset = 0;
-    for (const seg of pendingVADChunks) {
-      combined.set(seg, offset);
-      offset += seg.length;
-    }
-    const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-    enqueueTranscription(wavBlob, chunkNumber++);
-    pendingVADChunks = [];
-  } finally {
-    pendingVADLock = false;
-  }
-}
+    await flushPendingVADSegments();
 
     recordingPaused = true;
     // Accumulate elapsed time before pausing
@@ -838,44 +826,7 @@ stopButton.addEventListener("click", async () => {
   // **new**: absolutely kill the media tracks
   stopMicrophone();
 
-    // — FLUSH and SEND any pending VAD segments before stopping —
-if (pendingVADChunks.length > 0 && !pendingVADLock) {
-  pendingVADLock = true;
-  try {
-    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-    const combined     = new Float32Array(totalSamples);
-    let offset         = 0;
-    for (const seg of pendingVADChunks) {
-      combined.set(seg, offset);
-      offset += seg.length;
-    }
-    const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-    enqueueTranscription(wavBlob, chunkNumber++);
-    pendingVADChunks = [];
-  } finally {
-    pendingVADLock = false;
-  }
-}
-
-  
-    // Flush remaining buffered segments even if below threshold
-if (pendingVADChunks.length > 0 && !pendingVADLock) {
-  pendingVADLock = true;
-  try {
-    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-    const combined = new Float32Array(totalSamples);
-    let offset = 0;
-    for (const seg of pendingVADChunks) {
-      combined.set(seg, offset);
-      offset += seg.length;
-    }
-    const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-    enqueueTranscription(wavBlob, chunkNumber++);
-    pendingVADChunks = [];
-  } finally {
-    pendingVADLock = false;
-  }
-}
+    await flushPendingVADSegments();
 
     await Promise.resolve(); // ensure any flush enqueues are visible
     manualStop = true;

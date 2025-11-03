@@ -494,6 +494,7 @@
     (function () {
       const OPENAI = "openai";
       const SONIOX = "soniox";
+      const SONIOX_DIA = "soniox_dia";
       const LEMONFOX = "lemonfox";
       const VOXTRAL = "voxtral";
       const sel = document.getElementById("transcribeProvider");
@@ -503,10 +504,11 @@
         sessionStorage.setItem("transcribe_provider", p);
         const openaiKey = sessionStorage.getItem("openai_api_key") || "";
         const sonioxKey = sessionStorage.getItem("soniox_api_key") || "";
+        const SONIOX_DIA = "soniox_dia";
         const lemonKey = sessionStorage.getItem("lemonfox_api_key") || "";
         const mistralKey = sessionStorage.getItem("mistral_api_key") || "";
        // Pick the active key by provider; default to OpenAI for unknowns
-        const chosen = (p === SONIOX)   ? sonioxKey
+        const chosen = (p === SONIOX || p === SONIOX_DIA) ? sonioxKey
                      : (p === LEMONFOX) ? lemonKey
                      : (p === VOXTRAL)  ? mistralKey
                      : openaiKey;
@@ -709,5 +711,4 @@
 </script>
 </body>
 </html>
-
 

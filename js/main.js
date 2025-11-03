@@ -67,10 +67,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const provider = (sessionStorage.getItem('transcribe_provider') || 'openai').toLowerCase();
     try {
       const moduleByProvider = {
-        soniox:   './SONIOX_UPDATE.js',
-        lemonfox: './LemonfoxSTT.js',
-        voxtral:  './VoxtralminiSTT.js',
-        openai:   './recording.js',
+        soniox:      './SONIOX_UPDATE.js',
+        soniox_dia:  './SONIOX_UPDATE_dia.js',
+        lemonfox:    './LemonfoxSTT.js',
+        voxtral:     './VoxtralminiSTT.js',
+        openai:      './recording.js',
       };
       const path = moduleByProvider[provider] || './recording.js';
       console.info('[recording:init] provider:', provider, 'module:', path);
@@ -159,10 +160,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Choose module path
     const moduleByProvider = {
-      soniox:   './SONIOX_UPDATE.js',
-      lemonfox: './LemonfoxSTT.js',
-      voxtral:  './VoxtralminiSTT.js',
-      openai:   './recording.js',
+      soniox:      './SONIOX_UPDATE.js',
+      soniox_dia:  './SONIOX_UPDATE_dia.js',
+      lemonfox:    './LemonfoxSTT.js',
+      voxtral:     './VoxtralminiSTT.js',
+      openai:      './recording.js',
     };
     const path = moduleByProvider[provider] || './recording.js';
     console.info('[recording:switch] provider:', provider, 'module:', path);

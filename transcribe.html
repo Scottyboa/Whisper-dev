@@ -406,6 +406,7 @@
       <option value="soniox_dia">Soniox(dia)</option>
       <option value="lemonfox">Lemonfox</option>
       <option value="voxtral">Voxtral Mini</option>
+      <option value="deepgram">Deepgram Nova-3</option>
     </select>
   </div>
 </div>
@@ -497,6 +498,7 @@
       const SONIOX_DIA = "soniox_dia";
       const LEMONFOX = "lemonfox";
       const VOXTRAL = "voxtral";
+      const DEEPGRAM = "deepgram";
       const sel = document.getElementById("transcribeProvider");
       if (!sel) return;
 
@@ -507,10 +509,12 @@
         const SONIOX_DIA = "soniox_dia";
         const lemonKey = sessionStorage.getItem("lemonfox_api_key") || "";
         const mistralKey = sessionStorage.getItem("mistral_api_key") || "";
-       // Pick the active key by provider; default to OpenAI for unknowns
-        const chosen = (p === SONIOX || p === SONIOX_DIA) ? sonioxKey
-                     : (p === LEMONFOX) ? lemonKey
-                     : (p === VOXTRAL)  ? mistralKey
+        const deepgramKey = sessionStorage.getItem("deepgram_api_key") || "";
+        // Pick the active key by provider; default to OpenAI for unknowns
+        const chosen = (p === SONIOX)    ? sonioxKey
+                     : (p === LEMONFOX)  ? lemonKey
+                     : (p === VOXTRAL)   ? mistralKey
+                     : (p === DEEPGRAM)  ? deepgramKey
                      : openaiKey;
         sessionStorage.setItem("user_api_key", chosen);
       }

@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lemonfox:    './LemonfoxSTT.js',
         voxtral:     './VoxtralminiSTT.js',
         openai:      './recording.js',
-        deepgram: './deepgram_nova3.js', // NEW: Deepgram Nova-3
+        deepgram:    './deepgram_nova3.js', // NEW: Deepgram Nova-3
       };
       const path = moduleByProvider[provider] || './recording.js';
       console.info('[recording:init] provider:', provider, 'module:', path);

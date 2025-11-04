@@ -503,20 +503,23 @@
       if (!sel) return;
 
       function applyProvider(p) {
-        sessionStorage.setItem("transcribe_provider", p);
-        const openaiKey = sessionStorage.getItem("openai_api_key") || "";
-        const sonioxKey = sessionStorage.getItem("soniox_api_key") || "";
-        const lemonKey = sessionStorage.getItem("lemonfox_api_key") || "";
-        const mistralKey = sessionStorage.getItem("mistral_api_key") || "";
-        const deepgramKey = sessionStorage.getItem("deepgram_api_key") || "";
-        // Pick the active key by provider; default to OpenAI for unknowns
-        const chosen = (p === SONIOX)    ? sonioxKey
-                     : (p === LEMONFOX)  ? lemonKey
-                     : (p === VOXTRAL)   ? mistralKey
-                     : (p === DEEPGRAM)  ? deepgramKey
-                     : openaiKey;
-        sessionStorage.setItem("user_api_key", chosen);
-      }
+  sessionStorage.setItem("transcribe_provider", p);
+  const openaiKey = sessionStorage.getItem("openai_api_key") || "";
+  const sonioxKey = sessionStorage.getItem("soniox_api_key") || "";
+  const lemonKey = sessionStorage.getItem("lemonfox_api_key") || "";
+  const mistralKey = sessionStorage.getItem("mistral_api_key") || "";
+  const deepgramKey = sessionStorage.getItem("deepgram_api_key") || "";
+
+  // Pick the active key by provider; default to OpenAI for unknowns
+  const chosen =
+    (p === "soniox" || p === "soniox_dia") ? sonioxKey :
+    (p === "lemonfox") ? lemonKey :
+    (p === "voxtral") ? mistralKey :
+    (p === "deepgram") ? deepgramKey :
+    openaiKey;
+
+  sessionStorage.setItem("user_api_key", chosen);
+}
 
       // Initialize from previous choice or default to OpenAI
       const stored = sessionStorage.getItem("transcribe_provider") || OPENAI;

@@ -351,15 +351,23 @@ async function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-async function fetchSonioxTranscriptText(transcriptionId, retries = 5, delayMs = 2000) {
+// Add a per-attempt timeout so a single hung request can’t block the queue.
+async function fetchSonioxTranscriptText(
+  transcriptionId,
+  retries = 5,
+  delayMs = 2000,
+  perAttemptTimeoutMs = 30000
+) {
   const apiKey = getAPIKey();
   let attempt = 0;
 
   while (true) {
     try {
-      const rsp = await fetch(`${SONIOX_BASE}/transcriptions/${transcriptionId}/transcript`, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-      });
+      const rsp = await fetchWithTimeout(
+        `${SONIOX_BASE}/transcriptions/${transcriptionId}/transcript`,
+        { headers: { Authorization: `Bearer ${apiKey}` } },
+        perAttemptTimeoutMs
+      );
 
       if (!rsp.ok) {
         const body = await rsp.text().catch(() => "");
@@ -372,6 +380,10 @@ async function fetchSonioxTranscriptText(transcriptionId, retries = 5, delayMs =
       const j = await rsp.json();
       return j.text || "";
     } catch (err) {
+      // Treat aborted/timeout attempts as retryable
+      if (err && err.name === "AbortError") {
+        // fall through to retry logic below
+      }
       attempt += 1;
       if (attempt > retries) {
         logError(`Get transcript failed after ${retries} retries:`, err);

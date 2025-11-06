@@ -108,7 +108,8 @@ let completionTimerRunning = false;
 let groupId = null;
 let chunkNumber = 1;
 let manualStop = false;
-let transcriptChunks = {};  // {chunkNumber: transcript}
+let transcriptChunks = {};
+let transcriptFrozen = false;
 let pollingIntervals = {};  // (removed polling functions, kept for legacy structure)
 
 let chunkStartTime = 0;
@@ -632,9 +633,8 @@ async function processTranscriptionQueue() {
   // so the completion condition (requires !isProcessingQueue) can fire.
   isProcessingQueue = false;
 
-  // If the user pressed Stop and there's nothing left to process,
-  // ensure the status moves from "Finishing…" to "Transcription finished!"
-  if (manualStop && transcriptionQueue.length === 0) {
+  // If we stopped and nothing remains, do one last write only if not frozen.
+  if (manualStop && transcriptionQueue.length === 0 && !transcriptFrozen) {
     updateTranscriptionOutput();
   }
 }
@@ -732,17 +732,29 @@ function finalizeStop() {
 }
 
 function updateTranscriptionOutput() {
+  // Prevent any post-finish writes from wiping the UI
+  if (transcriptFrozen) return;
+
   const sortedKeys = Object.keys(transcriptChunks).map(Number).sort((a, b) => a - b);
   let combinedTranscript = "";
-  sortedKeys.forEach(key => {
+  for (const key of sortedKeys) {
     combinedTranscript += transcriptChunks[key] + " ";
-  });
+  }
+  const text = combinedTranscript.trim();
+  logDebug("UI write: combinedTranscript.length=", text.length);
+
   const transcriptionElem = document.getElementById("transcription");
   if (transcriptionElem) {
-    transcriptionElem.value = combinedTranscript.trim();
+    // Write safely regardless of element type
+    if ("value" in transcriptionElem) {
+      transcriptionElem.value = text;
+    } else {
+      transcriptionElem.textContent = text;
+    }
   }
+
+  // When all work is done, freeze to avoid late wipes
   if (manualStop && transcriptionQueue.length === 0 && !isProcessingQueue) {
-    // freeze timer at final value
     freezeCompletionTimer();
     if (!transcriptionError) {
       updateStatusMessage("Transcription finished!", "green");
@@ -750,7 +762,7 @@ function updateTranscriptionOutput() {
     } else {
       logInfo("Transcription complete with errors; keeping error message visible.");
     }
-    transcriptChunks = {};
+    transcriptFrozen = true;
   }
 }
 
@@ -830,6 +842,7 @@ function resetRecordingState() {
   }
 
   transcriptChunks = {};
+  transcriptFrozen = false;
   audioFrames = [];
   chunkStartTime = Date.now();
   lastFrameTime = Date.now();
@@ -912,7 +925,14 @@ function initRecording() {
   }
     resetRecordingState();
     const transcriptionElem = document.getElementById("transcription");
-    if (transcriptionElem) transcriptionElem.value = "";
+    if (transcriptionElem) {
+      // Clear the visible field at the start of a new session
+      if ("value" in transcriptionElem) {
+        transcriptionElem.value = "";
+      } else {
+        transcriptionElem.textContent = "";
+      }
+    }
     
     // initialize and start Silero VAD
     updateStatusMessage("Loading voice-activity model...", "orange");

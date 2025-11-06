@@ -108,6 +108,9 @@ let groupId = null;
 let chunkNumber = 1;
 let manualStop = false;
 let transcriptChunks = {};  // {chunkNumber: transcript}
+let transcriptFrozen = false; // freeze after final write to prevent wipes
+
+
 let pollingIntervals = {};  // (removed polling functions, kept for legacy structure)
 
 let chunkStartTime = 0;
@@ -591,11 +594,11 @@ async function processTranscriptionQueue() {
   // so the completion condition (requires !isProcessingQueue) can fire.
   isProcessingQueue = false;
 
-  // If the user pressed Stop and there's nothing left to process,
-  // ensure the status moves from "Finishing…" to "Transcription finished!"
-  if (manualStop && transcriptionQueue.length === 0) {
+  // Avoid a second final write after we've already frozen.
+  if (manualStop && transcriptionQueue.length === 0 && !transcriptFrozen) {
     updateTranscriptionOutput();
   }
+ 
 }
 
 // --- Removed: Polling functions (pollChunkTranscript) since we now transcribe directly ---
@@ -691,6 +694,8 @@ function finalizeStop() {
 }
 
 function updateTranscriptionOutput() {
+  // Prevent any post-finish writes from wiping the textarea
+  if (transcriptFrozen) return;
   const sortedKeys = Object.keys(transcriptChunks).map(Number).sort((a, b) => a - b);
   let combinedTranscript = "";
   sortedKeys.forEach(key => {
@@ -708,7 +713,7 @@ function updateTranscriptionOutput() {
     } else {
       logInfo("Transcription complete with errors; keeping error message visible.");
     }
-    transcriptChunks = {};
+    transcriptFrozen = true;
   }
 }
 
@@ -787,6 +792,7 @@ function resetRecordingState() {
   }
 
   transcriptChunks = {};
+  transcriptFrozen = false;
   audioFrames = [];
   chunkStartTime = Date.now();
   lastFrameTime = Date.now();

@@ -24,7 +24,7 @@ const DEBUG = true;
   let pendingVADChunks = [];
   let pendingVADLock = false;  // mutex for pause/stop flushes
  // Minimum total speech duration before sending (in seconds)
- const MIN_CHUNK_DURATION_SECONDS = 1200;
+ const MIN_CHUNK_DURATION_SECONDS = 7200;
  // Configure callbacks for speech start/end
  const sileroVADOptions = {
   // Force a final speech-end event when pause/stop is called, even mid-speech

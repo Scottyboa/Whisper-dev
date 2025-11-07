@@ -256,6 +256,7 @@ function getAPIKey() {
 }
 
 const SONIOX_BASE = "https://api.soniox.com/v1";
+const AUTO_CLEAN_ON_LOAD = true;
 
 async function uploadToSonioxFile(wavBlob, filename, retries = 5, backoff = 2000) {
   const apiKey = getAPIKey();
@@ -428,6 +429,67 @@ function renderDiarizedTranscript(tokens) {
   flush();
   return lines.join("\n");
 }
+
+// ─────────────────── One-shot cleanup (runs once per session) ───────────────────
+// ─────────────────── Cleanup on every page load ───────────────────
+async function cleanupSonioxAll() {
+  if (!AUTO_CLEAN_ON_LOAD) {
+    console.log("[SonioxCleanup] Skipped: AUTO_CLEAN_ON_LOAD=false");
+    return;
+  }
+  const apiKey = getAPIKey();
+  if (!apiKey) {
+    console.log("[SonioxCleanup] Skipped: no API key present");
+    return;
+  }
+  const hdrs = { Authorization: `Bearer ${apiKey}` };
+  const base = SONIOX_BASE;
+  console.group("[SonioxCleanup] Starting full cleanup…");
+  console.time("[SonioxCleanup] total");
+  try {
+    // 1) Delete transcriptions
+    const tResp = await fetchWithTimeout(`${base}/transcriptions`, { headers: hdrs }, 30000);
+    if (tResp.ok) {
+      const tJson = await tResp.json().catch(() => ({}));
+      const ts = Array.isArray(tJson?.transcriptions) ? tJson.transcriptions : [];
+      console.log(`[SonioxCleanup] Found ${ts.length} transcriptions`);
+      for (const t of ts) {
+        try {
+          await fetchWithTimeout(`${base}/transcriptions/${t.id}`, { method: "DELETE", headers: hdrs }, 30000);
+          console.log("  ↳ deleted transcription:", t.id);
+        } catch (e) {
+          console.warn("  ! failed deleting transcription", t?.id, e);
+        }
+      }
+    } else {
+      console.warn("[SonioxCleanup] Failed to list transcriptions:", await tResp.text());
+    }
+
+    // 2) Delete files
+    const fResp = await fetchWithTimeout(`${base}/files`, { headers: hdrs }, 30000);
+    if (fResp.ok) {
+      const fJson = await fResp.json().catch(() => ({}));
+      const fs = Array.isArray(fJson?.files) ? fJson.files : [];
+      console.log(`[SonioxCleanup] Found ${fs.length} files`);
+      for (const f of fs) {
+        try {
+          await fetchWithTimeout(`${base}/files/${f.id}`, { method: "DELETE", headers: hdrs }, 30000);
+          console.log("  ↳ deleted file:", f.id);
+        } catch (e) {
+          console.warn("  ! failed deleting file", f?.id, e);
+        }
+      }
+    } else {
+      console.warn("[SonioxCleanup] Failed to list files:", await fResp.text());
+    }
+    console.timeEnd("[SonioxCleanup] total");
+    console.groupEnd();
+    console.log("✅ [SonioxCleanup] Finished cleanup on page load.");
+  } catch (e) {
+    console.error("[SonioxCleanup] Error during cleanup:", e);
+  }
+}
+
 
 
 // ─────────────────── Deletion helpers (place right after fetchSonioxTranscriptText) ───────────────────
@@ -1210,4 +1272,6 @@ window.addEventListener("load", () => {
   if (sileroVAD && typeof sileroVAD.pause === "function") {
     sileroVAD.pause().catch(() => {});
   }
+  // Fire-and-forget cleanup; do not block UI
+  cleanupSonioxAll();
 });

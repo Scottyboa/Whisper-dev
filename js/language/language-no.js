@@ -5,7 +5,7 @@ export const indexTranslations = {
   headerTitle: "Transcribe Notes",
   headerSubtitle: "Avansert AI-drevet tale-til-tekst og notatgenerering for helsekonsultasjoner",
   startText: "Har du ikke en API-nøkkel ennå? Klikk på «API nøkkel – Hvordan lage» for enkel veiledning.",
-  apiPlaceholder: "Skriv inn API-nøkkel her",
+  apiPlaceholder: "Skriv inn OpenAI API-nøkkel her",
   enterButton: "Gå til transkripsjonsverktøyet",
   guideButton: "API-guide – Slik bruker du den",
   securityButton: "Sikkerhet",

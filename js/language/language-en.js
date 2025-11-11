@@ -3,7 +3,7 @@ export const indexTranslations = {
   headerTitle: "Transcribe Notes",
   headerSubtitle: "Advanced AI-Powered Speech-to-Text and Clinical Note Generation for Healthcare Consultations",
   startText: "Dont have an API-key yet? Click on «API guide- How to Get» for easy instructions.",
-  apiPlaceholder: "Enter API Key here",
+  apiPlaceholder: "Enter OpenAI API Key here",
   enterButton: "Enter Transcription Tool",
   guideButton: "API guide - How to use",
   securityButton: "Security",

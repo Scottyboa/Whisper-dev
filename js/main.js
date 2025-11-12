@@ -129,10 +129,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const choice = (sessionStorage.getItem('note_provider') || 'gpt5').toLowerCase();
     const path =
-      choice === 'gpt4'      ? './noteGeneration.js'  :
-      choice === 'lemonfox'  ? './LemonfoxTXT.js'     :
-      choice === 'mistral'   ? './MistralTXT.js'      :
-                               './notegeneration%20gpt-5.js';
+      choice === 'gpt4'       ? './noteGeneration.js'         :
+      choice === 'lemonfox'   ? './LemonfoxTXT.js'            :
+      choice === 'mistral'    ? './MistralTXT.js'             :
+      choice === 'gpt5-ns'    ? './noteGeneration_gpt5_NS.js' :
+                                './notegeneration%20gpt-5.js';
 
     // Load the module only once per session, then reuse from cache
     if (!window.__app.cachedModules[path]) {

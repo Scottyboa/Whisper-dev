@@ -92,10 +92,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const choice = (sessionStorage.getItem('note_provider') || 'gpt5').toLowerCase();
     // Map dropdown choice → module path (ALL note modules are in /js)
     const path =
-      choice === 'gpt4'      ? './noteGeneration.js'  :
-      choice === 'lemonfox'  ? './LemonfoxTXT.js'     :
-      choice === 'mistral'   ? './MistralTXT.js'      :
-                               './notegeneration%20gpt-5.js';
+  choice === 'gpt4'       ? './noteGeneration.js'         :
+  choice === 'lemonfox'   ? './LemonfoxTXT.js'            :
+  choice === 'mistral'    ? './MistralTXT.js'             :
+  choice === 'gpt5-ns'    ? './noteGeneration_gpt5_NS.js' : // <-- NEW LINE
+                            './notegeneration%20gpt-5.js'; // default: GPT-5 (streaming)
+
     try {
       const mod = await import(path);
       if (mod && typeof mod.initNoteGeneration === 'function') {

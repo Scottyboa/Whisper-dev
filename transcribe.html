@@ -141,6 +141,18 @@
       grid-template-rows: auto; /* Allow rows to size based on content */
       min-height: 1200px;       /* Ensure the grid is always at least 1200px tall */
     }
+   /* When ad columns are disabled, main content uses full width */
+    .grid-container.ads-disabled {
+      grid-template-columns: 1fr;
+    }
+    .grid-container.ads-disabled .sidebar,
+    .grid-container.ads-disabled .ad-sidebar {
+      display: none;
+    }
+    /* When ads are off, let main content span the single column */
+    .grid-container.ads-disabled .main-content {
+      grid-column: 1 / 2;
+    }
     /* Left Sidebar - Updated: No padding and no gap so ads fill the space */
     .sidebar {
       grid-column: 1 / 2;
@@ -605,8 +617,38 @@
     window.addEventListener("resize", setGridHeight);
   </script>
 
+  <script>
+    // Simple toggle for ad sidebars: set ADS_ENABLED to true/false
+    // - true  = show left/right columns (current behavior)
+    // - false = hide sidebars and use full-width layout
+    const ADS_ENABLED = false; // change this to false to start in "wide screen" mode
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const grid = document.querySelector('.grid-container');
+      if (!grid) return;
+      if (!ADS_ENABLED) {
+        grid.classList.add('ads-disabled');
+      } else {
+        grid.classList.remove('ads-disabled');
+      }
+    });
+
+    // Optional: manual runtime toggle from console or other code:
+    //   setAdsEnabled(false) → hide sidebars
+    //   setAdsEnabled(true)  → show sidebars
+    window.setAdsEnabled = function(enabled) {
+      const grid = document.querySelector('.grid-container');
+      if (!grid) return;
+      if (enabled) {
+        grid.classList.remove('ads-disabled');
+      } else {
+        grid.classList.add('ads-disabled');
+      }
+    };
+  </script>
+
 <script>
-  // 1) Generate or retrieve a per‑browser anonymous visitorId
+  // 1) Generate or retrieve a per-browser anonymous visitorId
   let visitorId = localStorage.getItem('visitorId');
   if (!visitorId) {
     visitorId = (crypto.randomUUID && crypto.randomUUID()) ||

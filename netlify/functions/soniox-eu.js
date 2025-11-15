@@ -17,15 +17,19 @@ exports.handler = async function handler(event, context) {
     };
   }
 
-  // Build upstream target URL for Soniox EU
-  //
-  // With the :splat redirect, event.path looks like:
-  //   "/.netlify/functions/soniox-eu/v1/files"
-  // so we remove only the function prefix and keep "/v1/files"
-  const functionPrefix = "/.netlify/functions/soniox-eu";
-  const pathOnly = event.path.startsWith(functionPrefix)
-    ? event.path.slice(functionPrefix.length)
-    : event.path;
+  // Build upstream target URL for Soniox.
+  // Depending on Netlify’s internals, event.path might be:
+  //   "/api/soniox-eu/v1/files"        (public API path)
+  // or "/.netlify/functions/soniox-eu/v1/files" (internal function path)
+  // Normalize both cases to just "/v1/files" before proxying.
+  const prefixes = ["/api/soniox-eu", "/.netlify/functions/soniox-eu"];
+  let pathOnly = event.path || "/";
+  for (const prefix of prefixes) {
+    if (pathOnly.startsWith(prefix)) {
+      pathOnly = pathOnly.slice(prefix.length) || "/";
+      break;
+    }
+  }
 
   const search = event.rawQuery ? `?${event.rawQuery}` : "";
   const target = new URL(`${pathOnly || "/"}` + search, upstreamBase);

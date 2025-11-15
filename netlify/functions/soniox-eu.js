@@ -7,11 +7,15 @@ export async function handler(event) {
   }
 
   // Build upstream target URL for Soniox EU
-  const url = new URL(event.rawUrl);
-  const path = url.pathname
-    .replace(/^\/\.netlify\/functions\/soniox-eu/, "")
-    .replace(/^\/api\/soniox-eu/, "");
-  const target = new URL(path + url.search, upstreamBase);
+  // With the :splat redirect, event.path looks like:
+  //   "/.netlify/functions/soniox-eu/v1/files"
+  // so we remove only the function prefix and keep "/v1/files"
+  const functionPrefix = "/.netlify/functions/soniox-eu";
+  const pathOnly = event.path.startsWith(functionPrefix)
+    ? event.path.slice(functionPrefix.length)
+    : event.path;
+  const search = event.rawQuery ? `?${event.rawQuery}` : "";
+  const target = new URL(`${pathOnly || "/"}` + search, upstreamBase);
 
   // CORS preflight
   if (event.httpMethod === "OPTIONS") {

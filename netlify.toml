@@ -1,5 +1,4 @@
-## Use a standard Function via redirect (works on all plans and avoids 404s)
 [[redirects]]
 from = "/api/soniox-eu/*"
-to = "/.netlify/functions/soniox-eu"
+to = "/.netlify/functions/soniox-eu/:splat"
 status = 200

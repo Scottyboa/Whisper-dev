@@ -1,4 +1,4 @@
-export async function handler(event) {
++ exports.handler = async function handler(event, context) {
   const upstreamBase = "https://stt-rt.eu.soniox.com";
 
   // Local probe that doesn't hit Soniox (to verify routing without external deps)
@@ -65,7 +65,7 @@ export async function handler(event) {
     body: Buffer.from(buf).toString("base64"),
     isBase64Encoded: true,
   };
-}
+};
 
 function cors(inHeaders) {
   const origin = inHeaders?.origin || "*";

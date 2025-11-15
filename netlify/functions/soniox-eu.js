@@ -27,6 +27,20 @@ export async function handler(event) {
   const headers = new Headers(inHeaders);
   headers.delete("origin");
   headers.delete("referer");
+  // Pass through headers (keep Authorization), but drop browser / proxy hop-by-hop headers
+  const inHeaders = event.headers || {};
+  const headers = new Headers(inHeaders);
+
+  // These are browser-only / CORS-related
+  headers.delete("origin");
+  headers.delete("referer");
+
+  // These must NOT be forwarded to Soniox; let fetch() set them for the upstream
+  headers.delete("host");
+  headers.delete("x-forwarded-host");
+  headers.delete("x-forwarded-for");
+  headers.delete("x-forwarded-proto");
+  headers.delete("content-length");
 
   // Body passthrough (support base64 for binary/form-data)
   const bodyBuf = ["GET", "HEAD"].includes(event.httpMethod)

@@ -1,3 +1,5 @@
-[[edge_functions]]
-path = "/api/soniox-eu/*"
-function = "soniox-eu"
+## Use a standard Function via redirect (works on all plans and avoids 404s)
+[[redirects]]
+from = "/api/soniox-eu/*"
+to = "/.netlify/functions/soniox-eu"
+status = 200

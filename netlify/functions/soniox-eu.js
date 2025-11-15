@@ -43,6 +43,7 @@ export async function handler(event) {
   const buf = await resp.arrayBuffer();
   const outHeaders = Object.fromEntries(resp.headers.entries());
   Object.assign(outHeaders, cors(inHeaders)); // add CORS for browser
+  outHeaders["x-proxy-target"] = target.toString();
 
   return {
     statusCode: resp.status,

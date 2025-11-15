@@ -1,6 +1,6 @@
-// netlify/functions/soniox-eu.js
+// netlify/functions/soniox-eu.js "const upstreamBase = "https://stt-rt.eu.soniox.com/v1";"
 
-const upstreamBase = "https://stt-rt.eu.soniox.com";
+const upstreamBase = "https://api.soniox.com";
 
 /**
  * Netlify Function proxy for Soniox EU endpoint.

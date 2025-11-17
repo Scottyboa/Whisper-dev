@@ -1,4 +1,4 @@
-// noteGeneration.js
+// MistralTXT.js
 
 // Utility function to hash a string (used for storing prompts keyed by API key)
 function hashString(str) {

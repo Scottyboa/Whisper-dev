@@ -175,16 +175,21 @@ function resetCompletionTimerDisplay() {
 // ────────────────────────────────
 // ADD THIS HELPER JUST BELOW updateStatusMessage()
 // ────────────────────────────────
+// ✅ REPLACE your existing fetchWithTimeout() with this one
 async function fetchWithTimeout(resource, options = {}, timeoutMs = 30000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(resource, { ...options, signal: controller.signal });
+    if (response.status === 401 || response.status === 403) {
+      updateStatusMessage("Soniox: Unauthorized – check your API key or region.", "red");
+    }
     return response;
   } finally {
     clearTimeout(id);
   }
 }
+
 
 function formatTime(ms) {
   const totalSec = Math.floor(ms / 1000);

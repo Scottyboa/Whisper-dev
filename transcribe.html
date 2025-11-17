@@ -571,6 +571,10 @@
         regionSel.addEventListener("change", () => {
           const val = (regionSel.value || "us").toLowerCase();
           sessionStorage.setItem("soniox_region", val === "eu" ? "eu" : "us");
+          // Show or hide the note depending on region
+          if (regionNote) {
+            regionNote.style.display = (val === "eu") ? "block" : "none";
+          }
         });
       }
 
@@ -580,6 +584,12 @@
       applyProvider(stored);
       // Ensure Region UI is in correct state on load
       applyRegionVisibility(stored);
+
+      // Also set correct initial visibility for the note (EU only)
+      const currentVal = (regionSel?.value || "us").toLowerCase();
+      if (regionNote) {
+        regionNote.style.display = (isSoniox(stored) && currentVal === "eu") ? "block" : "none";
+      }
 
       // On change: try soft-switch; if not available, persist state and reload (fallback)
       sel.addEventListener("change", async () => {

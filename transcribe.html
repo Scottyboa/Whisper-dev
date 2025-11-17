@@ -421,6 +421,20 @@
       <option value="deepgram">Deepgram Nova-3</option>
     </select>
   </div>
+  <!-- Soniox Region selector (shown only for Soniox providers) -->
+  <div id="soniox-region-container" style="display:none; align-items:center; gap:8px; margin-left:12px;">
+    <label for="sonioxRegion" id="sonioxRegionLabel">Region:</label>
+    <select id="sonioxRegion">
+      <option value="us">US</option>
+      <option value="eu">EU</option>
+    </select>
+  </div>
+  <!-- Note under Region dropdown (visible only when Soniox provider is selected) -->
+  <div id="soniox-region-note" style="display:none; margin:4px 0 0 12px; font-size:12px; color:#666; line-height:1.2;">
+    (EU endpoint requires
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSe_D5ePa1HmVStWEiMnwtFbE2R0RaKAlxM1pbdaCvXRJE9AJg/viewform"
+       target="_blank" rel="noopener noreferrer">EU API key</a> from SONIOX)
+  </div>
 </div>
       <!-- Recording Area -->
       <div class="recording-area">
@@ -510,6 +524,9 @@
       const VOXTRAL = "voxtral";
       const DEEPGRAM = "deepgram";
       const sel = document.getElementById("transcribeProvider");
+      const regionContainer = document.getElementById("soniox-region-container");
+      const regionSel = document.getElementById("sonioxRegion");
+      const regionNote = document.getElementById("soniox-region-note");
       if (!sel) return;
 
       function applyProvider(p) {
@@ -531,14 +548,43 @@
   sessionStorage.setItem("user_api_key", chosen);
 }
 
+      // --- Soniox Region handling ---
+      function isSoniox(p) { return p === SONIOX || p === SONIOX_DIA; }
+      function currentRegion() {
+        const r = (sessionStorage.getItem("soniox_region") || "us").toLowerCase();
+        return (r === "eu") ? "eu" : "us";
+      }
+      function applyRegionVisibility(p) {
+        if (!regionContainer || !regionSel) return;
+        if (isSoniox(p)) {
+          regionContainer.style.display = "flex";
+          // Initialize selector from storage (default 'us')
+          regionSel.value = currentRegion();
+          if (regionNote) regionNote.style.display = "block";
+        } else {
+          regionContainer.style.display = "none";
+          if (regionNote) regionNote.style.display = "none";
+        }
+      }
+      // Persist region on change; next API call will read it via getSonioxBase()
+      if (regionSel) {
+        regionSel.addEventListener("change", () => {
+          const val = (regionSel.value || "us").toLowerCase();
+          sessionStorage.setItem("soniox_region", val === "eu" ? "eu" : "us");
+        });
+      }
+
       // Initialize from previous choice or default to OpenAI
       const stored = sessionStorage.getItem("transcribe_provider") || OPENAI;
       sel.value = stored;
       applyProvider(stored);
+      // Ensure Region UI is in correct state on load
+      applyRegionVisibility(stored);
 
       // On change: try soft-switch; if not available, persist state and reload (fallback)
       sel.addEventListener("change", async () => {
         applyProvider(sel.value);
+        applyRegionVisibility(sel.value);
         // Soft switch if our app helper exists
         if (window.__app && typeof window.__app.switchTranscribeProvider === "function") {
           try {

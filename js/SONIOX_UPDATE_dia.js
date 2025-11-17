@@ -1,8 +1,6 @@
 
-// recording.js
-// Updated recording module without encryption/HMAC mechanisms,
-// processing audio chunks using OfflineAudioContext,
-// and implementing a client‑side transcription queue that sends each processed chunk directly to OpenAI's Whisper API.
+// SONIOX_UPDATE_dia.js
+
 let transcriptionError = false;
 
 function hashString(str) {

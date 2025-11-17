@@ -253,7 +253,13 @@ function getAPIKey() {
   return sessionStorage.getItem("user_api_key");
 }
 
-const SONIOX_BASE = "https://api.soniox.com/v1";
+// Region-aware base: reads sessionStorage on every call
+function getSonioxBase() {
+  const region = (sessionStorage.getItem("soniox_region") || "us").toLowerCase();
+  return region === "eu"
+    ? "https://api.eu.soniox.com/v1"
+    : "https://api.soniox.com/v1";
+}
 
 async function uploadToSonioxFile(wavBlob, filename, retries = 5, backoff = 2000) {
   const apiKey = getAPIKey();
@@ -261,7 +267,7 @@ async function uploadToSonioxFile(wavBlob, filename, retries = 5, backoff = 2000
   const fd = new FormData();
   fd.append("file", wavBlob, filename);
   try {
-    const rsp = await fetchWithTimeout(`${SONIOX_BASE}/files`, {
+    const rsp = await fetchWithTimeout(`${getSonioxBase()}/files`, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
      body: fd,
@@ -293,7 +299,7 @@ async function createSonioxTranscription(fileId, context, retries = 5, backoff =
     context, // optional domain/context string
   };
   try {
-    const rsp = await fetchWithTimeout(`${SONIOX_BASE}/transcriptions`, {
+    const rsp = await fetchWithTimeout(`${getSonioxBase()}/transcriptions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -322,7 +328,7 @@ async function pollSonioxTranscription(transcriptionId, timeoutMs = 300000, inte
     let rsp;
     try {
       rsp = await fetchWithTimeout(
-        `${SONIOX_BASE}/transcriptions/${transcriptionId}`,
+        `${getSonioxBase()}/transcriptions/${transcriptionId}`,
         { headers: { Authorization: `Bearer ${apiKey}` } },
         30000 // 30 s per poll attempt
       );
@@ -364,7 +370,7 @@ async function fetchSonioxTranscriptText(
   while (true) {
     try {
       const rsp = await fetchWithTimeout(
-        `${SONIOX_BASE}/transcriptions/${transcriptionId}/transcript`,
+        `${getSonioxBase()}/transcriptions/${transcriptionId}/transcript`,
         { headers: { Authorization: `Bearer ${apiKey}` } },
         perAttemptTimeoutMs
       );
@@ -408,7 +414,7 @@ async function deleteSonioxTranscription(transcriptionId) {
   if (!transcriptionId) return;
   const apiKey = getAPIKey();
   try {
-    const rsp = await fetch(`${SONIOX_BASE}/transcriptions/${transcriptionId}`, {
+    const rsp = await fetch(`${getSonioxBase()}/transcriptions/${transcriptionId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${apiKey}` },
     });
@@ -427,7 +433,7 @@ async function deleteSonioxFile(fileId) {
   if (!fileId) return;
   const apiKey = getAPIKey();
   try {
-    const rsp = await fetch(`${SONIOX_BASE}/files/${fileId}`, {
+const rsp = await fetch(`${getSonioxBase()}/files/${fileId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${apiKey}` },
     });

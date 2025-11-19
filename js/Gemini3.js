@@ -55,6 +55,7 @@ function formatTime(ms) {
 
 // Handles the note generation process using the OpenAI API
 // Handles the note generation process using the Gemini API (non-streaming)
+// Handles the note generation process using the Gemini API with streaming
 async function generateNote() {
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
@@ -97,7 +98,8 @@ async function generateNote() {
   // Fixed formatting instruction
   const baseInstruction = `
 Do not use bold text. Do not use asterisks (*) or Markdown formatting anywhere in the output.
-All headings should be plain text with a colon.`.trim();
+All headings should be plain text with a colon.
+`.trim();
 
   const finalPromptText =
     (promptText || "") +
@@ -106,15 +108,44 @@ All headings should be plain text with a colon.`.trim();
     "\n\nTRANSCRIPTION:\n" +
     transcriptionText;
 
+  // Helper to build the URL for different API versions
+  const makeUrl = (apiVersion) =>
+    `https://generativelanguage.googleapis.com/${apiVersion}/models/gemini-3-pro-preview:streamGenerateContent?alt=sse&key=${encodeURIComponent(
+      apiKey
+    )}`;
+
   try {
-    // NON-STREAMING CALL
-    const resp = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent",
-      {
+    // First try v1beta
+    let resp = await fetch(makeUrl("v1beta"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: finalPromptText
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          thinkingConfig: {
+            thinkingLevel: "low"
+          }
+        }
+      })
+    });
+
+    // If v1beta streaming isn’t available, fall back to v1alpha
+    if (resp.status === 404) {
+      console.warn("v1beta streamGenerateContent returned 404, trying v1alpha");
+      resp = await fetch(makeUrl("v1alpha"), {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           contents: [
@@ -132,59 +163,114 @@ All headings should be plain text with a colon.`.trim();
             }
           }
         })
-      }
-    );
+      });
+    }
 
-    if (!resp.ok) {
+    if (!resp.ok || !resp.body) {
       const text = await resp.text().catch(() => "");
-      throw new Error("Gemini HTTP " + resp.status + ": " + text);
+      throw new Error("Gemini stream HTTP " + resp.status + ": " + text);
     }
 
-    const data = await resp.json();
-
-    const textChunk =
-      data &&
-      Array.isArray(data.candidates) &&
-      data.candidates[0] &&
-      data.candidates[0].content &&
-      Array.isArray(data.candidates[0].content.parts)
-        ? data.candidates[0].content.parts
-            .map(part => (typeof part.text === "string" ? part.text : ""))
-            .join("")
-        : "";
-
-    clearInterval(noteTimerInterval);
-
-    if (!textChunk) {
-      generatedNoteField.value = "No text returned from Gemini.";
-      if (noteTimerElement) {
-        noteTimerElement.innerText = "Text generation completed (empty response).";
+    await streamGeminiSSE(resp.body, {
+      onDelta: (textChunk) => {
+        generatedNoteField.value += textChunk;
+      },
+      onDone: () => {
+        clearInterval(noteTimerInterval);
+        if (noteTimerElement) {
+          noteTimerElement.innerText = "Text generation completed!";
+        }
+      },
+      onError: (err) => {
+        console.error("Gemini streaming error:", err);
+        clearInterval(noteTimerInterval);
+        if (generatedNoteField) {
+          generatedNoteField.value =
+            "Error during note generation: " + String(err);
+        }
+        if (noteTimerElement) {
+          noteTimerElement.innerText = "";
+        }
       }
-      return;
-    }
-
-    generatedNoteField.value = textChunk;
-    if (noteTimerElement) {
-      noteTimerElement.innerText = "Text generation completed!";
-    }
-
-    // Optional: auto-resize the textarea if you want
-    // autoResize(generatedNoteField);
-
+    });
   } catch (error) {
-    console.error("Gemini error:", error);
+    console.error("Gemini streaming error:", error);
     clearInterval(noteTimerInterval);
     if (generatedNoteField) {
       generatedNoteField.value = "Error generating note: " + error;
     }
-    if (noteTimerElement) {
-      noteTimerElement.innerText = "";
+
+  }
+}
+async function streamGeminiSSE(body, callbacks) {
+  const { onDelta, onDone, onError } = callbacks;
+  const reader = body.getReader();
+  const decoder = new TextDecoder("utf-8");
+
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Split into lines; keep incomplete line in buffer
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith(":")) {
+          // comment / keep-alive
+          continue;
+        }
+
+        if (trimmed === "data: [DONE]") {
+          if (typeof onDone === "function") onDone();
+          return;
+        }
+
+        if (!trimmed.startsWith("data:")) continue;
+
+        const jsonStr = trimmed.slice(5).trim();
+        if (!jsonStr) continue;
+
+        let payload;
+        try {
+          payload = JSON.parse(jsonStr);
+        } catch (e) {
+          console.warn("Failed to parse SSE JSON chunk:", e, jsonStr);
+          continue;
+        }
+
+        try {
+          const candidates = payload.candidates || [];
+          if (!candidates.length) continue;
+
+          const parts =
+            (candidates[0].content && candidates[0].content.parts) || [];
+          const textChunk = parts
+            .map((p) => (typeof p.text === "string" ? p.text : ""))
+            .join("");
+
+          if (textChunk && typeof onDelta === "function") {
+            onDelta(textChunk);
+          }
+        } catch (e) {
+          console.warn("Error extracting text from SSE payload:", e, payload);
+        }
+      }
     }
+
+    // Stream ended without explicit [DONE]
+    if (typeof onDone === "function") onDone();
+  } catch (err) {
+    if (typeof onError === "function") onError(err);
   }
 }
 
-
- 
 // Initializes note generation functionality, including prompt slot handling and event listeners.
 function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");

@@ -467,12 +467,14 @@
           <div id="note-provider-container" style="display:flex; align-items:center; gap:8px; margin: 6px 0 10px;">
             <label for="noteProvider" id="noteProviderLabel">Note Provider:</label>
             <select id="noteProvider">
-  <option value="gpt5" selected>GPT-5 (streaming)</option>
-  <option value="gpt5-ns">GPT-5 (non-streaming)</option>
-  <option value="gpt4">GPT-4-latest</option>
-  <option value="lemonfox">Lemonfox</option>
-  <option value="mistral">Mistral</option>
+    <option value="gpt5" selected>GPT-5 (streaming)</option>
+    <option value="gpt5-ns">GPT-5 (non-streaming)</option>
+    <option value="gpt4">GPT-4-latest</option>
+    <option value="lemonfox">Lemonfox</option>
+    <option value="mistral">Mistral</option>
+    <option value="gemini3">Gemini 3</option> <!-- NEW OPTION -->
 </select>
+
           </div>
           <button id="generateNoteButton">Generate Note</button>
           <div id="noteTimer" class="timer">Note Generation Timer: 0 sec</div>
@@ -813,5 +815,4 @@
 </script>
 </body>
 </html>
-
 

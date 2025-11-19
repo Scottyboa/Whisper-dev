@@ -258,6 +258,11 @@
     <p id="deepgram-text">Enter your Deepgram API key:</p>
     <input type="text" id="deepgramKeyInput" placeholder="Enter Deepgram API Key here" autocomplete="off">
     <br>
+    <!-- New: Optional Google Gemini API Key -->
+    <p id="gemini-text">Enter your Google Gemini API key:</p>
+    <input type="text" id="geminiKeyInput" placeholder="Enter Google Gemini API Key here" autocomplete="off">
+    <br>
+
     <button id="enterTranscriptionBtn">Enter Transcription Tool</button>
     <br>
     <p class="ad-revenue-message" id="ad-revenue-message">
@@ -318,11 +323,13 @@
       btn._multiKeyWired = true;
 
       btn.addEventListener("click", function () {
-        var openaiKey = ((document.getElementById("apiKeyInput")    || {}).value || "").trim();
-        var sonioxKey = ((document.getElementById("sonioxKeyInput") || {}).value || "").trim();
-        var lemonKey  = ((document.getElementById("lemonfoxKeyInput") || {}).value || "").trim();
-        var mistralKey = ((document.getElementById("mistralKeyInput")   || {}).value || "").trim();
-        var deepgramKey = ((document.getElementById("deepgramKeyInput") || {}).value || "").trim();
+        var openaiKey   = ((document.getElementById("apiKeyInput")        || {}).value || "").trim();
+       var sonioxKey   = ((document.getElementById("sonioxKeyInput")     || {}).value || "").trim();
+       var lemonKey    = ((document.getElementById("lemonfoxKeyInput")   || {}).value || "").trim();
+       var mistralKey  = ((document.getElementById("mistralKeyInput")    || {}).value || "").trim();
+       var deepgramKey = ((document.getElementById("deepgramKeyInput")   || {}).value || "").trim();
+       var geminiKey   = ((document.getElementById("geminiKeyInput")     || {}).value || "").trim();   // ← NEW
+
 
         // Store all keys (even if empty) for later provider selection
         sessionStorage.setItem("openai_api_key", openaiKey);
@@ -330,6 +337,7 @@
         sessionStorage.setItem("lemonfox_api_key", lemonKey);
         sessionStorage.setItem("mistral_api_key", mistralKey);
         sessionStorage.setItem("deepgram_api_key", deepgramKey);
+        sessionStorage.setItem("gemini_api_key", geminiKey);
 
         // Back-compat: default active key remains OpenAI for now
         sessionStorage.setItem("user_api_key", openaiKey);

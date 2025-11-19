@@ -85,130 +85,83 @@ async function generateNote() {
   }, 1000);
   
     // Phase 3: Always use the OpenAI key for note generation (independent of transcription provider)
-  const apiKey = sessionStorage.getItem("openai_api_key");
-  if (!apiKey) {
-    alert("No API key available for note generation.");
+  // Phase 3: Always use the Gemini key for note generation (independent of transcription provider)
+const apiKey = sessionStorage.getItem("gemini_api_key");
+if (!apiKey) {
+    alert("No Gemini API key available for note generation.");
     clearInterval(noteTimerInterval);
     return;
-  }
+}
   
   // Add the fixed formatting instruction as a hidden prompt component.
   const baseInstruction = `
 Do not use bold text. Do not use asterisks (*) or Markdown formatting anywhere in the output.
 All headings should be plain text with a colon.`.trim();
 
-  // Append the hidden instruction to the user's prompt so it is always included.
-  const finalPromptText = promptText + "\n\n" + baseInstruction;
-  
-  try {
-  // Prepare the messages array for the Responses API
-  const messages = [
-    { role: "system", content: finalPromptText },
-    { role: "user",   content: transcriptionText }
-  ];
-  // Call the Responses API with GPT-5 and streaming
-  const resp = await fetch("https://api.openai.com/v1/responses", {
+// Append the hidden instruction to the user's prompt so it is always included.
+const finalPromptText = promptText + "\n\n" + baseInstruction;
+
+try {
+  // Call the Google Gemini 3 Pro Preview API (non-streaming)
+  const resp = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
+      "x-goog-api-key": apiKey
     },
     body: JSON.stringify({
-      model: "gpt-5.1",
-      input: messages.map(m => ({
-        role: m.role,
-        content: [{ type: "input_text", text: m.content }]
-      })),
-      stream: true,
-      // —— OPTIONAL TUNING PARAMS —— 
-      text: {
-        verbosity: "medium"    // try "low" (faster/terse) or "high" (more detail)
-      },
-      reasoning: {
-        effort: "low"      // try "minimal" (fastest) or omit for default medium
+      contents: [
+        {
+          parts: [
+            {
+              text: finalPromptText + "\n\nTRANSCRIPTION:\n" + transcriptionText
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        thinkingConfig: {
+          thinkingLevel: "low"   // low reasoning for faster, cheaper responses
+        }
       }
     })
   });
-    await streamOpenAIResponse(resp, {
-      onDelta: (textChunk) => {
-        generatedNoteField.value += textChunk;
-      },
-      onDone: () => {},
-      onError: (err) => {
-        console.error("Streaming error:", err);
-        alert("Error during note generation");
-      }
-    });
 
-    clearInterval(noteTimerInterval);
-    if (noteTimerElement) {
-      noteTimerElement.innerText = "Text generation completed!";
-    }
-  } catch (error) {
-    clearInterval(noteTimerInterval);
-    if (generatedNoteField) {
-      generatedNoteField.value = "Error generating note: " + error;
-    }
-    if (noteTimerElement) {
-      noteTimerElement.innerText = "";
-    }
+  if (!resp.ok) {
+    const errorText = await resp.text().catch(() => "");
+    throw new Error("Gemini error " + resp.status + ": " + errorText);
+  }
+
+  const data = await resp.json();
+
+  // Safely extract concatenated text from Gemini response
+  const geminiText =
+    data &&
+    Array.isArray(data.candidates) &&
+    data.candidates[0] &&
+    data.candidates[0].content &&
+    Array.isArray(data.candidates[0].content.parts)
+      ? data.candidates[0].content.parts
+          .map(part => (typeof part.text === "string" ? part.text : ""))
+          .join("")
+      : "";
+
+  generatedNoteField.value = geminiText || "[No text returned from Gemini]";
+
+  clearInterval(noteTimerInterval);
+  if (noteTimerElement) {
+    noteTimerElement.innerText = "Text generation completed!";
+  }
+} catch (error) {
+  clearInterval(noteTimerInterval);
+  if (generatedNoteField) {
+    generatedNoteField.value = "Error generating note: " + error;
+  }
+  if (noteTimerElement) {
+    noteTimerElement.innerText = "";
   }
 }
 
-async function streamOpenAIResponse(resp, {
-  onDelta = () => {},
-  onDone = () => {},
-  onError = (e) => { console.error(e); },
-} = {}) {
-  if (!resp.ok || !resp.body) {
-    const text = await resp.text().catch(() => "");
-    throw new Error(`OpenAI error ${resp.status}: ${text}`);
-  }
-
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split("\n\n");
-      buffer = parts.pop() ?? "";
-
-      for (const part of parts) {
-        const lines = part.split("\n");
-        let event = null;
-        let dataStr = null;
-        for (const line of lines) {
-          if (line.startsWith("event:")) event = line.slice(6).trim();
-          if (line.startsWith("data:"))  dataStr = line.slice(5).trim();
-        }
-        if (!dataStr) continue;
-        if (dataStr === "[DONE]") { onDone(); return; }
-
-        let payload;
-        try { payload = JSON.parse(dataStr); } catch { continue; }
-
-        if (payload.type === "response.output_text.delta" && typeof payload.delta === "string") {
-          onDelta(payload.delta);
-        }
-        if (payload.type === "response.completed") {
-          onDone(payload);
-          return;
-        }
-        if (payload.type === "response.error") {
-          onError(new Error(payload.error?.message || "Unknown streaming error"));
-          return;
-        }
-      }
-    }
-    onDone();
-  } catch (e) {
-    onError(e);
-  }
 }
 
  

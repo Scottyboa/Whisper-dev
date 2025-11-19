@@ -102,12 +102,13 @@ All headings should be plain text with a colon.`.trim();
 const finalPromptText = promptText + "\n\n" + baseInstruction;
 
 try {
-  // Call the Google Gemini 3 Pro Preview API (non-streaming)
-  const resp = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent", {
+  // Call the Google Gemini 3 Pro Preview API with streaming (SSE)
+  const resp = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:streamGenerateContent?alt=sse", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-goog-api-key": apiKey
+      "x-goog-api-key": apiKey,
+      "Accept": "text/event-stream"
     },
     body: JSON.stringify({
       contents: [
@@ -127,31 +128,28 @@ try {
     })
   });
 
-  if (!resp.ok) {
-    const errorText = await resp.text().catch(() => "");
-    throw new Error("Gemini error " + resp.status + ": " + errorText);
-  }
-
-  const data = await resp.json();
-
-  // Safely extract concatenated text from Gemini response
-  const geminiText =
-    data &&
-    Array.isArray(data.candidates) &&
-    data.candidates[0] &&
-    data.candidates[0].content &&
-    Array.isArray(data.candidates[0].content.parts)
-      ? data.candidates[0].content.parts
-          .map(part => (typeof part.text === "string" ? part.text : ""))
-          .join("")
-      : "";
-
-  generatedNoteField.value = geminiText || "[No text returned from Gemini]";
-
-  clearInterval(noteTimerInterval);
-  if (noteTimerElement) {
-    noteTimerElement.innerText = "Text generation completed!";
-  }
+  await streamGeminiResponse(resp, {
+    onDelta: (textChunk) => {
+      // append streamed text into the textarea
+      generatedNoteField.value += textChunk;
+    },
+    onDone: () => {
+      clearInterval(noteTimerInterval);
+      if (noteTimerElement) {
+        noteTimerElement.innerText = "Text generation completed!";
+      }
+    },
+    onError: (err) => {
+      console.error("Gemini streaming error:", err);
+      clearInterval(noteTimerInterval);
+      if (generatedNoteField) {
+        generatedNoteField.value = "Error during note generation: " + err;
+      }
+      if (noteTimerElement) {
+        noteTimerElement.innerText = "";
+      }
+    }
+  });
 } catch (error) {
   clearInterval(noteTimerInterval);
   if (generatedNoteField) {
@@ -161,7 +159,88 @@ try {
     noteTimerElement.innerText = "";
   }
 }
+ catch (error) {
+  clearInterval(noteTimerInterval);
+  if (generatedNoteField) {
+    generatedNoteField.value = "Error generating note: " + error;
+  }
+  if (noteTimerElement) {
+    noteTimerElement.innerText = "";
+  }
+}
 
+}
+async function streamGeminiResponse(resp, {
+  onDelta = () => {},
+  onDone = () => {},
+  onError = (e) => { console.error(e); },
+} = {}) {
+  if (!resp.ok || !resp.body) {
+    const text = await resp.text().catch(() => "");
+    throw new Error("Gemini streaming HTTP error " + resp.status + ": " + text);
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // SSE events are separated by double newlines
+      const events = buffer.split("\n\n");
+      buffer = events.pop() ?? "";
+
+      for (const event of events) {
+        const lines = event.split("\n");
+        let dataStr = null;
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith(":")) {
+            // comment / keep-alive
+            continue;
+          }
+          if (trimmed.startsWith("data:")) {
+            dataStr = trimmed.slice(5).trim();
+          }
+        }
+
+        if (!dataStr) continue;
+
+        let payload;
+        try {
+          payload = JSON.parse(dataStr);
+        } catch {
+          continue;
+        }
+
+        // Extract text from the streamed GenerateContentResponse
+        const textChunk =
+          payload &&
+          Array.isArray(payload.candidates) &&
+          payload.candidates[0] &&
+          payload.candidates[0].content &&
+          Array.isArray(payload.candidates[0].content.parts)
+            ? payload.candidates[0].content.parts
+                .map(part => (typeof part.text === "string" ? part.text : ""))
+                .join("")
+            : "";
+
+        if (textChunk) {
+          onDelta(textChunk);
+        }
+      }
+    }
+
+    onDone();
+  } catch (e) {
+    onError(e);
+  }
 }
 
  

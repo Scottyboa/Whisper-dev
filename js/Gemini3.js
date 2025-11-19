@@ -54,6 +54,7 @@ function formatTime(ms) {
 }
 
 // Handles the note generation process using the OpenAI API
+// Handles the note generation process using the Gemini API (non-streaming)
 async function generateNote() {
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
@@ -65,12 +66,12 @@ async function generateNote() {
     alert("No transcription text available.");
     return;
   }
-  
+
   const customPromptTextarea = document.getElementById("customPrompt");
   const promptText = customPromptTextarea ? customPromptTextarea.value : "";
   const generatedNoteField = document.getElementById("generatedNote");
   if (!generatedNoteField) return;
-  
+
   // Reset generated note field and start timer
   generatedNoteField.value = "";
   const noteTimerElement = document.getElementById("noteTimer");
@@ -80,168 +81,108 @@ async function generateNote() {
   }
   const noteTimerInterval = setInterval(() => {
     if (noteTimerElement) {
-      noteTimerElement.innerText = "Note Generation Timer: " + formatTime(Date.now() - noteStartTime);
+      noteTimerElement.innerText =
+        "Note Generation Timer: " + formatTime(Date.now() - noteStartTime);
     }
   }, 1000);
-  
-    // Phase 3: Always use the OpenAI key for note generation (independent of transcription provider)
-  // Phase 3: Always use the Gemini key for note generation (independent of transcription provider)
-const apiKey = sessionStorage.getItem("gemini_api_key");
-if (!apiKey) {
+
+  // Use the Gemini key for note generation
+  const apiKey = sessionStorage.getItem("gemini_api_key");
+  if (!apiKey) {
     alert("No Gemini API key available for note generation.");
     clearInterval(noteTimerInterval);
     return;
-}
-  
-  // Add the fixed formatting instruction as a hidden prompt component.
+  }
+
+  // Fixed formatting instruction
   const baseInstruction = `
 Do not use bold text. Do not use asterisks (*) or Markdown formatting anywhere in the output.
 All headings should be plain text with a colon.`.trim();
 
-// Append the hidden instruction to the user's prompt so it is always included.
-const finalPromptText = promptText + "\n\n" + baseInstruction;
-
-try {
-  // Call the Google Gemini 3 Pro Preview API with streaming (SSE)
-  const resp = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:streamGenerateContent?alt=sse", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-key": apiKey,
-      "Accept": "text/event-stream"
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            {
-              text: finalPromptText + "\n\nTRANSCRIPTION:\n" + transcriptionText
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        thinkingConfig: {
-          thinkingLevel: "low"   // low reasoning for faster, cheaper responses
-        }
-      }
-    })
-  });
-
-  await streamGeminiResponse(resp, {
-    onDelta: (textChunk) => {
-      // append streamed text into the textarea
-      generatedNoteField.value += textChunk;
-    },
-    onDone: () => {
-      clearInterval(noteTimerInterval);
-      if (noteTimerElement) {
-        noteTimerElement.innerText = "Text generation completed!";
-      }
-    },
-    onError: (err) => {
-      console.error("Gemini streaming error:", err);
-      clearInterval(noteTimerInterval);
-      if (generatedNoteField) {
-        generatedNoteField.value = "Error during note generation: " + err;
-      }
-      if (noteTimerElement) {
-        noteTimerElement.innerText = "";
-      }
-    }
-  });
-} catch (error) {
-  clearInterval(noteTimerInterval);
-  if (generatedNoteField) {
-    generatedNoteField.value = "Error generating note: " + error;
-  }
-  if (noteTimerElement) {
-    noteTimerElement.innerText = "";
-  }
-}
- catch (error) {
-  clearInterval(noteTimerInterval);
-  if (generatedNoteField) {
-    generatedNoteField.value = "Error generating note: " + error;
-  }
-  if (noteTimerElement) {
-    noteTimerElement.innerText = "";
-  }
-}
-
-}
-async function streamGeminiResponse(resp, {
-  onDelta = () => {},
-  onDone = () => {},
-  onError = (e) => { console.error(e); },
-} = {}) {
-  if (!resp.ok || !resp.body) {
-    const text = await resp.text().catch(() => "");
-    throw new Error("Gemini streaming HTTP error " + resp.status + ": " + text);
-  }
-
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
+  const finalPromptText =
+    (promptText || "") +
+    "\n\n" +
+    baseInstruction +
+    "\n\nTRANSCRIPTION:\n" +
+    transcriptionText;
 
   try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-
-      // SSE events are separated by double newlines
-      const events = buffer.split("\n\n");
-      buffer = events.pop() ?? "";
-
-      for (const event of events) {
-        const lines = event.split("\n");
-        let dataStr = null;
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || trimmed.startsWith(":")) {
-            // comment / keep-alive
-            continue;
+    // NON-STREAMING CALL
+    const resp = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: finalPromptText
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            thinkingConfig: {
+              thinkingLevel: "low"
+            }
           }
-          if (trimmed.startsWith("data:")) {
-            dataStr = trimmed.slice(5).trim();
-          }
-        }
-
-        if (!dataStr) continue;
-
-        let payload;
-        try {
-          payload = JSON.parse(dataStr);
-        } catch {
-          continue;
-        }
-
-        // Extract text from the streamed GenerateContentResponse
-        const textChunk =
-          payload &&
-          Array.isArray(payload.candidates) &&
-          payload.candidates[0] &&
-          payload.candidates[0].content &&
-          Array.isArray(payload.candidates[0].content.parts)
-            ? payload.candidates[0].content.parts
-                .map(part => (typeof part.text === "string" ? part.text : ""))
-                .join("")
-            : "";
-
-        if (textChunk) {
-          onDelta(textChunk);
-        }
+        })
       }
+    );
+
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => "");
+      throw new Error("Gemini HTTP " + resp.status + ": " + text);
     }
 
-    onDone();
-  } catch (e) {
-    onError(e);
+    const data = await resp.json();
+
+    const textChunk =
+      data &&
+      Array.isArray(data.candidates) &&
+      data.candidates[0] &&
+      data.candidates[0].content &&
+      Array.isArray(data.candidates[0].content.parts)
+        ? data.candidates[0].content.parts
+            .map(part => (typeof part.text === "string" ? part.text : ""))
+            .join("")
+        : "";
+
+    clearInterval(noteTimerInterval);
+
+    if (!textChunk) {
+      generatedNoteField.value = "No text returned from Gemini.";
+      if (noteTimerElement) {
+        noteTimerElement.innerText = "Text generation completed (empty response).";
+      }
+      return;
+    }
+
+    generatedNoteField.value = textChunk;
+    if (noteTimerElement) {
+      noteTimerElement.innerText = "Text generation completed!";
+    }
+
+    // Optional: auto-resize the textarea if you want
+    // autoResize(generatedNoteField);
+
+  } catch (error) {
+    console.error("Gemini error:", error);
+    clearInterval(noteTimerInterval);
+    if (generatedNoteField) {
+      generatedNoteField.value = "Error generating note: " + error;
+    }
+    if (noteTimerElement) {
+      noteTimerElement.innerText = "";
+    }
   }
 }
+
 
  
 // Initializes note generation functionality, including prompt slot handling and event listeners.

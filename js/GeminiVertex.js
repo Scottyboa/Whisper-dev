@@ -11,6 +11,20 @@
 const VERTEX_LOCATION = "europe-west4";
 const VERTEX_MODEL_ID = "gemini-3-pro-preview";
 
+async function fetchVertexAccessTokenFromHelper() {
+  const resp = await fetch("http://127.0.0.1:9999/getToken");
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => "");
+    throw new Error("Helper HTTP " + resp.status + ": " + text);
+  }
+  const data = await resp.json();
+  if (!data.access_token) {
+    throw new Error("Helper did not return access_token");
+  }
+  return data.access_token;
+}
+
+
 // Small helper to format the timer display
 function formatTime(ms) {
   const totalSec = Math.floor(ms / 1000);
@@ -137,17 +151,21 @@ async function generateNote() {
     }
   }, 1000);
 
-  // Read Vertex credentials from sessionStorage (provided on index.html)
-  const accessToken = sessionStorage.getItem("vertex_access_token");
-  if (!accessToken) {
-    alert(
-      "No Vertex access token found.\n\nGo back to the main page, paste your Vertex OAuth Client ID and click 'Sign in with Google for Vertex' first."
-    );
-    clearInterval(noteTimerInterval);
-    if (noteTimerElement) noteTimerElement.innerText = "";
-    return;
-  }
+let accessToken;
+try {
+  accessToken = await fetchVertexAccessTokenFromHelper();
+} catch (e) {
+  console.error("Could not get Vertex access token from helper:", e);
+  alert(
+    "Could not get a Vertex access token.\n\n" +
+    "Make sure the Vertex Helper is running (run_vertex_helper.bat)."
+  );
+  clearInterval(noteTimerInterval);
+  if (noteTimerElement) noteTimerElement.innerText = "";
+  return;
+}
 
+  
   const projectId = sessionStorage.getItem("vertex_project_id");
   if (!projectId) {
     alert(

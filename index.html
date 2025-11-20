@@ -219,8 +219,7 @@
     }
   </style>
   </style>
-  <!-- Google Identity Services for OAuth (used to obtain Vertex access tokens) -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+ 
 </head>
 <body>
   <!-- Language Dropdown -->
@@ -268,11 +267,20 @@
       <!-- Vertex Project ID, used for Vertex AI Gemini in europe-west4 -->
       <input type="text" id="vertexProjectIdInput" placeholder="Vertex Project ID (for Vertex EU)" autocomplete="off">
     </div>
-    <p id="vertex-clientid-text">Optional: Vertex OAuth Client ID (for Vertex Gemini EU)</p>
-    <input type="text" id="vertexClientIdInput" placeholder="Vertex OAuth Client ID" autocomplete="off">
-    <br>
-    <button id="vertexOAuthLoginButton" type="button">Sign in with Google for Vertex</button>
-    <br>
+    
+
+    <!-- Download ZIP containing run_vertex_helper.bat, vertex_auth_helper.py, README -->
+    <a href="vertex_helper_package.zip" download>
+      <button type="button" style="margin-top:10px;">
+        Download Vertex Helper Package (Windows)
+      </button>
+    </a>
+    <p style="font-size: 0.9em; max-width: 420px; margin: 6px auto; color:#444;">
+      This helper runs locally on your computer. After downloading, place your own
+      <code>service_account.json</code> next to it and run:
+      <br><code>python vertex_auth_helper.py</code><br>
+      Keep it running while using the Vertex Gemini option.
+    </p>
 
     <button id="enterTranscriptionBtn">Enter Transcription Tool</button>
     <br>
@@ -341,8 +349,7 @@
         var deepgramKey     = ((document.getElementById("deepgramKeyInput")     || {}).value || "").trim();
         var geminiKey       = ((document.getElementById("geminiKeyInput")       || {}).value || "").trim();
         var vertexProjectId = ((document.getElementById("vertexProjectIdInput") || {}).value || "").trim();
-        var vertexClientId  = ((document.getElementById("vertexClientIdInput")  || {}).value || "").trim();
-
+        
 
         // Store all keys (even if empty) for later provider selection
         sessionStorage.setItem("openai_api_key", openaiKey);
@@ -352,50 +359,12 @@
         sessionStorage.setItem("deepgram_api_key", deepgramKey);
         sessionStorage.setItem("gemini_api_key", geminiKey);
         sessionStorage.setItem("vertex_project_id", vertexProjectId);
-        sessionStorage.setItem("vertex_client_id", vertexClientId);
-
+        
         // Back-compat: default active key remains OpenAI for now
         sessionStorage.setItem("user_api_key", openaiKey);
 
         // Proceed to the transcription tool regardless of empties
         window.location.href = "transcribe.html";
-      });
-    })();
-
-    // Vertex OAuth login button: uses Google Identity Services to obtain a short-lived
-    // access token for the given Client ID and stores it in sessionStorage.
-    (function setupVertexOAuthLogin() {
-      var loginBtn = document.getElementById("vertexOAuthLoginButton");
-      if (!loginBtn) return;
-
-      loginBtn.addEventListener("click", function () {
-        var clientIdInput = document.getElementById("vertexClientIdInput");
-        var clientId = (clientIdInput && clientIdInput.value || "").trim();
-        if (!clientId) {
-          alert("Please paste your Vertex OAuth Client ID first.");
-          return;
-        }
-        if (!(window.google && google.accounts && google.accounts.oauth2)) {
-          alert("Google Identity library is not loaded yet. Check your internet connection and try again.");
-          return;
-        }
-
-        var tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: clientId,
-          scope: "https://www.googleapis.com/auth/cloud-platform",
-          callback: function (tokenResponse) {
-            console.log("Vertex OAuth token response:", tokenResponse);
-            if (tokenResponse && tokenResponse.access_token) {
-              sessionStorage.setItem("vertex_access_token", tokenResponse.access_token);
-              alert("Vertex access token stored for this session.");
-            } else {
-              alert("Did not receive an access token. See console for details.");
-            }
-          }
-        });
-
-        // Prompt the user to choose account and grant consent.
-        tokenClient.requestAccessToken({ prompt: "consent" });
       });
     })();
 

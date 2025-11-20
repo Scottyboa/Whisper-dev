@@ -218,6 +218,9 @@
       display: none;
     }
   </style>
+  </style>
+  <!-- Google Identity Services for OAuth (used to obtain Vertex access tokens) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <!-- Language Dropdown -->
@@ -258,9 +261,17 @@
     <p id="deepgram-text">Enter your Deepgram API key:</p>
     <input type="text" id="deepgramKeyInput" placeholder="Enter Deepgram API Key here" autocomplete="off">
     <br>
-    <!-- New: Optional Google Gemini API Key -->
+    <!-- New: Optional Google Gemini / Vertex Credentials -->
     <p id="gemini-text">Enter your Google Gemini API key:</p>
-    <input type="text" id="geminiKeyInput" placeholder="Enter Google Gemini API Key here" autocomplete="off">
+    <div class="gemini-credentials-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+      <input type="text" id="geminiKeyInput" placeholder="Enter Google Gemini API Key here" autocomplete="off">
+      <!-- Vertex Project ID, used for Vertex AI Gemini in europe-west4 -->
+      <input type="text" id="vertexProjectIdInput" placeholder="Vertex Project ID (for Vertex EU)" autocomplete="off">
+    </div>
+    <p id="vertex-clientid-text">Optional: Vertex OAuth Client ID (for Vertex Gemini EU)</p>
+    <input type="text" id="vertexClientIdInput" placeholder="Vertex OAuth Client ID" autocomplete="off">
+    <br>
+    <button id="vertexOAuthLoginButton" type="button">Sign in with Google for Vertex</button>
     <br>
 
     <button id="enterTranscriptionBtn">Enter Transcription Tool</button>
@@ -323,12 +334,14 @@
       btn._multiKeyWired = true;
 
       btn.addEventListener("click", function () {
-        var openaiKey   = ((document.getElementById("apiKeyInput")        || {}).value || "").trim();
-       var sonioxKey   = ((document.getElementById("sonioxKeyInput")     || {}).value || "").trim();
-       var lemonKey    = ((document.getElementById("lemonfoxKeyInput")   || {}).value || "").trim();
-       var mistralKey  = ((document.getElementById("mistralKeyInput")    || {}).value || "").trim();
-       var deepgramKey = ((document.getElementById("deepgramKeyInput")   || {}).value || "").trim();
-       var geminiKey   = ((document.getElementById("geminiKeyInput")     || {}).value || "").trim();   // ← NEW
+        var openaiKey       = ((document.getElementById("apiKeyInput")          || {}).value || "").trim();
+        var sonioxKey       = ((document.getElementById("sonioxKeyInput")       || {}).value || "").trim();
+        var lemonKey        = ((document.getElementById("lemonfoxKeyInput")     || {}).value || "").trim();
+        var mistralKey      = ((document.getElementById("mistralKeyInput")      || {}).value || "").trim();
+        var deepgramKey     = ((document.getElementById("deepgramKeyInput")     || {}).value || "").trim();
+        var geminiKey       = ((document.getElementById("geminiKeyInput")       || {}).value || "").trim();
+        var vertexProjectId = ((document.getElementById("vertexProjectIdInput") || {}).value || "").trim();
+        var vertexClientId  = ((document.getElementById("vertexClientIdInput")  || {}).value || "").trim();
 
 
         // Store all keys (even if empty) for later provider selection
@@ -338,12 +351,51 @@
         sessionStorage.setItem("mistral_api_key", mistralKey);
         sessionStorage.setItem("deepgram_api_key", deepgramKey);
         sessionStorage.setItem("gemini_api_key", geminiKey);
+        sessionStorage.setItem("vertex_project_id", vertexProjectId);
+        sessionStorage.setItem("vertex_client_id", vertexClientId);
 
         // Back-compat: default active key remains OpenAI for now
         sessionStorage.setItem("user_api_key", openaiKey);
 
         // Proceed to the transcription tool regardless of empties
         window.location.href = "transcribe.html";
+      });
+    })();
+
+    // Vertex OAuth login button: uses Google Identity Services to obtain a short-lived
+    // access token for the given Client ID and stores it in sessionStorage.
+    (function setupVertexOAuthLogin() {
+      var loginBtn = document.getElementById("vertexOAuthLoginButton");
+      if (!loginBtn) return;
+
+      loginBtn.addEventListener("click", function () {
+        var clientIdInput = document.getElementById("vertexClientIdInput");
+        var clientId = (clientIdInput && clientIdInput.value || "").trim();
+        if (!clientId) {
+          alert("Please paste your Vertex OAuth Client ID first.");
+          return;
+        }
+        if (!(window.google && google.accounts && google.accounts.oauth2)) {
+          alert("Google Identity library is not loaded yet. Check your internet connection and try again.");
+          return;
+        }
+
+        var tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: "https://www.googleapis.com/auth/cloud-platform",
+          callback: function (tokenResponse) {
+            console.log("Vertex OAuth token response:", tokenResponse);
+            if (tokenResponse && tokenResponse.access_token) {
+              sessionStorage.setItem("vertex_access_token", tokenResponse.access_token);
+              alert("Vertex access token stored for this session.");
+            } else {
+              alert("Did not receive an access token. See console for details.");
+            }
+          }
+        });
+
+        // Prompt the user to choose account and grant consent.
+        tokenClient.requestAccessToken({ prompt: "consent" });
       });
     })();
 

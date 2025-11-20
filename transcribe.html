@@ -466,13 +466,14 @@
           <!-- Phase 3: Note Provider selector (module switch only; both use OpenAI key) -->
           <div id="note-provider-container" style="display:flex; align-items:center; gap:8px; margin: 6px 0 10px;">
             <label for="noteProvider" id="noteProviderLabel">Note Provider:</label>
-            <select id="noteProvider">
+<select id="noteProvider">
     <option value="gpt5" selected>GPT-5 (streaming)</option>
     <option value="gpt5-ns">GPT-5 (non-streaming)</option>
     <option value="gpt4">GPT-4-latest</option>
     <option value="lemonfox">Lemonfox</option>
     <option value="mistral">Mistral</option>
-    <option value="gemini3">Gemini 3</option> <!-- NEW OPTION -->
+    <option value="gemini3">Gemini 3</option> <!-- Gemini via public API -->
+    <option value="gemini3-vertex">Gemini 3 (Vertex - GDPR friendly)</option> <!-- Gemini via Vertex AI -->
 </select>
 
           </div>

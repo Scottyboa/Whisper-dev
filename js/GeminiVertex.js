@@ -1,90 +1,99 @@
+// File: js/GeminiVertex.js
 // Gemini 3 via Vertex AI (GDPR-friendly, europe-west4)
-// This module mirrors the behaviour of Gemini3.js but calls the Vertex AI Gemini endpoint
-// using a project ID + API key stored in sessionStorage.
-//
-// Required sessionStorage keys (set on index.html):
-//   - "gemini_api_key"      → Vertex / Gemini API key
-//   - "vertex_project_id"   → Google Cloud project ID
 //
 // This module is loaded when note_provider === "gemini3-vertex".
-// It exposes initNoteGeneration(), which main.js calls.
+// It expects these to be in sessionStorage (set on index.html):
+//   - vertex_project_id     → Your Google Cloud Project ID
+//   - vertex_access_token   → OAuth access token (from "Sign in with Google for Vertex")
+//
+// It mirrors the UX of Gemini3.js: same button, same timer, same text areas.
 
 const VERTEX_LOCATION = "europe-west4";
 const VERTEX_MODEL_ID = "gemini-3-pro-preview";
 
-// Formats milliseconds into a human-readable string
+// Small helper to format the timer display
 function formatTime(ms) {
   const totalSec = Math.floor(ms / 1000);
-  if (totalSec < 60) {
-    return totalSec + " sec";
-  } else {
-    const minutes = Math.floor(totalSec / 60);
-    const seconds = totalSec % 60;
-    return minutes + " min" + (seconds > 0 ? " " + seconds + " sec" : "");
-  }
+  if (totalSec < 60) return totalSec + " sec";
+  const minutes = Math.floor(totalSec / 60);
+  const seconds = totalSec % 60;
+  return minutes + " min" + (seconds > 0 ? " " + seconds + " sec" : "");
 }
 
-/**
- * Minimal SSE parser for Vertex/Gemini streamGenerateContent responses.
- * Expects `response.body` (ReadableStream) and callback hooks.
- */
+// SSE parser for Vertex streamGenerateContent
 async function streamGeminiSSE(body, callbacks) {
   const { onDelta, onDone, onError } = callbacks || {};
   const reader = body.getReader();
   const decoder = new TextDecoder("utf-8");
   let buffer = "";
+  let eventBuffer = [];
 
   try {
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
+
       buffer += decoder.decode(value, { stream: true });
 
-      let sepIndex;
-      // Events are separated by double newline
-      while ((sepIndex = buffer.indexOf("\n\n")) !== -1) {
-        const rawEvent = buffer.slice(0, sepIndex).trim();
-        buffer = buffer.slice(sepIndex + 2);
+      // Process line-by-line
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() || ""; // keep the last partial line
 
-        // Ignore comments/empty lines
-        if (!rawEvent || rawEvent.startsWith(":")) continue;
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          // End of one SSE event block
+          if (eventBuffer.length) {
+            const dataLines = eventBuffer
+              .filter((l) => l.startsWith("data:"))
+              .map((l) => l.slice("data:".length).trim())
+              .filter(Boolean);
 
-        // We only care about data: lines
-        const dataPrefix = "data:";
-        if (!rawEvent.startsWith(dataPrefix)) continue;
+            eventBuffer = [];
 
-        const jsonStr = rawEvent.slice(dataPrefix.length).trim();
-        if (!jsonStr) continue;
-        if (jsonStr === "[DONE]") {
-          if (typeof onDone === "function") onDone();
-          return;
-        }
+            for (const jsonStr of dataLines) {
+              if (jsonStr === "[DONE]") {
+                if (typeof onDone === "function") onDone();
+                return;
+              }
+              let payload;
+              try {
+                payload = JSON.parse(jsonStr);
+              } catch (e) {
+                console.warn("Failed to parse SSE JSON chunk:", e, jsonStr);
+                continue;
+              }
 
-        let payload;
-        try {
-          payload = JSON.parse(jsonStr);
-        } catch (e) {
-          console.warn("Failed to parse SSE JSON chunk:", e, jsonStr);
-          continue;
-        }
+              try {
+                const candidates = payload.candidates || [];
+                if (!candidates.length) continue;
 
-        try {
-          const candidates = payload.candidates || [];
-          if (!candidates.length) continue;
-
-          for (const cand of candidates) {
-            // Vertex/Gemini responses can have either `content.parts` or top-level `parts`
-            const parts = (cand.content && cand.content.parts) || cand.parts || [];
-            const textChunk = parts
-              .map((p) => (p && typeof p.text === "string" ? p.text : ""))
-              .join("");
-
-            if (textChunk && typeof onDelta === "function") {
-              onDelta(textChunk);
+                for (const cand of candidates) {
+                  const parts =
+                    (cand.content && cand.content.parts) ||
+                    cand.parts ||
+                    [];
+                  const textChunk = parts
+                    .map((p) =>
+                      p && typeof p.text === "string" ? p.text : ""
+                    )
+                    .join("");
+                  if (textChunk && typeof onDelta === "function") {
+                    onDelta(textChunk);
+                  }
+                }
+              } catch (e) {
+                console.warn(
+                  "Error extracting text from SSE payload:",
+                  e,
+                  payload
+                );
+              }
             }
           }
-        } catch (e) {
-          console.warn("Error extracting text from SSE payload:", e, payload);
+        } else if (!trimmed.startsWith(":")) {
+          // Ignore comments, but keep other lines
+          eventBuffer.push(trimmed);
         }
       }
     }
@@ -96,7 +105,7 @@ async function streamGeminiSSE(body, callbacks) {
   }
 }
 
-// Handles the note generation process using Gemini 3 via Vertex AI (streaming)
+// Main note generation function using Vertex Gemini 3 (streaming)
 async function generateNote() {
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
@@ -114,7 +123,7 @@ async function generateNote() {
   const generatedNoteField = document.getElementById("generatedNote");
   if (!generatedNoteField) return;
 
-  // Reset generated note field and start timer
+  // Reset note area and start timer
   generatedNoteField.value = "";
   const noteTimerElement = document.getElementById("noteTimer");
   const noteStartTime = Date.now();
@@ -128,10 +137,12 @@ async function generateNote() {
     }
   }, 1000);
 
-  // Pull credentials from sessionStorage (set in index.html)
-  const apiKey = sessionStorage.getItem("gemini_api_key");
-  if (!apiKey) {
-    alert("No Gemini / Vertex API key available for note generation.");
+  // Read Vertex credentials from sessionStorage (provided on index.html)
+  const accessToken = sessionStorage.getItem("vertex_access_token");
+  if (!accessToken) {
+    alert(
+      "No Vertex access token found.\n\nGo back to the main page, paste your Vertex OAuth Client ID and click 'Sign in with Google for Vertex' first."
+    );
     clearInterval(noteTimerInterval);
     if (noteTimerElement) noteTimerElement.innerText = "";
     return;
@@ -139,13 +150,15 @@ async function generateNote() {
 
   const projectId = sessionStorage.getItem("vertex_project_id");
   if (!projectId) {
-    alert("No Vertex Project ID available for note generation.");
+    alert(
+      "No Vertex Project ID found.\n\nGo back to the main page and fill in the Vertex Project ID field."
+    );
     clearInterval(noteTimerInterval);
     if (noteTimerElement) noteTimerElement.innerText = "";
     return;
   }
 
-  // Fixed formatting instruction – aligned with Gemini3.js behaviour
+  // Same formatting rule as Gemini3.js
   const baseInstruction = `
 Do not use bold text. Do not use asterisks (*) or Markdown formatting anywhere in the output.
 All headings should be plain text with a colon.
@@ -165,14 +178,15 @@ All headings should be plain text with a colon.
       projectId
     )}/locations/${VERTEX_LOCATION}/publishers/google/models/${encodeURIComponent(
       VERTEX_MODEL_ID
-    )}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`;
+    )}:streamGenerateContent?alt=sse`;
 
   try {
-    // Prefer v1beta1, fall back to v1 if needed
+    // Try v1beta1 first, then fall back to v1 if needed
     let resp = await fetch(makeUrl("v1beta1"), {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + accessToken
       },
       body: JSON.stringify({
         contents: [
@@ -199,7 +213,8 @@ All headings should be plain text with a colon.
       resp = await fetch(makeUrl("v1"), {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + accessToken
         },
         body: JSON.stringify({
           contents: [
@@ -259,19 +274,18 @@ All headings should be plain text with a colon.
   }
 }
 
-// Initializes note generation functionality, including cookie/consent gating.
+// Initialize note generation for this provider
 function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");
   if (!generateNoteButton) return;
 
-  // Disable note generation if consent isn’t accepted (same behaviour as Gemini3.js)
+  // Same consent gating as other note modules
   if (document.cookie.indexOf("user_consent=accepted") === -1) {
     generateNoteButton.disabled = true;
     generateNoteButton.title =
       "Note generation is disabled until you accept cookies/ads.";
   }
 
-  // Attach click handler only
   generateNoteButton.addEventListener("click", generateNote);
 }
 

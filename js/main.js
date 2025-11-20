@@ -92,12 +92,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const choice = (sessionStorage.getItem('note_provider') || 'gpt5').toLowerCase();
     // Map dropdown choice → module path (ALL note modules are in /js)
     const path =
-    choice === 'gpt4'       ? './noteGeneration.js'         :
-    choice === 'lemonfox'   ? './LemonfoxTXT.js'            :
-    choice === 'mistral'    ? './MistralTXT.js'             :
-    choice === 'gpt5-ns'    ? './noteGeneration_gpt5_NS.js' :
-    choice === 'gemini3'    ? './Gemini3.js'                :   // NEW
-                              './notegeneration%20gpt-5.js'; // default
+    choice === 'gpt4'          ? './noteGeneration.js'          :
+    choice === 'lemonfox'      ? './LemonfoxTXT.js'             :
+    choice === 'mistral'       ? './MistralTXT.js'              :
+    choice === 'gpt5-ns'       ? './noteGeneration_gpt5_NS.js'  :
+    choice === 'gemini3'       ? './Gemini3.js'                 :   // Gemini via public API
+    choice === 'gemini3-vertex'? './GeminiVertex.js'            :   // Gemini via Vertex AI
+                                  './notegeneration%20gpt-5.js'; // default
 
 
     try {
@@ -131,12 +132,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const choice = (sessionStorage.getItem('note_provider') || 'gpt5').toLowerCase();
     const path =
-    choice === 'gpt4'       ? './noteGeneration.js'         :
-    choice === 'lemonfox'   ? './LemonfoxTXT.js'            :
-    choice === 'mistral'    ? './MistralTXT.js'             :
-    choice === 'gpt5-ns'    ? './noteGeneration_gpt5_NS.js' :
-    choice === 'gemini3'    ? './Gemini3.js'                :   // NEW
-                              './notegeneration%20gpt-5.js';
+      choice === 'gpt4'          ? './noteGeneration.js'          :
+      choice === 'lemonfox'      ? './LemonfoxTXT.js'             :
+      choice === 'mistral'       ? './MistralTXT.js'              :
+      choice === 'gpt5-ns'       ? './noteGeneration_gpt5_NS.js'  :
+      choice === 'gemini3'       ? './Gemini3.js'                 :   // Gemini via public API
+      choice === 'gemini3-vertex'? './GeminiVertex.js'            :   // Gemini via Vertex AI
+                                    './notegeneration%20gpt-5.js';
 
 
     // Load the module only once per session, then reuse from cache

@@ -82,6 +82,7 @@ function extractResponseText(json) {
 }
 
 // Handles the note generation process using the OpenAI API
+// Handles the note generation process using the OpenAI API (non-streaming GPT-5.1)
 async function generateNote() {
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
@@ -93,12 +94,12 @@ async function generateNote() {
     alert("No transcription text available.");
     return;
   }
-  
+
   const customPromptTextarea = document.getElementById("customPrompt");
   const promptText = customPromptTextarea ? customPromptTextarea.value : "";
   const generatedNoteField = document.getElementById("generatedNote");
   if (!generatedNoteField) return;
-  
+
   // Reset generated note field and start timer
   generatedNoteField.value = "";
   const noteTimerElement = document.getElementById("noteTimer");
@@ -108,18 +109,19 @@ async function generateNote() {
   }
   const noteTimerInterval = setInterval(() => {
     if (noteTimerElement) {
-      noteTimerElement.innerText = "Note Generation Timer: " + formatTime(Date.now() - noteStartTime);
+      noteTimerElement.innerText =
+        "Note Generation Timer: " + formatTime(Date.now() - noteStartTime);
     }
   }, 1000);
-  
-    // Phase 3: Always use the OpenAI key for note generation (independent of transcription provider)
+
+  // Phase 3: Always use the OpenAI key for note generation (independent of transcription provider)
   const apiKey = sessionStorage.getItem("openai_api_key");
   if (!apiKey) {
     alert("No API key available for note generation.");
     clearInterval(noteTimerInterval);
     return;
   }
-  
+
   // Add the fixed formatting instruction as a hidden prompt component.
   const baseInstruction = `
 Do not use bold text. Do not use asterisks (*) or Markdown formatting anywhere in the output.
@@ -127,22 +129,46 @@ All headings should be plain text with a colon.`.trim();
 
   // Append the hidden instruction to the user's prompt so it is always included.
   const finalPromptText = promptText + "\n\n" + baseInstruction;
-  
+
   try {
-  // Prepare the messages array for the Responses API
-  const messages = [
-    { role: "system", content: finalPromptText },
-    { role: "user",   content: transcriptionText }
-  ];
-  // Call the Responses API with GPT-5 and streaming
-  const resp = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-5",
+    // Prepare the messages array for the Responses API
+    const messages = [
+      { role: "system", content: finalPromptText },
+      { role: "user", content: transcriptionText }
+    ];
+
+    // Determine reasoning level from dropdown (default: "low")
+    const reasoningSelect = document.getElementById("gpt5Reasoning");
+    const reasoningLevel = reasoningSelect ? reasoningSelect.value : "low";
+
+    // Build the request body for non-streaming Responses API
+    const requestBody = {
+      model: "GPT-5.1",
+      input: messages.map(m => ({
+        role: m.role,
+        content: [{ type: "input_text", text: m.content }]
+      }))
+    };
+
+    // Only add reasoning if the level is not "none"
+    if (reasoningLevel && reasoningLevel !== "none") {
+      requestBody.reasoning = { effort: reasoningLevel }; // "low" | "medium" | "high"
+    }
+
+    // Call the Responses API with GPT-5.1 (non-streaming)
+const resp = await fetch("https://api.openai.com/v1/responses", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${apiKey}`,
+  },
+  body: (() => {
+    // Determine reasoning level from dropdown (default: "low")
+    const sel = document.getElementById("gpt5Reasoning");
+    const level = sel ? sel.value : "low";
+
+    const req = {
+      model: "gpt-5.1",
       input: [
         {
           role: "system",
@@ -153,15 +179,23 @@ All headings should be plain text with a colon.`.trim();
           content: [{ type: "input_text", text: transcriptionText }]
         }
       ],
-      // Optional tuning parameters (Responses API)
-      text: { verbosity: "medium" },
-      reasoning: { effort: "minimal" }
-    })
-  });
+      text: { verbosity: "medium" }
+    };
+
+    if (level && level !== "none") {
+      req.reasoning = { effort: level };
+    }
+
+    return JSON.stringify(req);
+  })()
+});
+
+
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "");
       throw new Error(`OpenAI error ${resp.status}: ${errText}`);
     }
+
     const json = await resp.json();
     const fullText = extractResponseText(json);
     generatedNoteField.value = fullText || "";
@@ -180,6 +214,7 @@ All headings should be plain text with a colon.`.trim();
     }
   }
 }
+
 
 async function streamOpenAIResponse(resp, {
   onDelta = () => {},

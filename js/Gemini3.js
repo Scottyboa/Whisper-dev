@@ -108,6 +108,11 @@ All headings should be plain text with a colon.
     "\n\nTRANSCRIPTION:\n" +
     transcriptionText;
 
+  // Determine Gemini reasoning level from dropdown (default: "low")
+  const geminiReasoningSelect = document.getElementById("geminiReasoning");
+  const geminiThinkingLevel = geminiReasoningSelect ? geminiReasoningSelect.value : "low";
+
+
   // Helper to build the URL for different API versions
   const makeUrl = (apiVersion) =>
     `https://generativelanguage.googleapis.com/${apiVersion}/models/gemini-3-pro-preview:streamGenerateContent?alt=sse&key=${encodeURIComponent(
@@ -133,7 +138,7 @@ All headings should be plain text with a colon.
         ],
         generationConfig: {
           thinkingConfig: {
-            thinkingLevel: "low"
+            thinkingLevel: geminiThinkingLevel
           }
         }
       })
@@ -159,7 +164,7 @@ All headings should be plain text with a colon.
           ],
           generationConfig: {
             thinkingConfig: {
-              thinkingLevel: "low"
+              thinkingLevel: geminiThinkingLevel
             }
           }
         })

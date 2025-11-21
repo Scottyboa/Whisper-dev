@@ -107,28 +107,42 @@ All headings should be plain text with a colon.`.trim();
     { role: "user",   content: transcriptionText }
   ];
   // Call the Responses API with GPT-5 and streaming
+  // Call the Responses API with GPT-5.1 and streaming
+
+  // Determine reasoning level from the dropdown (defaults to "low" if missing)
+  const reasoningSelect = document.getElementById("gpt5Reasoning");
+  const reasoningLevel = reasoningSelect ? reasoningSelect.value : "low";
+
+  // Build the base request body
+  const requestBody = {
+    model: "gpt-5.1",
+    input: messages.map(m => ({
+      role: m.role,
+      content: [{ type: "input_text", text: m.content }]
+    })),
+    stream: true,
+    // —— OPTIONAL TUNING PARAMS —— 
+    text: {
+      verbosity: "medium"    // try "low" (faster/terse) or "high" (more detail)
+    }
+  };
+
+  // Add reasoning only if the level is not "none"
+  if (reasoningLevel && reasoningLevel !== "none") {
+    requestBody.reasoning = {
+      effort: reasoningLevel   // "low" | "medium" | "high"
+    };
+  }
+
   const resp = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: "gpt-5",
-      input: messages.map(m => ({
-        role: m.role,
-        content: [{ type: "input_text", text: m.content }]
-      })),
-      stream: true,
-      // —— OPTIONAL TUNING PARAMS —— 
-      text: {
-        verbosity: "medium"    // try "low" (faster/terse) or "high" (more detail)
-      },
-      reasoning: {
-        effort: "minimal"      // try "minimal" (fastest) or omit for default medium
-      }
-    })
+    body: JSON.stringify(requestBody)
   });
+
     await streamOpenAIResponse(resp, {
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;

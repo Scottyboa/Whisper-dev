@@ -464,18 +464,29 @@
         <div class="column">
           <h3 id="noteGenerationTitle">Note Generation</h3>
           <!-- Phase 3: Note Provider selector (module switch only; both use OpenAI key) -->
-          <div id="note-provider-container" style="display:flex; align-items:center; gap:8px; margin: 6px 0 10px;">
+          <div id="note-provider-container" style="display:flex; align-items:center; gap:8px; margin: 6px 0 6px;">
             <label for="noteProvider" id="noteProviderLabel">Note Provider:</label>
-<select id="noteProvider">
-    <option value="gpt5" selected>GPT-5 (streaming)</option>
-    <option value="gpt5-ns">GPT-5 (non-streaming)</option>
-    <option value="gpt4">GPT-4-latest</option>
-    <option value="lemonfox">Lemonfox</option>
-    <option value="mistral">Mistral</option>
-    <option value="gemini3">Gemini 3</option> <!-- Gemini via public API -->
-    <option value="gemini3-vertex">Gemini 3 (Vertex - GDPR friendly)</option> <!-- Gemini via Vertex AI -->
-</select>
+            <select id="noteProvider">
+              <option value="gpt5" selected>GPT-5.1 (streaming)</option>
+              <option value="gpt5-ns">GPT-5.1 (non-streaming)</option>
+              <option value="gpt4">GPT-4-latest</option>
+              <option value="lemonfox">Lemonfox</option>
+              <option value="mistral">Mistral</option>
+              <option value="gemini3">Gemini 3</option> <!-- Gemini via public API -->
+              <option value="gemini3-vertex">Gemini 3 (Vertex - GDPR friendly)</option> <!-- Gemini via Vertex AI -->
+            </select>
+          </div>
 
+          <!-- GPT-5.1 reasoning level selector (only shown for GPT-5.1 providers) -->
+          <div id="gpt5-reasoning-container"
+               style="display:none; align-items:center; gap:8px; margin: 0 0 10px;">
+            <label for="gpt5Reasoning" id="gpt5ReasoningLabel">Reasoning level:</label>
+            <select id="gpt5Reasoning">
+              <option value="none">None</option>
+              <option value="low" selected>Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
           </div>
           <button id="generateNoteButton">Generate Note</button>
           <div id="noteTimer" class="timer">Note Generation Timer: 0 sec</div>
@@ -621,13 +632,25 @@
     (function () {
       const DEFAULT_NOTE_PROVIDER = "gpt5";
       const noteSel = document.getElementById("noteProvider");
+      const reasoningContainer = document.getElementById("gpt5-reasoning-container");
       if (!noteSel) return;
       const stored = sessionStorage.getItem("note_provider") || DEFAULT_NOTE_PROVIDER;
       noteSel.value = stored;
       sessionStorage.setItem("note_provider", stored);
+      function updateReasoningVisibility() {
+        if (!reasoningContainer) return;
+        const v = noteSel.value;
+        const isGpt51 = v === "gpt5" || v === "gpt5-ns";
+        reasoningContainer.style.display = isGpt51 ? "flex" : "none";
+      }
+
+      // Initial state on page load
+      updateReasoningVisibility();
+
       // New: live-switch note module without reloading
       noteSel.addEventListener("change", async () => {
         sessionStorage.setItem("note_provider", noteSel.value);
+        updateReasoningVisibility();
         if (window.__app && typeof window.__app.switchNoteProvider === "function") {
           await window.__app.switchNoteProvider(noteSel.value);
         }

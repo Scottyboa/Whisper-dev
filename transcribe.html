@@ -488,6 +488,15 @@
               <option value="high">High</option>
             </select>
           </div>
+          <!-- Gemini 3 reasoning level selector (only shown for Gemini3 provider) -->
+          <div id="gemini-reasoning-container"
+               style="display:none; align-items:center; gap:8px; margin: 0 0 10px;">
+            <label for="geminiReasoning" id="geminiReasoningLabel">Gemini reasoning:</label>
+            <select id="geminiReasoning">
+              <option value="low" selected>Low</option>
+              <option value="high">High</option>
+            </select>
+          </div>
           <button id="generateNoteButton">Generate Note</button>
           <div id="noteTimer" class="timer">Note Generation Timer: 0 sec</div>
           <textarea id="generatedNote" placeholder="Generated note will appear here..."></textarea>
@@ -632,16 +641,23 @@
     (function () {
       const DEFAULT_NOTE_PROVIDER = "gpt5";
       const noteSel = document.getElementById("noteProvider");
-      const reasoningContainer = document.getElementById("gpt5-reasoning-container");
+      const gptReasoningContainer = document.getElementById("gpt5-reasoning-container");
+      const geminiReasoningContainer = document.getElementById("gemini-reasoning-container");
       if (!noteSel) return;
       const stored = sessionStorage.getItem("note_provider") || DEFAULT_NOTE_PROVIDER;
       noteSel.value = stored;
       sessionStorage.setItem("note_provider", stored);
       function updateReasoningVisibility() {
-        if (!reasoningContainer) return;
-        const v = noteSel.value;
+                const v = noteSel.value;
         const isGpt51 = v === "gpt5" || v === "gpt5-ns";
-        reasoningContainer.style.display = isGpt51 ? "flex" : "none";
+        const isGemini3 = v === "gemini3"; // public Gemini 3 API only
+
+        if (gptReasoningContainer) {
+          gptReasoningContainer.style.display = isGpt51 ? "flex" : "none";
+        }
+        if (geminiReasoningContainer) {
+          geminiReasoningContainer.style.display = isGemini3 ? "flex" : "none";
+        }
       }
 
       // Initial state on page load

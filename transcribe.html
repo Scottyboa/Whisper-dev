@@ -244,7 +244,8 @@
     /* Auto-resizing Textareas */
     #transcription,
     #generatedNote,
-    #customPrompt {
+    #customPrompt,
+    #supplementaryInfo {
       width: 100%;
       padding: 12px;
       border: 1px solid #ddd;
@@ -260,6 +261,12 @@
     }
 #transcription {
   min-height: 150px;
+  resize: vertical;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+#supplementaryInfo {
+  min-height: 90px;
   resize: vertical;
   overflow-y: auto;
   overflow-x: hidden;
@@ -450,7 +457,32 @@
 </div>
         <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
         <div id="transcribeTimer" class="timer">Completion Timer: 0 sec</div>
-        <textarea id="transcription" placeholder="Transcription result will appear here..."></textarea>
+        <textarea
+          id="transcription"
+          placeholder="Transcription result will appear here."
+          style="margin-bottom: 6px;"  
+        ></textarea>
+
+        <!-- Clear button row ABOVE supplementary field -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
+          <button
+            id="clearSupplementaryButton"
+            type="button"
+            style="
+              padding: 4px 10px;
+              font-size: 12px;
+              border-radius: 6px;
+              background-color: #5a9;
+            "
+          >
+            Clear
+          </button>
+        </div>
+
+        <!-- Supplementary field (NO label above) -->
+        <textarea
+          id="supplementaryInfo"
+          placeholder="Supplementary information (optional)"></textarea>
         <div>
    <button id="startButton">Start</button>
     <button id="stopButton" disabled>Stop</button>
@@ -785,6 +817,19 @@
         logEvent({ action: 'noteGeneration' });
       });
     }
+  // Clear button logic for supplementary field
+  const clearSupplementaryButton = document.getElementById('clearSupplementaryButton');
+  if (clearSupplementaryButton) {
+    clearSupplementaryButton.addEventListener('click', () => {
+      const supEl = document.getElementById('supplementaryInfo');
+      if (supEl) {
+        supEl.value = '';
+        if (typeof autoResize === 'function') {
+          try { autoResize(supEl); } catch {}
+        }
+      }
+    });
+  }
   });
 </script>
 

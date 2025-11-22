@@ -70,6 +70,15 @@ async function generateNote() {
 
   const customPromptTextarea = document.getElementById("customPrompt");
   const promptText = customPromptTextarea ? customPromptTextarea.value : "";
+  // Supplementary info (prepended before transcription)
+  const supplementaryElem = document.getElementById("supplementaryInfo");
+  const supplementaryRaw = supplementaryElem ? supplementaryElem.value.trim() : "";
+
+  // EXACT required format:
+  // Supplerende informasjon:"[content]"
+  const supplementaryWrapped = supplementaryRaw
+    ? `Tilleggsopplysninger(brukes som kontekst):"${supplementaryRaw}"`
+    : "";
   const generatedNoteField = document.getElementById("generatedNote");
   if (!generatedNoteField) return;
 
@@ -102,11 +111,14 @@ All headings should be plain text with a colon.
 `.trim();
 
   const finalPromptText =
-    (promptText || "") +
-    "\n\n" +
-    baseInstruction +
-    "\n\nTRANSCRIPTION:\n" +
-    transcriptionText;
+  (promptText || "") +
+  "\n\n" +
+  baseInstruction +
+  "\n\n" +
+  (supplementaryWrapped ? supplementaryWrapped + "\n\n" : "") +
+  "TRANSCRIPTION:\n" +
+  transcriptionText;
+
 
   // Determine Gemini reasoning level from dropdown (default: "low")
   const geminiReasoningSelect = document.getElementById("geminiReasoning");

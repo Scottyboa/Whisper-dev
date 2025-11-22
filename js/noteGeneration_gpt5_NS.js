@@ -97,6 +97,14 @@ async function generateNote() {
 
   const customPromptTextarea = document.getElementById("customPrompt");
   const promptText = customPromptTextarea ? customPromptTextarea.value : "";
+
+  // Optional supplementary info (prepended before transcription for the user message)
+  const supplementaryElem = document.getElementById("supplementaryInfo");
+  const supplementaryRaw = supplementaryElem ? supplementaryElem.value.trim() : "";
+  const supplementaryWrapped = supplementaryRaw
+    ? `Tilleggsopplysninger(brukes som kontekst):"${supplementaryRaw}"\n\n`
+    : "";
+
   const generatedNoteField = document.getElementById("generatedNote");
   if (!generatedNoteField) return;
 
@@ -134,7 +142,7 @@ All headings should be plain text with a colon.`.trim();
     // Prepare the messages array for the Responses API
     const messages = [
       { role: "system", content: finalPromptText },
-      { role: "user", content: transcriptionText }
+      { role: "user",   content: supplementaryWrapped + transcriptionText }
     ];
 
     // Determine reasoning level from dropdown (default: "low")
@@ -176,7 +184,10 @@ const resp = await fetch("https://api.openai.com/v1/responses", {
         },
         {
           role: "user",
-          content: [{ type: "input_text", text: transcriptionText }]
+          content: [{
+           type: "input_text",
+            text: supplementaryWrapped + transcriptionText
+          }]
         }
       ],
       text: { verbosity: "medium" }

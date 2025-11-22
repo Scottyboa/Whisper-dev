@@ -68,6 +68,16 @@ async function generateNote() {
   
   const customPromptTextarea = document.getElementById("customPrompt");
   const promptText = customPromptTextarea ? customPromptTextarea.value : "";
+
+  // Optional supplementary info (prepended before transcription in the user message)
+  const supplementaryElem = document.getElementById("supplementaryInfo");
+  const supplementaryRaw = supplementaryElem ? supplementaryElem.value.trim() : "";
+  // Standard label:
+  // Tilleggsopplysninger(brukes som kontekst):"[content]"
+  const supplementaryWrapped = supplementaryRaw
+    ? `Tilleggsopplysninger(brukes som kontekst):"${supplementaryRaw}"\n\n`
+    : "";
+
   const generatedNoteField = document.getElementById("generatedNote");
   if (!generatedNoteField) return;
   
@@ -104,7 +114,10 @@ All headings should be plain text with a colon.`.trim();
     // Prepare OpenAI-compatible chat messages
     const messages = [
       { role: "system", content: finalPromptText },
-      { role: "user",   content: transcriptionText }
+      {
+        role: "user",
+        content: supplementaryWrapped + transcriptionText
+      }
     ];
     // Call Mistral's OpenAI-compatible Chat Completions API with streaming
     const resp = await fetch("https://api.mistral.ai/v1/chat/completions", {

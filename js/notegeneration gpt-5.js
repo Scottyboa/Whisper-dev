@@ -68,6 +68,15 @@ async function generateNote() {
   
   const customPromptTextarea = document.getElementById("customPrompt");
   const promptText = customPromptTextarea ? customPromptTextarea.value : "";
+  // Optional supplementary info (prepended before transcription for the user message)
+  const supplementaryElem = document.getElementById("supplementaryInfo");
+  const supplementaryRaw = supplementaryElem ? supplementaryElem.value.trim() : "";
+  // EXACT required format:
+  // Supplerende informasjon:"[exact content of the supplementary field]"
+  const supplementaryWrapped = supplementaryRaw
+    ? `Tilleggsopplysninger(brukes som kontekst):"${supplementaryRaw}"\n\n`
+    : "";
+
   const generatedNoteField = document.getElementById("generatedNote");
   if (!generatedNoteField) return;
   
@@ -104,7 +113,7 @@ All headings should be plain text with a colon.`.trim();
   // Prepare the messages array for the Responses API
   const messages = [
     { role: "system", content: finalPromptText },
-    { role: "user",   content: transcriptionText }
+    { role: "user",   content: supplementaryWrapped + transcriptionText }
   ];
   // Call the Responses API with GPT-5 and streaming
   // Call the Responses API with GPT-5.1 and streaming

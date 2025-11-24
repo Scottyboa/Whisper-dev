@@ -823,7 +823,11 @@
     clearSupplementaryButton.addEventListener('click', () => {
       const supEl = document.getElementById('supplementaryInfo');
       if (supEl) {
+        // Clear content
         supEl.value = '';
+        // Reset inline height so it snaps back to CSS default/min-height
+        supEl.style.height = '';
+        // If you use a global autoResize helper elsewhere, keep calling it
         if (typeof autoResize === 'function') {
           try { autoResize(supEl); } catch {}
         }

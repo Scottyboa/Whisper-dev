@@ -360,7 +360,45 @@
 
   document.addEventListener("DOMContentLoaded", function() {
     const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");
-    const apiKeyInput = document.getElementById("apiKeyInput");
+    const apiKeyInput          = document.getElementById("apiKeyInput");
+    const sonioxKeyInput       = document.getElementById("sonioxKeyInput");
+    const lemonfoxKeyInput     = document.getElementById("lemonfoxKeyInput");
+    const mistralKeyInput      = document.getElementById("mistralKeyInput");
+    const deepgramKeyInput     = document.getElementById("deepgramKeyInput");
+    const geminiKeyInput       = document.getElementById("geminiKeyInput");
+    const vertexProjectIdInput = document.getElementById("vertexProjectIdInput");
+
+    // 1) Prefill all fields from sessionStorage (keys only live for this tab)
+    if (apiKeyInput) {
+      const storedOpenai = sessionStorage.getItem("openai_api_key") || "";
+      if (storedOpenai && !apiKeyInput.value) apiKeyInput.value = storedOpenai;
+    }
+    if (sonioxKeyInput) {
+      const storedSoniox = sessionStorage.getItem("soniox_api_key") || "";
+      if (storedSoniox && !sonioxKeyInput.value) sonioxKeyInput.value = storedSoniox;
+    }
+    if (lemonfoxKeyInput) {
+      const storedLemon = sessionStorage.getItem("lemonfox_api_key") || "";
+      if (storedLemon && !lemonfoxKeyInput.value) lemonfoxKeyInput.value = storedLemon;
+    }
+    if (mistralKeyInput) {
+      const storedMistral = sessionStorage.getItem("mistral_api_key") || "";
+      if (storedMistral && !mistralKeyInput.value) mistralKeyInput.value = storedMistral;
+    }
+    if (deepgramKeyInput) {
+      const storedDeepgram = sessionStorage.getItem("deepgram_api_key") || "";
+      if (storedDeepgram && !deepgramKeyInput.value) deepgramKeyInput.value = storedDeepgram;
+    }
+    if (geminiKeyInput) {
+      const storedGemini = sessionStorage.getItem("gemini_api_key") || "";
+      if (storedGemini && !geminiKeyInput.value) geminiKeyInput.value = storedGemini;
+    }
+    if (vertexProjectIdInput) {
+      const storedVertex = sessionStorage.getItem("vertex_project_id") || "";
+      if (storedVertex && !vertexProjectIdInput.value) vertexProjectIdInput.value = storedVertex;
+    }
+
+    // 2) Existing click handler: still sets consent + user_api_key and redirects
     if (enterTranscriptionBtn && apiKeyInput) {
       enterTranscriptionBtn.addEventListener("click", () => {
         const apiKey = apiKeyInput.value.trim();

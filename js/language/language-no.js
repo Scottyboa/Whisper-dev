@@ -213,34 +213,152 @@ https://console.mistral.ai<br><br>
 `,  
   priceButton: "Pris",
   priceModalHeading: "Kostnadsinformasjon",
-priceModalText: `
+  priceModalText: `
 <div>
   <p><strong>Kostnadsinformasjon</strong></p>
-  <p>Du betaler kun for det du bruker, direkte fra kilden, uten dyre mellomledd – ingen abonnement, ingen binding.</p>
 
-  <p><strong>Priser:</strong></p>
+  <p>
+    Du betaler kun for det du faktisk bruker, direkte til hver leverandør (OpenAI, Soniox, Google Gemini,
+    Lemonfox, Deepgram, Mistral). Det er ingen abonnement eller påslag i denne appen. Prisene under er
+    ca.-tall i USD med omregning til NOK (her er det brukt omtrent 1 USD ≈ 11 NOK).
+  </p>
+
+  <p><strong>1. Tale-til-tekst<br>(pris per minutt lyd)</strong></p>
+
+  <p><strong>OpenAI – gpt-4o-transcribe</strong><br>
+  Ca. 0.006 USD per minutt (≈ 0,07 NOK/min).<br>
+  15 minutters konsultasjon: ca. 0.09 USD ≈ 1,00 NOK.</p>
+
+  <p><strong>Soniox (anbefales – best kvalitet og pris)</strong><br>
+  Ca 0.0017 USD per minutt.<br>
+  15 minutters konsultasjon: ca. 0.025 USD ≈ 0,30 NOK.</p>
+
+  <p><strong>Lemonfox – Whisper v3</strong><br>
+  Ca. 0.50 USD for 3 timer lyd ≈ 0.17 USD per time ≈ 0.0028 USD per minutt.<br>
+  15 minutters konsultasjon: ca. 0.042 USD ≈ 0,45 NOK.</p>
+
+  <p><strong>Mistral</strong><br>
+  API-prising starter rundt 0.001 USD per minutt.<br>
+  15 minutters konsultasjon: ca. 0.015 USD ≈ 0,17 NOK.</p>
+
+  <p><strong>Deepgram – Nova-3</strong><br>
+  Ca 0.004 USD per minutt.<br>
+  15 minutters konsultasjon = 0,60 NOK.</p>
+
+  <p><strong>2. Tekstgenerering – typiske priser (per 1 million tokens)</strong></p>
+
+  <p><strong>OpenAI – GPT-5.1</strong><br>
+  Input: 1.25 USD (≈ 13,75 NOK)<br>
+  Output: 10 USD (≈ 110 NOK)</p>
+
+  <p><strong>OpenAI – chatgpt-4o-latest</strong><br>
+  Input: 5 USD (≈ 55 NOK)<br>
+  Output: 15 USD (≈ 165 NOK)</p>
+
+  <p><strong>Google Gemini 3</strong><br>
+  Input: ca. 2 USD (≈ 22 NOK)<br>
+  Output: ca. 12 USD (≈ 132 NOK)</p>
+
+  <p><strong>Mistral – Mistral Large</strong><br>
+  Ca. 2 USD per 1M input-tokens og 6 USD per 1M output-tokens (≈ 22 og 66 NOK).</p>
+
+  <p><strong>Lemonfox – Llama 3-baserte modeller</strong><br>
+  Typisk rundt 0.50 USD per 1M LLM-tokens input og output (≈ 5,50 NOK).</p>
+
+  <p><strong>3. Hva er tokens – og hvor mye koster 1 konsultasjon?</strong></p>
+
+  <p>Modellene regner tekst i tokens, ikke i rene ord.</p>
+
   <ul>
-    <li>Tale-til-tekst: $0.006 per minutt</li>
-    <li>Notatgenerering: $5 per 1 million tokens (input) og $10 per 1 million tokens (output)</li>
+    <li>1 token ≈ 4 tegn ≈ ¾ ord</li>
+    <li>100 tokens ≈ 75 ord</li>
+    <li>1 000 tokens ≈ 750 ord</li>
   </ul>
 
-  <p><strong>Eksempel – 15-minutters konsultasjon:</strong></p>
+  <p>
+    15 min konsultasjon ca:<br>
+    2200 input-tokens per 15-minutters konsultasjon (hele transkripsjonen + strukturert tekst som sendes inn),<br>
+    450 output-tokens i det ferdige notatet,<br>
+    totalt ca. 2650 tokens per konsultasjon.<br><br>
+    Dette betyr at 1 million tokens gir omtrent 350–400 konsultasjoner i denne bruken
+    (avhengig av lengde og detaljer).
+  </p>
+
+  <p><strong>4. Eksempel: kostnad per 15-minutters konsultasjon</strong></p>
+
+  <p><em>Tale-til-tekst (ca.-priser per 15 min):</em></p>
   <ul>
-    <li>Tale-til-tekst: 15 × $0.006 = $0.09</li>
-    <li>Notatgenerering: vanligvis mellom $0.005 og $0.01</li>
-    <li>Totalt: cirka $0.10 for hele konsultasjonen</li>
+    <li>OpenAI gpt-4o-transcribe: ≈ 1,00 NOK</li>
+    <li>Soniox: ≈ 0,30 NOK</li>
+    <li>Lemonfox (Whisper v3): ≈ 0,45 NOK</li>
+    <li>Voxtral (Mistral): ≈ 0,17 NOK</li>
+    <li>Deepgram Nova-3 (batch): ≈ 0,70 NOK</li>
   </ul>
 
-  <p><strong>Eksempel på månedskostnad ved full bruk:</strong></p>
+  <p><em>Notatgenerering (2200 input + 450 output tokens):</em></p>
   <ul>
-    <li>20 konsultasjoner per dag × 4 dager i uken × 4 uker = 320 konsultasjoner</li>
-    <li>Totalkostnad denne måned: cirka $30–31</li>
+    <li>GPT-5.1: ≈ 0,08 NOK per notat</li>
+    <li>chatgpt-4o-latest: ≈ 0,20 NOK per notat</li>
+    <li>Gemini 3: ≈ 0,11 NOK per notat</li>
+    <li>Mistral Large: ≈ 0,08 NOK per notat</li>
+    <li>Lemonfox LLM: ≈ 0,02 NOK per notat</li>
   </ul>
 
-  <p><strong>Du betaler bare for bruk:</strong><br>
-  Hvis du ikke bruker tjenesten på grunn av ferie, sykdom, permisjon etc, betaler du ingenting.</p>
+  <p><em>Noen typiske kombinasjoner for én 15-minutters konsultasjon:</em></p>
+
+  <ul>
+    <li>OpenAI (gpt-4o-transcribe) + GPT-5.1<br>
+      ≈ 1,00 NOK (STT) + 0,08 NOK (notat) ≈ 1,10 NOK per konsultasjon
+    </li>
+    <li>Soniox + GPT-5.1<br>
+      ≈ 0,30 NOK (STT) + 0,08 NOK (notat) ≈ 0,40 NOK per konsultasjon
+    </li>
+    <li>Voxtral + Mistral Large<br>
+      ≈ 0,17 NOK (STT) + 0,08 NOK (notat) ≈ 0,25 NOK per konsultasjon
+    </li>
+  </ul>
+
+  <p>
+    Med andre ord: tekstmodellen er ekstremt billig – det er tale-til-tekst-delen som dominerer kostnaden.
+  </p>
+
+  <p><strong>5. Eksempel: månedskostnad ved jevn bruk</strong></p>
+
+  <p>
+    Anta:<br>
+    20 konsultasjoner per dag<br>
+    4 dager per uke<br>
+    4 uker per måned<br>
+    ⇒ ca. 320 konsultasjoner per måned (≈ 80 timer lyd).
+  </p>
+
+  <p>Da får du omtrent:</p>
+
+  <ul>
+    <li>OpenAI gpt-4o-transcribe + GPT-5.1<br>
+      ≈ 31 USD ≈ 340 NOK per måned
+    </li>
+    <li>Soniox + GPT-5.1<br>
+      ≈ 10 USD ≈ 110 NOK per måned
+    </li>
+    <li>Voxtral + Mistral Large<br>
+      ≈ 7 USD ≈ 80 NOK per måned
+    </li>
+    <li>Lemonfox (Whisper v3 + Llama 3)<br>
+      ≈ 14 USD ≈ 150 NOK per måned
+    </li>
+    <li>Deepgram Nova-3 + GPT-5.1<br>
+      ≈ 23 USD ≈ 250 NOK per måned
+    </li>
+  </ul>
+
+  <p>
+    Hvis du ikke bruker tjenesten (ferie, sykdom, permisjon osv.) påløper ingen faste kostnader,
+    du betaler kun for faktisk forbruk hos den enkelte leverandør.
+  </p>
 </div>
 `,
+
 };
 
 export const transcribeTranslations = {

@@ -140,19 +140,77 @@ Mange eksisterende leverandører tilbyr lignende tjenester, men tar betydelig me
 • Nettsiden i seg selv er helt gratis.<br><br>
 For at vi skal kunne fortsette å tilby denne tjenesten gratis, så hadde vi satt stor pris på om du godtar at det vises reklame fra Google Ads. Annonseinntektene hjelper oss å dekke kostnader til hosting og drift, slik at tjenesten kan forbli tilgjengelig for alle.`,  
   guideModalHeading: "API nøkkel - Hvordan lage",
-guideModalText: `For å bruke denne webappen, må du først opprette en OpenAI API-profil, generere en API-nøkkel og sørge for at din OpenAI-lommebok har tilstrekkelige midler. API-nøkkelen kopieres deretter og limes inn i det angitte feltet. Når du trykker på "Enter", lagrer webappen API-nøkkelen midlertidig for økten – denne nøkkelen kobler deg til OpenAI-serverne slik at tale-til-tekst-transkripsjon og notatgenerering kan fungere. Vennligst merk at du belastes umiddelbart per utførte oppgave (tale-til-tekst og/eller notatgenerering). For mer informasjon om kostnader, se "Kostnadsinformasjon"-seksjonen på forsiden. Vi anbefaler at du som bruker leser gjennom personvern- og informasjonsteksten på forsiden før du tar i bruk appen.
-<br><br>
-<strong>1. Opprett din OpenAI API-profil</strong><br>
-For å komme i gang, må du opprette en profil på OpenAI API-plattformen. Denne profilen fungerer som din konto for administrasjon av API-nøkler og fakturering. For å starte, besøk <a href="https://platform.openai.com/signup" style="color:blue;">OpenAI API Registrering</a>. Følg instruksjonene og opprett en bruker. Når du er registrert, får du tilgang til dashbordet ditt. Du vil da ha mulighet til å generere en personlig API-nøkkel, samt laste opp kreditt til din OpenAI-lommebok.
-<br><br>
-<strong>2. Generer en API-nøkkel</strong><br>
-Etter at du har opprettet profilen din, generer en API-nøkkel ved å gå til <a href="https://platform.openai.com/account/api-keys" style="color:blue;">API-nøkkeladministrasjonen</a>. Klikk på knappen for å opprette en ny API-nøkkel. Viktig: Du vil kun se nøkkelen én gang. Kopier den umiddelbart og oppbevar den sikkert (f.eks. i en tekstfil). Hvis du mister nøkkelen eller mistenker at den har blitt kompromittert, kan du enkelt deaktivere/slette den på samme sted som du genererte den og samtidig opprette en ny.
-<br><br>
-<strong>3. Sett inn midler på din OpenAI-lommebok</strong><br>
-For at webappen skal fungere, må din OpenAI-lommebok ha tilstrekkelige midler. Besøk <a href="https://platform.openai.com/account/billing/overview" style="color:blue;">Fakturerings- og betalingsside</a> for å sette inn midler. Du kan overføre hvilket som helst beløp når som helst. Så lenge midlene er tilgjengelige, vil du kunne bruke funksjonene i denne webappen – hver oppgave belastes umiddelbart. For detaljert prisoversikt, se "Kostnadsinformasjon".
-<br><br>
-<strong>Sikkerhetsmerknad for økten</strong><br>
-Når du logger inn ved å skrive inn API-nøkkelen i feltet på denne forsiden og klikker på enter, så lagres denne kun midlertidig i nettleserøkten din. Dette betyr at hvis du forlater nettsiden, lukker nettleseren eller slår av datamaskinen, vil ikke API-nøkkelen bli lagret. Du må da klippe og lime den inn på nytt neste gang du bruker webappen, noe som sikrer at nøkkelen din forblir sikker.`,  
+guideModalText: `Hvordan skaffe API-nøkler:<br><br>
+For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du anskaffe én eller flere API-nøkler (OpenAI, Soniox, Google Gemini, Lemonfox, Deepgram, Mistral).<br><br>
+
+<strong>Tale-til-tekst-modeller i appen:</strong><br>
+- OpenAI: gpt-4o-transcribe<br>
+- Soniox<br>
+- Soniox (speaker labels)<br>
+- Lemonfox Speech-to-Text (Whisper v3-basert)<br>
+- Voxtral Mini<br>
+- Deepgram Nova-3<br><br>
+
+<strong>Tekstgenereringsmodeller i appen:</strong><br>
+- GPT-5.1 (streaming)<br>
+- GPT-5.1 (non-streaming)<br>
+- GPT-4-latest<br>
+- Lemonfox tekstgenerering (Llama 3-baserte modeller)<br>
+- Mistral Large<br>
+- Gemini 3<br><br>
+
+<strong>OpenAI</strong><br>
+– Lag en bruker på OpenAI:<br>
+https://platform.openai.com<br><br>
+– Generer en API-nøkkel og sett inn kreditt på kontoen din<br>
+– Lagre API-nøkkelen trygt et sted (lokalt på PC-en, tekstfil, passordmanager, Dropbox osv.)<br>
+– Lim inn nøkkelen i feltet «OpenAI API key» på forsiden<br>
+– Du kan nå bruke OpenAI-modellene i appen:<br>
+• Tale-til-tekst: gpt-4o-transcribe (velg «OpenAI» i Opptaksmodul-nedtrekksmeny på hovedsiden)<br>
+• Tekstgenerering: chatgpt-4-latest, GPT-5.1<br><br>
+
+<strong>Soniox</strong><br>
+– Lag en bruker på Soniox:<br>
+https://soniox.com<br><br>
+– Generer en Soniox API-nøkkel og kjøp/last opp credits (samme prinsipp som hos OpenAI)<br>
+– Lagre nøkkelen trygt og lim den inn i feltet «Soniox API key (EU or US)» på forsiden<br>
+– Du kan nå bruke tale-til-tekst-modellen Soniox (svært god og rimelig tale-til-tekst-modell, anbefales)<br>
+– For å få EU-endepunkt (GDPR-vennlig): send e-post til sales@soniox.com og be om EU API-nøkkel for bruk av tale-til-tekst i klinisk pasient–lege-setting<br>
+– På hovedsiden kan du velge mellom EU- og US-endepunkt i nedtrekksmenyen når du bruker Soniox<br><br>
+
+<strong>Google Gemini</strong><br>
+– Lag bruker / logg inn på Google AI Studio:<br>
+https://aistudio.google.com<br><br>
+– Generer en Gemini API-nøkkel<br>
+– Du får normalt noen gratis credits ved opprettelse av bruker (se oversikt inne i AI Studio)<br>
+– Lagre nøkkelen trygt og lim den inn i feltet «Google Gemini API key» på forsiden<br>
+– Tekstmodell: Gemini 3 (per nå en av de aller beste tekstmodellene for tekstgenerering)<br><br>
+
+<strong>Lemonfox</strong><br>
+– Lag en bruker på Lemonfox:<br>
+https://www.lemonfox.ai<br><br>
+– Generer en API-nøkkel i Lemonfox-dashbordet (for tale-til-tekst og/eller tekstmodell, avhengig av hva du bruker i appen)<br>
+– Lemonfox tilbyr en svært rimelig speech-to-text-API, ofte med gratis bruk første måned – se pris-/produktsiden for detaljer. EU-endepunkt (GDPR-vennlig)<br>
+– Lagre nøkkelen trygt og lim den inn i «Lemonfox API key»-feltet på forsiden<br>
+– Du kan nå bruke:<br>
+• Tale-til-tekst-modell: Lemonfox Speech-to-Text (Whisper v3-basert, billig og rask)<br>
+• Tekstgenerering: Lemonfox LLM (Llama 3-baserte modeller)<br><br>
+
+<strong>Deepgram</strong><br>
+– Lag en bruker på Deepgram:<br>
+https://deepgram.com<br><br>
+– Gå til utvikler-/API-sidene («Developers» / «Docs») og generer en API-nøkkel i Deepgram-konsollen<br>
+– Lagre nøkkelen trygt og lim den inn i feltet «Deepgram API key» på forsiden<br>
+– Du kan nå bruke tale-til-tekst-modellen Deepgram Nova-3 i appen<br><br>
+
+<strong>Mistral</strong><br>
+– Lag en bruker på Mistral AI og logg inn på konsollen:<br>
+https://console.mistral.ai<br><br>
+– Sett opp betaling om nødvendig, og gå deretter til «API keys» i konsollen for å generere en Mistral API-nøkkel<br>
+– Lagre nøkkelen trygt og lim den inn i feltet «Mistral API key» på forsiden<br>
+– Tekstmodell: Mistral Large<br>
+– EU-endepunkt / europeisk datalagring som standard – godt egnet for GDPR-vennlig bruk<br>
+`,  
   priceButton: "Pris",
   priceModalHeading: "Kostnadsinformasjon",
 priceModalText: `

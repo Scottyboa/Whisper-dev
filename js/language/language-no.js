@@ -131,14 +131,15 @@ Vi benytter informasjonskapsler (cookies) utelukkende for å kunne vise relevant
 `,
   
   aboutModalHeading: "Om",
-  aboutModalText: `Denne nettsiden ble opprettet for å gi helsepersonell og andre brukere direkte tilgang til høykvalitets tale-til-tekst transkripsjon og klinisk notatgenerering – uten unødvendige kostnader eller mellomledd.<br><br>
-Ved å bruke din egen OpenAI API-nøkkel kobler du deg direkte til kilden for teknologien. Dette betyr at du kun betaler den faktiske bruksprisen fastsatt av OpenAI, uten påslag eller abonnementsavgifter.<br><br>
-Mange eksisterende leverandører tilbyr lignende tjenester, men tar betydelig mer – ofte 8 til 10 ganger den reelle kostnaden for den underliggende teknologien. Denne plattformen tilbyr samme funksjonalitet til en brøkdel av prisen.<br><br>
+aboutModalText: `Denne nettsiden ble opprettet for å gi helsepersonell og andre brukere direkte tilgang til høykvalitets tale-til-tekst og klinisk notatgenerering – uten unødvendige kostnader eller mellomledd.<br><br>
+Ved å bruke dine egne API-nøkler til leverandører av tale-til-tekst og tekstgenereringsmodeller kobler du deg direkte til kilden for teknologien. Dette betyr at du kun betaler den faktiske bruksprisen fastsatt av hver enkelt leverandør, uten påslag eller abonnementsavgifter fra denne nettsiden.<br><br>
+Mange eksisterende leverandører tilbyr lignende tjenester, men tar betydelig mer – ofte mange ganger den reelle kostnaden for den underliggende teknologien. Denne plattformen lar deg bruke de samme modellene tilnærmet til «innkjøpspris», slik at kostnaden per konsultasjon blir svært lav.<br><br>
 <strong>Nøkkelpunkter:</strong><br>
-• Ingen abonnement, ingen konto kreves.<br>
-• Du betaler kun OpenAI direkte for det du bruker.<br>
-• Nettsiden i seg selv er helt gratis.<br><br>
-For at vi skal kunne fortsette å tilby denne tjenesten gratis, så hadde vi satt stor pris på om du godtar at det vises reklame fra Google Ads. Annonseinntektene hjelper oss å dekke kostnader til hosting og drift, slik at tjenesten kan forbli tilgjengelig for alle.`,  
+• Ingen abonnement, ingen konto kreves på denne nettsiden.<br>
+• Du betaler kun direkte til API-leverandørene for det du bruker (tale-til-tekst og tekstgenerering).<br>
+• Nettsiden i seg selv er helt gratis å bruke.<br><br>
+For at vi skal kunne fortsette å tilby denne tjenesten gratis, setter vi stor pris på om du godtar at det vises reklame fra Google Ads. Annonseinntektene hjelper oss å dekke kostnader til hosting og drift, slik at tjenesten kan forbli tilgjengelig for alle.`,
+ 
   guideModalHeading: "API nøkkel - Hvordan lage",
 guideModalText: `Hvordan skaffe API-nøkler:<br><br>
 For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du anskaffe én eller flere API-nøkler (OpenAI, Soniox, Google Gemini, Lemonfox, Deepgram, Mistral).<br><br>

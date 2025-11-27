@@ -13,7 +13,7 @@ export const indexTranslations = {
   adRevenueMessage: "Siden dette nettstedet er gratis å bruke og utelukkende finansieres av annonseinntekter, setter vi stor pris på om du godtar annonser for å støtte tjenesten.",
   
   securityModalHeading: "Personvern",
-  securityModalText: `
+securityModalText: `
 <strong>Personvern og Databehandling</strong><br><br>
 Denne webappen er laget som et verktøy for bruk av tale-til-tekst og notatgenerering. Det er ditt fulle ansvar som helsepersonell/behandlingsansvarlig å sikre at all bruk er i samsvar med GDPR, helsepersonelloven og Normen for informasjonssikkerhet.<br><br>
 
@@ -26,109 +26,167 @@ Dette innebærer blant annet:<br>
 - Inngå nødvendige avtaler (DPA)<br>
 - Utføre grundige risikovurderinger (DPIA og TIA)<br><br>
 
-- Mer informasjon om dette lengere ned i denne teksten.<br><br>
+– Mer informasjon om dette lengre ned i denne teksten.<br><br>
 
-Utvikler av denne webapp påtar seg intet ansvar for din bruk eller manglende etterlevelse.<br><br>
+Utvikler av denne webappen påtar seg intet ansvar for din bruk eller manglende etterlevelse. Dette er ikke juridisk rådgivning; du må selv involvere personvernombud/juridisk rådgiver ved behov.<br><br>
+
 <hr><br>
 
-<strong>1. Hva fungerer webappen?</strong><br>
+<strong>1. Hvordan fungerer webappen?</strong><br>
 - Tar opp lyd via nettleserens opptaksfunksjon.<br>
 - Behandler lyd i nettleserens minne (RAM).<br>
-- Laster opp lydfil via sikker HTTPS-forbindelse til OpenAI Whisper API for transkripsjon, ved bruk av din egen API-nøkkel.<br>
-- Sender transkripsjonen (og eventuell tilleggstekst / prompt) videre til OpenAI API som genererer et notatutkast, også med din egen API-nøkkel.<br>
-- Nettleseren mottar notatet direkte fra OpenAI med sikker/kryptert tilkobling.<br>
-- Din API-nøkkel lagres bare midlertidig i nettleserens minne (SessionStorage). Skrur du av webappen, eller går ut av nettleseren, så slettes API-nøkkelen din fra nettleserens minne. For å da kunne bruke webappen igjen, så må du klippe-lime inn din API-nøkkel på nytt. Dette fungerer som et ekstra lag med sikkerhet overfor din API-nøkkel, og motvirker ikke-autorisert tilgang til din nøkkel.<br><br>
+- Laster opp lydfil via sikker HTTPS-forbindelse til valgt tale-til-tekst-leverandør (f.eks. OpenAI, Soniox, Lemonfox, Mistral/Voxtral, Deepgram) ved bruk av din egen API-nøkkel fra leverandør.<br>
+- Sender transkripsjonen (og eventuell tilleggstekst/prompt) videre til valgt tekstmodell (f.eks. GPT-5.1, GPT-4o, Gemini 3, Mistral Large, Lemonfox LLM) ved bruk av deres API, også med din egen API-nøkkel.<br>
+- Nettleseren mottar notatutkastet direkte fra den aktuelle leverandøren via en sikker/kryptert tilkobling.<br><br>
+
+API-nøklene dine lagres bare midlertidig i nettleserens minne (SessionStorage). Skrur du av webappen eller lukker nettleseren, slettes API-nøklene fra nettleserens minne. For å bruke webappen igjen må du lime inn nøklene på nytt. Dette gir et ekstra sikkerhetslag mot uautorisert tilgang til nøklene dine.<br><br>
+
+Webappen har ingen egen server som lagrer lyd eller tekst; all kommunikasjon går direkte mellom din nettleser og de tjenestene du selv har valgt.<br><br>
+
 <hr><br>
 
-<strong>2. Din egen OpenAI API-nøkkel er påkrevd</strong><br>
-All kommunikasjon med OpenAI skjer direkte fra din nettleser ved bruk av din personlige API-nøkkel. Utvikleren av denne webappen har ingen tilgang til din nøkkel eller data.<br><br>
+<strong>2. Dine egne API-nøkler er påkrevd</strong><br>
+All kommunikasjon med modell-leverandørene (OpenAI, Google Gemini, Soniox, Lemonfox, Deepgram, Mistral m.fl.) skjer direkte fra din nettleser ved bruk av dine personlige API-nøkler.<br><br>
+
+Utvikleren av denne webappen har ingen tilgang til dine API-nøkler eller til innholdet du sender til leverandørene.<br><br>
+
 <hr><br>
 
-<strong>3. Databehandleravtale (DPA) med OpenAI</strong><br>
-Hvis du skal bruke API-tjenestene til behandling av personopplysninger anbefales det at du inngår en databehandleravtale med OpenAI. Du finner OpenAI sin standardavtale her: <a href="https://ironcladapp.com/public-launch/63ffefa2bed6885f4536d0fe" style="color:blue;" target="_blank">OpenAI databehandleravtale (DPA)</a>. Du finner ditt organisasjonsnummer her: <a href="https://platform.openai.com/settings/organization/general" style="color:blue;" target="_blank">din OpenAI organisasjonsprofil</a>. Når avtalen er signert, så har du og OpenAI anerkjent at det er du som bruker, som har rollen som databehandler – ikke OpenAI.<br><br>
+<strong>3. Databehandleravtaler (DPA) med leverandørene</strong><br>
+Hvis du skal bruke API-tjenestene til behandling av personopplysninger (særlig pasientopplysninger), anbefales det at du inngår databehandleravtale (DPA) med hver leverandør du faktisk bruker, for eksempel:<br>
+- OpenAI (tale-til-tekst og tekstgenerering)<br>
+- Google (Gemini 3 via Google AI Studio)<br>
+- Soniox (tale-til-tekst)<br>
+- Deepgram (tale-til-tekst)<br>
+- Mistral (Voxtral for tale-til-tekst, Mistral Large for tekst)<br>
+- Lemonfox (Whisper v3 tale-til-tekst og Llama 3-baserte tekstmodeller)<br><br>
+
+For OpenAI finnes det en standard databehandleravtale (DPA) og en egen organisasjonsprofil der virksomhetsinformasjon (f.eks. organisasjonsnummer) registreres. Tilsvarende avtaler og dokumenter finnes hos de andre leverandørene.<br><br>
+
+Når DPAs er på plass er utgangspunktet at du/virksomheten er behandlingsansvarlig, mens leverandørene (OpenAI, Google, Soniox, Mistral, Deepgram, Lemonfox osv.) er databehandlere. Du må selv kontrollere at avtalene faktisk dekker din bruk (helse, forskning, etc.).<br><br>
+
 <hr><br>
 
-<strong>4. DPIA og TIA – Nødvendige risikovurderinger</strong><br><br>
+<strong>4. DPIA og TIA – nødvendige risikovurderinger</strong><br><br>
 
-<strong>DPIA (Data Protection Impact Assessment):</strong> Påkrevd etter GDPR artikkel 35 når ny teknologi brukes til å behandle særlige kategorier opplysninger. Formålet er å identifisere og redusere personvernrisikoene knyttet til selve behandlingen.<br>
-Undersøk hva som behandles, hvorfor, og hvilke tiltak som trengs for å beskytte pasientenes rettigheter.<br>
-Eksempelmal tilgjengelig her: <a href="https://transcribe-notes.netlify.app/dpia" style="color:blue;" target="_blank">Forslag til DPIA (eksempelmal)</a><br><br>
+<strong>DPIA (Data Protection Impact Assessment)</strong><br>
+Påkrevd etter GDPR artikkel 35 når ny teknologi brukes til å behandle særlige kategorier opplysninger (som helseopplysninger). Formålet er å identifisere og redusere personvernrisikoer knyttet til selve behandlingen.<br><br>
 
-<strong>TIA (Transfer Impact Assessment):</strong> Påkrevd etter Schrems II-dommen og GDPR artikkel 44–49 når personopplysninger overføres til et land utenfor EØS (som USA). Formålet er å dokumentere at overføringen gir et «vesentlig tilsvarende» personvernnivå.<br>
-Vurder amerikansk lovgivning (FISA 702, CLOUD Act m.m.) mot dataenes art og dine supplerende tekniske/kontraktuelle tiltak.<br>
-Konkluder på om overføringen – sammen med Standard Contractual Clauses og OpenAIs EU-US Data Privacy Framework-sertifisering – fortsatt er forsvarlig.<br>
-Eksempelmal tilgjengelig her: <a href="https://transcribe-notes.netlify.app/tia.html" style="color:blue;" target="_blank">Forslag til Transfer Impact Assessment (TIA)</a><br><br>
+Du bør blant annet:<br>
+- Kartlegge hvilke data som behandles (lyd, tekst, metadata).<br>
+- Beskrive formål (klinisk dokumentasjon, kvalitet, forskning osv.).<br>
+- Vurdere risiko for pasientenes rettigheter og friheter.<br>
+- Beslutte tekniske og organisatoriske tiltak (kryptering, tilgangsstyring, logging, opplæring osv.).<br><br>
 
-Begge vurderingene bør være gjennomført, dokumentert og godkjent av deg som bruker før webappen tas i bruk.<br><br>
+<strong>TIA (Transfer Impact Assessment)</strong><br>
+Påkrevd når personopplysninger overføres til land utenfor EØS (for eksempel USA). Formålet er å dokumentere at overføringen likevel gir et «vesentlig tilsvarende» vern som i EU/EØS (Schrems II, GDPR art. 44–49).<br><br>
+
+Du bør blant annet:<br>
+- Vurdere relevant lovgivning i mottakerland (f.eks. FISA 702, CLOUD Act).<br>
+- Se dette opp mot hvor sensitive dataene er, og hvilke tekniske/kontraktuelle tiltak du bruker (kryptering, pseudonymisering, SCC, ZDR, EU-endepunkt osv.).<br>
+- Konkludere eksplisitt på om overføringen er forsvarlig og om restrisikoen er akseptabel.<br><br>
+
+Både DPIA og TIA bør være gjennomført, dokumentert og godkjent av deg/virksomheten før webappen brukes på reelle pasientdata.<br><br>
+
 <hr><br>
 
-<strong>5. Zero Data Retention (ZDR) og datalagring hos OpenAI</strong><br><br>
+<strong>5. Databehandling, datalagring og «GDPR-vennlighet» hos ulike leverandører</strong><br><br>
 
-<strong>OpenAIs standard policy</strong><br>
-Per OpenAIs API Data Usage Policy brukes data sendt til API-et ikke til å trene modellene. Data kan imidlertid lagres midlertidig (typisk opptil 30 dager) for misbruksovervåking og feilsøking før de slettes.<br><br>
+Nedenfor er en grov oversikt slik tjenestene typisk fungerer i dag. Dette kan endre seg, og du må alltid kontrollere oppdatert dokumentasjon og avtaleverk hos leverandøren før du konkluderer.<br><br>
 
-<strong>Zero Data Retention (ZDR)</strong><br>
-OpenAI tilbyr ZDR for enkelte større kunder etter særskilt avtale, men dette er ikke standard for vanlig API-bruk og er derfor ikke aktivt for denne appen.<br><br>
+<strong>Lemonfox (tale-til-tekst og tekstgenerering)</strong><br>
+Lemonfox er EU-basert og markedsfører seg som fullt GDPR-kompatibel.<br>
+Tale-til-tekst (Whisper v3) og Llama 3-baserte tekstmodeller prosesseres i EU, og de oppgir at lyd/tekst slettes kort tid etter prosessering (ingen gjenbruk til trening).<br>
+Dette gjør Lemonfox til et relativt «GDPR-vennlig» alternativ for både tale-til-tekst og tekstgenerering, forutsatt at du likevel gjør DPIA/TIA og har tilstrekkelige avtaler.<br><br>
 
-<strong>Veien videre</strong><br>
-Fremtidige versjoner av appen kan utforske støtte for alternative KI-leverandører som tilbyr ZDR som standard (f.eks. visse tjenester på Microsoft Azure). Eventuelle oppdateringer med tanke på dette vil kommuniseres via webappen.<br><br>
+<strong>Soniox (med EU-endepunkt)</strong><br>
+Soniox tilbyr dataresidens i både USA og EU.<br>
+Når et prosjekt er konfigurert med EU-region, behandles lyd og transkripsjoner innenfor denne regionen; systemdata som kontodata og fakturadata kan likevel håndteres globalt.<br>
+For å ta i bruk EU-endepunktet i klinisk setting må du typisk kontakte Soniox (for eksempel via e-post til salg/support) og be om tilgang til EU-prosjekt/API-nøkkel og dokumentasjon på dataresidens. Tilgang på EU-endepunkt kan ta 1–2 dager å oppnå etter kontakt.<br>
+Med EU-endepunktet aktivert er Soniox et godt alternativ for GDPR-tilpasset tale-til-tekst, men du må fortsatt gjøre DPIA/TIA og inngå nødvendig DPA.<br><br>
+
+<strong>Mistral (Voxtral for tale-til-tekst, Mistral Large for tekst)</strong><br>
+Mistral er EU-basert, og standardoppsettet deres er at API-data hostes i EU som utgangspunkt. Det finnes egne US-endepunkter dersom man eksplisitt velger det.<br>
+Mistral tilbyr mulighet for Zero Data Retention (ZDR) etter søknad, dvs. at data ikke lagres utover det som er strengt nødvendig for å levere svaret. Dette kan gjøre det enklere å argumentere for bruk på helsedata, men må dokumenteres i DPIA/TIA.<br>
+Kombinasjonen EU-endepunkt + ZDR (der dette faktisk er innvilget og konfigurert) gjør Mistral (Voxtral + Mistral Large) til et av de mest «GDPR-vennlige» alternativene i denne appen.<br><br>
+
+<strong>Gemini 3 (Google)</strong><br>
+Gemini via Google AI Studio / Gemini API med ren API-nøkkel:<br>
+Per i dag behandles forespørsler normalt på global infrastruktur, noe som kan innebære overføring utenfor EU/EØS. Google ruller gradvis ut flere regionale dataresidens- og prosesseringsmuligheter, men du må selv sjekke om din bruk (og din lisens/plan) faktisk er låst til EU-region. Når regionalt EU-endepunkt tilgjengeliggjøres av Google, så vil dette oppdateres i denne appen.<br><br>
+
+<strong>OpenAI</strong><br>
+OpenAI oppgir at API-data ikke brukes til modelltrening som standard, men kan lagres midlertidig (typisk opptil 30 dager) for misbruksdeteksjon og feilsøking.<br>
+OpenAI har introdusert dataresidens i Europa for enkelte API-kunder og produkter, men dette krever spesifikke avtaler/konfigurasjon.<br>
+Slik denne webappen normalt er satt opp, vil kall til OpenAI ofte gå til globale endepunkter (typisk US), noe som innebærer overføring utenfor EU/EØS.<br><br>
+
+Bruk av OpenAI med pasientdata befinner seg dermed ofte i et juridisk «gråområde» med mindre du har:<br>
+- en tydelig DPA,<br>
+- dokumentert DPIA/TIA som eksplisitt dekker overføringen, og<br>
+- eventuelle særordninger om EU-dataresidens/ZDR dersom dette er tilgjengelig og faktisk aktivert.<br><br>
+
+<strong>Deepgram (Nova-3)</strong><br>
+Deepgram har historisk brukt globale endepunkter, men tilbyr nå dedikerte og EU-spesifikke endepunkter.<br>
+Hvis du kun bruker standard/globalt endepunkt, vil lyddata typisk prosesseres utenfor EU/EØS.<br>
+Deepgram har også EU-hostede tjenester og beskriver ulike compliance-oppsett (inkludert for helse), men det krever at du bevisst konfigurerer riktig endepunkt (f.eks. api.eu.deepgram.com) og har avtaler som dekker dataresidens og eventuelle lagringstider.<br>
+Slik appen ofte brukes i dag, kan Deepgram derfor – på samme måte som OpenAI – innebære at data sendes ut av EU hvis du ikke eksplisitt konfigurerer EU-endepunkt og har juridiske vurderinger på plass.<br><br>
+
+<strong>Kort oppsummert om modellene i denne appen:</strong><br><br>
+
+Relativt «GDPR-vennlige» alternativer (forutsatt DPA + DPIA/TIA):<br>
+- Lemonfox (EU-basert STT + LLM, hurtig sletting)<br>
+- Soniox med EU-endepunkt (lyd/tekst behandles i EU-region)<br>
+- Mistral (Voxtral + Mistral Large) med standard EU-hosting og eventuelt ZDR<br><br>
+
+Mer krevende/«gråsoner» for pasientdata (med mindre du har særskilte avtaler og EU-residens/ZDR på plass):<br>
+- OpenAI via globale endepunkter<br>
+- Deepgram via globale endepunkter<br>
+- Gemini 3 via globalt Google AI Studio/Gemini API uten eksplisitt EU-lock<br><br>
+
+I alle tilfeller er det du/virksomheten som må dokumentere at løsning og leverandørvalg er i tråd med GDPR, helsepersonelloven og Normen.<br><br>
+
 <hr><br>
 
-<strong>6. Forutsetninger for potensiell klinisk bruk</strong><br><br>
-Din vurdering er avgjørende: Lovligheten av å bruke dette verktøyet med pasientdata avhenger utelukkende av din egen grundige vurdering. Du må selv konkludere – basert på DPA med OpenAI, DPIA og TIA – om bruken er forsvarlig og om restrisikoen er akseptabel for din praksis.<br><br>
+<strong>6. Forutsetninger for potensiell klinisk bruk</strong><br>
+Din vurdering er avgjørende: Lovligheten av å bruke dette verktøyet med pasientdata avhenger utelukkende av din egen grundige vurdering av både appen og hver enkelt leverandør du kobler til (OpenAI, Gemini, Soniox, Lemonfox, Mistral, Deepgram osv.).<br><br>
 
-<strong>Minimumskrav før bruk med pasientdata:</strong><br>
-- Gyldig DPA med OpenAI er på plass.<br>
-- Virksomhetsspesifikk DPIA og TIA er gjennomført, godkjent og konkluderer med akseptabel restrisiko.<br>
-- Ansvar for innhold: Du er ansvarlig for alt innhold du sender til OpenAI via din API-nøkkel og for å kvalitetssikre notatutkastet som genereres i etterkant, før de evt. overføres til pasientjournal.<br><br>
+Minimumskrav før bruk med pasientdata bør være:<br>
+- Gyldige databehandleravtaler (DPA) med alle leverandører du faktisk bruker.<br>
+- Virksomhetsspesifikk DPIA og TIA som er gjennomført, godkjent og konkluderer med akseptabel restrisiko.<br>
+- Tydelig beslutning om hvilke modeller/endepunkter som kan brukes til pasientdata (for eksempel å begrense pasientrelatert bruk til Lemonfox, Soniox EU, Mistral og/eller Gemini via EU-region, dersom det vurderes som forsvarlig).<br>
+- Ansvar for innhold: Du er ansvarlig for alt innhold du sender til leverandørene via dine API-nøkler, og for å kvalitetssikre notatutkastet før det eventuelt kopieres inn i pasientjournal.<br><br>
+
 <hr><br>
 
 <strong>7. Oversikt over datalagring</strong><br><br>
-<table style="border-collapse:collapse;width:100%;">
-  <thead>
-    <tr>
-      <th style="border:1px solid #ccc;padding:4px;">Datatype</th>
-      <th style="border:1px solid #ccc;padding:4px;">Hvor lagres den?</th>
-      <th style="border:1px solid #ccc;padding:4px;">Hvor lenge?</th>
-      <th style="border:1px solid #ccc;padding:4px;">Hvem har tilgang?</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="border:1px solid #ccc;padding:4px;">Din OpenAI API-nøkkel</td>
-      <td style="border:1px solid #ccc;padding:4px;">SessionStorage-minne i din nettleser</td>
-      <td style="border:1px solid #ccc;padding:4px;">Til du enten avslutter webappen eller nettleseren</td>
-      <td style="border:1px solid #ccc;padding:4px;">Kun deg og din nettleser</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc;padding:4px;">Lydsegmenter under opptak</td>
-      <td style="border:1px solid #ccc;padding:4px;">Nettleserens minne (RAM)</td>
-      <td style="border:1px solid #ccc;padding:4px;">Kun under opptak/prosessering. Lagres ikke hos OpenAI etter prosessering er fullført</td>
-      <td style="border:1px solid #ccc;padding:4px;">Kun deg og din nettleser</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc;padding:4px;">Tekst/notatutkast</td>
-      <td style="border:1px solid #ccc;padding:4px;">OpenAI API (midlertidig)</td>
-      <td style="border:1px solid #ccc;padding:4px;">Maks 30 dager hos OpenAI</td>
-      <td style="border:1px solid #ccc;padding:4px;">Du, OpenAI (midlertidig)</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc;padding:4px;">Instruksjoner / Prompter</td>
-      <td style="border:1px solid #ccc;padding:4px;">Lokalt i din nettleser. Hvis du som bruker logger inn i webappen på samme nettleser, datamaskin og med samme API-nøkkel, så vil promptene du har laget være tilgjengelige for deg igjen</td>
-      <td style="border:1px solid #ccc;padding:4px;">Til du sletter dem</td>
-      <td style="border:1px solid #ccc;padding:4px;">Du og din nettleser</td>
-    </tr>
-  </tbody>
-</table><br><br>
+
+(Dette gjelder hvordan webappen håndterer data; i tillegg kommer lagring hos hver API-leverandør, som du må kontrollere selv.)<br><br>
+
+<strong>Dine API-nøkler (OpenAI, Soniox, Gemini, Lemonfox, Deepgram, Mistral osv.)</strong><br>
+- Hvor lagres de? SessionStorage-minne i din nettleser.<br>
+- Hvor lenge? Til du avslutter webappen eller lukker nettleseren.<br>
+- Hvem har tilgang? Kun deg og din nettleser.<br><br>
+
+<strong>Lydsegmenter under opptak</strong><br>
+- Hvor lagres de? Nettleserens minne (RAM).<br>
+- Hvor lenge? Kun under opptak/prosessering. Webappen lagrer ikke lyd permanent.<br>
+- Hvem har tilgang? Kun deg og din nettleser før de sendes til valgt tale-til-tekst-API.<br><br>
+
+<strong>Transkribert tekst/notatutkast hos leverandørene</strong><br>
+- Hvor lagres det? Hos valgt API-leverandør (OpenAI, Google, Soniox, Lemonfox, Mistral, Deepgram osv.), i deres skyinfrastruktur.<br>
+- Hvor lenge? Varierer – f.eks. oppgir OpenAI at data kan lagres inntil ca. 30 dager for misbruksdeteksjon; enkelte EU-baserte leverandører (som Lemonfox/Mistral med ZDR) sletter raskere. Du må selv sjekke gjeldende policy for hver leverandør.<br>
+- Hvem har tilgang? Deg via API-svarene, og den aktuelle leverandøren i den perioden data teknisk sett lagres.<br><br>
+
+<strong>Instruksjoner/Prompter i selve webappen</strong><br>
+- Hvor lagres de? Lokalt i din nettleser (typisk LocalStorage/SessionStorage). Hvis du bruker samme nettleser, samme PC og samme API-nøkkel, vil promptene fortsatt være tilgjengelige for deg neste gang.<br>
+- Hvor lenge? Til du sletter dem eller rydder nettleserdata.<br>
+- Hvem har tilgang? Du og nettleseren din.<br><br>
+
 <hr><br>
 
-<strong>8. Kildekode</strong><br><br>
-- Kildekoden er åpen og kjører lokalt i din nettleser.<br><br>
-<hr><br>
-
-<strong>9. Informasjonskapsler og annonser</strong><br><br>
-Vi benytter informasjonskapsler (cookies) utelukkende for å kunne vise relevante annonser gjennom Google Ads, og for språkvalg, samtykke og for lagring av tilpassede prompts som du har laget. Informasjonskapslene lagrer ikke personopplysninger utover det som er nødvendig for funksjonalitet og tilpasning. Googles informasjonskapsler har ingen tilgang til data relatert til lydopptak og generert tekst (pasientdata).
+<strong>8. Kildekode</strong><br>
+Kildekoden er åpen og kjører lokalt i din nettleser. Det finnes ingen skjulte bakdører som sender data til utviklerens servere, ut over statistikk i forhold til hvor ofte appen brukes, via antall klikk osv., men ingen sensitiv informasjon om bruker eller data bruker sender/mottar.<br>
 `,
+
   
   aboutModalHeading: "Om",
 aboutModalText: `Denne nettsiden ble opprettet for å gi helsepersonell og andre brukere direkte tilgang til høykvalitets tale-til-tekst og klinisk notatgenerering – uten unødvendige kostnader eller mellomledd.<br><br>

@@ -12,175 +12,412 @@ export const indexTranslations = {
   securityModalHeading: "Privacy",
 securityModalText: `
 <strong>Privacy and Data Processing</strong><br><br>
-This web app is provided as a tool for speech-to-text and note generation. As a healthcare professional/data controller you are fully responsible for ensuring that all use complies with the GDPR, the Health Personnel Act, and the Norwegian “Norm” for information security.<br><br>
+This web app is designed as a tool for speech-to-text and note generation. It is your full responsibility as a healthcare professional/data controller to ensure that all use complies with GDPR, the Health Personnel Act, and the Norwegian “Normen” for information security.<br><br>
 
-You alone are responsible for making sure the use of this app satisfies every requirement in:<br>
+You alone are responsible for ensuring that the use of this app meets all requirements under:<br>
 - GDPR<br>
-- Health Personnel Act<br>
-- Norm for Information Security<br><br>
+- The Health Personnel Act<br>
+- The Norwegian Information Security Norm (“Normen”)<br><br>
 
 This includes, among other things:<br>
-- Signing the necessary agreements (DPA)<br>
-- Carrying out thorough risk assessments (DPIA and TIA)<br><br>
+- Entering necessary agreements (DPAs)<br>
+- Performing thorough risk assessments (DPIA and TIA)<br><br>
 
-More information on these topics appears further down in this text.<br><br>
+– More information about this is found further down in this text.<br><br>
 
-The developer of this web app accepts no liability for your use of it or for any failure to comply with applicable regulations.<br><br>
+The developer of this web app assumes no responsibility for your use or lack of compliance. This is not legal advice; you must involve a data protection officer/legal advisor as needed.<br><br>
+
 <hr><br>
 
 <strong>1. How does the web app work?</strong><br>
-- Records audio using the browser’s recording feature.<br>
+- Records audio through the browser’s recording functionality.<br>
 - Processes audio in the browser’s memory (RAM).<br>
-- Uploads the audio file over a secure HTTPS connection to the OpenAI Whisper API for transcription, using your own API key.<br>
-- Sends the transcription (and any additional text/prompt) to the OpenAI API, which generates a draft note—also with your own API key.<br>
-- Receives the note directly in your browser over a secure/encrypted connection.<br>
-- Your API key is stored only temporarily in SessionStorage. When you close the web app or exit the browser, the key is deleted from memory. To use the app again you must paste in your key anew. This provides an extra layer of security for your key and prevents unauthorised access.<br><br>
+- Uploads the audio file via secure HTTPS to the selected speech-to-text provider (e.g., OpenAI, Soniox, Lemonfox, Mistral/Voxtral, Deepgram) using your own API key from that provider.<br>
+- Sends the transcription (and any additional prompt/text) to the selected text model (e.g., GPT-5.1, GPT-4o, Gemini 3, Mistral Large, Lemonfox LLM) via their API, also using your own API key.<br>
+- Your browser receives the draft note directly from the provider through a secure/encrypted connection.<br><br>
+
+Your API keys are stored only temporarily in the browser’s memory (SessionStorage). When you close the app or browser, the keys are deleted. To use the web app again, you must paste the keys again. This provides an additional layer of security against unauthorized access.<br><br>
+
+The web app has no server that stores audio or text; all communication is directly between your browser and the services you choose.<br><br>
+
 <hr><br>
 
-<strong>2. Your own OpenAI API key is required</strong><br>
-All communication with OpenAI happens directly from your browser using your personal API key. The developer has no access to your key or data.<br><br>
+<strong>2. Your own API keys are required</strong><br>
+All communication with the model providers (OpenAI, Google Gemini, Soniox, Lemonfox, Deepgram, Mistral, etc.) happens directly from your browser using your personal API keys.<br><br>
+
+The developer of this web app has no access to your API keys or the content you send to the providers.<br><br>
+
 <hr><br>
 
-<strong>3. Data Processing Agreement (DPA) with OpenAI</strong><br>
-If you will use the API services to process personal data, you should sign a DPA with OpenAI. You can find OpenAI’s standard agreement here: <a href="https://ironcladapp.com/public-launch/63ffefa2bed6885f4536d0fe" style="color:blue;" target="_blank">OpenAI Data Processing Agreement (DPA)</a>. Your organisation ID is available here: <a href="https://platform.openai.com/settings/organization/general" style="color:blue;" target="_blank">your OpenAI organisation profile</a>. Once signed, both you and OpenAI acknowledge that you, the user, act as data processor—not OpenAI.<br><br>
+<strong>3. Data Processing Agreements (DPA) with providers</strong><br>
+If you will use API services to process personal data (especially patient data), you are advised to enter a Data Processing Agreement (DPA) with each provider you actually use, for example:<br>
+- OpenAI (speech-to-text and text generation)<br>
+- Google (Gemini 3 via Google AI Studio)<br>
+- Soniox (speech-to-text)<br>
+- Deepgram (speech-to-text)<br>
+- Mistral (Voxtral for speech-to-text, Mistral Large for text)<br>
+- Lemonfox (Whisper v3 speech-to-text and Llama 3-based text models)<br><br>
+
+OpenAI provides a standard DPA and an organization profile where company information is registered. Equivalent agreements and documents exist for other providers.<br><br>
+
+Once DPAs are in place, you/your organization are the data controller, while the providers (OpenAI, Google, Soniox, Mistral, Deepgram, Lemonfox, etc.) are data processors. You must verify that the agreements adequately cover your specific use (healthcare, research, etc.).<br><br>
+
 <hr><br>
 
-<strong>4. DPIA and TIA – Required risk assessments</strong><br><br>
+<strong>4. DPIA and TIA – required risk assessments</strong><br><br>
 
-<strong>DPIA (Data Protection Impact Assessment):</strong> Required under GDPR Article 35 when new technology is used to process special-category data. The purpose is to identify and mitigate privacy risks in the processing itself.<br>
-Assess what is processed, why, and which measures are needed to protect patients’ rights.<br>
-Template available here: <a href="https://transcribe-notes.netlify.app/dpia-en" style="color:blue;" target="_blank">Suggested DPIA (template)</a><br><br>
+<strong>DPIA (Data Protection Impact Assessment)</strong><br>
+Required under GDPR Article 35 when new technology is used to process special-category data (such as health data). The purpose is to identify and reduce privacy risks related to the processing.<br><br>
 
-<strong>TIA (Transfer Impact Assessment):</strong> Required under the Schrems II ruling and GDPR Articles 44–49 when personal data are transferred to a country outside the EEA (such as the USA). The purpose is to document that the transfer provides a “level of protection essentially equivalent” to the EEA.<br>
-Assess US legislation (FISA 702, CLOUD Act, etc.) against the nature of the data and your supplementary technical/contractual safeguards.<br>
-Conclude whether the transfer—together with Standard Contractual Clauses and OpenAI’s EU-US Data Privacy Framework certification—remains defensible.<br>
-Template available here: <a href="https://transcribe-notes.netlify.app/tia.html" style="color:blue;" target="_blank">Suggested Transfer Impact Assessment (TIA)</a><br><br>
+You should, among other things:<br>
+- Map which data are processed (audio, text, metadata).<br>
+- Describe purpose (clinical documentation, quality, research, etc.).<br>
+- Assess risks to patients’ rights and freedoms.<br>
+- Decide on technical and organizational measures (encryption, access control, logging, training, etc.).<br><br>
 
-Both assessments should be completed, documented, and approved by you before the web app is used.<br><br>
+<strong>TIA (Transfer Impact Assessment)</strong><br>
+Required when personal data is transferred outside the EEA (e.g., to the USA). The purpose is to document that the transfer still provides a “essentially equivalent” level of protection (Schrems II, GDPR Art. 44–49).<br><br>
+
+You should, among other things:<br>
+- Assess relevant laws in the recipient country (e.g., FISA 702, CLOUD Act).<br>
+- Compare this with the sensitivity of the data and the technical/contractual measures used (encryption, pseudonymization, SCC, ZDR, EU endpoints, etc.).<br>
+- Conclude whether the transfer is acceptable and whether the residual risk is tolerable.<br><br>
+
+Both DPIA and TIA should be completed, documented, and approved before using the web app with real patient data.<br><br>
+
 <hr><br>
 
-<strong>5. Zero Data Retention (ZDR) and data storage at OpenAI</strong><br><br>
+<strong>5. Data processing, storage, and “GDPR-friendliness” of different providers</strong><br><br>
 
-<strong>OpenAI’s standard policy</strong><br>
-Under OpenAI’s API Data Usage Policy, data sent to the API are not used to train the models. However, they may be stored temporarily (typically up to 30 days) for abuse monitoring and debugging before deletion.<br><br>
+Below is a rough overview of how services typically operate today. This may change. You must always check current documentation and agreements from each provider.<br><br>
 
-<strong>Zero Data Retention (ZDR)</strong><br>
-OpenAI offers ZDR for certain larger customers by special agreement, but this is not standard for normal API users and is therefore not active for this app.<br><br>
+<strong>Lemonfox (speech-to-text and text generation)</strong><br>
+EU-based and markets itself as fully GDPR-compliant.<br>
+Speech-to-text (Whisper v3) and Llama 3-based text models are processed in the EU, and they state that audio/text is deleted shortly after processing (no training reuse).<br>
+This makes Lemonfox relatively GDPR-friendly for both speech-to-text and text generation, provided you still perform DPIA/TIA and have proper agreements.<br><br>
 
-<strong>Next steps</strong><br>
-Future versions of the app may explore support for alternative AI providers that offer ZDR as standard (e.g. certain services on Microsoft Azure). Any updates in this regard will be communicated through the web app.<br><br>
+<strong>Soniox (with EU endpoint)</strong><br>
+Soniox offers data residency in both the US and EU.<br>
+When a project is configured for the EU region, audio and transcripts are processed within that region; some system data (account/billing data) may still be handled globally.<br>
+To use the EU endpoint clinically, you typically must contact Soniox and request EU-project access/API key and documentation. Access may take 1–2 days after contact.<br>
+With the EU endpoint enabled, Soniox is a strong GDPR-aligned option for speech-to-text, though DPIA/TIA and DPAs remain required.<br><br>
+
+<strong>Mistral (Voxtral for speech-to-text, Mistral Large for text)</strong><br>
+EU-based. API data hosting in the EU by default unless explicitly using US endpoints.<br>
+Mistral offers Zero Data Retention (ZDR) on request, meaning data is not retained beyond what is necessary to deliver the response. This may simplify GDPR justification but must be documented in DPIA/TIA.<br>
+EU endpoint + ZDR (when granted and configured) makes Mistral one of the most GDPR-friendly options in this app.<br><br>
+
+<strong>Gemini 3 (Google)</strong><br>
+Gemini via Google AI Studio / Gemini API with pure API key:<br>
+Currently processed on global infrastructure, which may involve transfers outside the EEA. Google is gradually rolling out regional processing and residency features, but you must verify whether your license/plan is truly locked to the EU region.<br>
+When EU-locked endpoints become available from Google, the app will be updated to support them.<br><br>
+
+<strong>OpenAI</strong><br>
+OpenAI states that API data is not used for training by default, but may be stored temporarily (typically up to ~30 days) for abuse detection and debugging.<br>
+OpenAI has introduced data residency in Europe for certain API customers and products, but this requires specific agreements/configurations.<br>
+With typical usage in this app, OpenAI calls often go to global (US) endpoints, meaning transfers outside the EEA.<br><br>
+
+Using OpenAI with patient data is often a legal gray zone unless you have:<br>
+- a clear DPA,<br>
+- documented DPIA/TIA covering the transfer,<br>
+- any special arrangements for EU data residency/ZDR if available and activated.<br><br>
+
+<strong>Deepgram (Nova-3)</strong><br>
+Historically used global endpoints, but now offers dedicated and EU-specific endpoints.<br>
+Using only the default/global endpoint typically means audio is processed outside the EEA.<br>
+Deepgram also offers EU-hosted services and various compliance setups, but you must configure the correct endpoint (e.g., api.eu.deepgram.com) and have agreements covering data residency and retention.<br>
+As commonly used today, Deepgram—like OpenAI—may involve data transfers outside the EU unless explicitly configured otherwise.<br><br>
+
+<strong>Summary of model options in this app:</strong><br><br>
+
+Relatively GDPR-friendly (with DPA + DPIA/TIA):<br>
+- Lemonfox (EU STT + LLM, rapid deletion)<br>
+- Soniox with EU endpoint<br>
+- Mistral (Voxtral + Mistral Large) with EU hosting and optional ZDR<br><br>
+
+More demanding/“gray zones” for patient data (without special agreements/EU residency/ZDR):<br>
+- OpenAI via global endpoints<br>
+- Deepgram via global endpoints<br>
+- Gemini 3 via global Google AI Studio/Gemini API (no EU lock)<br><br>
+
+In all cases, you/your organization must document compliance with GDPR, the Health Personnel Act, and the Norwegian Information Security Norm.<br><br>
+
 <hr><br>
 
-<strong>6. Prerequisites for potential clinical use</strong><br><br>
-Your assessment is decisive: The legality of using this tool with patient data depends entirely on your own thorough evaluation. You must conclude—based on the DPA with OpenAI, DPIA, and TIA—whether the usage is defensible and any residual risk acceptable for your practice.<br><br>
+<strong>6. Preconditions for possible clinical use</strong><br>
+Your assessment is decisive: The legality of using this tool with patient data depends entirely on your own thorough assessment of both the app and every provider you connect to (OpenAI, Gemini, Soniox, Lemonfox, Mistral, Deepgram, etc.).<br><br>
 
-<strong>Minimum requirements before using patient data:</strong><br>
-- A valid DPA with OpenAI is in place.<br>
-- A practice-specific DPIA and TIA are completed, approved, and conclude that residual risk is acceptable.<br>
-- Content responsibility: You are responsible for all content you send to OpenAI via your API key and for quality-assuring the generated draft note before it is possibly transferred to the patient record.<br><br>
+Minimum requirements before using patient data:<br>
+- Valid DPAs with every provider you use.<br>
+- Organization-specific DPIA and TIA that are completed, approved, and conclude acceptable residual risk.<br>
+- Clear decision on which models/endpoints may be used for patient data (e.g., limiting to Lemonfox, Soniox EU, Mistral, and/or Gemini with EU region if deemed adequate).<br>
+- Responsibility for content: You are responsible for all data sent via your API keys and for verifying the generated note before placing it in a patient record.<br><br>
+
 <hr><br>
 
 <strong>7. Overview of data storage</strong><br><br>
-<table style="border-collapse:collapse;width:100%;">
-  <thead>
-    <tr>
-      <th style="border:1px solid #ccc;padding:4px;">Data&nbsp;Type</th>
-      <th style="border:1px solid #ccc;padding:4px;">Where is it stored?</th>
-      <th style="border:1px solid #ccc;padding:4px;">For how long?</th>
-      <th style="border:1px solid #ccc;padding:4px;">Who has access?</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="border:1px solid #ccc;padding:4px;">Your OpenAI API key</td>
-      <td style="border:1px solid #ccc;padding:4px;">SessionStorage memory in your browser</td>
-      <td style="border:1px solid #ccc;padding:4px;">Until you close the web app or the browser</td>
-      <td style="border:1px solid #ccc;padding:4px;">Only you and your browser</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc;padding:4px;">Audio segments while recording</td>
-      <td style="border:1px solid #ccc;padding:4px;">Browser memory (RAM)</td>
-      <td style="border:1px solid #ccc;padding:4px;">Only during recording/processing. Not stored at OpenAI once processing is finished</td>
-      <td style="border:1px solid #ccc;padding:4px;">Only you and your browser</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc;padding:4px;">Text/draft note</td>
-      <td style="border:1px solid #ccc;padding:4px;">OpenAI API (temporary)</td>
-      <td style="border:1px solid #ccc;padding:4px;">Up to 30 days at OpenAI</td>
-      <td style="border:1px solid #ccc;padding:4px;">You, OpenAI (temporary)</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc;padding:4px;">Instructions / Prompts</td>
-      <td style="border:1px solid #ccc;padding:4px;">Locally in your browser. If you log in to the web app on the same browser, computer, and with the same API key, your prompts will be available again</td>
-      <td style="border:1px solid #ccc;padding:4px;">Until you delete them</td>
-      <td style="border:1px solid #ccc;padding:4px;">You and your browser</td>
-    </tr>
-  </tbody>
-</table><br><br>
+
+(This describes how the web app handles data; provider-side storage must be verified with each provider.)<br><br>
+
+<strong>Your API keys (OpenAI, Soniox, Gemini, Lemonfox, Deepgram, Mistral, etc.)</strong><br>
+- Where stored? SessionStorage in your browser.<br>
+- For how long? Until you close the app or browser.<br>
+- Who has access? Only you and your browser.<br><br>
+
+<strong>Audio segments during recording</strong><br>
+- Where stored? Browser memory (RAM).<br>
+- For how long? Only during recording/processing. The app does not store audio permanently.<br>
+- Who has access? Only you and your browser before the audio is sent to the selected STT API.<br><br>
+
+<strong>Transcribed text/note drafts at providers</strong><br>
+- Where stored? At the selected provider (OpenAI, Google, Soniox, Lemonfox, Mistral, Deepgram, etc.) in their cloud infrastructure.<br>
+- For how long? Varies—e.g., OpenAI states data may be stored up to ~30 days for abuse detection; some EU providers (Lemonfox/Mistral with ZDR) delete faster. You must verify each provider’s policy.<br>
+- Who has access? You through the API response, and the provider during the technical retention period.<br><br>
+
+<strong>Instructions/Prompts inside the web app</strong><br>
+- Where stored? Locally in your browser (LocalStorage/SessionStorage). If you use the same browser, PC, and API key, prompts remain available next time.<br>
+- For how long? Until you delete them or clear browser data.<br>
+- Who has access? You and your browser.<br><br>
+
 <hr><br>
 
-<strong>8. Source code</strong><br><br>
-- The source code is open and runs locally in your browser.<br><br>
-<hr><br>
-
-<strong>9. Cookies and ads</strong><br><br>
-We use cookies solely to display relevant ads through Google Ads, and for language selection, consent management, and storage of customised prompts you have created. The cookies do not store personal data beyond what is necessary for functionality and personalisation. Google’s cookies have no access to data related to audio recordings and generated text (patient data).
+<strong>8. Source code</strong><br>
+The source code is open and runs locally in your browser. There are no hidden backdoors transmitting data to the developer’s servers, other than basic usage statistics like click counts, but no sensitive user information or data you send/receive.<br>
 `,
 
   aboutModalHeading: "About",
-  aboutModalText: `This website was created to provide healthcare professionals and other users with direct access to high-quality speech-to-text transcription and clinical note generation—without unnecessary costs or intermediaries.<br><br>
-By using your own OpenAI API key, you connect directly to the source of the technology. This means you only pay the actual usage cost set by OpenAI, without markups or subscription fees.<br><br>
-Many existing providers offer similar services but charge significantly more—often 8 to 10 times the real cost of the underlying technology. This platform offers the same functionality at a fraction of the price.<br><br>
+  aboutModalText: `This website was created to give healthcare professionals and other users direct access to high-quality speech-to-text and clinical note generation — without unnecessary costs or intermediaries.<br><br>
+By using your own API keys for speech-to-text and text-generation providers, you connect directly to the source of the technology. This means you only pay the actual usage cost set by each provider, with no markup or subscription fees from this website.<br><br>
+Many existing providers offer similar services but charge significantly more — often many times the real cost of the underlying technology. This platform allows you to use the same models at essentially “wholesale price,” making the cost per consultation extremely low.<br><br>
+
 <strong>Key points:</strong><br>
-• No subscription, no account required.<br>
-• You only pay OpenAI directly for what you use.<br>
-• The website itself is completely free.<br><br>
-To continue offering this free service, we would greatly appreciate it if you accept the display of ads from Google Ads. Ad revenue helps us cover hosting and operational costs, allowing the service to remain accessible to everyone.`,
+• No subscription, no account required on this website.<br>
+• You pay only the providers directly for what you use (speech-to-text and text generation).<br>
+• The website itself is completely free to use.<br><br>
+
+To keep this service free, we greatly appreciate if you allow Google Ads to be displayed. The advertising revenue helps us cover hosting and operational costs, allowing the service to remain available to everyone.`,
+
   guideModalHeading: "API key - How to Get",
-guideModalText: `To use this web app, you must first create an OpenAI API profile, generate an API key, and ensure that your OpenAI wallet has sufficient funds. Next, copy the API key and paste it into the designated field. When you press "Enter," the web app temporarily stores the API key for the session—this key connects you to OpenAI’s servers so that speech-to-text transcription and note generation can function. Please note that you are charged immediately for each task performed (speech-to-text and/or note generation). For more information on costs, see the "Cost Information" section on the front page. We recommend that you read the privacy and information notice on the front page before using the app.
-<br><br>
-<strong>1. Create your OpenAI API profile</strong><br>
-To get started, you need to set up a profile on the OpenAI API platform. This profile serves as your account for managing API keys and billing. To begin, visit <a href="https://platform.openai.com/signup" style="color:blue;">OpenAI API Sign-Up</a>. Follow the instructions to register and create an account. Once registered, you’ll have access to your dashboard, where you can generate a personal API key and add credits to your OpenAI wallet.
-<br><br>
-<strong>2. Generate an API key</strong><br>
-After creating your profile, generate an API key by navigating to <a href="https://platform.openai.com/account/api-keys" style="color:blue;">API Key Management</a>. Click the button to create a new API key. Important: you will only see the key once. Copy it immediately and store it securely (for example, in a text file). If you lose the key or suspect it has been compromised, you can easily deactivate/delete it in the same section where you generated it and create a new one.
-<br><br>
-<strong>3. Add funds to your OpenAI wallet</strong><br>
-For the web app to function, your OpenAI wallet must have sufficient funds. Visit <a href="https://platform.openai.com/account/billing/overview" style="color:blue;">Billing & Payments</a> to add funds. You can top up with any amount at any time. As long as funds are available, you’ll be able to use the features of this web app—each task is billed immediately. For a detailed pricing breakdown, see "Cost Information."
-<br><br>
-<strong>Session Security Notice</strong><br>
-When you log in by entering the API key into the field on this front page and pressing Enter, it is stored only temporarily in your browser session. This means that if you leave the page, close your browser, or shut down your computer, the API key will not be saved. You will then need to copy and paste it again the next time you use the web app, ensuring that your key remains secure.`,
+guideModalText: `How to obtain API keys:<br><br>
+To use the speech-to-text and note-generation models in this app, you must obtain one or more API keys (OpenAI, Soniox, Google Gemini, Lemonfox, Deepgram, Mistral).<br><br>
+
+<strong>Speech-to-text models in the app:</strong><br>
+- OpenAI: gpt-4o-transcribe<br>
+- Soniox<br>
+- Soniox (speaker labels)<br>
+- Lemonfox Speech-to-Text (Whisper v3-based)<br>
+- Voxtral Mini<br>
+- Deepgram Nova-3<br><br>
+
+<strong>Text generation models in the app:</strong><br>
+- GPT-5.1 (streaming)<br>
+- GPT-5.1 (non-streaming)<br>
+- GPT-4-latest<br>
+- Lemonfox text generation (Llama 3-based models)<br>
+- Mistral Large<br>
+- Gemini 3<br><br>
+
+<strong>OpenAI</strong><br>
+– Create an account at OpenAI:<br>
+https://platform.openai.com<br><br>
+– Generate an API key and add credit to your account<br>
+– Store the key securely (locally on your PC, text file, password manager, Dropbox, etc.)<br>
+– Paste the key into the field “OpenAI API key” on the front page<br>
+– You can now use the OpenAI models in the app:<br>
+• Speech-to-text: gpt-4o-transcribe (select “OpenAI” in the Recording Module dropdown on the main page)<br>
+• Text generation: chatgpt-4-latest, GPT-5.1<br><br>
+
+<strong>Soniox</strong><br>
+– Create an account at Soniox:<br>
+https://soniox.com<br><br>
+– Generate a Soniox API key and purchase/upload credits (same principle as OpenAI)<br>
+– Store the key securely and paste it into “Soniox API key (EU or US)” on the front page<br>
+– You can now use Soniox speech-to-text (very high-quality and cost-effective, recommended)<br>
+– For EU endpoint (GDPR-friendly): email sales@soniox.com and request an EU API key for clinical doctor–patient use<br>
+– On the main page, you can choose between EU and US endpoints in the dropdown when using Soniox<br><br>
+
+<strong>Google Gemini</strong><br>
+– Create/log in to an account on Google AI Studio:<br>
+https://aistudio.google.com<br><br>
+– Generate a Gemini API key<br>
+– You normally receive some free credits upon account creation (check inside AI Studio)<br>
+– Store the key securely and paste it into “Google Gemini API key” on the front page<br>
+– Text model: Gemini 3 (currently one of the best text-generation models available)<br><br>
+
+<strong>Lemonfox</strong><br>
+– Create an account on Lemonfox:<br>
+https://www.lemonfox.ai<br><br>
+– Generate an API key in the Lemonfox dashboard (for speech-to-text and/or text model depending on what you use)<br>
+– Lemonfox offers a very inexpensive speech-to-text API, often with free usage for the first month — see the pricing/product page for details. EU endpoint (GDPR-friendly)<br>
+– Store the key securely and paste it into “Lemonfox API key” on the front page<br>
+– You can now use:<br>
+• Speech-to-text: Lemonfox Speech-to-Text (Whisper v3-based, inexpensive and fast)<br>
+• Text generation: Lemonfox LLM (Llama 3-based models)<br><br>
+
+<strong>Deepgram</strong><br>
+– Create an account at Deepgram:<br>
+https://deepgram.com<br><br>
+– Go to the developer/API pages (“Developers” / “Docs”) and generate an API key in the Deepgram console<br>
+– Store the key securely and paste it into “Deepgram API key” on the front page<br>
+– You can now use the Deepgram Nova-3 speech-to-text model in the app<br><br>
+
+<strong>Mistral</strong><br>
+– Create an account at Mistral AI and log in to the console:<br>
+https://console.mistral.ai<br><br>
+– Set up billing if needed, then go to “API keys” in the console and generate a Mistral API key<br>
+– Store the key securely and paste it into “Mistral API key” on the front page<br>
+– Text model: Mistral Large<br>
+– EU endpoint / European data storage by default – well suited for GDPR-friendly use<br>
+`,
 
   priceButton: "Price",
   priceModalHeading: "Price",
 priceModalText: `
 <div>
   <p><strong>Cost Information</strong></p>
-  <p>You only pay for what you use — directly from the source, with no costly middlemen. No subscription. No commitment.</p>
 
-  <p><strong>Prices:</strong></p>
+  <p>
+    You only pay for what you actually use, directly to each provider (OpenAI, Soniox, Google Gemini,
+    Lemonfox, Deepgram, Mistral). There are no subscriptions or markups in this app. The prices below are
+    approximate USD figures with conversion to NOK (using roughly 1 USD ≈ 11 NOK).
+  </p>
+
+  <p><strong>1. Speech-to-Text<br>(price per minute of audio)</strong></p>
+
+  <p><strong>OpenAI – gpt-4o-transcribe</strong><br>
+  Approx. 0.006 USD per minute (≈ 0.07 NOK/min).<br>
+  15-minute consultation: approx. 0.09 USD ≈ 1.00 NOK.</p>
+
+  <p><strong>Soniox (recommended – best quality and price)</strong><br>
+  Approx. 0.0017 USD per minute.<br>
+  15-minute consultation: approx. 0.025 USD ≈ 0.30 NOK.</p>
+
+  <p><strong>Lemonfox – Whisper v3</strong><br>
+  Approx. 0.50 USD for 3 hours of audio ≈ 0.17 USD per hour ≈ 0.0028 USD per minute.<br>
+  15-minute consultation: approx. 0.042 USD ≈ 0.45 NOK.</p>
+
+  <p><strong>Mistral</strong><br>
+  API pricing starts around 0.001 USD per minute.<br>
+  15-minute consultation: approx. 0.015 USD ≈ 0.17 NOK.</p>
+
+  <p><strong>Deepgram – Nova-3</strong><br>
+  Approx. 0.004 USD per minute.<br>
+  15-minute consultation = approx. 0.60 NOK.</p>
+
+  <p><strong>2. Text Generation – typical prices (per 1 million tokens)</strong></p>
+
+  <p><strong>OpenAI – GPT-5.1</strong><br>
+  Input: 1.25 USD (≈ 13.75 NOK)<br>
+  Output: 10 USD (≈ 110 NOK)</p>
+
+  <p><strong>OpenAI – chatgpt-4o-latest</strong><br>
+  Input: 5 USD (≈ 55 NOK)<br>
+  Output: 15 USD (≈ 165 NOK)</p>
+
+  <p><strong>Google Gemini 3</strong><br>
+  Input: approx. 2 USD (≈ 22 NOK)<br>
+  Output: approx. 12 USD (≈ 132 NOK)</p>
+
+  <p><strong>Mistral – Mistral Large</strong><br>
+  Approx. 2 USD per 1M input tokens and 6 USD per 1M output tokens (≈ 22 and 66 NOK).</p>
+
+  <p><strong>Lemonfox – Llama 3-based models</strong><br>
+  Typically around 0.50 USD per 1M LLM input and output tokens (≈ 5.50 NOK).</p>
+
+  <p><strong>3. What are tokens – and how much does 1 consultation cost?</strong></p>
+
+  <p>Models count text in tokens, not plain words.</p>
+
   <ul>
-    <li>Speech-to-text: $0.006 per minute</li>
-    <li>Note generation: $5 per 1 million tokens (input) and $10 per 1 million tokens (output)</li>
+    <li>1 token ≈ 4 characters ≈ ¾ of a word</li>
+    <li>100 tokens ≈ 75 words</li>
+    <li>1,000 tokens ≈ 750 words</li>
   </ul>
 
-  <p><strong>Example – 15-minute consultation:</strong></p>
+  <p>
+    A 15-minute consultation typically:<br>
+    2,200 input tokens per 15-minute consultation (the full transcription + structured text sent in),<br>
+    450 output tokens in the finished note,<br>
+    total approx. 2,650 tokens per consultation.<br><br>
+    This means 1 million tokens gives about 350–400 consultations in this usage
+    (depending on length and detail).
+  </p>
+
+  <p><strong>4. Example: cost per 15-minute consultation</strong></p>
+
+  <p><em>Speech-to-text (approximate prices per 15 min):</em></p>
   <ul>
-    <li>Speech-to-text: 15 × $0.006 = $0.09</li>
-    <li>Note generation: typically between $0.005 and $0.01</li>
-    <li>Total: approximately $0.10 for the full consultation</li>
+    <li>OpenAI gpt-4o-transcribe: ≈ 1.00 NOK</li>
+    <li>Soniox: ≈ 0.30 NOK</li>
+    <li>Lemonfox (Whisper v3): ≈ 0.45 NOK</li>
+    <li>Voxtral (Mistral): ≈ 0.17 NOK</li>
+    <li>Deepgram Nova-3 (batch): ≈ 0.70 NOK</li>
   </ul>
 
-  <p><strong>Example monthly cost with regular use:</strong></p>
+  <p><em>Note generation (2,200 input + 450 output tokens):</em></p>
   <ul>
-    <li>20 consultations per day × 4 days per week × 4 weeks = 320 consultations</li>
-    <li>Total monthly cost: approximately $30–31</li>
+    <li>GPT-5.1: ≈ 0.08 NOK per note</li>
+    <li>chatgpt-4o-latest: ≈ 0.20 NOK per note</li>
+    <li>Gemini 3: ≈ 0.11 NOK per note</li>
+    <li>Mistral Large: ≈ 0.08 NOK per note</li>
+    <li>Lemonfox LLM: ≈ 0.02 NOK per note</li>
   </ul>
 
-  <p><strong>You only pay for usage:</strong><br>
-  If you don’t use the service due to vacation, illness, or other reasons, you pay nothing.</p>
+  <p><em>Some typical combinations for one 15-minute consultation:</em></p>
+
+  <ul>
+    <li>OpenAI (gpt-4o-transcribe) + GPT-5.1<br>
+      ≈ 1.00 NOK (STT) + 0.08 NOK (note) ≈ 1.10 NOK per consultation
+    </li>
+    <li>Soniox + GPT-5.1<br>
+      ≈ 0.30 NOK (STT) + 0.08 NOK (note) ≈ 0.40 NOK per consultation
+    </li>
+    <li>Voxtral + Mistral Large<br>
+      ≈ 0.17 NOK (STT) + 0.08 NOK (note) ≈ 0.25 NOK per consultation
+    </li>
+  </ul>
+
+  <p>
+    In other words: the text model is extremely cheap — the speech-to-text portion dominates the total cost.
+  </p>
+
+  <p><strong>5. Example: monthly cost with steady use</strong></p>
+
+  <p>
+    Assume:<br>
+    20 consultations per day<br>
+    4 days per week<br>
+    4 weeks per month<br>
+    ⇒ approx. 320 consultations per month (≈ 80 hours of audio).
+  </p>
+
+  <p>This yields approximately:</p>
+
+  <ul>
+    <li>OpenAI gpt-4o-transcribe + GPT-5.1<br>
+      ≈ 31 USD ≈ 340 NOK per month
+    </li>
+    <li>Soniox + GPT-5.1<br>
+      ≈ 10 USD ≈ 110 NOK per month
+    </li>
+    <li>Voxtral + Mistral Large<br>
+      ≈ 7 USD ≈ 80 NOK per month
+    </li>
+    <li>Lemonfox (Whisper v3 + Llama 3)<br>
+      ≈ 14 USD ≈ 150 NOK per month
+    </li>
+    <li>Deepgram Nova-3 + GPT-5.1<br>
+      ≈ 23 USD ≈ 250 NOK per month
+    </li>
+  </ul>
+
+  <p>
+    If you don’t use the service (vacation, sick leave, parental leave), no fixed costs accrue;
+    you only pay for actual usage with each provider.
+  </p>
 </div>
 `,
+
 };
 
 export const transcribeTranslations = {

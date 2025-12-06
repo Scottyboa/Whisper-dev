@@ -280,8 +280,8 @@
     <div class="gemini-credentials-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
       <input
         type="text"
-        id="vertexProjectIdInput"
-        placeholder="Vertex Project ID"
+        id="vertexBackendUrlInput"
+        placeholder="Vertex backend URL (https://…run.app)"
         autocomplete="off"
       >
       <input
@@ -358,9 +358,9 @@
         var lemonKey             = ((document.getElementById("lemonfoxKeyInput")        || {}).value || "").trim();
         var mistralKey           = ((document.getElementById("mistralKeyInput")         || {}).value || "").trim();
         var deepgramKey          = ((document.getElementById("deepgramKeyInput")        || {}).value || "").trim();
-        var geminiKey            = ((document.getElementById("geminiKeyInput")          || {}).value || "").trim();
-        var vertexProjectId      = ((document.getElementById("vertexProjectIdInput")    || {}).value || "").trim();
-        var vertexBackendSecret  = ((document.getElementById("vertexBackendSecretInput")|| {}).value || "").trim();
+        var geminiKey            = ((document.getElementById("geminiKeyInput")           || {}).value || "").trim();
+        var vertexBackendUrl     = ((document.getElementById("vertexBackendUrlInput")    || {}).value || "").trim();
+        var vertexBackendSecret  = ((document.getElementById("vertexBackendSecretInput") || {}).value || "").trim();
 
         // Store all keys (even if empty) for later provider selection
         sessionStorage.setItem("openai_api_key", openaiKey);
@@ -369,7 +369,7 @@
         sessionStorage.setItem("mistral_api_key", mistralKey);
         sessionStorage.setItem("deepgram_api_key", deepgramKey);
         sessionStorage.setItem("gemini_api_key", geminiKey);
-        sessionStorage.setItem("vertex_project_id", vertexProjectId);
+        sessionStorage.setItem("vertex_backend_url", vertexBackendUrl);
         sessionStorage.setItem("vertex_backend_secret", vertexBackendSecret);
         
         // Back-compat: default active key remains OpenAI for now
@@ -388,7 +388,7 @@
     const mistralKeyInput          = document.getElementById("mistralKeyInput");
     const deepgramKeyInput         = document.getElementById("deepgramKeyInput");
     const geminiKeyInput           = document.getElementById("geminiKeyInput");
-    const vertexProjectIdInput     = document.getElementById("vertexProjectIdInput");
+    const vertexBackendUrlInput    = document.getElementById("vertexBackendUrlInput");
     const vertexBackendSecretInput = document.getElementById("vertexBackendSecretInput");
 
     // 1) Prefill all fields from sessionStorage (keys only live for this tab)
@@ -416,9 +416,10 @@
       const storedGemini = sessionStorage.getItem("gemini_api_key") || "";
       if (storedGemini && !geminiKeyInput.value) geminiKeyInput.value = storedGemini;
     }
-    if (vertexProjectIdInput) {
-      const storedVertex = sessionStorage.getItem("vertex_project_id") || "";
-      if (storedVertex && !vertexProjectIdInput.value) vertexProjectIdInput.value = storedVertex;
+    // Vertex backend URL / secret
+    if (vertexBackendUrlInput) {
+      const storedUrl = sessionStorage.getItem("vertex_backend_url") || "";
+      if (storedUrl && !vertexBackendUrlInput.value) vertexBackendUrlInput.value = storedUrl;
     }
     if (vertexBackendSecretInput) {
       const storedSecret = sessionStorage.getItem("vertex_backend_secret") || "";

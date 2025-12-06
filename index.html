@@ -265,12 +265,31 @@
     <input type="text" id="deepgramKeyInput" placeholder="Enter Deepgram API Key here" autocomplete="off">
     <br>
     <!-- New: Optional Google Gemini / Vertex Credentials -->
-     <p id="gemini-text">Google Gemini API key:</p>
+    <p id="gemini-text">Google Gemini API key:</p>
     <div class="gemini-credentials-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-      <input type="text" id="geminiKeyInput" placeholder="Enter Google Gemini API Key here" autocomplete="off">
-      <!-- Temporarily disabled Vertex Project ID field
-      <input type="text" id="vertexProjectIdInput" placeholder="Vertex Project ID (for Vertex EU)" autocomplete="off">
-      -->
+      <input
+        type="text"
+        id="geminiKeyInput"
+        placeholder="Enter Google Gemini API Key here"
+        autocomplete="off"
+      >
+    </div>
+
+    <!-- New: Vertex Cloud Run configuration (per-user) -->
+    <p id="vertex-text">Google Vertex (Cloud Run) settings:</p>
+    <div class="gemini-credentials-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+      <input
+        type="text"
+        id="vertexProjectIdInput"
+        placeholder="Vertex Project ID"
+        autocomplete="off"
+      >
+      <input
+        type="text"
+        id="vertexBackendSecretInput"
+        placeholder="Vertex backend secret"
+        autocomplete="off"
+      >
     </div>
     
 
@@ -334,14 +353,14 @@
       btn._multiKeyWired = true;
 
       btn.addEventListener("click", function () {
-        var openaiKey       = ((document.getElementById("apiKeyInput")          || {}).value || "").trim();
-        var sonioxKey       = ((document.getElementById("sonioxKeyInput")       || {}).value || "").trim();
-        var lemonKey        = ((document.getElementById("lemonfoxKeyInput")     || {}).value || "").trim();
-        var mistralKey      = ((document.getElementById("mistralKeyInput")      || {}).value || "").trim();
-        var deepgramKey     = ((document.getElementById("deepgramKeyInput")     || {}).value || "").trim();
-        var geminiKey       = ((document.getElementById("geminiKeyInput")       || {}).value || "").trim();
-        var vertexProjectId = ((document.getElementById("vertexProjectIdInput") || {}).value || "").trim();
-        
+        var openaiKey            = ((document.getElementById("apiKeyInput")             || {}).value || "").trim();
+        var sonioxKey            = ((document.getElementById("sonioxKeyInput")          || {}).value || "").trim();
+        var lemonKey             = ((document.getElementById("lemonfoxKeyInput")        || {}).value || "").trim();
+        var mistralKey           = ((document.getElementById("mistralKeyInput")         || {}).value || "").trim();
+        var deepgramKey          = ((document.getElementById("deepgramKeyInput")        || {}).value || "").trim();
+        var geminiKey            = ((document.getElementById("geminiKeyInput")          || {}).value || "").trim();
+        var vertexProjectId      = ((document.getElementById("vertexProjectIdInput")    || {}).value || "").trim();
+        var vertexBackendSecret  = ((document.getElementById("vertexBackendSecretInput")|| {}).value || "").trim();
 
         // Store all keys (even if empty) for later provider selection
         sessionStorage.setItem("openai_api_key", openaiKey);
@@ -351,6 +370,7 @@
         sessionStorage.setItem("deepgram_api_key", deepgramKey);
         sessionStorage.setItem("gemini_api_key", geminiKey);
         sessionStorage.setItem("vertex_project_id", vertexProjectId);
+        sessionStorage.setItem("vertex_backend_secret", vertexBackendSecret);
         
         // Back-compat: default active key remains OpenAI for now
         sessionStorage.setItem("user_api_key", openaiKey);
@@ -361,14 +381,15 @@
     })();
 
   document.addEventListener("DOMContentLoaded", function() {
-    const enterTranscriptionBtn = document.getElementById("enterTranscriptionBtn");
-    const apiKeyInput          = document.getElementById("apiKeyInput");
-    const sonioxKeyInput       = document.getElementById("sonioxKeyInput");
-    const lemonfoxKeyInput     = document.getElementById("lemonfoxKeyInput");
-    const mistralKeyInput      = document.getElementById("mistralKeyInput");
-    const deepgramKeyInput     = document.getElementById("deepgramKeyInput");
-    const geminiKeyInput       = document.getElementById("geminiKeyInput");
-    const vertexProjectIdInput = document.getElementById("vertexProjectIdInput");
+    const enterTranscriptionBtn    = document.getElementById("enterTranscriptionBtn");
+    const apiKeyInput              = document.getElementById("apiKeyInput");
+    const sonioxKeyInput           = document.getElementById("sonioxKeyInput");
+    const lemonfoxKeyInput         = document.getElementById("lemonfoxKeyInput");
+    const mistralKeyInput          = document.getElementById("mistralKeyInput");
+    const deepgramKeyInput         = document.getElementById("deepgramKeyInput");
+    const geminiKeyInput           = document.getElementById("geminiKeyInput");
+    const vertexProjectIdInput     = document.getElementById("vertexProjectIdInput");
+    const vertexBackendSecretInput = document.getElementById("vertexBackendSecretInput");
 
     // 1) Prefill all fields from sessionStorage (keys only live for this tab)
     if (apiKeyInput) {
@@ -398,6 +419,10 @@
     if (vertexProjectIdInput) {
       const storedVertex = sessionStorage.getItem("vertex_project_id") || "";
       if (storedVertex && !vertexProjectIdInput.value) vertexProjectIdInput.value = storedVertex;
+    }
+    if (vertexBackendSecretInput) {
+      const storedSecret = sessionStorage.getItem("vertex_backend_secret") || "";
+      if (storedSecret && !vertexBackendSecretInput.value) vertexBackendSecretInput.value = storedSecret;
     }
 
     // 2) Existing click handler: still sets consent + user_api_key and redirects
@@ -457,8 +482,3 @@
   
 </body>
 </html>
-
-
-
-
-

@@ -71,7 +71,6 @@ async function generateNote() {
   // --- Read Vertex config from sessionStorage (NO DEFAULTS) ---
   const backendUrl = (sessionStorage.getItem("vertex_backend_url") || "").trim();
   const backendSecret = (sessionStorage.getItem("vertex_backend_secret") || "").trim();
-  const vertexProjectId = (sessionStorage.getItem("vertex_project_id") || "").trim();
 
   if (!backendUrl) {
     clearInterval(noteTimerInterval);
@@ -111,9 +110,7 @@ async function generateNote() {
         transcription: transcriptionText,
         customPrompt: combinedPrompt,
         provider: "gemini",
-        modelVariant: "g25",
-        // optional hint: backend can ignore this safely
-        vertexProjectId,
+        modelVariant: "g25"
       }),
     });
 

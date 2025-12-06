@@ -1,125 +1,34 @@
-// File: js/GeminiVertex.js
-// Gemini 3 via Vertex AI (GDPR-friendly, europe-west4)
+** File: js/GeminiVertex.js
+// GeminiVertex.js
+// Note generation via a user-configured Vertex AI backend (Cloud Run) using Gemini 2.5 Pro (EU).
 //
-// This module is loaded when note_provider === "gemini3-vertex".
-// It expects these to be in sessionStorage (set on index.html):
-//   - vertex_project_id     → Your Google Cloud Project ID
-//   - vertex_access_token   → OAuth access token (from "Sign in with Google for Vertex")
+// IMPORTANT:
+// - There is NO hardcoded backend URL here.
+// - The module ONLY uses values from sessionStorage:
+//     vertex_backend_url    → Cloud Run URL (e.g. https://...run.app)
+//     vertex_backend_secret → X-Proxy-Secret for that backend
+//     vertex_project_id     → optional, informational only
 //
-// It mirrors the UX of Gemini3.js: same button, same timer, same text areas.
+// Backend contract (your Cloud Run index.js):
+//   POST JSON:
+//     {
+//       transcription: string,
+//       customPrompt: string,
+//       provider: "gemini",
+//       modelVariant: "g25"
+//     }
 
-const VERTEX_LOCATION = "europe-west4";
-const VERTEX_MODEL_ID = "gemini-3-pro-preview";
-
-async function fetchVertexAccessTokenFromHelper() {
-  const resp = await fetch("http://127.0.0.1:9999/getToken");
-  if (!resp.ok) {
-    const text = await resp.text().catch(() => "");
-    throw new Error("Helper HTTP " + resp.status + ": " + text);
-  }
-  const data = await resp.json();
-  if (!data.access_token) {
-    throw new Error("Helper did not return access_token");
-  }
-  return data.access_token;
-}
-
-
-// Small helper to format the timer display
 function formatTime(ms) {
   const totalSec = Math.floor(ms / 1000);
-  if (totalSec < 60) return totalSec + " sec";
-  const minutes = Math.floor(totalSec / 60);
-  const seconds = totalSec % 60;
-  return minutes + " min" + (seconds > 0 ? " " + seconds + " sec" : "");
-}
-
-// SSE parser for Vertex streamGenerateContent
-async function streamGeminiSSE(body, callbacks) {
-  const { onDelta, onDone, onError } = callbacks || {};
-  const reader = body.getReader();
-  const decoder = new TextDecoder("utf-8");
-  let buffer = "";
-  let eventBuffer = [];
-
-  try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-
-      // Process line-by-line
-      const lines = buffer.split(/\r?\n/);
-      buffer = lines.pop() || ""; // keep the last partial line
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) {
-          // End of one SSE event block
-          if (eventBuffer.length) {
-            const dataLines = eventBuffer
-              .filter((l) => l.startsWith("data:"))
-              .map((l) => l.slice("data:".length).trim())
-              .filter(Boolean);
-
-            eventBuffer = [];
-
-            for (const jsonStr of dataLines) {
-              if (jsonStr === "[DONE]") {
-                if (typeof onDone === "function") onDone();
-                return;
-              }
-              let payload;
-              try {
-                payload = JSON.parse(jsonStr);
-              } catch (e) {
-                console.warn("Failed to parse SSE JSON chunk:", e, jsonStr);
-                continue;
-              }
-
-              try {
-                const candidates = payload.candidates || [];
-                if (!candidates.length) continue;
-
-                for (const cand of candidates) {
-                  const parts =
-                    (cand.content && cand.content.parts) ||
-                    cand.parts ||
-                    [];
-                  const textChunk = parts
-                    .map((p) =>
-                      p && typeof p.text === "string" ? p.text : ""
-                    )
-                    .join("");
-                  if (textChunk && typeof onDelta === "function") {
-                    onDelta(textChunk);
-                  }
-                }
-              } catch (e) {
-                console.warn(
-                  "Error extracting text from SSE payload:",
-                  e,
-                  payload
-                );
-              }
-            }
-          }
-        } else if (!trimmed.startsWith(":")) {
-          // Ignore comments, but keep other lines
-          eventBuffer.push(trimmed);
-        }
-      }
-    }
-
-    // Stream ended without explicit [DONE]
-    if (typeof onDone === "function") onDone();
-  } catch (err) {
-    if (typeof onError === "function") onError(err);
+  if (totalSec < 60) {
+    return totalSec + " sec";
+  } else {
+    const minutes = Math.floor(totalSec / 60);
+    const seconds = totalSec % 60;
+    return minutes + " min" + (seconds > 0 ? " " + seconds + " sec" : "");
   }
 }
 
-// Main note generation function using Vertex Gemini 3 (streaming)
 async function generateNote() {
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
@@ -134,10 +43,18 @@ async function generateNote() {
 
   const customPromptTextarea = document.getElementById("customPrompt");
   const promptText = customPromptTextarea ? customPromptTextarea.value : "";
+
+  // Supplementary info (prepended before transcription, same style as Gemini3)
+  const supplementaryElem = document.getElementById("supplementaryInfo");
+  const supplementaryRaw = supplementaryElem ? supplementaryElem.value.trim() : "";
+  const supplementaryWrapped = supplementaryRaw
+    ? `Tilleggsopplysninger(brukes som kontekst):"${supplementaryRaw}"`
+    : "";
+
   const generatedNoteField = document.getElementById("generatedNote");
   if (!generatedNoteField) return;
 
-  // Reset note area and start timer
+  // Reset note field and start timer
   generatedNoteField.value = "";
   const noteTimerElement = document.getElementById("noteTimer");
   const noteStartTime = Date.now();
@@ -151,153 +68,88 @@ async function generateNote() {
     }
   }, 1000);
 
-let accessToken;
-try {
-  accessToken = await fetchVertexAccessTokenFromHelper();
-} catch (e) {
-  console.error("Could not get Vertex access token from helper:", e);
-  alert(
-    "Could not get a Vertex access token.\n\n" +
-    "Make sure the Vertex Helper is running (run_vertex_helper.bat)."
-  );
-  clearInterval(noteTimerInterval);
-  if (noteTimerElement) noteTimerElement.innerText = "";
-  return;
-}
+  // --- Read Vertex config from sessionStorage (NO DEFAULTS) ---
+  const backendUrl = (sessionStorage.getItem("vertex_backend_url") || "").trim();
+  const backendSecret = (sessionStorage.getItem("vertex_backend_secret") || "").trim();
+  const vertexProjectId = (sessionStorage.getItem("vertex_project_id") || "").trim();
 
-  
-  const projectId = sessionStorage.getItem("vertex_project_id");
-  if (!projectId) {
-    alert(
-      "No Vertex Project ID found.\n\nGo back to the main page and fill in the Vertex Project ID field."
-    );
+  if (!backendUrl) {
     clearInterval(noteTimerInterval);
     if (noteTimerElement) noteTimerElement.innerText = "";
+    alert(
+      "No Vertex backend URL configured.\n\n" +
+      "Please paste your Cloud Run URL on the start page before using Google Vertex."
+    );
     return;
   }
 
-  // Same formatting rule as Gemini3.js
-  const baseInstruction = `
-Do not use bold text. Do not use asterisks (*) or Markdown formatting anywhere in the output.
-All headings should be plain text with a colon.
-`.trim();
+  if (!backendSecret) {
+    clearInterval(noteTimerInterval);
+    if (noteTimerElement) noteTimerElement.innerText = "";
+    alert(
+      "No Vertex backend secret configured.\n\n" +
+      "Please paste your backend secret (X-Proxy-Secret) on the start page before using Google Vertex."
+    );
+    return;
+  }
 
-  const finalPromptText =
+  // For now we always target Gemini 2.5 Pro in the backend:
+  //   modelVariant: "g25"
+  // If you later add more options, read sessionStorage.vertex_model or #vertexModel here.
+  const combinedPrompt =
     (promptText || "") +
-    "\n\n" +
-    baseInstruction +
-    "\n\nTRANSCRIPTION:\n" +
-    transcriptionText;
-
-  // Build Vertex AI endpoint URL for europe-west4
-  const baseUrl = `https://${VERTEX_LOCATION}-aiplatform.googleapis.com`;
-  const makeUrl = (apiVersion) =>
-    `${baseUrl}/${apiVersion}/projects/${encodeURIComponent(
-      projectId
-    )}/locations/${VERTEX_LOCATION}/publishers/google/models/${encodeURIComponent(
-      VERTEX_MODEL_ID
-    )}:streamGenerateContent?alt=sse`;
+    (supplementaryWrapped ? "\n\n" + supplementaryWrapped : "");
 
   try {
-    // Try v1beta1 first, then fall back to v1 if needed
-    let resp = await fetch(makeUrl("v1beta1"), {
+    const resp = await fetch(backendUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: "Bearer " + accessToken
+        "X-Proxy-Secret": backendSecret,
       },
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: finalPromptText
-              }
-            ]
-          }
-        ],
-        generationConfig: {
-          thinkingConfig: {
-            thinkingLevel: "low"
-          }
-        }
-      })
+        transcription: transcriptionText,
+        customPrompt: combinedPrompt,
+        provider: "gemini",
+        modelVariant: "g25",
+        // optional hint: backend can ignore this safely
+        vertexProjectId,
+      }),
     });
 
-    if (resp.status === 404) {
-      console.warn(
-        "Vertex streamGenerateContent v1beta1 returned 404, trying v1"
-      );
-      resp = await fetch(makeUrl("v1"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + accessToken
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: finalPromptText
-                }
-              ]
-            }
-          ],
-          generationConfig: {
-            thinkingConfig: {
-              thinkingLevel: "low"
-            }
-          }
-        })
-      });
-    }
-
-    if (!resp.ok || !resp.body) {
+    if (!resp.ok) {
       const text = await resp.text().catch(() => "");
-      throw new Error("Vertex Gemini stream HTTP " + resp.status + ": " + text);
+      throw new Error(
+        "Vertex backend HTTP " + resp.status + (text ? ": " + text : "")
+      );
     }
 
-    await streamGeminiSSE(resp.body, {
-      onDelta: (textChunk) => {
-        generatedNoteField.value += textChunk;
-      },
-      onDone: () => {
-        clearInterval(noteTimerInterval);
-        if (noteTimerElement) {
-          noteTimerElement.innerText = "Text generation completed!";
-        }
-      },
-      onError: (err) => {
-        console.error("Vertex Gemini streaming error:", err);
-        clearInterval(noteTimerInterval);
-        if (generatedNoteField) {
-          generatedNoteField.value =
-            "Error during note generation: " + String(err);
-        }
-        if (noteTimerElement) {
-          noteTimerElement.innerText = "";
-        }
-      }
-    });
-  } catch (error) {
-    console.error("Vertex Gemini streaming error:", error);
+    const data = await resp.json().catch(() => ({}));
+    const noteText = data.note || "";
+
     clearInterval(noteTimerInterval);
-    if (generatedNoteField) {
-      generatedNoteField.value = "Error generating note: " + error;
+    if (noteTimerElement) {
+      noteTimerElement.innerText =
+        "Text generation completed! (Vertex Gemini 2.5 Pro)";
     }
+
+    generatedNoteField.value = noteText;
+  } catch (err) {
+    console.error("Vertex Gemini note error:", err);
+    clearInterval(noteTimerInterval);
     if (noteTimerElement) {
       noteTimerElement.innerText = "";
     }
+    generatedNoteField.value =
+      "Error generating note via Vertex backend: " + String(err);
   }
 }
 
-// Initialize note generation for this provider
 function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");
   if (!generateNoteButton) return;
 
-  // Same consent gating as other note modules
+  // Same consent gate as other note modules
   if (document.cookie.indexOf("user_consent=accepted") === -1) {
     generateNoteButton.disabled = true;
     generateNoteButton.title =

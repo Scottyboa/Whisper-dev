@@ -493,7 +493,7 @@
       </div>
       <!-- Note Generation & Custom Prompt -->
       <div class="bottom-half">
-        <div class="column">
+      <div class="column">
           <h3 id="noteGenerationTitle">Note Generation</h3>
           <!-- Phase 3: Note Provider selector (module switch only; both use OpenAI key) -->
           <div id="note-provider-container" style="display:flex; align-items:center; gap:8px; margin: 6px 0 6px;">
@@ -505,8 +505,17 @@
               <option value="lemonfox">Lemonfox</option>
               <option value="mistral">Mistral</option>
               <option value="gemini3">Gemini 3</option> <!-- Gemini via public API -->
-              <option value="gemini3-vertex">Gemini 3 (Vertex - GDPR friendly)</option> <!-- Gemini via Vertex AI -->
+              <option value="gemini3-vertex">Google Vertex</option> <!-- Vertex-backed models (e.g. Gemini 2.5 Pro) -->
             </select>
+
+            <!-- New: Vertex model selector (shown only when Note Provider = Google Vertex) -->
+            <div id="vertex-model-container"
+                 style="display:none; align-items:center; gap:6px; margin-left:8px;">
+              <label for="vertexModel" id="vertexModelLabel">Model:</label>
+              <select id="vertexModel">
+                <option value="gemini-2.5-pro" selected>Gemini 2.5 Pro</option>
+              </select>
+            </div>
           </div>
 
           <!-- GPT-5.1 reasoning level selector (only shown for GPT-5.1 providers) -->
@@ -675,20 +684,38 @@
       const noteSel = document.getElementById("noteProvider");
       const gptReasoningContainer = document.getElementById("gpt5-reasoning-container");
       const geminiReasoningContainer = document.getElementById("gemini-reasoning-container");
+      const vertexModelContainer = document.getElementById("vertex-model-container");
+      const vertexModelSelect = document.getElementById("vertexModel");
       if (!noteSel) return;
       const stored = sessionStorage.getItem("note_provider") || DEFAULT_NOTE_PROVIDER;
       noteSel.value = stored;
       sessionStorage.setItem("note_provider", stored);
+
+      // Restore previously chosen Vertex model (if any)
+      if (vertexModelSelect) {
+        const storedVertexModel = sessionStorage.getItem("vertex_model");
+        if (storedVertexModel) {
+          vertexModelSelect.value = storedVertexModel;
+        }
+        vertexModelSelect.addEventListener("change", () => {
+          sessionStorage.setItem("vertex_model", vertexModelSelect.value);
+        });
+      }
+
       function updateReasoningVisibility() {
                 const v = noteSel.value;
         const isGpt51 = v === "gpt5" || v === "gpt5-ns";
         const isGemini3 = v === "gemini3"; // public Gemini 3 API only
+        const isVertex = v === "gemini3-vertex"; // Google Vertex backend
 
         if (gptReasoningContainer) {
           gptReasoningContainer.style.display = isGpt51 ? "flex" : "none";
         }
         if (geminiReasoningContainer) {
           geminiReasoningContainer.style.display = isGemini3 ? "flex" : "none";
+        }
+        if (vertexModelContainer) {
+          vertexModelContainer.style.display = isVertex ? "flex" : "none";
         }
       }
 
@@ -823,11 +850,7 @@
     clearSupplementaryButton.addEventListener('click', () => {
       const supEl = document.getElementById('supplementaryInfo');
       if (supEl) {
-        // Clear content
         supEl.value = '';
-        // Reset inline height so it snaps back to CSS default/min-height
-        supEl.style.height = '';
-        // If you use a global autoResize helper elsewhere, keep calling it
         if (typeof autoResize === 'function') {
           try { autoResize(supEl); } catch {}
         }

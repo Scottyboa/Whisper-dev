@@ -32,30 +32,51 @@ Utvikler av denne webappen påtar seg intet ansvar for din bruk eller manglende 
 
 <hr><br>
 
-<strong>1. Hvordan fungerer webappen?</strong><br>
+<strong>1. Praktiske anbefalinger for modellvalg i denne appen</strong><br><br>
+
+Webappen gir tilgang til flere ulike leverandører og modeller. Nedenfor er en praktisk, litt normativ oversikt som gjør det enklere å velge. Du må likevel gjøre din egen juridiske og tekniske vurdering.<br><br>
+
+<strong>Tale-til-tekst (STT)</strong><br>
+- Kvalitetsmessig er de sterkeste tale-til-tekst-modellene i denne appen som regel OpenAI gpt-4o-transcribe og Soniox.<br>
+- Til rutinemessig bruk på identifiserbare pasientdata er <strong>Soniox med EU-endepunkt og null datalagring</strong> det alternativet som passer best inn i et strengt GDPR-/helse-regime. OpenAI bruker typisk globale endepunkter og har midlertidig lagring; dette havner ofte i en juridisk «gråsone» med mindre du har særskilte avtaler og eksplisitt EU-dataresidens på plass.<br><br>
+
+<strong>Notatgenerering (LLM)</strong><br>
+- Til selve notatgenereringen er det gjerne <strong>ChatGPT-modellene (GPT-5.1 / GPT-4o)</strong> og <strong>Gemini-modellene (Gemini 3 og Gemini 2.5 Pro)</strong> som gir best kvalitet i denne appen.<br>
+- Sett fra et GDPR-ståsted er det <strong>kun Google Vertex AI med Gemini 2.5 Pro satt opp i EU-region og med zero data retention</strong> som kan konfigureres slik at både prosessering og lagring holdes innenfor EU og uten gjenbruk til trening. Dette krever at du oppretter eget Google Cloud/Vertex-prosjekt, deployer en liten backend (Cloud Run) og limer inn backend-URL + hemmelig nøkkel i feltene for «Google Vertex» på forsiden.<br><br>
+
+<strong>Andre leverandører i denne appen</strong><br>
+- <strong>Lemonfox</strong>, <strong>Mistral</strong> og <strong>Deepgram</strong> er i hovedsak inkludert for testing/eksperimentering og eventuell ikke-klinisk bruk. For krevende klinisk diktering og notatskriving er kvaliteten deres generelt lavere enn Soniox/OpenAI/Gemini, og hvor «GDPR-vennlige» de er avhenger helt av hvilke endepunkter (EU/globalt) og eventuelle ZDR-innstillinger du faktisk har aktivert hos leverandøren.<br>
+- GPT-modellene fra <strong>OpenAI</strong>, <strong>Deepgram</strong> sine standard/globalt hostede STT-endepunkter og <strong>Gemini 3 via Google AI Studio</strong> vil ofte ha global infrastruktur og midlertidig datalagring. Disse oppsettene er ikke automatisk GDPR-kompatible for identifiserbare pasientdata og bør regnes som «gråsoner» med mindre du har eksplisitte avtaler, EU-dataresidens og ZDR dokumentert.<br><br>
+
+<strong>Mest GDPR-optimal kombinasjon i denne appen</strong><br>
+Hvis du bruker <strong>Soniox med EU-endepunkt</strong> til tale-til-tekst, og <strong>Google Vertex AI (Gemini 2.5 Pro i EU-region med zero data retention)</strong> til notatgenerering, kan den tekniske dataflyten i denne appen holdes innenfor EU uten gjenbruk til trening hos leverandøren. Lovlighet og etterlevelse avhenger likevel av dine egne DPA-er, DPIA/TIA og lokale krav, men rent teknisk er dette den mest GDPR-optimaliserte konfigurasjonen appen støtter per i dag.<br><br>
+
+<hr><br>
+
+<strong>2. Hvordan fungerer webappen?</strong><br>
 - Tar opp lyd via nettleserens opptaksfunksjon.<br>
 - Behandler lyd i nettleserens minne (RAM).<br>
 - Laster opp lydfil via sikker HTTPS-forbindelse til valgt tale-til-tekst-leverandør (f.eks. OpenAI, Soniox, Lemonfox, Mistral/Voxtral, Deepgram) ved bruk av din egen API-nøkkel fra leverandør.<br>
-- Sender transkripsjonen (og eventuell tilleggstekst/prompt) videre til valgt tekstmodell (f.eks. GPT-5.1, GPT-4o, Gemini 3, Mistral Large, Lemonfox LLM) ved bruk av deres API, også med din egen API-nøkkel.<br>
-- Nettleseren mottar notatutkastet direkte fra den aktuelle leverandøren via en sikker/kryptert tilkobling.<br><br>
+- Sender transkripsjonen (og eventuell tilleggstekst/prompt) videre til valgt tekstmodell (f.eks. GPT-5.1, GPT-4o, Gemini 3, Mistral Large, Lemonfox LLM eller Gemini 2.5 Pro via din egen Vertex-backend).<br>
+- Nettleseren mottar notatutkastet direkte fra den aktuelle leverandøren (eller via din Vertex-backend) via en sikker/kryptert tilkobling.<br><br>
 
 API-nøklene dine lagres bare midlertidig i nettleserens minne (SessionStorage). Skrur du av webappen eller lukker nettleseren, slettes API-nøklene fra nettleserens minne. For å bruke webappen igjen må du lime inn nøklene på nytt. Dette gir et ekstra sikkerhetslag mot uautorisert tilgang til nøklene dine.<br><br>
 
-Webappen har ingen egen server som lagrer lyd eller tekst; all kommunikasjon går direkte mellom din nettleser og de tjenestene du selv har valgt.<br><br>
+Webappen har ingen egen server som lagrer lyd eller tekst; all kommunikasjon går direkte mellom din nettleser og de tjenestene du selv har valgt (eller, for Google Vertex, via backend-URL-en du selv har satt opp i ditt eget Google Cloud-prosjekt).<br><br>
 
 <hr><br>
 
-<strong>2. Dine egne API-nøkler er påkrevd</strong><br>
-All kommunikasjon med modell-leverandørene (OpenAI, Google Gemini, Soniox, Lemonfox, Deepgram, Mistral m.fl.) skjer direkte fra din nettleser ved bruk av dine personlige API-nøkler.<br><br>
+<strong>3. Dine egne API-nøkler er påkrevd</strong><br>
+All kommunikasjon med modell-leverandørene (OpenAI, Google Gemini, Soniox, Lemonfox, Deepgram, Mistral m.fl.) skjer direkte fra din nettleser ved bruk av dine personlige API-nøkler, eller via din egen Google Cloud-backend (URL + hemmelig nøkkel) når du bruker Vertex-integrasjonen.<br><br>
 
-Utvikleren av denne webappen har ingen tilgang til dine API-nøkler eller til innholdet du sender til leverandørene.<br><br>
+Utvikleren av denne webappen har ingen tilgang til dine API-nøkler, din backend-URL/hemmelige nøkkel eller til innholdet du sender til leverandørene.<br><br>
 
 <hr><br>
 
-<strong>3. Databehandleravtaler (DPA) med leverandørene</strong><br>
+<strong>4. Databehandleravtaler (DPA) med leverandørene</strong><br>
 Hvis du skal bruke API-tjenestene til behandling av personopplysninger (særlig pasientopplysninger), anbefales det at du inngår databehandleravtale (DPA) med hver leverandør du faktisk bruker, for eksempel:<br>
 - OpenAI (tale-til-tekst og tekstgenerering)<br>
-- Google (Gemini 3 via Google AI Studio)<br>
+- Google (Gemini 3 via Google AI Studio, Gemini 2.5 Pro via Vertex AI)<br>
 - Soniox (tale-til-tekst)<br>
 - Deepgram (tale-til-tekst)<br>
 - Mistral (Voxtral for tale-til-tekst, Mistral Large for tekst)<br>
@@ -67,7 +88,7 @@ Når DPAs er på plass er utgangspunktet at du/virksomheten er behandlingsansvar
 
 <hr><br>
 
-<strong>4. DPIA og TIA – nødvendige risikovurderinger</strong><br><br>
+<strong>5. DPIA og TIA – nødvendige risikovurderinger</strong><br><br>
 
 <strong>DPIA (Data Protection Impact Assessment)</strong><br>
 Påkrevd etter GDPR artikkel 35 når ny teknologi brukes til å behandle særlige kategorier opplysninger (som helseopplysninger). Formålet er å identifisere og redusere personvernrisikoer knyttet til selve behandlingen.<br><br>
@@ -90,7 +111,7 @@ Både DPIA og TIA bør være gjennomført, dokumentert og godkjent av deg/virkso
 
 <hr><br>
 
-<strong>5. Databehandling, datalagring og «GDPR-vennlighet» hos ulike leverandører</strong><br><br>
+<strong>6. Databehandling, datalagring og «GDPR-vennlighet» hos ulike leverandører</strong><br><br>
 
 Nedenfor er en grov oversikt slik tjenestene typisk fungerer i dag. Dette kan endre seg, og du må alltid kontrollere oppdatert dokumentasjon og avtaleverk hos leverandøren før du konkluderer.<br><br>
 
@@ -102,7 +123,7 @@ Dette gjør Lemonfox til et relativt «GDPR-vennlig» alternativ for både tale-
 <strong>Soniox (med EU-endepunkt)</strong><br>
 Soniox tilbyr dataresidens i både USA og EU.<br>
 Når et prosjekt er konfigurert med EU-region, behandles lyd og transkripsjoner innenfor denne regionen; systemdata som kontodata og fakturadata kan likevel håndteres globalt.<br>
-For å ta i bruk EU-endepunktet i klinisk setting må du typisk kontakte Soniox (for eksempel via e-post til salg/support) og be om tilgang til EU-prosjekt/API-nøkkel og dokumentasjon på dataresidens. Tilgang på EU-endepunkt kan ta 1–2 dager å oppnå etter kontakt.<br>
+For å ta i bruk EU-endepunktet i klinisk setting må du typisk kontakte Soniox (for eksempel via e-post til <strong>sales@soniox.com</strong>) og be om tilgang til EU-prosjekt/API-nøkkel og dokumentasjon på dataresidens. Tilgang på EU-endepunkt kan ta 1–2 dager å oppnå etter kontakt.<br>
 Med EU-endepunktet aktivert er Soniox et godt alternativ for GDPR-tilpasset tale-til-tekst, men du må fortsatt gjøre DPIA/TIA og inngå nødvendig DPA.<br><br>
 
 <strong>Mistral (Voxtral for tale-til-tekst, Mistral Large for tekst)</strong><br>
@@ -110,9 +131,16 @@ Mistral er EU-basert, og standardoppsettet deres er at API-data hostes i EU som 
 Mistral tilbyr mulighet for Zero Data Retention (ZDR) etter søknad, dvs. at data ikke lagres utover det som er strengt nødvendig for å levere svaret. Dette kan gjøre det enklere å argumentere for bruk på helsedata, men må dokumenteres i DPIA/TIA.<br>
 Kombinasjonen EU-endepunkt + ZDR (der dette faktisk er innvilget og konfigurert) gjør Mistral (Voxtral + Mistral Large) til et av de mest «GDPR-vennlige» alternativene i denne appen.<br><br>
 
-<strong>Gemini 3 (Google)</strong><br>
-Gemini via Google AI Studio / Gemini API med ren API-nøkkel:<br>
-Per i dag behandles forespørsler normalt på global infrastruktur, noe som kan innebære overføring utenfor EU/EØS. Google ruller gradvis ut flere regionale dataresidens- og prosesseringsmuligheter, men du må selv sjekke om din bruk (og din lisens/plan) faktisk er låst til EU-region. Når regionalt EU-endepunkt tilgjengeliggjøres av Google, så vil dette oppdateres i denne appen.<br><br>
+<strong>Google Vertex AI (Gemini 2.5 Pro via EU-backend)</strong><br>
+I denne appen brukes Google Vertex AI kun via din egen backend-URL og hemmelige nøkkel, som du legger inn under «Google Vertex» på forsiden.<br>
+Når Vertex-prosjektet ditt er konfigurert til en EU-region (for eksempel europe-west1) og med zero data retention / ingen gjenbruk av data til trening, vil forespørsler og svar behandles innenfor EU, og forespørselsdata ikke lagres lenger enn nødvendig for å levere svaret, jf. Googles dokumentasjon.<br>
+Dette oppsettet kan dermed brukes som et EU-resident, null-retensjonsalternativ for notatgenerering, forutsatt at du også har gyldig DPA med Google og har gjennomført DPIA/TIA som eksplisitt dekker denne bruken.<br>
+For en praktisk gjennomgang av hvordan du oppretter prosjektet, velger region og deployer backend-en som brukes av denne appen, kan du klikke på guide-knappen i «Google Vertex»-overskriften på forsiden; dette åpner en egen ChatGPT-veiledning der du kan stille oppfølgingsspørsmål.<br><br>
+
+<strong>Gemini 3 (Google AI Studio)</strong><br>
+Gemini 3 brukt via Google AI Studio / Gemini API med ren API-nøkkel behandles normalt på Googles globale infrastruktur, noe som typisk innebærer at data kan overføres utenfor EU/EØS.<br>
+Google kan lagre forespørselsdata midlertidig for misbruksdeteksjon, stabilitet og forbedring, avhengig av innstillinger og avtale, og endepunktet er som hovedregel ikke eksplisitt låst til EU-region.<br>
+Bruk av Gemini 3 via Google AI Studio vil derfor ofte være et juridisk «gråområde» for identifiserbare pasientdata, med mindre du har eksplisitte kontraktsmessige garantier om EU-dataresidens og lagringstid, dokumentert i DPIA/TIA. Denne appen tilbyr i stedet en egen Google Vertex-integrasjon for EU-region (se over).<br><br>
 
 <strong>OpenAI</strong><br>
 OpenAI oppgir at API-data ikke brukes til modelltrening som standard, men kan lagres midlertidig (typisk opptil 30 dager) for misbruksdeteksjon og feilsøking.<br>
@@ -132,37 +160,40 @@ Slik appen ofte brukes i dag, kan Deepgram derfor – på samme måte som OpenAI
 
 <strong>Kort oppsummert om modellene i denne appen:</strong><br><br>
 
-Relativt «GDPR-vennlige» alternativer (forutsatt DPA + DPIA/TIA):<br>
-- Lemonfox (EU-basert STT + LLM, hurtig sletting)<br>
-- Soniox med EU-endepunkt (lyd/tekst behandles i EU-region)<br>
-- Mistral (Voxtral + Mistral Large) med standard EU-hosting og eventuelt ZDR<br><br>
+Mest «GDPR-optimal» kombinasjon i denne appen (dersom riktig konfigurert og med DPA + DPIA/TIA på plass):<br>
+- Soniox med EU-endepunkt til tale-til-tekst.<br>
+- Google Vertex AI med Gemini 2.5 Pro i EU-region og zero data retention til notatgenerering.<br><br>
+
+Andre relativt «GDPR-vennlige» alternativer (forutsatt at EU-endepunkt og eventuelle ZDR-innstillinger faktisk er aktivert og dokumentert):<br>
+- Lemonfox (EU-basert STT + LLM, hurtig sletting).<br>
+- Mistral (Voxtral + Mistral Large) med standard EU-hosting og eventuelt ZDR.<br><br>
 
 Mer krevende/«gråsoner» for pasientdata (med mindre du har særskilte avtaler og EU-residens/ZDR på plass):<br>
-- OpenAI via globale endepunkter<br>
-- Deepgram via globale endepunkter<br>
-- Gemini 3 via globalt Google AI Studio/Gemini API uten eksplisitt EU-lock<br><br>
+- OpenAI via globale endepunkter.<br>
+- Deepgram via globale endepunkter.<br>
+- Gemini 3 via globalt Google AI Studio/Gemini API uten eksplisitt EU-lock.<br><br>
 
 I alle tilfeller er det du/virksomheten som må dokumentere at løsning og leverandørvalg er i tråd med GDPR, helsepersonelloven og Normen.<br><br>
 
 <hr><br>
 
-<strong>6. Forutsetninger for potensiell klinisk bruk</strong><br>
+<strong>7. Forutsetninger for potensiell klinisk bruk</strong><br>
 Din vurdering er avgjørende: Lovligheten av å bruke dette verktøyet med pasientdata avhenger utelukkende av din egen grundige vurdering av både appen og hver enkelt leverandør du kobler til (OpenAI, Gemini, Soniox, Lemonfox, Mistral, Deepgram osv.).<br><br>
 
 Minimumskrav før bruk med pasientdata bør være:<br>
 - Gyldige databehandleravtaler (DPA) med alle leverandører du faktisk bruker.<br>
 - Virksomhetsspesifikk DPIA og TIA som er gjennomført, godkjent og konkluderer med akseptabel restrisiko.<br>
-- Tydelig beslutning om hvilke modeller/endepunkter som kan brukes til pasientdata (for eksempel å begrense pasientrelatert bruk til Lemonfox, Soniox EU, Mistral og/eller Gemini via EU-region, dersom det vurderes som forsvarlig).<br>
-- Ansvar for innhold: Du er ansvarlig for alt innhold du sender til leverandørene via dine API-nøkler, og for å kvalitetssikre notatutkastet før det eventuelt kopieres inn i pasientjournal.<br><br>
+- Tydelig beslutning om hvilke modeller/endepunkter som kan brukes til pasientdata (for eksempel å begrense pasientrelatert bruk til Soniox med EU-endepunkt for tale-til-tekst og Google Vertex AI med Gemini 2.5 Pro i EU-region og zero data retention til notatgenerering, og eventuelt Lemonfox/Mistral dersom dette etter din vurdering er forsvarlig).<br>
+- Ansvar for innhold: Du er ansvarlig for alt innhold du sender til leverandørene via dine API-nøkler/backend, og for å kvalitetssikre notatutkastet før det eventuelt kopieres inn i pasientjournal.<br><br>
 
 <hr><br>
 
-<strong>7. Oversikt over datalagring</strong><br><br>
+<strong>8. Oversikt over datalagring</strong><br><br>
 
 (Dette gjelder hvordan webappen håndterer data; i tillegg kommer lagring hos hver API-leverandør, som du må kontrollere selv.)<br><br>
 
-<strong>Dine API-nøkler (OpenAI, Soniox, Gemini, Lemonfox, Deepgram, Mistral osv.)</strong><br>
-- Hvor lagres de? SessionStorage-minne i din nettleser.<br>
+<strong>Dine API-nøkler og Vertex-backend (OpenAI, Soniox, Gemini, Lemonfox, Deepgram, Mistral osv.)</strong><br>
+- Hvor lagres de? I SessionStorage-minne i din nettleser.<br>
 - Hvor lenge? Til du avslutter webappen eller lukker nettleseren.<br>
 - Hvem har tilgang? Kun deg og din nettleser.<br><br>
 
@@ -172,18 +203,18 @@ Minimumskrav før bruk med pasientdata bør være:<br>
 - Hvem har tilgang? Kun deg og din nettleser før de sendes til valgt tale-til-tekst-API.<br><br>
 
 <strong>Transkribert tekst/notatutkast hos leverandørene</strong><br>
-- Hvor lagres det? Hos valgt API-leverandør (OpenAI, Google, Soniox, Lemonfox, Mistral, Deepgram osv.), i deres skyinfrastruktur.<br>
-- Hvor lenge? Varierer – f.eks. oppgir OpenAI at data kan lagres inntil ca. 30 dager for misbruksdeteksjon; enkelte EU-baserte leverandører (som Lemonfox/Mistral med ZDR) sletter raskere. Du må selv sjekke gjeldende policy for hver leverandør.<br>
-- Hvem har tilgang? Deg via API-svarene, og den aktuelle leverandøren i den perioden data teknisk sett lagres.<br><br>
+- Hvor lagres det? Hos valgt API-leverandør (OpenAI, Google, Soniox, Lemonfox, Mistral, Deepgram osv.) i deres skyinfrastruktur, eller i ditt eget Google Cloud-prosjekt når du bruker Vertex-backend.<br>
+- Hvor lenge? Varierer – f.eks. oppgir OpenAI at data kan lagres inntil ca. 30 dager for misbruksdeteksjon; enkelte EU-baserte leverandører (som Lemonfox/Mistral med ZDR, Soniox EU og Vertex med zero data retention) sletter raskere. Du må selv sjekke gjeldende policy for hver leverandør og din egen Vertex-konfigurasjon.<br>
+- Hvem har tilgang? Deg via API-/backend-svarene, og den aktuelle leverandøren (eller ditt eget Google Cloud-prosjekt) i den perioden data teknisk sett lagres.<br><br>
 
 <strong>Instruksjoner/Prompter i selve webappen</strong><br>
-- Hvor lagres de? Lokalt i din nettleser (typisk LocalStorage/SessionStorage). Hvis du bruker samme nettleser, samme PC og samme API-nøkkel, vil promptene fortsatt være tilgjengelige for deg neste gang.<br>
+- Hvor lagres de? Lokalt i din nettleser (typisk LocalStorage/SessionStorage). Hvis du bruker samme nettleser, samme PC og samme nøkler/backend, vil promptene fortsatt være tilgjengelige for deg neste gang.<br>
 - Hvor lenge? Til du sletter dem eller rydder nettleserdata.<br>
 - Hvem har tilgang? Du og nettleseren din.<br><br>
 
 <hr><br>
 
-<strong>8. Kildekode</strong><br>
+<strong>9. Kildekode</strong><br>
 Kildekoden er åpen og kjører lokalt i din nettleser. Det finnes ingen skjulte bakdører som sender data til utviklerens servere, ut over statistikk i forhold til hvor ofte appen brukes, via antall klikk osv., men ingen sensitiv informasjon om bruker eller data bruker sender/mottar.<br>
 `,
 

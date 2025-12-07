@@ -245,6 +245,13 @@ https://aistudio.google.com<br><br>
 – Lagre nøkkelen trygt og lim den inn i feltet «Google Gemini API key» på forsiden<br>
 – Tekstmodell: Gemini 3 (per nå en av de aller beste tekstmodellene for tekstgenerering)<br><br>
 
+<strong>Google Vertex (Gemini 2.5 Pro – EU-endepunkt)</strong><br>
+– Dette er et mer avansert oppsett for deg som vil bruke Gemini via Google Cloud / Vertex AI med regionalt EU-endepunkt (f.eks. europe-west1 eller europe-west4).<br>
+– Kort fortalt: Du oppretter et eget Google Cloud-prosjekt, aktiverer Vertex AI, kobler det til en faktureringskonto og deployer en liten backend-funksjon (Cloud Run) som gir deg en HTTPS-adresse (https://…run.app).<br>
+– I denne webappen limer du inn denne adressen i feltet «Vertex backend URL (https://…run.app)» og den hemmelige nøkkelen (BACKEND_SECRET) i feltet «Vertex backend secret» på forsiden.<br>
+– All bruk av Gemini 2.5 Pro går da via ditt eget prosjekt; både fakturering og databehandling styres av deg, og du kan velge EU-region for bedre GDPR-tilpasning.<br>
+– Oppsettet kan oppleves litt teknisk, så for en detaljert steg-for-steg-veiledning kan du klikke på «Guide»-lenken ved siden av «Google Vertex»-overskriften over disse feltene på forsiden.<br><br>
+
 <strong>Lemonfox</strong><br>
 – Lag en bruker på Lemonfox:<br>
 https://www.lemonfox.ai<br><br>

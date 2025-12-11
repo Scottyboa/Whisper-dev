@@ -1,4 +1,3 @@
-** File: js/GeminiVertex.js
 // GeminiVertex.js
 // Note generation via a user-configured Vertex AI backend (Cloud Run) using Gemini 2.5 Pro (EU).
 //
@@ -127,7 +126,7 @@ async function generateNote() {
     clearInterval(noteTimerInterval);
     if (noteTimerElement) {
       noteTimerElement.innerText =
-        "Text generation completed! (Vertex Gemini 2.5 Pro)";
+        "Text generation completed!";
     }
 
     generatedNoteField.value = noteText;

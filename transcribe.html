@@ -501,6 +501,8 @@
             <select id="noteProvider">
               <option value="gpt5" selected>GPT-5.1 (streaming)</option>
               <option value="gpt5-ns">GPT-5.1 (non-streaming)</option>
+              <option value="gpt52">GPT-5.2 (streaming)</option>
+              <option value="gpt52-ns">GPT-5.2 (non-streaming)</option>
               <option value="gpt4">GPT-4-latest</option>
               <option value="lemonfox">Lemonfox</option>
               <option value="mistral">Mistral</option>
@@ -527,6 +529,7 @@
               <option value="low" selected>Low</option>
               <option value="medium">Medium</option>
               <option value="high">High</option>
+              <option value="xhigh" id="gpt5ReasoningXHigh" hidden disabled>Extra High (xhigh)</option>
             </select>
           </div>
           <!-- Gemini 3 reasoning level selector (only shown for Gemini3 provider) -->
@@ -705,11 +708,26 @@
       function updateReasoningVisibility() {
                 const v = noteSel.value;
         const isGpt51 = v === "gpt5" || v === "gpt5-ns";
+        const isGpt52 = v === "gpt52" || v === "gpt52-ns";
+        const isGpt5x = isGpt51 || isGpt52;
         const isGemini3 = v === "gemini3"; // public Gemini 3 API only
         const isVertex = v === "gemini3-vertex"; // Google Vertex backend
 
         if (gptReasoningContainer) {
-          gptReasoningContainer.style.display = isGpt51 ? "flex" : "none";
+          gptReasoningContainer.style.display = isGpt5x ? "flex" : "none";
+
+          // Only GPT-5.2 providers should expose xhigh
+          const xhighOpt = document.getElementById("gpt5ReasoningXHigh");
+          const reasoningSel = document.getElementById("gpt5Reasoning");
+          if (xhighOpt) {
+            xhighOpt.hidden = !isGpt52;
+            xhighOpt.disabled = !isGpt52;
+          }
+
+          // If user had xhigh selected and switches away from GPT-5.2, downgrade to high.
+          if (!isGpt52 && reasoningSel && reasoningSel.value === "xhigh") {
+            reasoningSel.value = "high";
+          }
         }
         if (geminiReasoningContainer) {
           geminiReasoningContainer.style.display = isGemini3 ? "flex" : "none";

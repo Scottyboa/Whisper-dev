@@ -95,6 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
     choice === 'gpt4'          ? './noteGeneration.js'          :
     choice === 'lemonfox'      ? './LemonfoxTXT.js'             :
     choice === 'mistral'       ? './MistralTXT.js'              :
+    choice === 'gpt52'         ? './noteGeneration_gpt52.js'    :
+    choice === 'gpt52-ns'      ? './noteGeneration_gpt52_NS.js' :
     choice === 'gpt5-ns'       ? './noteGeneration_gpt5_NS.js'  :
     choice === 'gemini3'       ? './Gemini3.js'                 :   // Gemini via public API
     choice === 'gemini3-vertex'? './GeminiVertex.js'            :   // Gemini via Vertex AI
@@ -135,6 +137,8 @@ document.addEventListener('DOMContentLoaded', () => {
       choice === 'gpt4'          ? './noteGeneration.js'          :
       choice === 'lemonfox'      ? './LemonfoxTXT.js'             :
       choice === 'mistral'       ? './MistralTXT.js'              :
+      choice === 'gpt52'         ? './noteGeneration_gpt52.js'    :
+      choice === 'gpt52-ns'      ? './noteGeneration_gpt52_NS.js' :
       choice === 'gpt5-ns'       ? './noteGeneration_gpt5_NS.js'  :
       choice === 'gemini3'       ? './Gemini3.js'                 :   // Gemini via public API
       choice === 'gemini3-vertex'? './GeminiVertex.js'            :   // Gemini via Vertex AI

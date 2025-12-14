@@ -244,6 +244,19 @@
   <div class="container">
     <!-- This text is replaced by the language file (e.g. "Dont have an API-key yet? ...") -->
     <p id="start-text">To get started, please enter your OpenAI API key:</p>
+
+    <!-- New: Prompt Profile ID (optional) -->
+    <p id="prompt-profile-label">Prompt profile ID (optional):</p>
+    <input
+      type="text"
+      id="promptProfileInput"
+      placeholder='e.g. "David1"'
+      autocomplete="off"
+    >
+    <p id="prompt-profile-hint" style="font-size: 14px; color: #666; margin-top: -10px;">
+      Used to save your custom prompts on this device, independent of your API key.
+    </p>
+
     <!-- New explicit label above the OpenAI field -->
     <p id="openai-label">OpenAI API key:</p>
     <input type="text" id="apiKeyInput" placeholder="Enter API Key here" autocomplete="off">
@@ -363,6 +376,7 @@
       btn._multiKeyWired = true;
 
       btn.addEventListener("click", function () {
+        var promptProfileId      = ((document.getElementById("promptProfileInput")      || {}).value || "").trim();
         var openaiKey            = ((document.getElementById("apiKeyInput")             || {}).value || "").trim();
         var sonioxKey            = ((document.getElementById("sonioxKeyInput")          || {}).value || "").trim();
         var lemonKey             = ((document.getElementById("lemonfoxKeyInput")        || {}).value || "").trim();
@@ -371,6 +385,13 @@
         var geminiKey            = ((document.getElementById("geminiKeyInput")           || {}).value || "").trim();
         var vertexBackendUrl     = ((document.getElementById("vertexBackendUrlInput")    || {}).value || "").trim();
         var vertexBackendSecret  = ((document.getElementById("vertexBackendSecretInput") || {}).value || "").trim();
+
+        // If profile ID is blank -> remove it so the app falls back to legacy prompt behavior.
+        try {
+          if (promptProfileId) localStorage.setItem("prompt_profile_id", promptProfileId);
+          else localStorage.removeItem("prompt_profile_id");
+        } catch {}
+
 
         // Store all keys (even if empty) for later provider selection
         sessionStorage.setItem("openai_api_key", openaiKey);
@@ -385,6 +406,9 @@
         // Back-compat: default active key remains OpenAI for now
         sessionStorage.setItem("user_api_key", openaiKey);
 
+        // Consent cookie (kept as before, but now only set once here)
+        setCookie("user_consent", "accepted", 365);
+
         // Proceed to the transcription tool regardless of empties
         window.location.href = "transcribe.html";
       });
@@ -392,6 +416,7 @@
 
   document.addEventListener("DOMContentLoaded", function() {
     const enterTranscriptionBtn    = document.getElementById("enterTranscriptionBtn");
+    const promptProfileInput       = document.getElementById("promptProfileInput");
     const apiKeyInput              = document.getElementById("apiKeyInput");
     const sonioxKeyInput           = document.getElementById("sonioxKeyInput");
     const lemonfoxKeyInput         = document.getElementById("lemonfoxKeyInput");
@@ -400,6 +425,13 @@
     const geminiKeyInput           = document.getElementById("geminiKeyInput");
     const vertexBackendUrlInput    = document.getElementById("vertexBackendUrlInput");
     const vertexBackendSecretInput = document.getElementById("vertexBackendSecretInput");
+
+    // 0) Prefill prompt profile from localStorage (device persistent)
+    if (promptProfileInput) {
+      const storedProfile = (localStorage.getItem("prompt_profile_id") || "").trim();
+      if (storedProfile && !promptProfileInput.value) promptProfileInput.value = storedProfile;
+    }
+
 
     // 1) Prefill all fields from sessionStorage (keys only live for this tab)
     if (apiKeyInput) {
@@ -434,19 +466,6 @@
     if (vertexBackendSecretInput) {
       const storedSecret = sessionStorage.getItem("vertex_backend_secret") || "";
       if (storedSecret && !vertexBackendSecretInput.value) vertexBackendSecretInput.value = storedSecret;
-    }
-
-    // 2) Existing click handler: still sets consent + user_api_key and redirects
-    if (enterTranscriptionBtn && apiKeyInput) {
-      enterTranscriptionBtn.addEventListener("click", () => {
-        const apiKey = apiKeyInput.value.trim();
-        // Consent cookie is still set
-        setCookie("user_consent", "accepted", 365);
-        // Store the API key as entered (valid or not)
-        sessionStorage.setItem("user_api_key", apiKey);
-        // Redirect to transcribe.html
-        window.location.href = "transcribe.html";
-      });
     }
   });
 </script>

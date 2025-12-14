@@ -409,6 +409,42 @@
         // Consent cookie (kept as before, but now only set once here)
         setCookie("user_consent", "accepted", 365);
 
+
+        // NEW: First-time migration UX fix.
+        // If the chosen profile has no prompts yet, copy legacy (OpenAI-key) prompts into it.
+        // This prevents "my prompts disappeared" when a user tries profiles the first time.
+        try {
+          if (promptProfileId && openaiKey) {
+            // Legacy namespace: hash(raw openai_api_key)
+            const hashString = (str) => {
+              let hash = 0;
+              for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                hash |= 0;
+              }
+              return hash.toString();
+            };
+
+            const legacyNs = hashString(openaiKey);
+            const profileNs = hashString(`profile:${promptProfileId}`);
+            const migratedFlagKey = `prompt_migrated_${profileNs}`;
+
+            if (localStorage.getItem(migratedFlagKey) !== "1") {
+              for (let i = 1; i <= 10; i++) {
+                const slot = String(i);
+                const oldKey = `customPrompt_${legacyNs}_${slot}`;
+                const newKey = `customPrompt_${profileNs}_${slot}`;
+                const newVal = localStorage.getItem(newKey) || "";
+                if (newVal && newVal.trim()) continue;
+                const oldVal = localStorage.getItem(oldKey) || "";
+                if (!oldVal) continue;
+                localStorage.setItem(newKey, oldVal);
+              }
+              localStorage.setItem(migratedFlagKey, "1");
+            }
+          }
+        } catch {}
+        
         // Proceed to the transcription tool regardless of empties
         window.location.href = "transcribe.html";
       });

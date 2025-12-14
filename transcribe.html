@@ -321,6 +321,29 @@
       flex-direction: column;
       gap: 10px;
     }
+
+    /* Prompt profile row (Custom Prompt column) */
+    .prompt-profile-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: -6px;
+    }
+    .prompt-profile-left {
+      font-size: 14px;
+      color: #555;
+    }
+    .prompt-profile-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .prompt-profile-actions button {
+      font-size: 14px;
+      padding: 6px 10px;
+    }
     /* Ad Containers for Right Sidebar */
     #right-ad-unit-1 {
       width: 300px;
@@ -547,6 +570,20 @@
         </div>
         <div class="column">
           <h3 id="customPromptTitle">Custom Prompt</h3>
+
+          <!-- New: Prompt profile status + Import/Export -->
+          <div class="prompt-profile-row">
+            <div class="prompt-profile-left">
+              <span id="promptProfileLabel">Prompt profile:</span>
+              <span id="promptProfileValue">(not set)</span>
+            </div>
+            <div class="prompt-profile-actions">
+              <button id="promptExportBtn" type="button">Export</button>
+              <button id="promptImportBtn" type="button">Import</button>
+              <input id="promptImportFile" type="file" accept="application/json" style="display:none;">
+            </div>
+          </div>
+
           <label for="promptSlot" id="promptSlotLabel">Prompt Slot:</label>
           <select id="promptSlot">
             <option value="1">1</option>
@@ -887,6 +924,57 @@
     const promptSlotSelect = document.getElementById("promptSlot");
     const customPromptTextarea = document.getElementById("customPrompt");
 
+
+    // New: prompt profile UI elements
+    const promptProfileValue = document.getElementById("promptProfileValue");
+    const promptExportBtn = document.getElementById("promptExportBtn");
+    const promptImportBtn = document.getElementById("promptImportBtn");
+    const promptImportFile = document.getElementById("promptImportFile");
+
+    // We'll re-use the same loader that the slot UI uses (defined below).
+    // We create a safe wrapper here so we can call it after profile changes.
+    function reloadCurrentPromptSlot() {
+      if (!promptSlotSelect || !customPromptTextarea) return;
+      // PromptManager.loadPrompt updates #customPrompt itself in your current codebase.
+      PromptManager.loadPrompt(promptSlotSelect.value);
+    }
+
+
+    function renderPromptProfileLabel() {
+      if (!promptProfileValue) return;
+      const pid = (typeof PromptManager.getPromptProfileId === "function")
+        ? PromptManager.getPromptProfileId()
+        : ((localStorage.getItem("prompt_profile_id") || "").trim());
+      promptProfileValue.textContent = pid ? pid : "(not set)";
+    }
+
+    function ensurePromptProfileId({ allowChange = false } = {}) {
+      const existing = (typeof PromptManager.getPromptProfileId === "function")
+        ? PromptManager.getPromptProfileId()
+        : ((localStorage.getItem("prompt_profile_id") || "").trim());
+      if (existing && !allowChange) return existing;
+
+      const currentHint = existing ? `Current: ${existing}\n\n` : "";
+      const entered = (window.prompt(
+        `${currentHint}Set a Prompt profile ID (e.g. "David", "David1"):\n\n(Stored on this device)`,
+        existing || ""
+      ) || "").trim();
+      if (!entered) return "";
+
+      if (typeof PromptManager.setPromptProfileId === "function") {
+        PromptManager.setPromptProfileId(entered);
+      } else {
+        try { localStorage.setItem("prompt_profile_id", entered); } catch {}
+      }
+      renderPromptProfileLabel();
+      // Important: switching profiles changes the namespace; reload the visible slot.
+      reloadCurrentPromptSlot();
+      return entered;
+    }
+
+    // Initial render
+    renderPromptProfileLabel();
+
     if (promptSlotSelect && customPromptTextarea) {
       let isLoadingPrompt = false;
 
@@ -909,6 +997,53 @@
 
       // Load new prompt on slot change
       promptSlotSelect.addEventListener("change", loadCurrentSlot);
+    }
+
+    // Optional: allow clicking the profile value to change it quickly
+    if (promptProfileValue) {
+      promptProfileValue.style.cursor = "pointer";
+      promptProfileValue.title = "Click to set/change prompt profile";
+      promptProfileValue.addEventListener("click", () => {
+        ensurePromptProfileId({ allowChange: true });
+      });
+    }
+
+
+    // Wire Import/Export buttons (safe now; real logic added in later steps)
+    if (promptExportBtn) {
+      promptExportBtn.addEventListener("click", () => {
+        const pid = ensurePromptProfileId();
+        if (!pid) return;
+        // Will be implemented in later steps
+        if (typeof PromptManager.exportPromptsToFile === "function") {
+          PromptManager.exportPromptsToFile();
+        } else {
+          // No-op for now; keeps UX clear during incremental implementation
+          console.warn("Export not implemented yet (PromptManager.exportPromptsToFile missing).");
+        }
+      });
+    }
+
+    if (promptImportBtn && promptImportFile) {
+      promptImportBtn.addEventListener("click", () => {
+        const pid = ensurePromptProfileId();
+        if (!pid) return;
+        promptImportFile.value = "";
+        promptImportFile.click();
+      });
+
+      promptImportFile.addEventListener("change", async () => {
+        const file = promptImportFile.files && promptImportFile.files[0];
+        if (!file) return;
+        // Will be implemented in later steps
+        if (typeof PromptManager.importPromptsFromFile === "function") {
+          await PromptManager.importPromptsFromFile(file);
+          // After import, refresh visible slot
+          reloadCurrentPromptSlot();
+        } else {
+          console.warn("Import not implemented yet (PromptManager.importPromptsFromFile missing).");
+        }
+      });
     }
   </script>
 

@@ -993,6 +993,13 @@ function initRecording() {
     alert("Please enter your Soniox API key first.");
     return;
   }
+
+    // NEW: Purge Soniox-side data immediately when a new recording session starts.
+    // Fire-and-forget so the UI doesn't stall if Soniox is slow.
+    cleanupSonioxAll().catch((err) => {
+      logError("Soniox cleanup on start failed", err);
+    });
+
     resetRecordingState();
     const transcriptionElem = document.getElementById("transcription");
     if (transcriptionElem) {
@@ -1280,6 +1287,5 @@ window.addEventListener("load", () => {
   if (sileroVAD && typeof sileroVAD.pause === "function") {
     sileroVAD.pause().catch(() => {});
   }
-  // Fire-and-forget cleanup; do not block UI
-  cleanupSonioxAll();
+  
 });

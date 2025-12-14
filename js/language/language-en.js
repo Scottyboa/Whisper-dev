@@ -496,7 +496,12 @@ guideText: `Welcome to the Transcribe Notes Transcription tool. This application
 
   <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. The Completion Timer counts until the full transcript is received (usually within 5–10 seconds).</li><br>
 
-  <li><strong>Custom Prompt:</strong> On the right, select a prompt slot (1–10) and enter your custom prompt. Your prompt is saved automatically and linked to your API key. You can create any prompt that fits your documentation style, tone, and clinical focus. This gives you full flexibility over how your notes are generated.</li><br>
+  <li><strong>Custom Prompt & Prompt Profiles:</strong> On the right, select a prompt slot (1–10) and write your custom prompt. Prompts are saved automatically on this device. To keep your prompts independent of API key changes, you can set a <strong>Prompt profile ID</strong> (e.g. “David”, “David 1”, “Office-PC-2”). The active profile name is shown above the prompt field. If no profile is set, prompts may still be stored using the older API-key-linked method.</li><br>
+
+  <li><strong>Export / Import (move or share prompts):</strong> Click <strong>Export</strong> to download a small JSON file containing your 10 prompt slots for the current Prompt profile. On another computer, set your Prompt profile ID (the same one, or a new one) and click <strong>Import</strong> to load that file. Import always loads the prompts into your <strong>current</strong> profile on that device, which also makes it easy to share prompt “templates” with colleagues.</li><br>
+
+  <li><strong>Changing profiles:</strong> If you switch the Prompt profile ID, the prompt slots immediately show the prompts saved under that profile. This lets multiple users share the same computer without mixing prompts, as long as each user uses their own profile name.</li><br>
+
 
   <li><strong>Note Generation:</strong> Once transcription is complete, click "Generate Note" to create a note based on your transcript and selected/custom prompt. Generated medical notes must be reviewed and validated by healthcare professionals before use.</li><br>
 

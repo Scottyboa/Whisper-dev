@@ -495,7 +495,12 @@ guideText: `Velkommen til <strong>Transcribe Notes</strong>. Denne applikasjonen
 
   <li><strong>Fullføring:</strong> Når du klikker på "Stopp/Ferdig", stopper opptaket. Fullføringstimeren teller tiden til hele transkripsjonen er mottatt (vanligvis innen 3-7 sekunder).</li><br>
 
-  <li><strong>Tilpasset prompt:</strong> På høyre side kan du velge en promptplass (1–10) og skrive inn din egen prompt. Prompten lagres automatisk og knyttes til din API-nøkkel. Du kan lage hvilken som helst prompt som passer din dokumentasjonsstil, tone og faglige fokus. Dette gir deg full fleksibilitet i hvordan notatene dine genereres. Du finner prompt-eksempler nederst i denne guiden som av erfaring fungerer godt.</li><br>
+  <li><strong>Tilpasset prompt og promptprofiler:</strong> På høyre side velger du en prompt-plass (1–10) og skriver inn din egen prompt. Promptene lagres automatisk på denne enheten. For å gjøre promptene uavhengige av endringer i API-nøkkel kan du sette en <strong>Prompt profile ID</strong> (f.eks. “David”, “David 1”, “Office-PC-2”). Aktiv profil vises over prompt-feltet. Hvis ingen profil er satt, kan promptene fortsatt være lagret med den eldre metoden som var knyttet til API-nøkkel.</li><br>
+
+  <li><strong>Eksport / import (flytt eller del prompts):</strong> Klikk <strong>Export</strong> for å laste ned en liten JSON-fil som inneholder alle 10 prompt-plassene for gjeldende profil. På en annen PC setter du Prompt profile ID (samme eller en ny) og klikker <strong>Import</strong> for å lese inn filen. Import legger alltid promptene inn i den <strong>aktive</strong> profilen på den enheten, noe som også gjør det enkelt å dele prompt-“maler” med kolleger.</li><br>
+
+  <li><strong>Bytte profil:</strong> Når du endrer Prompt profile ID, vil prompt-plassene umiddelbart vise promptene som er lagret under den profilen. Dette gjør at flere kan bruke samme PC uten å blande prompts, så lenge hver bruker har sin egen profil.</li><br>
+
 
   <li><strong>Notatgenerering:</strong> Når transkripsjonen er fullført, klikker du på "Generer notat" for å lage et notat basert på transkripsjonen og den valgte/tilpassede prompten. Genererte journalnotater må gjennomgås og valideres av helsepersonell før de tas i bruk.</li><br>
 

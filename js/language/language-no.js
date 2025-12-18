@@ -461,7 +461,7 @@ https://console.mistral.ai<br><br>
 export const transcribeTranslations = {
   pageTitle: "Transkripsjonsverktøy med annonser og guideoverlegg",
   openaiUsageLinkText: "Kostnadsoversikt",
-  openaiWalletLinkText: "OpenAI-kreditt",
+  openaiWalletLinkText: "Kreditt",
   btnFunctions: "Funksjoner",
   btnGuide: "Guide",
   backToHome: "Tilbake til forsiden",

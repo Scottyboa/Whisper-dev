@@ -533,16 +533,21 @@
           <div id="note-provider-container" style="display:flex; align-items:center; gap:8px; margin: 6px 0 6px;">
             <label for="noteProvider" id="noteProviderLabel">Note Provider:</label>
             <select id="noteProvider">
-              <option value="gpt5" selected>GPT-5.1 (streaming)</option>
-              <option value="gpt5-ns">GPT-5.1 (non-streaming)</option>
-              <option value="gpt52">GPT-5.2 (streaming)</option>
-              <option value="gpt52-ns">GPT-5.2 (non-streaming)</option>
+              <option value="gpt5" selected>GPT-5.1</option>
+              <option value="gpt52">GPT-5.2</option>
               <option value="gpt4">GPT-4-latest</option>
               <option value="lemonfox">Lemonfox</option>
               <option value="mistral">Mistral</option>
               <option value="gemini3">Gemini 3</option> <!-- Gemini via public API -->
               <option value="gemini3-vertex">Google Vertex</option> <!-- Vertex-backed models (e.g. Gemini 2.5 Pro) -->
             </select>
+            <div id="note-provider-mode-container" style="display:none; align-items:center; gap:8px;">
+              <label for="noteProviderMode" id="noteProviderModeLabel">Mode:</label>
+              <select id="noteProviderMode">
+                <option value="streaming" selected>streaming</option>
+                <option value="non-streaming">non-streaming</option>
+              </select>
+            </div>
 
             <!-- New: Vertex model selector (shown only when Note Provider = Google Vertex) -->
             <div id="vertex-model-container"
@@ -738,9 +743,46 @@
       const vertexModelContainer = document.getElementById("vertex-model-container");
       const vertexModelSelect = document.getElementById("vertexModel");
       if (!noteSel) return;
-      const stored = sessionStorage.getItem("note_provider") || DEFAULT_NOTE_PROVIDER;
-      noteSel.value = stored;
-      sessionStorage.setItem("note_provider", stored);
+      const noteModeContainer = document.getElementById("note-provider-mode-container");
+      const noteModeSel = document.getElementById("noteProviderMode");
+      const storedProvider = sessionStorage.getItem("note_provider") || DEFAULT_NOTE_PROVIDER;
+
+      // Stored values historically included streaming/non-streaming in the provider key (e.g. gpt5-ns, gpt52-ns).
+      // The UI now separates Model (primary) and Mode (secondary).
+      let initialModel = storedProvider;
+      let initialMode = "streaming";
+      if (storedProvider === "gpt5-ns" || storedProvider === "gpt52-ns") {
+        initialModel = storedProvider.replace("-ns", "");
+        initialMode = "non-streaming";
+      } else if (storedProvider === "gpt5" || storedProvider === "gpt52") {
+        initialModel = storedProvider;
+        initialMode = "streaming";
+      }
+
+      // If the stored provider isn't a valid option in the primary dropdown, fall back to default.
+      if (!Array.from(noteSel.options).some(o => o.value === initialModel)) {
+        initialModel = DEFAULT_NOTE_PROVIDER;
+        initialMode = "streaming";
+      }
+
+      noteSel.value = initialModel;
+      if (noteModeSel) noteModeSel.value = initialMode;
+
+      // Persist canonical values for downstream module loading (main.js still switches on note_provider).
+      function getEffectiveNoteProvider(model, mode) {
+        const isGpt5x = model === "gpt5" || model === "gpt52";
+        if (!isGpt5x) return model;
+        return mode === "non-streaming" ? `${model}-ns` : model;
+      }
+
+      sessionStorage.setItem("note_provider", getEffectiveNoteProvider(noteSel.value, noteModeSel ? noteModeSel.value : "streaming"));
+      if (noteModeSel) sessionStorage.setItem("note_mode", noteModeSel.value);
+
+      function updateNoteModeVisibility() {
+        const v = noteSel.value;
+        const show = v === "gpt5" || v === "gpt52";
+        if (noteModeContainer) noteModeContainer.style.display = show ? "flex" : "none";
+      }
 
       // Restore previously chosen Vertex model (if any)
       if (vertexModelSelect) {
@@ -755,8 +797,9 @@
 
       function updateReasoningVisibility() {
                 const v = noteSel.value;
-        const isGpt51 = v === "gpt5" || v === "gpt5-ns";
-        const isGpt52 = v === "gpt52" || v === "gpt52-ns";
+        updateNoteModeVisibility();
+        const isGpt51 = v === "gpt5";
+        const isGpt52 = v === "gpt52";
         const isGpt5x = isGpt51 || isGpt52;
         const isGemini3 = v === "gemini3"; // public Gemini 3 API only
         const isVertex = v === "gemini3-vertex"; // Google Vertex backend
@@ -788,14 +831,30 @@
       // Initial state on page load
       updateReasoningVisibility();
 
-      // New: live-switch note module without reloading
-      noteSel.addEventListener("change", async () => {
-        sessionStorage.setItem("note_provider", noteSel.value);
-        updateReasoningVisibility();
+      async function syncNoteProvider() {
+        const effective = getEffectiveNoteProvider(
+          noteSel.value,
+          noteModeSel ? noteModeSel.value : "streaming"
+        );
+        sessionStorage.setItem("note_provider", effective);
+        if (noteModeSel) sessionStorage.setItem("note_mode", noteModeSel.value);
+
         if (window.__app && typeof window.__app.switchNoteProvider === "function") {
-          await window.__app.switchNoteProvider(noteSel.value);
+          await window.__app.switchNoteProvider(effective);
         }
+      }
+
+      // Live-switch note module without reloading
+      noteSel.addEventListener("change", async () => {
+        updateReasoningVisibility();
+        await syncNoteProvider();
       });
+
+      if (noteModeSel) {
+        noteModeSel.addEventListener("change", async () => {
+          await syncNoteProvider();
+        });
+      }
     })();
   </script>
 

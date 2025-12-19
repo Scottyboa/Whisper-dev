@@ -585,6 +585,7 @@
               <option value="mistral">Mistral</option>
               <option value="gemini3">Gemini 3</option> <!-- Gemini via public API -->
               <option value="gemini3-vertex">Google Vertex</option> <!-- Vertex-backed models (e.g. Gemini 2.5 Pro) -->
+              <option value="aws-bedrock">AWS Bedrock</option>
             </select>
             <div id="note-provider-mode-container" style="display:none; align-items:center; gap:8px;">
               <label for="noteProviderMode" id="noteProviderModeLabel">Mode:</label>
@@ -600,6 +601,17 @@
               <label for="vertexModel" id="vertexModelLabel">Model:</label>
               <select id="vertexModel">
                 <option value="gemini-2.5-pro" selected>Gemini 2.5 Pro</option>
+              </select>
+            </div>
+
+            <!-- AWS Bedrock model selector (shown only when Note Provider = AWS Bedrock) -->
+            <div id="bedrock-model-container"
+                 style="display:none; align-items:center; gap:6px; margin-left:8px;">
+              <label for="bedrockModel" id="bedrockModelLabel">Model:</label>
+              <select id="bedrockModel">
+                <option value="haiku-4-5">Claude Haiku 4.5</option>
+                <option value="sonnet-4" selected>Claude Sonnet 4</option>
+                <option value="sonnet-4-5">Claude Sonnet 4.5</option>
               </select>
             </div>
           </div>
@@ -787,6 +799,8 @@
       const geminiReasoningContainer = document.getElementById("gemini-reasoning-container");
       const vertexModelContainer = document.getElementById("vertex-model-container");
       const vertexModelSelect = document.getElementById("vertexModel");
+      const bedrockModelContainer = document.getElementById("bedrock-model-container");
+      const bedrockModelSelect = document.getElementById("bedrockModel");
       if (!noteSel) return;
       const noteModeContainer = document.getElementById("note-provider-mode-container");
       const noteModeSel = document.getElementById("noteProviderMode");
@@ -840,6 +854,17 @@
         });
       }
 
+      // Bedrock model preference (if any)
+      if (bedrockModelSelect) {
+        const storedBedrockModel = sessionStorage.getItem("bedrock_model");
+        if (storedBedrockModel) {
+          bedrockModelSelect.value = storedBedrockModel;
+        }
+        bedrockModelSelect.addEventListener("change", () => {
+          sessionStorage.setItem("bedrock_model", bedrockModelSelect.value);
+        });
+      }
+
       function updateReasoningVisibility() {
                 const v = noteSel.value;
         updateNoteModeVisibility();
@@ -848,6 +873,7 @@
         const isGpt5x = isGpt51 || isGpt52;
         const isGemini3 = v === "gemini3"; // public Gemini 3 API only
         const isVertex = v === "gemini3-vertex"; // Google Vertex backend
+        const isBedrock = v === "aws-bedrock"; // AWS Bedrock backend
 
         if (gptReasoningContainer) {
           gptReasoningContainer.style.display = isGpt5x ? "flex" : "none";
@@ -870,6 +896,9 @@
         }
         if (vertexModelContainer) {
           vertexModelContainer.style.display = isVertex ? "flex" : "none";
+        }
+        if (bedrockModelContainer) {
+          bedrockModelContainer.style.display = isBedrock ? "flex" : "none";
         }
       }
 

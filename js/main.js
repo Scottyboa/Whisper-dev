@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     choice === 'gpt5-ns'       ? './noteGeneration_gpt5_NS.js'  :
     choice === 'gemini3'       ? './Gemini3.js'                 :   // Gemini via public API
     choice === 'gemini3-vertex'? './GeminiVertex.js'            :   // Gemini via Vertex AI
+    choice === 'aws-bedrock'   ? './AWSBedrock.js'             :   // AWS Bedrock (Claude via proxy)
                                   './notegeneration%20gpt-5.js'; // default
 
 
@@ -142,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
       choice === 'gpt5-ns'       ? './noteGeneration_gpt5_NS.js'  :
       choice === 'gemini3'       ? './Gemini3.js'                 :   // Gemini via public API
       choice === 'gemini3-vertex'? './GeminiVertex.js'            :   // Gemini via Vertex AI
+      choice === 'aws-bedrock'   ? './AWSBedrock.js'             :   // AWS Bedrock (Claude via proxy)
                                     './notegeneration%20gpt-5.js';
 
 

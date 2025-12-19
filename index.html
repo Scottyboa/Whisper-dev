@@ -312,6 +312,32 @@
         id="vertexBackendSecretInput"
         placeholder="Vertex backend secret"
         autocomplete="off"
+     >
+   </div>
+
+    <!-- New: AWS Bedrock proxy configuration (per-user) -->
+    <p id="bedrock-text">
+      AWS Bedrock (
+      <a
+        href="https://chatgpt.com"
+        target="_blank"
+        rel="noopener"
+        id="bedrock-guide-link"
+      >Guide</a>
+      ):
+    </p>
+    <div class="gemini-credentials-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+      <input
+        type="text"
+        id="bedrockBackendUrlInput"
+        placeholder="Bedrock backend URL (https://…lambda-url.eu-north-1.on.aws/)"
+        autocomplete="off"
+      >
+      <input
+        type="text"
+        id="bedrockBackendSecretInput"
+        placeholder="Bedrock backend secret"
+        autocomplete="off"
       >
     </div>
     
@@ -385,6 +411,9 @@
         var geminiKey            = ((document.getElementById("geminiKeyInput")           || {}).value || "").trim();
         var vertexBackendUrl     = ((document.getElementById("vertexBackendUrlInput")    || {}).value || "").trim();
         var vertexBackendSecret  = ((document.getElementById("vertexBackendSecretInput") || {}).value || "").trim();
+        var bedrockBackendUrl   = ((document.getElementById("bedrockBackendUrlInput")   || {}).value || "").trim();
+        var bedrockBackendSecret= ((document.getElementById("bedrockBackendSecretInput")|| {}).value || "").trim();
+
 
         // If profile ID is blank -> remove it so the app falls back to legacy prompt behavior.
         try {
@@ -402,6 +431,8 @@
         sessionStorage.setItem("gemini_api_key", geminiKey);
         sessionStorage.setItem("vertex_backend_url", vertexBackendUrl);
         sessionStorage.setItem("vertex_backend_secret", vertexBackendSecret);
+        sessionStorage.setItem("bedrock_backend_url", bedrockBackendUrl);
+        sessionStorage.setItem("bedrock_backend_secret", bedrockBackendSecret);
         
         // Back-compat: default active key remains OpenAI for now
         sessionStorage.setItem("user_api_key", openaiKey);
@@ -461,6 +492,8 @@
     const geminiKeyInput           = document.getElementById("geminiKeyInput");
     const vertexBackendUrlInput    = document.getElementById("vertexBackendUrlInput");
     const vertexBackendSecretInput = document.getElementById("vertexBackendSecretInput");
+    const bedrockBackendUrlInput    = document.getElementById("bedrockBackendUrlInput");
+    const bedrockBackendSecretInput = document.getElementById("bedrockBackendSecretInput");
 
     // 0) Prefill prompt profile from localStorage (device persistent)
     if (promptProfileInput) {
@@ -502,6 +535,16 @@
     if (vertexBackendSecretInput) {
       const storedSecret = sessionStorage.getItem("vertex_backend_secret") || "";
       if (storedSecret && !vertexBackendSecretInput.value) vertexBackendSecretInput.value = storedSecret;
+    }
+
+    // Bedrock backend URL / secret
+    if (bedrockBackendUrlInput) {
+      const storedUrl = sessionStorage.getItem("bedrock_backend_url") || "";
+      if (storedUrl && !bedrockBackendUrlInput.value) bedrockBackendUrlInput.value = storedUrl;
+    }
+    if (bedrockBackendSecretInput) {
+      const storedSecret = sessionStorage.getItem("bedrock_backend_secret") || "";
+      if (storedSecret && !bedrockBackendSecretInput.value) bedrockBackendSecretInput.value = storedSecret;
     }
   });
 </script>

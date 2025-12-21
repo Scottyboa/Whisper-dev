@@ -1,0 +1,213 @@
+============================================================
+AWS BEDROCK (EU STOCKHOLM) SETUP GUIDE (FOR THIS APP)
+============================================================
+
+This guide helps you create your own AWS Bedrock “proxy” (a small Lambda function)
+so this app can use these Claude models from your AWS account:
+
+  • Claude Sonnet 4
+  • Claude Sonnet 4.5
+  • Claude Haiku 4.5
+
+
+------------------------------------------------------------
+PRIVACY / EU PROCESSING (PLAIN LANGUAGE)
+------------------------------------------------------------
+
+If you keep everything in the EU Stockholm region (eu-north-1), then requests are
+processed in that EU region.
+
+AWS states that Amazon Bedrock does not store or log your prompts and completions,
+does not use them to train AWS models, and does not share them with third parties.
+
+Important: Your own AWS account can still store data if YOU enable logging or if
+you copy/paste data elsewhere. The proxy you deploy does not print your
+transcription to logs during normal successful usage.
+
+
+------------------------------------------------------------
+WHAT YOU’LL GET AT THE END
+------------------------------------------------------------
+
+You will copy two values into this app:
+
+  1) Backend URL  (your Lambda Function URL)
+  2) Secret key   (a password you choose)
+
+
+============================================================
+STEP-BY-STEP SETUP
+============================================================
+
+---------------------------------
+STEP 1 — CREATE / SIGN IN TO AWS
+---------------------------------
+
+1) Create an AWS account (or sign in if you already have one).
+2) For this setup, it’s okay to use your AWS “root user” (account owner login).
+   (Later you can create a normal admin user if you want — optional.)
+
+Tip (recommended): Enable MFA (2-factor login) for your AWS root user.
+
+
+-----------------------------------------
+STEP 2 — SET REGION TO EU STOCKHOLM (KEY)
+-----------------------------------------
+
+In the AWS Console, find the Region selector in the TOP RIGHT corner and choose:
+
+  ✅ Europe (Stockholm) — eu-north-1
+
+Keep this Region selected for the rest of the steps.
+
+
+------------------------------------
+STEP 3 — ADD BILLING (PAYMENT METHOD)
+------------------------------------
+
+Amazon Bedrock usage costs money, so you must add a payment method:
+
+1) In AWS Console, search for:  Billing
+2) Open Billing
+3) Find Payment methods / Payment preferences
+4) Add a credit/debit card
+
+
+------------------------------------------------
+STEP 4 — ENABLE AMAZON BEDROCK + ENABLE CLAUDE
+------------------------------------------------
+
+You must enable model access in Bedrock before the proxy can call the models:
+
+1) In AWS Console, search for:  Amazon Bedrock
+2) Open Amazon Bedrock
+3) In the left menu, choose:     Model access
+4) Click:                        Modify model access
+5) Enable these models:
+     ✅ Claude Sonnet 4
+     ✅ Claude Sonnet 4.5
+     ✅ Claude Haiku 4.5
+6) Accept/confirm any prompts.
+
+You may be asked for basic info like company name / website / purpose.
+Example purpose text:
+  “Medical note generation in a doctor-patient setting.”
+
+
+------------------------------------------------------------
+STEP 5 — DEPLOY THE PROXY (CLICK THE QUICK-CREATE LINK)
+------------------------------------------------------------
+
+This link opens AWS CloudFormation with everything prepared. You’ll enter a
+secret password and click Create.
+
+Copy/paste this into your browser WHILE LOGGED INTO AWS:
+
+https://eu-north-1.console.aws.amazon.com/cloudformation/home?region=eu-north-1#/stacks/create/review?templateURL=https%3A%2F%2Fs3.eu-north-1.amazonaws.com%2Fbedrock-note-proxy-cfn-eu-north-1-yourbrand%2Ftemplates%2Fbedrock-note-proxy.yaml&stackName=bedrock-note-proxy&param_BedrockRegion=eu-north-1&param_DefaultModelKey=sonnet-4&param_CodeS3Bucket=bedrock-note-proxy-cfn-eu-north-1-yourbrand&param_CodeS3Key=artifacts%2Fbedrock-note-proxy.zip
+
+
+-----------------------------------------------------
+STEP 6 — SET “ProxySecret” (YOUR PASSWORD) + SAVE IT
+-----------------------------------------------------
+
+On the CloudFormation Create Stack page, scroll down until you see:
+
+  ProxySecret
+
+1) Enter a strong password (minimum 16 characters).
+2) Save it somewhere safe:
+     • Password manager (best)
+     • Encrypted note / encrypted file
+     • Dropbox is OK ONLY if the file is encrypted/password-protected
+
+⚠️ You WILL need this secret in the app later.
+
+
+-----------------------------------------------
+STEP 7 — CHECK THE 3 BOXES AND CREATE THE STACK
+-----------------------------------------------
+
+Scroll to the bottom of the page.
+
+You will see 3 acknowledgement checkboxes (IAM + SAM/macro).
+✅ Tick all three.
+Then click:
+  ✅ Create stack
+
+
+--------------------------------------------
+STEP 8 — WAIT UNTIL STATUS IS “CREATE_COMPLETE”
+--------------------------------------------
+
+After you click Create stack:
+1) You will see the Stack page (often on the Events tab)
+2) Wait until the stack Status becomes:
+   ✅ CREATE_COMPLETE
+
+
+------------------------------------------------------
+STEP 9 — COPY YOUR BACKEND URL (THE “FunctionUrl” VALUE)
+------------------------------------------------------
+
+When the stack is CREATE_COMPLETE:
+
+1) Open the stack’s:  Outputs  tab
+2) Find:              FunctionUrl
+3) Copy it and store it safely
+
+That is your app’s “Backend URL”.
+
+
+-----------------------------------------
+STEP 10 — CONNECT IT TO THIS APP
+-----------------------------------------
+
+In the app’s input fields on the front page:
+
+1) Bedrock backend URL  → paste the FunctionUrl
+2) Secret key           → paste the ProxySecret you created
+
+Done — you can now use:
+  • Claude Sonnet 4
+  • Claude Sonnet 4.5
+  • Claude Haiku 4.5
+
+
+============================================================
+WHERE TO FIND / CHANGE YOUR SECRET LATER (IMPORTANT)
+============================================================
+
+If you forgot your ProxySecret, or you want to rotate it:
+
+1) AWS Console → Lambda
+2) Open Functions
+3) Click your proxy function (created by the stack)
+4) Go to: Configuration → Environment variables
+5) Look for: PROXY_SECRET
+
+If you can’t copy it easily:
+- Click Edit to reveal it, OR
+- Set a NEW secret value, Save, then update the secret in the app to match.
+
+
+============================================================
+TROUBLESHOOTING
+============================================================
+
+1) “AccessDenied” / “Model not enabled”
+   • Make sure you enabled the Claude models in:
+     Amazon Bedrock → Model access → Modify model access
+   • Confirm your AWS region is eu-north-1 (top right).
+
+2) “Unauthorized” (401)
+   • Your secret key in the app must match ProxySecret EXACTLY.
+   • Copy/paste carefully.
+
+3) Stack fails to create
+   • Make sure you ticked all 3 acknowledgement boxes.
+   • Make sure region is eu-north-1 (top right).
+
+
+============================================================
+UNINSTALL / REMOVE EVERYTHING
+=========

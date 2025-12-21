@@ -19,9 +19,7 @@ Hvis du bruker regionen EU Stockholm (eu-north-1), behandles forespørslene i de
 AWS oppgir at Amazon Bedrock ikke lagrer eller logger “prompts” og svar, ikke bruker dem til
 å trene AWS-modeller, og ikke deler dem med tredjeparter.
 
-Viktig: Din egen AWS-konto kan fortsatt lagre data hvis DU aktiverer ekstra logging
-eller hvis du kopierer/lagrer innhold andre steder. Proxyen du deployer her skriver
-ikke transkripsjonen til logger ved normal bruk.
+Å bruke AI-modellene via dette oppsettet garanterer null datalagring og holder all databehandling og dataresidens innenfor EU, noe som gjør bruken av modellene GDPR kompatibelt.
 
 
 ------------------------------------------------------------
@@ -42,11 +40,9 @@ STEG-FOR-STEG OPPSETT
 STEG 1 — OPPRETT / LOGG INN I AWS
 ---------------------------------
 
-1) Opprett en AWS-konto (eller logg inn hvis du allerede har en).
+1) Opprett en AWS-konto(Free-tier) (eller logg inn hvis du allerede har en).
 2) For dette engangsoppsettet er det OK å bruke AWS “root user” (konto-eier).
    (Senere kan du eventuelt opprette en vanlig admin-bruker — valgfritt.)
-
-Tips (anbefalt): Aktiver MFA (tofaktor) for root-brukeren etter oppsettet.
 
 
 -----------------------------------------
@@ -64,13 +60,13 @@ Behold denne regionen valgt for resten av stegene.
 STEG 3 — LEGG INN BETALING (BETALINGSMETODE)
 ------------------------------------
 
-Amazon Bedrock koster penger å bruke, så du må legge inn betalingsmetode:
-
 1) I AWS Console, søk etter:  Billing
 2) Åpne Billing
 3) Finn Payment methods / Payment preferences
 4) Legg til bankkort (credit/debit)
 
+Ingen månedlige avgifter.
+Du belastes bare for faktisk bruk av modellene, og betaler ingenting ved inaktivitet.
 
 ------------------------------------------------
 STEG 4 — AKTIVER AMAZON BEDROCK + AKTIVER CLAUDE

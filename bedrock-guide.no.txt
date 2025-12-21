@@ -1,0 +1,220 @@
+============================================================
+AWS BEDROCK (EU STOCKHOLM) OPPSETTSGUIDE (FOR DENNE APPEN)
+============================================================
+
+Denne guiden hjelper deg å lage din egen AWS Bedrock “proxy” (en liten Lambda-funksjon),
+slik at denne appen kan bruke disse Claude-modellene fra din AWS-konto:
+
+  • Claude Sonnet 4
+  • Claude Sonnet 4.5
+  • Claude Haiku 4.5
+
+
+------------------------------------------------------------
+PERSONVERN / EU-PROSESSERING (ENKEL FORKLARING)
+------------------------------------------------------------
+
+Hvis du bruker regionen EU Stockholm (eu-north-1), behandles forespørslene i den EU-regionen.
+
+AWS oppgir at Amazon Bedrock ikke lagrer eller logger “prompts” og svar, ikke bruker dem til
+å trene AWS-modeller, og ikke deler dem med tredjeparter.
+
+Viktig: Din egen AWS-konto kan fortsatt lagre data hvis DU aktiverer ekstra logging
+eller hvis du kopierer/lagrer innhold andre steder. Proxyen du deployer her skriver
+ikke transkripsjonen til logger ved normal bruk.
+
+
+------------------------------------------------------------
+DETTE FÅR DU TIL SLUTT
+------------------------------------------------------------
+
+Du kopierer to verdier inn i denne appen:
+
+  1) Backend URL  (din Lambda Function URL)
+  2) Secret key   (et passord du velger)
+
+
+============================================================
+STEG-FOR-STEG OPPSETT
+============================================================
+
+---------------------------------
+STEG 1 — OPPRETT / LOGG INN I AWS
+---------------------------------
+
+1) Opprett en AWS-konto (eller logg inn hvis du allerede har en).
+2) For dette engangsoppsettet er det OK å bruke AWS “root user” (konto-eier).
+   (Senere kan du eventuelt opprette en vanlig admin-bruker — valgfritt.)
+
+Tips (anbefalt): Aktiver MFA (tofaktor) for root-brukeren etter oppsettet.
+
+
+-----------------------------------------
+STEG 2 — SETT REGION TIL EU STOCKHOLM (VIKTIG)
+-----------------------------------------
+
+I AWS Console, finn region-velgeren øverst til høyre og velg:
+
+  ✅ Europe (Stockholm) — eu-north-1
+
+Behold denne regionen valgt for resten av stegene.
+
+
+------------------------------------
+STEG 3 — LEGG INN BETALING (BETALINGSMETODE)
+------------------------------------
+
+Amazon Bedrock koster penger å bruke, så du må legge inn betalingsmetode:
+
+1) I AWS Console, søk etter:  Billing
+2) Åpne Billing
+3) Finn Payment methods / Payment preferences
+4) Legg til bankkort (credit/debit)
+
+
+------------------------------------------------
+STEG 4 — AKTIVER AMAZON BEDROCK + AKTIVER CLAUDE
+------------------------------------------------
+
+Du må aktivere modelltilgang i Bedrock før proxyen kan kalle modellene:
+
+1) I AWS Console, søk etter:  Amazon Bedrock
+2) Åpne Amazon Bedrock
+3) I menyen til venstre, velg: Model access
+4) Klikk:                      Modify model access
+5) Aktiver disse modellene:
+     ✅ Claude Sonnet 4
+     ✅ Claude Sonnet 4.5
+     ✅ Claude Haiku 4.5
+6) Godta/bekreft eventuelle spørsmål.
+
+Du kan bli spurt om enkel info som firmanavn / nettside / formål.
+Eksempel på formålstekst:
+  “Generering av medisinske notater i en lege–pasient-konsultasjon.”
+
+
+------------------------------------------------------------
+STEG 5 — DEPLOY PROXYEN (KLIKK QUICK-CREATE LENKEN)
+------------------------------------------------------------
+
+Denne lenken åpner AWS CloudFormation med alt klart. Du legger inn et passord og klikker Create.
+
+Kopier/lim inn dette i nettleseren MENS DU ER LOGGET INN I AWS:
+
+https://eu-north-1.console.aws.amazon.com/cloudformation/home?region=eu-north-1#/stacks/create/review?templateURL=https%3A%2F%2Fs3.eu-north-1.amazonaws.com%2Fbedrock-note-proxy-cfn-eu-north-1-yourbrand%2Ftemplates%2Fbedrock-note-proxy.yaml&stackName=bedrock-note-proxy&param_BedrockRegion=eu-north-1&param_DefaultModelKey=sonnet-4&param_CodeS3Bucket=bedrock-note-proxy-cfn-eu-north-1-yourbrand&param_CodeS3Key=artifacts%2Fbedrock-note-proxy.zip
+
+
+-----------------------------------------------------
+STEG 6 — SETT “ProxySecret” (PASSORD) + LAGRE DET TRYGT
+-----------------------------------------------------
+
+På Create Stack-siden, scroll ned til du finner:
+
+  ProxySecret
+
+1) Skriv inn et sterkt passord (minimum 16 tegn).
+2) Lagre det trygt:
+     • Passordmanager (best)
+     • Kryptert notat / kryptert fil
+     • Dropbox er OK KUN hvis filen er kryptert/passordbeskyttet
+
+⚠️ Du trenger dette passordet i appen etterpå.
+
+
+-----------------------------------------------
+STEG 7 — HUK AV 3 BOKSER OG OPPRETT STACKEN
+-----------------------------------------------
+
+Scroll helt ned.
+
+Du ser 3 “acknowledgement” avkrysningsbokser (IAM + SAM/macro).
+✅ Huk av alle tre.
+Klikk deretter:
+  ✅ Create stack
+
+
+--------------------------------------------
+STEG 8 — VENT TIL STATUS ER “CREATE_COMPLETE”
+--------------------------------------------
+
+Etter du klikker Create stack:
+1) Du havner på Stack-siden (ofte på Events-fanen)
+2) Vent til status blir:
+   ✅ CREATE_COMPLETE
+
+
+------------------------------------------------------
+STEG 9 — KOPIER BACKEND URL (VERDIEN “FunctionUrl”)
+------------------------------------------------------
+
+Når stacken er CREATE_COMPLETE:
+
+1) Åpne fanen:   Outputs
+2) Finn:         FunctionUrl
+3) Kopier og lagre den trygt
+
+Dette er appens “Backend URL”.
+
+
+-----------------------------------------
+STEG 10 — KOBLE DET TIL DENNE APPEN
+-----------------------------------------
+
+I appens felter på forsiden:
+
+1) Bedrock backend URL  → lim inn FunctionUrl
+2) Secret key           → lim inn ProxySecret du laget
+
+Ferdig — du kan nå bruke:
+  • Claude Sonnet 4
+  • Claude Sonnet 4.5
+  • Claude Haiku 4.5
+
+
+============================================================
+HVOR FINNER / ENDRER DU SECRET KEY SENERE (VIKTIG)
+============================================================
+
+Hvis du har glemt ProxySecret eller vil bytte det:
+
+1) AWS Console → Lambda
+2) Gå til Functions
+3) Klikk proxy-funksjonen (laget av stacken)
+4) Gå til: Configuration → Environment variables
+5) Finn: PROXY_SECRET
+
+Hvis du ikke får kopiert den enkelt:
+- Trykk Edit for å se den, ELLER
+- Sett en NY verdi, lagre, og oppdater secret i appen så de matcher.
+
+
+============================================================
+FEILSØKING
+============================================================
+
+1) “AccessDenied” / “Model not enabled”
+   • Sjekk at du har aktivert Claude-modellene i:
+     Amazon Bedrock → Model access → Modify model access
+   • Sjekk at region er eu-north-1 (øverst til høyre).
+
+2) “Unauthorized” (401)
+   • Secret key i appen må matche ProxySecret EKSAKT.
+   • Kopier/lim inn nøye.
+
+3) Stack feiler å opprette
+   • Huk av alle 3 avkrysningsboksene.
+   • Sjekk region eu-north-1 (øverst til høyre).
+
+
+============================================================
+AVINSTALLER / FJERN ALT
+============================================================
+
+For å slette proxyen helt:
+
+1) AWS Console → CloudFormation
+2) Klikk Stacks
+3) Velg stacken (bedrock-note-proxy)
+4) Klikk Delete
+
+Dette fjerner Lambda + permissions + Function URL.

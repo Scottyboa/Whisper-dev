@@ -169,6 +169,32 @@
     button:active {
       transform: scale(0.98);
     }
+    .keys-io-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 10px 0 0 0;
+    }
+    .keys-io-row button {
+      margin: 0; /* override the global 10px to keep the row tight */
+    }
+    /* Smaller Import/Export buttons only */
+    .keys-io-btn {
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 8px;
+      min-width: 110px;
+    }
+    #keysIoHint {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    }
+    #keysIoStatus {
+      font-size: 12px;
+      margin-top: 6px;
+    }
     .ad-revenue-message {
       margin-top: 20px;
       font-size: 18px;
@@ -257,6 +283,16 @@
       Used to save your custom prompts on this device, independent of your API key.
     </p>
 
+    <div class="keys-io-row">
+      <button type="button" id="importKeysBtn" class="keys-io-btn">Import keys</button>
+      <button type="button" id="exportKeysBtn" class="keys-io-btn">Export keys</button>
+      <input type="file" id="importKeysFile" accept="application/json" style="display:none">
+    </div>
+    <p id="keysIoHint">
+      Exported files contain secrets in plain text. Store safely.
+    </p>
+    <p id="keysIoStatus" aria-live="polite"></p>
+
     <!-- New explicit label above the OpenAI field -->
     <p id="openai-label">OpenAI API key:</p>
     <input type="text" id="apiKeyInput" placeholder="Enter API Key here" autocomplete="off">
@@ -341,7 +377,6 @@
       >
     </div>
     
-
     <button id="enterTranscriptionBtn">Enter Transcription Tool</button>
     <br>
     <p class="ad-revenue-message" id="ad-revenue-message">
@@ -545,6 +580,125 @@
     if (bedrockBackendSecretInput) {
       const storedSecret = sessionStorage.getItem("bedrock_backend_secret") || "";
       if (storedSecret && !bedrockBackendSecretInput.value) bedrockBackendSecretInput.value = storedSecret;
+    }
+
+    // Import/Export key bundle (local JSON file that YOU store; not uploaded anywhere)
+    const exportKeysBtn  = document.getElementById("exportKeysBtn");
+    const importKeysBtn  = document.getElementById("importKeysBtn");
+    const importKeysFile = document.getElementById("importKeysFile");
+    const keysIoStatus   = document.getElementById("keysIoStatus");
+
+    const KEY_FIELDS = [
+      { id: "apiKeyInput",               storageKey: "openai_api_key" },
+      { id: "sonioxKeyInput",            storageKey: "soniox_api_key" },
+      { id: "lemonfoxKeyInput",          storageKey: "lemonfox_api_key" },
+      { id: "mistralKeyInput",           storageKey: "mistral_api_key" },
+      { id: "deepgramKeyInput",          storageKey: "deepgram_api_key" },
+      { id: "geminiKeyInput",            storageKey: "gemini_api_key" },
+      { id: "vertexBackendUrlInput",     storageKey: "vertex_backend_url" },
+      { id: "vertexBackendSecretInput",  storageKey: "vertex_backend_secret" },
+      { id: "bedrockBackendUrlInput",    storageKey: "bedrock_backend_url" },
+      { id: "bedrockBackendSecretInput", storageKey: "bedrock_backend_secret" }
+    ];
+
+    function setKeysIoStatus(message, isError) {
+      if (!keysIoStatus) return;
+      keysIoStatus.textContent = message || "";
+      keysIoStatus.style.color = isError ? "#b00020" : "#2e7d32";
+    }
+
+    function buildKeyBundle() {
+      const data = {};
+      KEY_FIELDS.forEach(({ id, storageKey }) => {
+        const el = document.getElementById(id);
+        const val = (el && typeof el.value === "string") ? el.value.trim() : "";
+        data[storageKey] = val;
+      });
+      return {
+        schema: "whisper-dev.keys",
+        version: 1,
+        createdAt: new Date().toISOString(),
+        data
+      };
+    }
+
+    function applyKeyBundle(bundle) {
+      if (!bundle) throw new Error("Empty file");
+
+      // Support both {data:{...}} and legacy flat {openai_api_key:"..."} shapes
+      const data = (bundle.data && typeof bundle.data === "object") ? bundle.data : bundle;
+
+      KEY_FIELDS.forEach(({ id, storageKey }) => {
+        if (!(storageKey in data)) return;
+        const el = document.getElementById(id);
+        if (el && typeof data[storageKey] === "string") {
+          el.value = data[storageKey];
+        }
+        // Keep behavior consistent with your Enter button: put values in sessionStorage.
+        try { sessionStorage.setItem(storageKey, (data[storageKey] || "").toString()); } catch {}
+      });
+
+      // Back-compat: default active key remains OpenAI
+      try { sessionStorage.setItem("user_api_key", (data.openai_api_key || "").toString()); } catch {}
+    }
+
+    if (exportKeysBtn) {
+      exportKeysBtn.addEventListener("click", function () {
+        try {
+          const bundle = buildKeyBundle();
+          const pretty = JSON.stringify(bundle, null, 2);
+          const blob = new Blob([pretty], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+
+          const now = new Date();
+          const y = now.getFullYear();
+          const m = String(now.getMonth() + 1).padStart(2, "0");
+          const d = String(now.getDate()).padStart(2, "0");
+          const filename = `whisper-keys-${y}${m}${d}.json`;
+
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+
+          setKeysIoStatus("Exported keys file. Store it somewhere safe.", false);
+        } catch (e) {
+          console.error(e);
+          setKeysIoStatus("Export failed: " + (e && e.message ? e.message : "Unknown error"), true);
+        }
+      });
+    }
+
+    if (importKeysBtn && importKeysFile) {
+      importKeysBtn.addEventListener("click", function () {
+        importKeysFile.value = ""; // allow re-importing the same file
+        importKeysFile.click();
+      });
+
+      importKeysFile.addEventListener("change", function () {
+        const file = importKeysFile.files && importKeysFile.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onerror = function () {
+          setKeysIoStatus("Import failed: could not read file.", true);
+        };
+        reader.onload = function () {
+          try {
+            const text = String(reader.result || "");
+            const parsed = JSON.parse(text);
+            applyKeyBundle(parsed);
+            setKeysIoStatus("Imported keys. Review the fields, then click Enter.", false);
+          } catch (e) {
+            console.error(e);
+            setKeysIoStatus("Import failed: invalid JSON file.", true);
+          }
+        };
+        reader.readAsText(file);
+      });
     }
   });
 </script>

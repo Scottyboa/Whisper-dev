@@ -70,6 +70,7 @@ Amazon Bedrock usage costs money, so you must add a payment method:
 3) Find Payment methods / Payment preferences
 4) Add a credit/debit card
 
+No monthly fees. You’re only charged for actual use of the models, and you pay nothing when inactive.
 
 ------------------------------------------------
 STEP 4 — ENABLE AMAZON BEDROCK + ENABLE CLAUDE
@@ -175,17 +176,14 @@ Done — you can now use:
 WHERE TO FIND / CHANGE YOUR SECRET LATER (IMPORTANT)
 ============================================================
 
-If you forgot your ProxySecret, or you want to rotate it:
+If you forgot your ProxySecret:
 
 1) AWS Console → Lambda
 2) Open Functions
 3) Click your proxy function (created by the stack)
 4) Go to: Configuration → Environment variables
 5) Look for: PROXY_SECRET
-
-If you can’t copy it easily:
-- Click Edit to reveal it, OR
-- Set a NEW secret value, Save, then update the secret in the app to match.
+6) Copy it.
 
 
 ============================================================
@@ -205,7 +203,3 @@ TROUBLESHOOTING
    • Make sure you ticked all 3 acknowledgement boxes.
    • Make sure region is eu-north-1 (top right).
 
-
-============================================================
-UNINSTALL / REMOVE EVERYTHING
-=========

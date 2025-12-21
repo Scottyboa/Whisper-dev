@@ -243,9 +243,68 @@
     }
     .accordion-hidden-content {
       display: none;
+   }
+  
+    /* AWS Bedrock Guide Modal (opened from the "Guide" link next to AWS Bedrock) */
+    #bedrockGuideView {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      background: white;
+      border: 2px solid #ccc;
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 3000;
     }
-  </style>
-  </style>
+    #bedrockGuideView.active {
+      display: block;
+    }
+    #bedrockGuideView .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      background: white;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    #bedrockGuideClose {
+      /* Keep the close button visible while scrolling inside the modal */
+      position: sticky;
+      top: 12px;
+      float: right;
+      font-size: 30px;
+      line-height: 1;
+      border: none;
+      background: transparent;
+      color: #d11;            /* RED so it's visible on white */
+      cursor: pointer;
+      padding: 0 6px;
+      margin: 0;              /* global button adds margin */
+      z-index: 3001;          /* ensure it's above content */
+    }
+    /* Prevent the floated close button from affecting the layout below */
+    #bedrockGuideHeading {
+      clear: both;
+    }
+    #bedrockGuideClose:hover {
+      opacity: 0.8;
+    }
+    #bedrockGuideText {
+      white-space: pre-wrap;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.4;
+      margin: 0;
+    }
+
+</style>
  
 </head>
 <body>
@@ -355,10 +414,9 @@
     <p id="bedrock-text">
       AWS Bedrock (
       <a
-        href="https://chatgpt.com"
-        target="_blank"
-        rel="noopener"
+        href="#"
         id="bedrock-guide-link"
+        role="button"
       >Guide</a>
       ):
     </p>
@@ -726,10 +784,105 @@
     });
   </script>
   
+  
+  <!-- AWS Bedrock Guide Modal -->
+  <div id="bedrockGuideView" aria-hidden="true">
+  <button id="bedrockGuideClose" type="button" aria-label="Close">&times;</button>
+  <h3>AWS Bedrock setup guide</h3>
+  <pre id="bedrockGuideText">Loading…</pre>
+</div>
+
+
   <script type="module" src="./js/main-index.js"></script>
 
   <script>
     document.addEventListener("DOMContentLoaded", function() {
+
+      // AWS Bedrock "Guide" modal (opened from the link next to AWS Bedrock)
+      const bedrockGuideLink = document.getElementById("bedrock-guide-link");
+      const bedrockGuideView = document.getElementById("bedrockGuideView");
+      const bedrockGuideClose = document.getElementById("bedrockGuideClose");
+      const bedrockGuideTextEl = document.getElementById("bedrockGuideText");
+
+      // Track which language we loaded last, so switching language loads the correct guide
+        let bedrockGuideLoadedLang = null;
+
+      function getCurrentLang() {
+        // Your site already stores language here via initIndexLanguage()
+        return localStorage.getItem("siteLanguage") || "en";
+      }
+
+      async function loadBedrockGuideForCurrentLanguage() {
+        if (!bedrockGuideTextEl) return;
+
+        const lang = getCurrentLang();
+        if (bedrockGuideLoadedLang === lang) return;
+
+        bedrockGuideTextEl.textContent = "Loading…";
+
+        // Norwegian only when lang === "no". All other languages default to English.
+        const candidates = (lang === "no")
+          ? ["./bedrock-guide.no.txt", "./bedrock-guide.txt"]
+          : ["./bedrock-guide.txt"];
+
+        try {
+          let loaded = false;
+          for (const url of candidates) {
+            const res = await fetch(url, { cache: "no-store" });
+            if (!res.ok) continue;
+            bedrockGuideTextEl.textContent = await res.text();
+            loaded = true;
+            break;
+          }
+          if (!loaded) throw new Error("No guide file could be loaded.");
+          bedrockGuideLoadedLang = lang;
+        } catch (err) {
+          console.error("Failed to load bedrock guide text:", err);
+          bedrockGuideTextEl.textContent =
+            "Could not load the guide text.\n\n" +
+            "If you are the site owner: make sure bedrock-guide.txt exists next to index.html (and optionally bedrock-guide.no.txt).";
+          bedrockGuideLoadedLang = null;
+        }
+      }
+
+      function openBedrockGuide() {
+        if (!bedrockGuideView) return;
+        bedrockGuideView.classList.add("active");
+        bedrockGuideView.setAttribute("aria-hidden", "false");
+        loadBedrockGuideForCurrentLanguage();
+      }
+
+      function closeBedrockGuide() {
+        if (!bedrockGuideView) return;
+        bedrockGuideView.classList.remove("active");
+        bedrockGuideView.setAttribute("aria-hidden", "true");
+      }
+
+      if (bedrockGuideLink && bedrockGuideView) {
+        bedrockGuideLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          openBedrockGuide();
+        });
+      }
+
+      if (bedrockGuideClose) {
+        bedrockGuideClose.addEventListener("click", closeBedrockGuide);
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && bedrockGuideView?.classList.contains("active")) {
+          closeBedrockGuide();
+        }
+      });
+
+      // If the user changes language while the modal is open, refresh the guide text
+      const langSelectEl = document.getElementById("lang-select");
+      langSelectEl?.addEventListener("change", () => {
+        bedrockGuideLoadedLang = null;
+        if (bedrockGuideView?.classList.contains("active")) {
+          loadBedrockGuideForCurrentLanguage();
+        }
+      });
       document.addEventListener("keydown", function(e) {
         // Check if the pressed key is "Enter"
         if (e.key === "Enter") {

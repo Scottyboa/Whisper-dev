@@ -178,10 +178,7 @@ Hvis du har glemt ProxySecret eller vil bytte det:
 3) Klikk proxy-funksjonen (laget av stacken)
 4) Gå til: Configuration → Environment variables
 5) Finn: PROXY_SECRET
-
-Hvis du ikke får kopiert den enkelt:
-- Trykk Edit for å se den, ELLER
-- Sett en NY verdi, lagre, og oppdater secret i appen så de matcher.
+6) Kopier og lagre trygt.
 
 
 ============================================================

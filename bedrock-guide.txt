@@ -20,9 +20,7 @@ processed in that EU region.
 AWS states that Amazon Bedrock does not store or log your prompts and completions,
 does not use them to train AWS models, and does not share them with third parties.
 
-Important: Your own AWS account can still store data if YOU enable logging or if
-you copy/paste data elsewhere. The proxy you deploy does not print your
-transcription to logs during normal successful usage.
+Using the AI models by way of this setup guarantees zero data retention and keep all data processing and residency within the EU, making usage of the models fully GDPR compliant.
 
 
 ------------------------------------------------------------

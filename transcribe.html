@@ -576,17 +576,25 @@
           <h3 id="noteGenerationTitle">Note Generation</h3>
           <!-- Phase 3: Note Provider selector (module switch only; both use OpenAI key) -->
           <div id="note-provider-container" style="display:flex; align-items:center; gap:8px; margin: 6px 0 6px;">
-            <label for="noteProvider" id="noteProviderLabel">Note Provider:</label>
+            <label for="noteProvider" id="noteProviderLabel">Provider:</label>
             <select id="noteProvider">
-              <option value="gpt5" selected>GPT-5.1</option>
-              <option value="gpt52">GPT-5.2</option>
-              <option value="gpt4">GPT-4-latest</option>
+              <option value="openai" selected>OpenAI</option>
               <option value="lemonfox">Lemonfox</option>
               <option value="mistral">Mistral</option>
               <option value="gemini3">Gemini 3(Google AI studio)</option> <!-- Gemini via public API -->
               <option value="gemini3-vertex">Google Vertex</option> <!-- Vertex-backed models (e.g. Gemini 2.5 Pro) -->
               <option value="aws-bedrock">AWS Bedrock</option>
             </select>
+            <!-- OpenAI model selector (shown only when Provider = OpenAI) -->
+            <div id="openai-model-container"
+                 style="display:none; align-items:center; gap:6px; margin-left:8px;">
+              <label for="openaiModel" id="openaiModelLabel">Model:</label>
+              <select id="openaiModel">
+                <option value="gpt5" selected>GPT-5.1</option>
+                <option value="gpt52">GPT-5.2</option>
+                <option value="gpt4">GPT-4-latest</option>
+              </select>
+            </div>
             <div id="note-provider-mode-container" style="display:none; align-items:center; gap:8px;">
               <label for="noteProviderMode" id="noteProviderModeLabel">Mode:</label>
               <select id="noteProviderMode">
@@ -791,56 +799,69 @@
   </script>
   
   <!-- Phase 3: Note provider persistence (no reload; module chosen in main.js) -->
-  <script>
+<script>
     (function () {
-      const DEFAULT_NOTE_PROVIDER = "gpt5";
-      const noteSel = document.getElementById("noteProvider");
+      const DEFAULT_PROVIDER = "openai";
+      const DEFAULT_OPENAI_MODEL = "gpt5";
+      const providerSel = document.getElementById("noteProvider");
+      const openaiModelContainer = document.getElementById("openai-model-container");
+      const openaiModelSel = document.getElementById("openaiModel");
+
       const gptReasoningContainer = document.getElementById("gpt5-reasoning-container");
       const geminiReasoningContainer = document.getElementById("gemini-reasoning-container");
       const vertexModelContainer = document.getElementById("vertex-model-container");
       const vertexModelSelect = document.getElementById("vertexModel");
       const bedrockModelContainer = document.getElementById("bedrock-model-container");
       const bedrockModelSelect = document.getElementById("bedrockModel");
-      if (!noteSel) return;
+
+      if (!providerSel) return;
+
       const noteModeContainer = document.getElementById("note-provider-mode-container");
       const noteModeSel = document.getElementById("noteProviderMode");
-      const storedProvider = sessionStorage.getItem("note_provider") || DEFAULT_NOTE_PROVIDER;
 
-      // Stored values historically included streaming/non-streaming in the provider key (e.g. gpt5-ns, gpt52-ns).
-      // The UI now separates Model (primary) and Mode (secondary).
-      let initialModel = storedProvider;
+      // Canonical provider key used for module switching (main.js still switches on note_provider).
+      // Examples:
+      //   - OpenAI: gpt5 / gpt5-ns / gpt52 / gpt52-ns / gpt4
+      //   - Others: lemonfox / mistral / gemini3 / gemini3-vertex / aws-bedrock
+      const storedProviderKey = sessionStorage.getItem("note_provider");
+
+      let initialProvider = DEFAULT_PROVIDER;
+      let initialOpenAiModel = DEFAULT_OPENAI_MODEL;
       let initialMode = "streaming";
-      if (storedProvider === "gpt5-ns" || storedProvider === "gpt52-ns") {
-        initialModel = storedProvider.replace("-ns", "");
-        initialMode = "non-streaming";
-      } else if (storedProvider === "gpt5" || storedProvider === "gpt52") {
-        initialModel = storedProvider;
+
+      if (storedProviderKey) {
+        const isNs = storedProviderKey.endsWith("-ns");
+        const baseKey = isNs ? storedProviderKey.replace(/-ns$/, "") : storedProviderKey;
+
+        if (baseKey === "gpt5" || baseKey === "gpt52" || baseKey === "gpt4") {
+          initialProvider = "openai";
+          initialOpenAiModel = baseKey;
+
+          // Mode only applies to GPT-5.x
+          if ((baseKey === "gpt5" || baseKey === "gpt52") && isNs) {
+            initialMode = "non-streaming";
+          }
+        } else {
+          initialProvider = baseKey;
+        }
+      }
+
+      // Fallbacks if sessionStorage contains an unknown value
+      if (!Array.from(providerSel.options).some(o => o.value === initialProvider)) {
+        initialProvider = DEFAULT_PROVIDER;
+        initialOpenAiModel = DEFAULT_OPENAI_MODEL;
         initialMode = "streaming";
       }
 
-      // If the stored provider isn't a valid option in the primary dropdown, fall back to default.
-      if (!Array.from(noteSel.options).some(o => o.value === initialModel)) {
-        initialModel = DEFAULT_NOTE_PROVIDER;
-        initialMode = "streaming";
-      }
-
-      noteSel.value = initialModel;
+      providerSel.value = initialProvider;
+      if (openaiModelSel) openaiModelSel.value = initialOpenAiModel;
       if (noteModeSel) noteModeSel.value = initialMode;
 
-      // Persist canonical values for downstream module loading (main.js still switches on note_provider).
-      function getEffectiveNoteProvider(model, mode) {
+      function getEffectiveNoteProvider(provider, model, mode) {
+        if (provider !== "openai") return provider;
         const isGpt5x = model === "gpt5" || model === "gpt52";
         if (!isGpt5x) return model;
         return mode === "non-streaming" ? `${model}-ns` : model;
-      }
-
-      sessionStorage.setItem("note_provider", getEffectiveNoteProvider(noteSel.value, noteModeSel ? noteModeSel.value : "streaming"));
-      if (noteModeSel) sessionStorage.setItem("note_mode", noteModeSel.value);
-
-      function updateNoteModeVisibility() {
-        const v = noteSel.value;
-        const show = v === "gpt5" || v === "gpt52";
-        if (noteModeContainer) noteModeContainer.style.display = show ? "flex" : "none";
       }
 
       // Restore previously chosen Vertex model (if any)
@@ -865,15 +886,36 @@
         });
       }
 
-      function updateReasoningVisibility() {
-                const v = noteSel.value;
-        updateNoteModeVisibility();
-        const isGpt51 = v === "gpt5";
-        const isGpt52 = v === "gpt52";
+      function updateVisibility() {
+        const provider = providerSel.value;
+        const model = openaiModelSel ? openaiModelSel.value : DEFAULT_OPENAI_MODEL;
+
+        const isOpenAi = provider === "openai";
+        const isGpt51 = isOpenAi && model === "gpt5";
+        const isGpt52 = isOpenAi && model === "gpt52";
         const isGpt5x = isGpt51 || isGpt52;
-        const isGemini3 = v === "gemini3"; // public Gemini 3 API only
-        const isVertex = v === "gemini3-vertex"; // Google Vertex backend
-        const isBedrock = v === "aws-bedrock"; // AWS Bedrock backend
+
+        const isGemini3 = provider === "gemini3"; // public Gemini 3 API only
+        const isVertex = provider === "gemini3-vertex"; // Google Vertex backend
+        const isBedrock = provider === "aws-bedrock"; // AWS Bedrock backend
+
+        if (openaiModelContainer) {
+          openaiModelContainer.style.display = isOpenAi ? "flex" : "none";
+        }
+        if (openaiModelSel) {
+          openaiModelSel.disabled = !isOpenAi;
+        }
+
+        // Mode only for GPT-5.x
+        const showMode = isGpt5x;
+        if (noteModeContainer) {
+          noteModeContainer.style.display = showMode ? "flex" : "none";
+        }
+        if (noteModeSel) {
+          noteModeSel.disabled = !showMode;
+          // Keep a sane default when hidden
+          if (!showMode) noteModeSel.value = "streaming";
+        }
 
         if (gptReasoningContainer) {
           gptReasoningContainer.style.display = isGpt5x ? "flex" : "none";
@@ -891,6 +933,7 @@
             reasoningSel.value = "high";
           }
         }
+
         if (geminiReasoningContainer) {
           geminiReasoningContainer.style.display = isGemini3 ? "flex" : "none";
         }
@@ -902,14 +945,13 @@
         }
       }
 
-      // Initial state on page load
-      updateReasoningVisibility();
-
       async function syncNoteProvider() {
         const effective = getEffectiveNoteProvider(
-          noteSel.value,
+          providerSel.value,
+          openaiModelSel ? openaiModelSel.value : DEFAULT_OPENAI_MODEL,
           noteModeSel ? noteModeSel.value : "streaming"
         );
+
         sessionStorage.setItem("note_provider", effective);
         if (noteModeSel) sessionStorage.setItem("note_mode", noteModeSel.value);
 
@@ -918,11 +960,23 @@
         }
       }
 
+      // Initial state on page load
+      updateVisibility();
+      // Persist initial values
+      syncNoteProvider();
+
       // Live-switch note module without reloading
-      noteSel.addEventListener("change", async () => {
-        updateReasoningVisibility();
+      providerSel.addEventListener("change", async () => {
+        updateVisibility();
         await syncNoteProvider();
       });
+
+      if (openaiModelSel) {
+        openaiModelSel.addEventListener("change", async () => {
+          updateVisibility();
+          await syncNoteProvider();
+        });
+      }
 
       if (noteModeSel) {
         noteModeSel.addEventListener("change", async () => {

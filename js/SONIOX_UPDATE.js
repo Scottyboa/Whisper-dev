@@ -264,6 +264,69 @@ function getSonioxBase() {
     : "https://api.soniox.com/v1";
 }
 
+// Keep parity with *_dia.js: optionally purge Soniox-side resources when a new session starts.
+// ⚠️ This deletes *all* transcriptions/files visible to the API key (not just ones from this page).
+const AUTO_CLEAN_ON_LOAD = true;
+
+// ─────────────────── Cleanup on every new recording start ───────────────────
+async function cleanupSonioxAll() {
+  if (!AUTO_CLEAN_ON_LOAD) {
+    logDebug("[SonioxCleanup] Skipped: AUTO_CLEAN_ON_LOAD=false");
+    return;
+  }
+  const apiKey = getAPIKey();
+  if (!apiKey) {
+    logDebug("[SonioxCleanup] Skipped: no API key present");
+    return;
+  }
+
+  const hdrs = { Authorization: `Bearer ${apiKey}` };
+  const base = getSonioxBase();
+
+  logInfo("[SonioxCleanup] Starting full cleanup…");
+  try {
+    // 1) Delete transcriptions
+    const tResp = await fetchWithTimeout(`${base}/transcriptions`, { headers: hdrs }, 30000);
+    if (tResp.ok) {
+      const tJson = await tResp.json().catch(() => ({}));
+      const ts = Array.isArray(tJson?.transcriptions) ? tJson.transcriptions : [];
+      logInfo(`[SonioxCleanup] Found ${ts.length} transcriptions`);
+      for (const t of ts) {
+        try {
+          await fetchWithTimeout(`${base}/transcriptions/${t.id}`, { method: "DELETE", headers: hdrs }, 30000);
+          logDebug("[SonioxCleanup] deleted transcription:", t.id);
+        } catch (e) {
+          logDebug("[SonioxCleanup] failed deleting transcription", t?.id, e);
+        }
+      }
+    } else {
+      logDebug("[SonioxCleanup] Failed to list transcriptions:", await tResp.text().catch(() => ""));
+    }
+
+    // 2) Delete files
+    const fResp = await fetchWithTimeout(`${base}/files`, { headers: hdrs }, 30000);
+    if (fResp.ok) {
+      const fJson = await fResp.json().catch(() => ({}));
+      const fs = Array.isArray(fJson?.files) ? fJson.files : [];
+      logInfo(`[SonioxCleanup] Found ${fs.length} files`);
+      for (const f of fs) {
+        try {
+          await fetchWithTimeout(`${base}/files/${f.id}`, { method: "DELETE", headers: hdrs }, 30000);
+          logDebug("[SonioxCleanup] deleted file:", f.id);
+        } catch (e) {
+          logDebug("[SonioxCleanup] failed deleting file", f?.id, e);
+        }
+      }
+    } else {
+      logDebug("[SonioxCleanup] Failed to list files:", await fResp.text().catch(() => ""));
+    }
+
+    logInfo("✅ [SonioxCleanup] Finished cleanup on start.");
+  } catch (e) {
+    logDebug("[SonioxCleanup] Error during cleanup:", e);
+  }
+}
+
 async function uploadToSonioxFile(wavBlob, filename, retries = 5, backoff = 2000) {
   const apiKey = getAPIKey();
   if (!apiKey) throw new Error("API key not available");
@@ -894,6 +957,12 @@ function initRecording() {
     alert("Please enter your Soniox API key first.");
     return;
   }
+
+    // NEW: Purge Soniox-side data immediately when a new recording session starts.
+    // Fire-and-forget so the UI doesn't stall if Soniox is slow.
+    cleanupSonioxAll().catch((err) => {
+      logError("Soniox cleanup on start failed", err);
+    });
     resetRecordingState();
     const transcriptionElem = document.getElementById("transcription");
     if (transcriptionElem) transcriptionElem.value = "";

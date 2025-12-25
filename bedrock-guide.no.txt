@@ -97,7 +97,7 @@ Denne lenken åpner AWS CloudFormation med alt klart. Du legger inn et passord o
 
 Kopier/lim inn dette i nettleseren MENS DU ER LOGGET INN I AWS:
 
-https://eu-north-1.console.aws.amazon.com/cloudformation/home?region=eu-north-1#/stacks/create/review?templateURL=https%3A%2F%2Fs3.eu-north-1.amazonaws.com%2Fbedrock-note-proxy-cfn-eu-north-1-yourbrand%2Ftemplates%2Fbedrock-note-proxy.yaml&stackName=bedrock-note-proxy&param_BedrockRegion=eu-north-1&param_DefaultModelKey=sonnet-4&param_CodeS3Bucket=bedrock-note-proxy-cfn-eu-north-1-yourbrand&param_CodeS3Key=artifacts%2Fbedrock-note-proxy.zip&param_CodeS3ObjectVersion=1nav3iJXFrhb88muQGriQG52r5yvVaBs
+https://eu-north-1.console.aws.amazon.com/cloudformation/home?region=eu-north-1#/stacks/create/review?templateURL=https%3A%2F%2Fs3.eu-north-1.amazonaws.com%2Fbedrock-note-proxy-cfn-eu-north-1-yourbrand%2Ftemplates%2Fbedrock-note-proxy.yaml&stackName=bedrock-note-proxy&param_BedrockRegion=eu-north-1&param_DefaultModelKey=sonnet-4&param_CodeS3Bucket=bedrock-note-proxy-cfn-eu-north-1-yourbrand&param_CodeS3Key=artifacts%2Fbedrock-note-proxy.zip
 
 
 -----------------------------------------------------

@@ -356,6 +356,19 @@ https://console.mistral.ai<br><br>
   Input: ca. 2 USD (≈ 22 NOK)<br>
   Output: ca. 12 USD (≈ 132 NOK)</p>
 
+  <p><strong>AWS Bedrock – Claude Sonnet 4</strong><br>
+  Input: 3 USD (≈ 33 NOK)<br>
+  Output: 15 USD (≈ 165 NOK)</p>
+
+  <p><strong>AWS Bedrock – Claude Sonnet 4.5</strong><br>
+  Input: 3 USD (≈ 33 NOK)<br>
+  Output: 15 USD (≈ 165 NOK)</p>
+
+  <p><strong>AWS Bedrock – Claude Haiku 4.5</strong><br>
+  Input: 1 USD (≈ 11 NOK)<br>
+  Output: 5 USD (≈ 55 NOK)</p>
+
+
   <p><strong>Mistral – Mistral Large</strong><br>
   Ca. 2 USD per 1M input-tokens og 6 USD per 1M output-tokens (≈ 22 og 66 NOK).</p>
 

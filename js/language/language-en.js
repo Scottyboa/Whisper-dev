@@ -413,6 +413,8 @@ priceModalText: `
     <li>Gemini 3: ≈ 0.11 NOK per note</li>
     <li>Mistral Large: ≈ 0.08 NOK per note</li>
     <li>Lemonfox LLM: ≈ 0.02 NOK per note</li>
+    <li>AWS Bedrock – Claude Sonnet 4 / 4.5: ≈ 0.15 NOK per note</li>
+    <li>AWS Bedrock – Claude Haiku 4.5: ≈ 0.05 NOK per note</li>
   </ul>
 
   <p><em>Some typical combinations for one 15-minute consultation:</em></p>
@@ -426,6 +428,12 @@ priceModalText: `
     </li>
     <li>Voxtral + Mistral Large<br>
       ≈ 0.17 NOK (STT) + 0.08 NOK (note) ≈ 0.25 NOK per consultation
+    </li>
+    <li>Soniox + Claude Sonnet 4 / 4.5<br>
+      ≈ 0.30 NOK (STT) + 0.15 NOK (note) ≈ 0.45 NOK per consultation
+    </li>
+    <li>Soniox + Claude Haiku 4.5<br>
+      ≈ 0.30 NOK (STT) + 0.05 NOK (note) ≈ 0.35 NOK per consultation
     </li>
   </ul>
 
@@ -460,6 +468,12 @@ priceModalText: `
     </li>
     <li>Deepgram Nova-3 + GPT-5.1<br>
       ≈ 23 USD ≈ 250 NOK per month
+    </li>
+    <li>Soniox + Claude Sonnet 4 / 4.5<br>
+      ≈ 12 USD ≈ 130 NOK per month
+    </li>
+    <li>Soniox + Claude Haiku 4.5<br>
+      ≈ 9 USD ≈ 100 NOK per month
     </li>
   </ul>
 

@@ -412,6 +412,8 @@ https://console.mistral.ai<br><br>
     <li>Gemini 3: ≈ 0,11 NOK per notat</li>
     <li>Mistral Large: ≈ 0,08 NOK per notat</li>
     <li>Lemonfox LLM: ≈ 0,02 NOK per notat</li>
+    <li>AWS Bedrock – Claude Sonnet 4 / 4.5: ≈ 0,15 NOK per notat</li>
+    <li>AWS Bedrock – Claude Haiku 4.5: ≈ 0,05 NOK per notat</li>
   </ul>
 
   <p><em>Noen typiske kombinasjoner for én 15-minutters konsultasjon:</em></p>
@@ -425,6 +427,12 @@ https://console.mistral.ai<br><br>
     </li>
     <li>Voxtral + Mistral Large<br>
       ≈ 0,17 NOK (STT) + 0,08 NOK (notat) ≈ 0,25 NOK per konsultasjon
+    </li>
+    <li>Soniox + Claude Sonnet 4 / 4.5<br>
+      ≈ 0,30 NOK (STT) + 0,15 NOK (notat) ≈ 0,45 NOK per konsultasjon
+    </li>
+    <li>Soniox + Claude Haiku 4.5<br>
+      ≈ 0,30 NOK (STT) + 0,05 NOK (notat) ≈ 0,35 NOK per konsultasjon
     </li>
   </ul>
 
@@ -459,6 +467,12 @@ https://console.mistral.ai<br><br>
     </li>
     <li>Deepgram Nova-3 + GPT-5.1<br>
       ≈ 23 USD ≈ 250 NOK per måned
+    </li>
+    <li>Soniox + Claude Sonnet 4 / 4.5<br>
+      ≈ 12 USD ≈ 130 NOK per måned
+    </li>
+    <li>Soniox + Claude Haiku 4.5<br>
+      ≈ 9 USD ≈ 100 NOK per måned
     </li>
   </ul>
 

@@ -211,3 +211,59 @@ For å slette proxyen helt:
 4) Klikk Delete
 
 Dette fjerner Lambda + permissions + Function URL.
+
+
+============================================================
+OPPDATERING AV STACKEN SENERE (NÅR NYE APP-OPPDATERINGER SLIPPES)
+============================================================
+
+Hvis det noen gang kommer informasjon om fremtidige oppdateringer for AWS Bedrock-
+oppsettet i appen, er dette hvordan du oppdaterer din eksisterende CloudFormation-stack.
+Nye oppdateringer vil bli informert om inne i webappen når de skjer.
+
+VIKTIG:
+• Å oppdatere stacken oppdaterer Lambda-proxy-oppsettet ditt.
+• Behold din eksisterende ProxySecret med mindre du ønsker å endre den (hvis du endrer den,
+  må du også oppdatere den i appen).
+
+------------------------------------------------------------
+SLIK OPPDATERER DU STACKEN (CLOUDFORMATION)
+------------------------------------------------------------
+
+1) I AWS-konsollen, sørg for at Region er:
+   ✅ Europe (Stockholm) — eu-north-1
+
+2) Åpne: CloudFormation
+3) Klikk: Stacks
+4) Velg stacken din (eksempelnavn: bedrock-note-proxy)
+
+5) Klikk: Update stack ▼
+   Velg: ✅ Make a direct update
+
+6) Under “Prepare template”, velg:
+   ✅ Replace existing template
+   Klikk deretter: Next
+
+7) Velg kilde for template:
+   ✅ Amazon S3 URL
+   Lim inn denne Template URL-en:
+
+   https://s3.eu-north-1.amazonaws.com/bedrock-note-proxy-cfn-eu-north-1-yourbrand/templates/bedrock-note-proxy.yaml
+
+   Klikk deretter: Next
+
+8) Parametere:
+   • La verdiene stå som de er (anbefalt), spesielt ProxySecret
+   Klikk deretter: Next → Next
+
+9) Bekreftelser:
+   Du vil se 3 avkrysningsbokser for bekreftelse (IAM + SAM/macro).
+   ✅ Huk av alle tre.
+
+10) Klikk:
+    ✅ Update stack
+
+11) Vent til stack-status blir:
+    ✅ UPDATE_COMPLETE
+
+Ferdig — proxy-stacken din er nå oppdatert.

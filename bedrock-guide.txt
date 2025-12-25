@@ -203,3 +203,59 @@ TROUBLESHOOTING
    • Make sure you ticked all 3 acknowledgement boxes.
    • Make sure region is eu-north-1 (top right).
 
+
+============================================================
+UPDATING YOUR STACK LATER (WHEN NEW APP UPDATES ARE RELEASED)
+============================================================
+
+If there will ever be information on future updates for the AWS Bedrock setup in
+the app, this is how you update your existing CloudFormation stack. New updates
+will be informed inside the web app when they happen.
+
+IMPORTANT:
+• Updating the stack will update your Lambda proxy setup.
+• Keep your existing ProxySecret unless you want to change it (if you change it,
+  you must also update it in the app).
+
+------------------------------------------------------------
+HOW TO UPDATE THE STACK (CLOUDFORMATION)
+------------------------------------------------------------
+
+1) In AWS Console, make sure your Region is:
+   ✅ Europe (Stockholm) — eu-north-1
+
+2) Open: CloudFormation
+3) Click: Stacks
+4) Select your stack (example name: bedrock-note-proxy)
+
+5) Click: Update stack ▼
+   Choose: ✅ Make a direct update
+
+6) Under “Prepare template”, choose:
+   ✅ Replace existing template
+   Then click: Next
+
+7) Choose template source:
+   ✅ Amazon S3 URL
+   Paste this Template URL:
+
+   https://s3.eu-north-1.amazonaws.com/bedrock-note-proxy-cfn-eu-north-1-yourbrand/templates/bedrock-note-proxy.yaml
+
+   Then click: Next
+
+8) Parameters:
+   • Leave values as-is (recommended), especially ProxySecret
+   Then click: Next → Next
+
+9) Acknowledgements:
+   You will see 3 acknowledgement checkboxes (IAM + SAM/macro).
+   ✅ Tick all three.
+
+10) Click:
+    ✅ Update stack
+
+11) Wait until the stack Status becomes:
+    ✅ UPDATE_COMPLETE
+
+Done — your proxy stack is now updated.
+

@@ -521,27 +521,27 @@ guideText: `Welcome to the Transcribe Notes Transcription tool. This application
 <strong>How to Use the Functions:</strong><br><br>
 
 <ul>
-  <li><strong>Recording:</strong> Patient consent must always be obtained prior to recording. Click "Start Recording" to begin capturing audio. Every 2 minutes, a chunk of audio is automatically sent to the OpenAI servers for transcription. The transcripts will appear sequentially in the transcription output field.<br><br>
-  <strong><u>Important:</u> The recorder does not work in every web browser. It is recommended to use either <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>.</strong></li><br>
+  <li><strong>Recording:</strong> The patient’s consent must always be obtained before recording. Click “Start recording” to begin capturing audio.<br><br>
+  
+  <strong><u>Important:</u> The recording function does not work in all browsers. We therefore recommend using <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>.</strong> Select the desired transcription model in pulldown menu before starting the recording.</li><br>
 
-  <li><strong>Pause and Resume:</strong> You can use the "Pause" button to temporarily stop the recording—for instance, if the consultation is interrupted or you need to step out of the office briefly. When you click "Pause", the current audio segment is uploaded and transcribed, and the recording is paused. When you're ready to continue, click "Resume", and the recording automatically resumes with the next segment. The timer continues from where it left off, and the session can be ended as usual by clicking "Stop/Complete".</li><br>
+  <li><strong>Pause and resume:</strong> You can use the “Pause” button to temporarily stop the recording, for example if the consultation is interrupted or you need to leave the office for a moment. When you press “Pause,” the current audio segment is uploaded and transcribed, and the recording is paused. When you are ready to continue, click “Resume,” and the recording will automatically continue with the next segment. The timer continues from where it left off, and the recording can ultimately be ended as usual with “Stop/Done.”</li><br>
 
-  <li><strong>Completion:</strong> After clicking "Stop/Complete", the recording stops. The Completion Timer counts until the full transcript is received (usually within 5–10 seconds).</li><br>
+  <li><strong>Completion:</strong> When you click “Stop/Done,” the recording stops. The completion timer counts the time until the full transcription has been received (usually within 5–10 seconds).</li><br>
 
-  <li><strong>Custom Prompt & Prompt Profiles:</strong> On the right, select a prompt slot (1–10) and write your custom prompt. Prompts are saved automatically on this device. To keep your prompts independent of API key changes, you can set a <strong>Prompt profile ID</strong> (e.g. “David”, “David 1”, “Office-PC-2”). The active profile name is shown above the prompt field. If no profile is set, prompts may still be stored using the older API-key-linked method.</li><br>
+  <li><strong>Custom prompt and prompt profiles:</strong> On the right side, choose a prompt slot (1–10) and enter your own prompt. The prompts are saved automatically on this device. To make the prompts independent of changes to the API key, you can set a <strong>Prompt profile ID</strong> (e.g., “David”, “David 1”, “Office-PC-2”). The active profile is shown above the prompt field. If no profile is set, the prompts may still be saved using the older method that was tied to the API key.</li><br>
 
-  <li><strong>Export / Import (move or share prompts):</strong> Click <strong>Export</strong> to download a small JSON file containing your 10 prompt slots for the current Prompt profile. On another computer, set your Prompt profile ID (the same one, or a new one) and click <strong>Import</strong> to load that file. Import always loads the prompts into your <strong>current</strong> profile on that device, which also makes it easy to share prompt “templates” with colleagues.</li><br>
+  <li><strong>Export / import (move or share prompts):</strong> Click <strong>Export</strong> to download a small JSON file containing all 10 prompt slots for the current profile. On another PC, set the Prompt profile ID (the same one or a new one) and click <strong>Import</strong> to load the file. Import always places the prompts into the <strong>active</strong> profile on that device, which also makes it easy to share prompt “templates” with colleagues.</li><br>
 
-  <li><strong>Changing profiles:</strong> If you switch the Prompt profile ID, the prompt slots immediately show the prompts saved under that profile. This lets multiple users share the same computer without mixing prompts, as long as each user uses their own profile name.</li><br>
+  <li><strong>Switch profile:</strong> When you change the Prompt profile ID, the prompt slots will immediately show the prompts stored under that profile. This allows multiple people to use the same PC without mixing prompts, as long as each user has their own profile.</li><br>
 
+  <li><strong>Note generation:</strong> Once the transcription is complete, click “Generate note” to create a note based on the transcription and the selected/custom prompt. Note generation is performed by the provider selected in the dropdown menu in the note generation module. Generated clinical notes must be reviewed and validated by healthcare personnel before use.</li><br>
 
-  <li><strong>Note Generation:</strong> Once transcription is complete, click "Generate Note" to create a note based on your transcript and selected/custom prompt. Generated medical notes must be reviewed and validated by healthcare professionals before use.</li><br>
+  <li><strong>Cost overview:</strong> To see your current usage with OpenAI, click the cost overview link located at the top right of this page.</li><br>
 
-  <li><strong>Usage Overview:</strong> To check your current usage at OpenAI, click on the usage overview hyperlink on the main interface.</li><br>
+  <li><strong>Security:</strong> Your audio recording is sent directly to the selected provider’s servers (from the dropdown menu) for transcription, and is neither stored (applies only to AWS Bedrock, Google Vertex, and Soniox) nor used for machine learning. The transcribed text is only displayed in your browser and is deleted/disappears as soon as you close the browser or load new content.</li><br>
 
-  <li><strong>Security:</strong> Your audio recording is sent directly to OpenAI’s API servers for transcription, only for the purpose of transcription. It is not stored or used for machine learning. The transcribed text displayed in your browser is not saved anywhere, and is deleted/disappears as soon as you close the browser or load new content.</li><br>
-
-  <li><strong>Guide Toggle:</strong> Click the "Guide" button again to return to the main interface.</li>
+  <li><strong>Guide button:</strong> Click the “Guide” button again to return to the main view.</li>
 </ul><br><br>
 
 <strong>Prompt Examples:</strong><br><br>

@@ -521,9 +521,9 @@ guideText: `Velkommen til <strong>Transcribe Notes</strong>. Denne applikasjonen
 <strong>Slik bruker du funksjonene:</strong><br><br>
 
 <ul>
-  <li><strong>Opptak:</strong> Pasientens samtykke må alltid innhentes før opptak. Klikk på "Start opptak" for å begynne å ta opp lyd.<br><br>
+  <li><strong>Opptak:</strong> Pasientens samtykke må alltid innhentes før opptak. Velg ønsket tale-til-tekst modell fra nedtrekksmenu, deretter klikk på "Start opptak" for å begynne opptak..<br><br>
   
-  <strong><u>Viktig:</u> Opptaksfunksjonen fungerer ikke i alle nettlesere. Vi anbefaler derfor å bruke <strong>Google Chrome</strong> eller <strong>Microsoft Edge</strong>.</strong> Velg så ønsket transkripsjonsmodell.</li><br>
+  <strong><u>Viktig:</u> Opptaksfunksjonen fungerer ikke i alle nettlesere. Vi anbefaler derfor å bruke <strong>Google Chrome</strong> eller <strong>Microsoft Edge</strong>.</strong></li><br>
 
   <li><strong>Pause og gjenoppta:</strong> Du kan bruke "Pause"-knappen til midlertidig å stoppe opptaket, for eksempel dersom konsultasjonen blir avbrutt eller du trenger å forlate kontoret et øyeblikk. Når du trykker på "Pause", lastes det aktuelle lydsegmentet opp og transkriberes, og opptaket settes på pause. Når du er klar til å fortsette, klikker du på "Fortsett", og opptaket gjenopptas automatisk med neste segment. Tidtakeren fortsetter der den slapp, og opptaket kan til slutt avsluttes som vanlig med "Stopp/Ferdig".</li><br>
 

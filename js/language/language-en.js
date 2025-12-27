@@ -276,15 +276,15 @@ https://aistudio.google.com<br><br>
 – Store the key securely and paste it into “Google Gemini API key” on the front page<br>
 – Text model: Gemini 3 (currently one of the best text-generation models available)<br><br>
 
-<strong>Google Vertex (Gemini 2.5 Pro – EU endpoint)</strong><br>
+<strong>Google Vertex (Gemini 2.5 Pro – full GDPR compliance)</strong><br>
 – This is a more advanced setup designed for users who want to run Gemini through Google Cloud / Vertex AI using a regional EU endpoint (such as europe-west1 or europe-west4).<br>
 – In short: you create your own Google Cloud project, activate Vertex AI, link it to a billing account, and deploy a small backend function (Cloud Run) which gives you a secure HTTPS URL (https://…run.app).<br>
 – In this web app, you paste that URL into the field “Vertex backend URL (https://…run.app)” and your secret BACKEND_SECRET into the “Vertex backend secret” field on the front page.<br>
 – All usage of Gemini 2.5 Pro then runs through *your* project; you control billing, quotas, and can select an EU region, which improves GDPR compliance.<br>
 – The setup is slightly technical, so if you prefer a full step-by-step guide, click the “Guide” link next to the “Google Vertex” header above the input fields on the front page.<br><br>
 
-<strong>AWS Bedrock (advanced setup – can enable full GDPR compliance)</strong><br>
-– This is a more advanced setup than most options in the app, but it can be configured in a way that supports full GDPR compliance.<br>
+<strong>AWS Bedrock (full GDPR compliance)</strong><br>
+– This is a more advanced setup than most options in the app, but it can be configured in a way that supports full GDPR compliance, with EU endpoint.<br>
 – For step-by-step instructions, click the <strong>“Guide”</strong> link next to the <strong>AWS Bedrock</strong> header on the front page (index.html).<br>
 – When the setup is complete, you will receive a <strong>backend URL</strong> and a <strong>secret key</strong>. You must paste these into the <strong>AWS Bedrock</strong> fields on the front page of the web app.<br><br>
 

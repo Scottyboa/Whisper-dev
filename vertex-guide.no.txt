@@ -1,0 +1,207 @@
+============================================================
+VERTEX AI-BACKEND (EUROPE-WEST4) — DISTRIBUSJONSGUIDE (FOR DENNE APPEN)
+
+Denne guiden hjelper deg å distribuere en liten backend i ditt eget Google Cloud-prosjekt.
+Når du er ferdig, limer du inn to verdier i denne appen slik at den kan kalle Vertex AI
+via prosjektet ditt:
+
+• Backend-URL (Cloud Run-URL)
+• Hemmelig nøkkel (kreves av webappen)
+
+SIKKERHETS-/KOSTNADSADVARSEL (LES)
+
+IKKE del backend-URL-en eller den hemmelige nøkkelen med noen.
+
+Alle som har dem kan kalle backenden din og generere Vertex AI-forespørsler som
+vil påføre kostnader i Google Cloud-prosjektet ditt.
+
+HVA DU HAR NÅR DU ER FERDIG
+
+Du vil kopiere to verdier inn i denne appen:
+
+Backend-URL (Cloud Run-tjeneste-URL)
+
+Hemmelig nøkkel (backend secret)
+
+============================================================
+TRINN-FOR-TRINN OPPSETT
+TRINN 0 — FORUTSETNINGER (PROSJEKT + FAKTURERING)
+
+0.1 Opprett et Google Cloud-prosjekt
+
+Åpne Google Cloud Console.
+
+Klikk prosjektvelgeren (øverst til venstre / topplinjen).
+
+Klikk: NEW PROJECT
+
+Opprett prosjektet ditt.
+
+Etter at prosjektet er opprettet kan du bli videresendt til en side som sier:
+“Enable Infrastructure Manager API”
+Klikk:
+✅ Enable
+Deretter venter du til aktiveringen er fullført.
+
+0.2 Aktiver fakturering (påkrevd)
+
+Cloud Run + Vertex AI krever fakturering.
+
+I Cloud Console: sørg for at ditt nye prosjekt er valgt (topplinjen).
+
+Åpne: Billing
+
+Knytt en faktureringskonto til prosjektet ditt.
+
+TRINN 1 — GI TILLATELSER TIL STANDARD COMPUTE ENGINE-TJENESTEKONTO
+
+Vi bruker prosjektets standard Compute Engine-tjenestekonto for distribusjon.
+
+1.1 Finn standard Compute Engine-tjenestekonto
+
+Gå til: IAM & Admin → IAM
+
+Se etter en principal som:
+PROJECT_NUMBER-compute@developer.gserviceaccount.com
+
+Den kan også vises som:
+“Compute Engine default service account”
+
+1.2 Tildel nødvendige roller
+
+Fortsatt i: IAM & Admin → IAM
+
+Klikk: Grant access
+
+I “New principals”, lim inn e-postadressen til standard Compute-tjenestekonto
+(den ...-compute@developer.gserviceaccount.com
+)
+
+Legg til disse rollene:
+• Owner
+• Infrastructure Manager Service Agent (roles/config.agent)
+(Etter å ha lagt til Owner, klikk “Add another role” for å legge til den andre.)
+
+Klikk: Save
+
+TRINN 2 — DISTRIBUER MED INFRASTRUCTURE MANAGER (TERRAFORM)
+
+2.1 Åpne Infrastructure Manager
+
+Åpne (i samme nettleser der du er logget inn på Google):
+https://console.cloud.google.com/infra-manager
+
+2.2 Opprett en ny deployment
+
+Klikk: Create
+
+Velg:
+• Deployment ID: et navn du vil
+Eksempel: vertex-note-backend
+• Region: europe-west4 (EU4)
+• Service account: standard Compute Engine-tjenestekonto
+(...-compute@developer.gserviceaccount.com
+)
+
+2.3 Kilde til Terraform-konfigurasjon (Git)
+
+La source type stå som Git, og fyll inn:
+
+• Git repo URL: https://github.com/vertex-note-tools/Vertex-note
+
+• Git directory: infra
+• Git ref: main
+
+Klikk: Continue
+
+2.4 Terraform-verdier (kun én verdi)
+
+Du skal bare se én Terraform-variabel:
+• project_id
+
+Slik fyller du den riktig ut:
+
+Klikk prosjektvelgeren i topplinjen i Cloud Console.
+
+Finn prosjektets “Project ID”
+(ser ut som: my-project-123456 — IKKE prosjekt nummeret)
+
+Kopier den
+
+Lim den inn i verdifeltet for project_id
+
+Klikk: Create deployment / Apply
+
+TRINN 3 — KOPIER BACKEND-URL + HEMMELIG NØKKEL
+
+Etter at deployment er fullført (grønn sjekk):
+
+Åpne deploymenten
+
+Klikk: Outputs
+
+Kopier og lagre trygt:
+
+• service_url (kan vises som “Function URL / service_url”)
+→ Dette er din Backend-URL
+
+• backend_secret (kan vises som “Secret key / backend_secret”)
+→ Dette er din Hemmelige nøkkel
+
+TRINN 4 — KOBLE DEN TIL DENNE APPEN
+
+Gå tilbake til appens forside og lim inn:
+
+• Backend-URL = service_url
+• Hemmelig nøkkel = backend_secret
+
+Ferdig — du kan nå bruke Gemini 2.5 Pro fra Google Vertex-rullegardinmenyen
+i notatgenereringsmodulen.
+
+============================================================
+HVOR DU FINNER DISSE VERDIENE SENERE
+
+Backend-URL + hemmelig nøkkel er lagret som deployment outputs.
+
+Slik henter du dem igjen:
+
+Cloud Console → Infrastructure Manager
+
+Åpne deploymenten
+
+Åpne: Outputs
+
+Kopier:
+• service_url
+• backend_secret
+
+============================================================
+FEILSØKING (BARE HVIS DISTRIBUSJONEN MISLYKKES)
+
+“Permission denied” / rollefeil
+
+Dobbeltsjekk at standard Compute Engine-tjenestekonto har BEGGE rollene:
+
+• Owner
+• Infrastructure Manager Service Agent (roles/config.agent)
+
+“Jeg finner ikke standard Compute Engine-tjenestekonto”
+
+Aktiver Compute Engine API én gang:
+
+Åpne Cloud Console → Compute Engine
+
+Hvis du blir bedt om det, aktiver API-et
+
+Gå tilbake til: IAM & Admin → IAM
+
+Se igjen etter:
+PROJECT_NUMBER-compute@developer.gserviceaccount.com
+
+Infrastructure Manager API er ikke aktivert
+
+Hvis du ikke så prompten tidligere, aktiver den manuelt:
+
+Cloud Console → APIs & Services
+
+Aktiver: Infrastructure Manager API

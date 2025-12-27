@@ -228,7 +228,7 @@ Mange eksisterende leverandører tilbyr lignende tjenester, men tar betydelig me
 • Ingen abonnement, ingen konto kreves på denne nettsiden.<br>
 • Du betaler kun direkte til API-leverandørene for det du bruker (tale-til-tekst og tekstgenerering).<br>
 • Nettsiden i seg selv er helt gratis å bruke.<br><br>
-For at vi skal kunne fortsette å tilby denne tjenesten gratis, setter vi stor pris på om du godtar at det vises reklame fra Google Ads. Annonseinntektene hjelper oss å dekke kostnader til hosting og drift, slik at tjenesten kan forbli tilgjengelig for alle.`,
+`,
  
   guideModalHeading: "API nøkkel - Hvordan lage",
 guideModalText: `Hvordan skaffe API-nøkler:<br><br>

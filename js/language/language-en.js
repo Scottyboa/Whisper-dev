@@ -254,7 +254,7 @@ To use the speech-to-text and note-generation models in this app, you must obtai
 <strong>Recommended use in relation to GDPR:</strong><br>
 - Of the available models in this web app, Soniox for speech-to-text, as well as Google Vertex (Gemini 2.5 Pro) and AWS Bedrock (Claude) for text/note generation, are GDPR-compliant.<br>
 - The other models may involve data processing outside the EU’s borders and temporary data retention, which makes them less suitable for use in a clinical setting with regard to GDPR and the Norwegian Data Protection Authority’s guidance/standards.<br>
-- For use of this app in a clinical setting, it is therefore strongly recommended to use Soniox for speech-to-text, and Google Vertex and AWS Bedrock for note generation. Fortunately, these models are also very good and will provide high quality for both transcription and note generation.<br><br>
+- For use of this app in a clinical setting, it is therefore strongly recommended to use Soniox for speech-to-text, and Google Vertex and/or AWS Bedrock for note generation. Fortunately, these models are also very good and will provide high quality for both transcription and note generation.<br><br>
 
 <strong>OpenAI</strong><br>
 – Create an account at OpenAI:<br>

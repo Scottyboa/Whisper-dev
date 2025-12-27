@@ -44,6 +44,7 @@ Webappen gir tilgang til flere ulike leverandører og modeller. Nedenfor er en p
 -Til selve notatgenereringen er det gjerne <strong>ChatGPT-modellene (GPT-5.1 / GPT-5.2)</strong>, <strong>Claude-modellene (via AWS Bedrock)</strong> og <strong>Gemini-modellene (Gemini 3 og Gemini 2.5 Pro)</strong> som gir best kvalitet i denne appen. <br>
 -Sett fra et GDPR-ståsted er det <strong>AWS Bedrock (Claude)</strong> som ofte er det mest anbefalte oppsettet, fordi det kan settes opp med EU/EØS-regionvalg, zero data retention og dermed gi et svært GDPR-tilpasset oppsett. <br>
 -En sterk alternativ løsning er <strong>Google Vertex AI med Gemini 2.5 Pro</strong> i EU-region. Dette krever at du oppretter eget Google Cloud/Vertex-prosjekt, deployer en liten backend (Cloud Run) og limer inn backend-URL + hemmelig nøkkel i feltene for «Google Vertex» på forsiden.<br>
+-For instrukser/guide for oppsett av AWS Bedrock og Google Vertex, klikk på "Guide" knappen ved siden av nøkkelfeltene her på forsiden.<br>
 
 <strong>Andre leverandører i denne appen</strong><br>
 - <strong>Lemonfox</strong>, <strong>Mistral</strong> og <strong>Deepgram</strong> er i hovedsak inkludert for testing/eksperimentering og eventuell ikke-klinisk bruk. For krevende klinisk diktering og notatskriving er kvaliteten deres generelt lavere enn Soniox/OpenAI/Gemini, og hvor «GDPR-vennlige» de er avhenger helt av hvilke endepunkter (EU/globalt) og eventuelle ZDR-innstillinger du faktisk har aktivert hos leverandøren.<br>

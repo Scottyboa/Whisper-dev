@@ -1,0 +1,207 @@
+============================================================
+VERTEX AI BACKEND (EUROPE-WEST4) DEPLOYMENT GUIDE (FOR THIS APP)
+============================================================
+
+This guide helps you deploy a small backend into your own Google Cloud project.
+When finished, you will paste two values into this app so it can call Vertex AI
+through your project:
+
+  • Backend URL   (Cloud Run URL)
+  • Secret key    (required by the webapp)
+
+
+------------------------------------------------------------
+SECURITY / COST WARNING (READ)
+------------------------------------------------------------
+
+Do NOT share your backend URL or secret key with anyone.
+
+Anyone who has them can call your backend and generate Vertex AI requests that
+will incur costs on your Google Cloud project.
+
+
+------------------------------------------------------------
+WHAT YOU’LL GET AT THE END
+------------------------------------------------------------
+
+You will copy two values into this app:
+
+  1) Backend URL  (Cloud Run service URL)
+  2) Secret key   (backend secret)
+
+
+============================================================
+STEP-BY-STEP SETUP
+============================================================
+
+---------------------------------------------
+STEP 0 — PREREQUISITES (PROJECT + BILLING)
+---------------------------------------------
+
+0.1 Create a Google Cloud project
+
+1) Open Google Cloud Console.
+2) Click the project selector (top-left / top bar).
+3) Click: NEW PROJECT
+4) Create your project.
+
+After the project is created, you may be redirected to a page that says:
+  “Enable Infrastructure Manager API”
+Click:
+  ✅ Enable
+Then wait until the enablement completes.
+
+0.2 Enable Billing (required)
+
+Cloud Run + Vertex AI requires billing.
+
+1) In the Cloud Console, make sure your new project is selected (top bar).
+2) Open: Billing
+3) Attach a billing account to your project.
+
+
+--------------------------------------------------------------------
+STEP 1 — GIVE PERMISSIONS TO THE DEFAULT COMPUTE ENGINE SERVICE ACCOUNT
+--------------------------------------------------------------------
+
+We will use the project’s default Compute Engine service account for deployment.
+
+1.1 Find the default Compute Engine service account
+
+1) Go to: IAM & Admin → IAM
+2) Look for a principal like:
+     PROJECT_NUMBER-compute@developer.gserviceaccount.com
+   It may also be shown as:
+     “Compute Engine default service account”
+
+1.2 Grant it the required roles
+
+Still in: IAM & Admin → IAM
+
+1) Click: Grant access
+2) In “New principals”, paste the Compute default service account email
+   (the ...-compute@developer.gserviceaccount.com one)
+3) Add these roles:
+     • Owner
+     • Infrastructure Manager Service Agent   (roles/config.agent)
+   (After adding Owner, click “Add another role” to add the second role.)
+4) Click: Save
+
+
+---------------------------------------------------------
+STEP 2 — DEPLOY WITH INFRASTRUCTURE MANAGER (TERRAFORM)
+---------------------------------------------------------
+
+2.1 Open Infrastructure Manager
+
+Open (in the same browser where you’re logged into Google):
+  https://console.cloud.google.com/infra-manager
+
+2.2 Create a new deployment
+
+1) Click: Create
+2) Choose:
+     • Deployment ID: any name you want
+       Example: vertex-note-backend
+     • Region: europe-west4 (EU4)
+     • Service account: the default Compute Engine service account
+       (...-compute@developer.gserviceaccount.com)
+
+2.3 Source of Terraform configuration (Git)
+
+Leave source type as Git, then fill:
+
+  • Git repo URL:      https://github.com/vertex-note-tools/Vertex-note
+  • Git directory:     infra
+  • Git ref:           main
+
+Click: Continue
+
+2.4 Terraform values (only one value)
+
+You should see only one Terraform variable:
+  • project_id
+
+To fill it correctly:
+
+1) Click the project selector in the top bar of Cloud Console.
+2) Find your project’s “Project ID”
+   (looks like: my-project-123456 — NOT the project number)
+3) Copy it
+4) Paste it into the project_id value field
+5) Click: Create deployment / Apply
+
+
+----------------------------------------------
+STEP 3 — COPY YOUR BACKEND URL + SECRET KEY
+----------------------------------------------
+
+After the deployment finishes successfully (green check):
+
+1) Open the deployment
+2) Click: Outputs
+3) Copy and store safely:
+
+  • service_url (may appear as “Function URL / service_url”)
+    → This is your Backend URL
+
+  • backend_secret (may appear as “Secret key / backend_secret”)
+    → This is your Secret key
+
+
+-----------------------------------------
+STEP 4 — CONNECT IT TO THIS APP
+-----------------------------------------
+
+Go back to this app’s front page and paste:
+
+  • Backend URL  = service_url
+  • Secret key   = backend_secret
+
+Done — you can now use Gemini 2.5 Pro from the Google Vertex dropdown menu
+in the note generation module.
+
+
+============================================================
+WHERE TO FIND THESE VALUES LATER
+============================================================
+
+Backend URL + Secret key are stored as deployment outputs.
+
+To retrieve them again:
+
+1) Cloud Console → Infrastructure Manager
+2) Open your deployment
+3) Open: Outputs
+4) Copy:
+     • service_url
+     • backend_secret
+
+
+============================================================
+TROUBLESHOOTING (ONLY IF DEPLOYMENT FAILS)
+============================================================
+
+1) “Permission denied” / role errors
+
+Double-check the Compute Engine default service account has BOTH roles:
+
+  • Owner
+  • Infrastructure Manager Service Agent (roles/config.agent)
+
+2) “I can’t find the Compute Engine default service account”
+
+Enable Compute Engine API once:
+
+1) Open Cloud Console → Compute Engine
+2) If prompted, enable the API
+3) Return to: IAM & Admin → IAM
+4) Look again for:
+     PROJECT_NUMBER-compute@developer.gserviceaccount.com
+
+3) Infrastructure Manager API not enabled
+
+If you didn’t see the prompt earlier, enable it manually:
+
+1) Cloud Console → APIs & Services
+2) Enable: Infrastructure Manager API

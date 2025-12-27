@@ -283,6 +283,11 @@ https://aistudio.google.com<br><br>
 – All usage of Gemini 2.5 Pro then runs through *your* project; you control billing, quotas, and can select an EU region, which improves GDPR compliance.<br>
 – The setup is slightly technical, so if you prefer a full step-by-step guide, click the “Guide” link next to the “Google Vertex” header above the input fields on the front page.<br><br>
 
+<strong>AWS Bedrock (advanced setup – can enable full GDPR compliance)</strong><br>
+– This is a more advanced setup than most options in the app, but it can be configured in a way that supports full GDPR compliance.<br>
+– For step-by-step instructions, click the <strong>“Guide”</strong> link next to the <strong>AWS Bedrock</strong> header on the front page (index.html).<br>
+– When the setup is complete, you will receive a <strong>backend URL</strong> and a <strong>secret key</strong>. You must paste these into the <strong>AWS Bedrock</strong> fields on the front page of the web app.<br><br>
+
 <strong>Lemonfox</strong><br>
 – Create an account on Lemonfox:<br>
 https://www.lemonfox.ai<br><br>

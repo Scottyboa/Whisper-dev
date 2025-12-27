@@ -226,8 +226,7 @@ Many existing providers offer similar services but charge significantly more —
 • No subscription, no account required on this website.<br>
 • You pay only the providers directly for what you use (speech-to-text and text generation).<br>
 • The website itself is completely free to use.<br><br>
-
-To keep this service free, we greatly appreciate if you allow Google Ads to be displayed. The advertising revenue helps us cover hosting and operational costs, allowing the service to remain available to everyone.`,
+`,
 
   guideModalHeading: "API key - How to Get",
 guideModalText: `How to obtain API keys:<br><br>

@@ -521,12 +521,13 @@ guideText: `Velkommen til <strong>Transcribe Notes</strong>. Denne applikasjonen
 <strong>Slik bruker du funksjonene:</strong><br><br>
 
 <ul>
-  <li><strong>Opptak:</strong> Pasientens samtykke må alltid innhentes før opptak. Klikk på "Start opptak" for å begynne å ta opp lyd. Hvert 2. minutt sendes en lydsekvens automatisk til OpenAI sine servere for transkribering. Transkriberingen vises fortløpende i tekstfeltet for transkripsjon.<br><br>
-  <strong><u>Viktig:</u> Opptaksfunksjonen fungerer ikke i alle nettlesere. Vi anbefaler derfor å bruke <strong>Google Chrome</strong> eller <strong>Microsoft Edge</strong>.</strong></li><br>
+  <li><strong>Opptak:</strong> Pasientens samtykke må alltid innhentes før opptak. Klikk på "Start opptak" for å begynne å ta opp lyd.<br><br>
+  
+  <strong><u>Viktig:</u> Opptaksfunksjonen fungerer ikke i alle nettlesere. Vi anbefaler derfor å bruke <strong>Google Chrome</strong> eller <strong>Microsoft Edge</strong>.</strong> Velg så ønsket transkripsjonsmodell.</li><br>
 
   <li><strong>Pause og gjenoppta:</strong> Du kan bruke "Pause"-knappen til midlertidig å stoppe opptaket, for eksempel dersom konsultasjonen blir avbrutt eller du trenger å forlate kontoret et øyeblikk. Når du trykker på "Pause", lastes det aktuelle lydsegmentet opp og transkriberes, og opptaket settes på pause. Når du er klar til å fortsette, klikker du på "Fortsett", og opptaket gjenopptas automatisk med neste segment. Tidtakeren fortsetter der den slapp, og opptaket kan til slutt avsluttes som vanlig med "Stopp/Ferdig".</li><br>
 
-  <li><strong>Fullføring:</strong> Når du klikker på "Stopp/Ferdig", stopper opptaket. Fullføringstimeren teller tiden til hele transkripsjonen er mottatt (vanligvis innen 3-7 sekunder).</li><br>
+  <li><strong>Fullføring:</strong> Når du klikker på "Stopp/Ferdig", stopper opptaket. Fullføringstimeren teller tiden til hele transkripsjonen er mottatt (vanligvis innen 5-10 sekunder).</li><br>
 
   <li><strong>Tilpasset prompt og promptprofiler:</strong> På høyre side velger du en prompt-plass (1–10) og skriver inn din egen prompt. Promptene lagres automatisk på denne enheten. For å gjøre promptene uavhengige av endringer i API-nøkkel kan du sette en <strong>Prompt profile ID</strong> (f.eks. “David”, “David 1”, “Office-PC-2”). Aktiv profil vises over prompt-feltet. Hvis ingen profil er satt, kan promptene fortsatt være lagret med den eldre metoden som var knyttet til API-nøkkel.</li><br>
 
@@ -534,12 +535,11 @@ guideText: `Velkommen til <strong>Transcribe Notes</strong>. Denne applikasjonen
 
   <li><strong>Bytte profil:</strong> Når du endrer Prompt profile ID, vil prompt-plassene umiddelbart vise promptene som er lagret under den profilen. Dette gjør at flere kan bruke samme PC uten å blande prompts, så lenge hver bruker har sin egen profil.</li><br>
 
-
-  <li><strong>Notatgenerering:</strong> Når transkripsjonen er fullført, klikker du på "Generer notat" for å lage et notat basert på transkripsjonen og den valgte/tilpassede prompten. Genererte journalnotater må gjennomgås og valideres av helsepersonell før de tas i bruk.</li><br>
+  <li><strong>Notatgenerering:</strong> Når transkripsjonen er fullført, klikker du på "Generer notat" for å lage et notat basert på transkripsjonen og den valgte/tilpassede prompten. Notatgenerering skjer da hos valgte tilbyder i nedtrekksmenyen i notatgenereringsmodulen. Genererte journalnotater må gjennomgås og valideres av helsepersonell før de tas i bruk.</li><br>
 
   <li><strong>Kostnadsoversikt:</strong> For å se ditt nåværende forbruk hos OpenAI, klikk på lenken for kostnadsoversikt som er plassert oppe til høyre på denne siden.</li><br>
 
-  <li><strong>Sikkerhet:</strong> Lydopptaket ditt sendes direkte til OpenAI sine API-servere for transkribering, og hverken lagres eller brukes for maskinlæring. Den transkriberte teksten vises kun i nettleseren din, og slettes/forsvinner så snart du lukker nettleseren eller laster inn nytt innhold.</li><br>
+  <li><strong>Sikkerhet:</strong> Lydopptaket ditt sendes direkte til valgte tilbyder (fra nedtrekksmenuen) sine servere for transkribering, og hverken lagres(gjelder bare for AWS Bedrock, Google Vertex og Soniox) eller brukes for maskinlæring. Den transkriberte teksten vises kun i nettleseren din, og slettes/forsvinner så snart du lukker nettleseren eller laster inn nytt innhold.</li><br>
 
   <li><strong>Guide-knapp:</strong> Klikk på "Guide"-knappen igjen for å gå tilbake til hovedvisningen.</li>
 </ul><br><br>

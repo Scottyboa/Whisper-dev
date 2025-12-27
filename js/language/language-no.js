@@ -41,15 +41,16 @@ Webappen gir tilgang til flere ulike leverandører og modeller. Nedenfor er en p
 - Til rutinemessig bruk på identifiserbare pasientdata er <strong>Soniox med EU-endepunkt og null datalagring</strong> det alternativet som passer best inn i et strengt GDPR-/helse-regime. OpenAI bruker typisk globale endepunkter og har midlertidig lagring; dette havner ofte i en juridisk «gråsone» med mindre du har særskilte avtaler og eksplisitt EU-dataresidens på plass.<br><br>
 
 <strong>Notatgenerering (LLM)</strong><br>
-- Til selve notatgenereringen er det gjerne <strong>ChatGPT-modellene (GPT-5.1 / GPT-4o)</strong> og <strong>Gemini-modellene (Gemini 3 og Gemini 2.5 Pro)</strong> som gir best kvalitet i denne appen.<br>
-- Sett fra et GDPR-ståsted er det <strong>kun Google Vertex AI med Gemini 2.5 Pro satt opp i EU-region og med zero data retention</strong> som kan konfigureres slik at både prosessering og lagring holdes innenfor EU og uten gjenbruk til trening. Dette krever at du oppretter eget Google Cloud/Vertex-prosjekt, deployer en liten backend (Cloud Run) og limer inn backend-URL + hemmelig nøkkel i feltene for «Google Vertex» på forsiden.<br><br>
+-Til selve notatgenereringen er det gjerne <strong>ChatGPT-modellene (GPT-5.1 / GPT-5.2)</strong>, <strong>Claude-modellene (via AWS Bedrock)</strong> og <strong>Gemini-modellene (Gemini 3 og Gemini 2.5 Pro)</strong> som gir best kvalitet i denne appen. <br>
+-Sett fra et GDPR-ståsted er det <strong>AWS Bedrock (Claude)</strong> som ofte er det mest anbefalte oppsettet, fordi det kan settes opp med EU/EØS-regionvalg, zero data retention og dermed gi et svært GDPR-tilpasset oppsett. <br>
+-En sterk alternativ løsning er <strong>Google Vertex AI med Gemini 2.5 Pro</strong> i EU-region. Dette krever at du oppretter eget Google Cloud/Vertex-prosjekt, deployer en liten backend (Cloud Run) og limer inn backend-URL + hemmelig nøkkel i feltene for «Google Vertex» på forsiden.<br>
 
 <strong>Andre leverandører i denne appen</strong><br>
 - <strong>Lemonfox</strong>, <strong>Mistral</strong> og <strong>Deepgram</strong> er i hovedsak inkludert for testing/eksperimentering og eventuell ikke-klinisk bruk. For krevende klinisk diktering og notatskriving er kvaliteten deres generelt lavere enn Soniox/OpenAI/Gemini, og hvor «GDPR-vennlige» de er avhenger helt av hvilke endepunkter (EU/globalt) og eventuelle ZDR-innstillinger du faktisk har aktivert hos leverandøren.<br>
 - GPT-modellene fra <strong>OpenAI</strong>, <strong>Deepgram</strong> sine standard/globalt hostede STT-endepunkter og <strong>Gemini 3 via Google AI Studio</strong> vil ofte ha global infrastruktur og midlertidig datalagring. Disse oppsettene er ikke automatisk GDPR-kompatible for identifiserbare pasientdata og bør regnes som «gråsoner» med mindre du har eksplisitte avtaler, EU-dataresidens og ZDR dokumentert.<br><br>
 
 <strong>Mest GDPR-optimal kombinasjon i denne appen</strong><br>
-Hvis du bruker <strong>Soniox med EU-endepunkt</strong> til tale-til-tekst, og <strong>Google Vertex AI (Gemini 2.5 Pro i EU-region med zero data retention)</strong> til notatgenerering, kan den tekniske dataflyten i denne appen holdes innenfor EU uten gjenbruk til trening hos leverandøren. Lovlighet og etterlevelse avhenger likevel av dine egne DPA-er, DPIA/TIA og lokale krav, men rent teknisk er dette den mest GDPR-optimaliserte konfigurasjonen appen støtter per i dag.<br><br>
+Hvis du bruker <strong>Soniox med EU-endepunkt</strong> til tale-til-tekst, og <strong>Google Vertex AI (Gemini 2.5 Pro med EU endepunkt) eller AWS Bedrock(Claude)</strong> til notatgenerering, kan den tekniske dataflyten i denne appen holdes innenfor EU uten gjenbruk til trening hos leverandøren. Lovlighet og etterlevelse avhenger likevel av dine egne DPA-er, DPIA/TIA og lokale krav, men rent teknisk er dette den mest GDPR-optimaliserte konfigurasjonen appen støtter per i dag.<br><br>
 
 <hr><br>
 

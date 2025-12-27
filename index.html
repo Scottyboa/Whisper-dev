@@ -302,6 +302,48 @@
       font-size: 14px;
       line-height: 1.4;
       margin: 0;
+     }
+
+    /* Google Vertex Guide Modal (opened from the "Guide" link next to Google Vertex) */
+    #vertexGuideView {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      background: white;
+      border: 2px solid #ccc;
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 3002;
+    }
+    #vertexGuideView.active {
+      display: block;
+    }
+    #vertexGuideClose {
+      position: sticky;
+      top: 12px;
+      float: right;
+      font-size: 30px;
+      line-height: 1;
+      border: none;
+      background: transparent;
+      color: #d11;
+      cursor: pointer;
+      padding: 0 6px;
+      margin: 0;
+      z-index: 3003;
+    }
+    #vertexGuideClose:hover {
+      opacity: 0.8;
+    }
+    #vertexGuideText {
+      white-space: pre-wrap;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.4;
+      margin: 0;
     }
 
 </style>
@@ -388,10 +430,9 @@
     <p id="vertex-text">
       Google Vertex (
       <a
-        href="https://chatgpt.com/share/6934538c-2e28-800f-bd03-ca11769d6501"
-        target="_blank"
-        rel="noopener noreferrer"
-        style="color: blue; text-decoration: underline;"
+        href="#"
+        id="vertex-guide-link"
+        role="button"
       >Guide</a>
       ):
     </p>
@@ -792,6 +833,13 @@
   <pre id="bedrockGuideText">Loading…</pre>
 </div>
 
+  <!-- Google Vertex Guide Modal -->
+  <div id="vertexGuideView" aria-hidden="true">
+    <button id="vertexGuideClose" type="button" aria-label="Close">&times;</button>
+    <h3>Google Vertex setup guide</h3>
+    <pre id="vertexGuideText">Loading…</pre>
+  </div>
+
 
   <script type="module" src="./js/main-index.js"></script>
 
@@ -875,12 +923,89 @@
         }
       });
 
+      // Google Vertex "Guide" modal (opened from the link next to Google Vertex)
+      const vertexGuideLink = document.getElementById("vertex-guide-link");
+      const vertexGuideView = document.getElementById("vertexGuideView");
+      const vertexGuideClose = document.getElementById("vertexGuideClose");
+      const vertexGuideTextEl = document.getElementById("vertexGuideText");
+
+      // Track which language we loaded last, so switching language loads the correct guide
+      let vertexGuideLoadedLang = null;
+
+      async function loadVertexGuideForCurrentLanguage() {
+        if (!vertexGuideTextEl) return;
+
+        const lang = getCurrentLang();
+        if (vertexGuideLoadedLang === lang) return;
+
+        vertexGuideTextEl.textContent = "Loading…";
+
+        // Norwegian only when lang === "no". All other languages default to English.
+        const candidates = (lang === "no")
+          ? ["./vertex-guide.no.txt", "./vertex-guide.txt"]
+          : ["./vertex-guide.txt"];
+
+        try {
+          let loaded = false;
+          for (const url of candidates) {
+            const res = await fetch(url, { cache: "no-store" });
+            if (!res.ok) continue;
+            vertexGuideTextEl.textContent = await res.text();
+            loaded = true;
+            break;
+          }
+          if (!loaded) throw new Error("No guide file could be loaded.");
+          vertexGuideLoadedLang = lang;
+        } catch (err) {
+          console.error("Failed to load vertex guide text:", err);
+          vertexGuideTextEl.textContent =
+            "Could not load the guide text.\n\n" +
+            "If you are the site owner: make sure vertex-guide.txt exists next to index.html (and optionally vertex-guide.no.txt).";
+          vertexGuideLoadedLang = null;
+        }
+      }
+
+      function openVertexGuide() {
+        if (!vertexGuideView) return;
+        vertexGuideView.classList.add("active");
+        vertexGuideView.setAttribute("aria-hidden", "false");
+        loadVertexGuideForCurrentLanguage();
+      }
+
+      function closeVertexGuide() {
+        if (!vertexGuideView) return;
+        vertexGuideView.classList.remove("active");
+        vertexGuideView.setAttribute("aria-hidden", "true");
+      }
+
+      if (vertexGuideLink && vertexGuideView) {
+        vertexGuideLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          openVertexGuide();
+        });
+      }
+
+      if (vertexGuideClose) {
+        vertexGuideClose.addEventListener("click", closeVertexGuide);
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && vertexGuideView?.classList.contains("active")) {
+          closeVertexGuide();
+        }
+      });
+
+
       // If the user changes language while the modal is open, refresh the guide text
       const langSelectEl = document.getElementById("lang-select");
       langSelectEl?.addEventListener("change", () => {
         bedrockGuideLoadedLang = null;
+        vertexGuideLoadedLang = null;
         if (bedrockGuideView?.classList.contains("active")) {
           loadBedrockGuideForCurrentLanguage();
+        }
+        if (vertexGuideView?.classList.contains("active")) {
+          loadVertexGuideForCurrentLanguage();
         }
       });
       document.addEventListener("keydown", function(e) {

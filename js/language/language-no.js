@@ -259,11 +259,13 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 - For bruk av denne app i klinisk setting er det derfor sterkt anbefalt å bruke Soniox for tale-til-tekst, og Google Vertex og/eller AWS Bedrock for notatgenerering. Heldigvis er disse modellene også svært gode, og vil gi høy kvalitet både på transkripsjon og notatgenerering.<br><br>
 
 <strong>AWS Bedrock (Claude modeller - Full GDPR compliance)</strong><br>
+– For notatgenerering.<br>
 – Dette er et noe mer avansert oppsett enn de fleste andre alternativene i appen, men kan konfigureres slik at det gir et fullt GDPR-tilpasset oppsett.<br>
 – For komplett steg-for-steg-oppsett: klikk på <strong>«Guide»</strong>-lenken ved siden av <strong>AWS Bedrock</strong>-overskriften på forsiden (index.html).<br>
 – Når oppsettet er ferdig, vil du få en <strong>backend URL</strong> og en <strong>secret key</strong>, som du må lime inn i <strong>AWS Bedrock</strong>-feltene på forsiden av webappen.<br><br>
 
 <strong>Google Vertex (Gemini 2.5 Pro – EU-endepunkt)</strong><br>
+– For notatgenerering.<br>
 – Dette er et mer avansert oppsett for deg som vil bruke Gemini via Google Cloud / Vertex AI med regionalt EU-endepunkt (f.eks. europe-west1 eller europe-west4).<br>
 – Kort fortalt: Du oppretter et eget Google Cloud-prosjekt, aktiverer Vertex AI, kobler det til en faktureringskonto og deployer en liten backend-funksjon (Cloud Run) som gir deg en HTTPS-adresse (https://…run.app).<br>
 – I denne webappen limer du inn denne adressen i feltet «Vertex backend URL (https://…run.app)» og den hemmelige nøkkelen (BACKEND_SECRET) i feltet «Vertex backend secret» på forsiden.<br>
@@ -271,6 +273,7 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 – Oppsettet kan oppleves litt teknisk, så for en detaljert steg-for-steg-veiledning kan du klikke på <strong>«Guide»</strong>-lenken ved siden av «Google Vertex»-overskriften over disse feltene på forsiden.<br><br>
 
 <strong>Soniox</strong><br>
+– For tale til tekst.<br>
 – Lag en bruker på Soniox:<br>
 https://soniox.com<br><br>
 – Generer en Soniox API-nøkkel og kjøp/last opp credits (samme prinsipp som hos OpenAI)<br>

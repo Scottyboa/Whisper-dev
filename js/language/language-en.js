@@ -2,7 +2,7 @@ export const indexTranslations = {
   pageTitle: "Transcribe Notes",
   headerTitle: "Transcribe Notes",
   headerSubtitle: "Advanced AI-Powered Speech-to-Text and Clinical Note Generation for Healthcare Consultations",
-  startText: "You can now also choose between different models from various providers. Dont have an API-key yet? Click on «API guide- How to Get» for easy instructions.",
+  startText: "You can now also choose between different models from various providers. Read the info modules at the bottom of the frontpage, for instructions on how to use the app.",
   apiPlaceholder: "Enter OpenAI API Key here",
   enterButton: "Enter Transcription Tool",
   guideButton: "API guide - How to use",
@@ -259,14 +259,14 @@ https://platform.openai.com<br><br>
 • Speech-to-text: gpt-4o-transcribe (select “OpenAI” in the Recording Module dropdown on the main page)<br>
 • Text generation: chatgpt-4-latest, GPT-5.1<br><br>
 
-<strong>Soniox</strong><br>
+<strong>Soniox(full GDPR compliance)</strong><br>
 – Create an account at Soniox:<br>
 https://soniox.com<br><br>
 – Generate a Soniox API key and purchase/upload credits (same principle as OpenAI)<br>
 – Store the key securely and paste it into “Soniox API key (EU or US)” on the front page<br>
 – You can now use Soniox speech-to-text (very high-quality and cost-effective, recommended)<br>
-– For EU endpoint (GDPR-friendly): email sales@soniox.com and request an EU API key for clinical doctor–patient use<br>
-– On the main page, you can choose between EU and US endpoints in the dropdown when using Soniox<br><br>
+– For EU endpoint (GDPR-compliant): email sales@soniox.com and request an EU API key for clinical doctor–patient use. Usal response time is 1-2 days. When approved, you can create a "new project" on your soniox.com user, in which you may chose EU endpoint. You can then generate a new API key which is linked to this new project.<br>
+– On the main page, you can choose between EU(GDPR compliant) and US endpoints in the dropdown when using Soniox.<br><br>
 
 <strong>Google Gemini</strong><br>
 – Create/log in to an account on Google AI Studio:<br>

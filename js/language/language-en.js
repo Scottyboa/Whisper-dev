@@ -537,7 +537,7 @@ guideText: `Welcome to the Transcribe Notes Transcription tool. This application
 
   <li><strong>Note generation:</strong> Once the transcription is complete, click “Generate note” to create a note based on the transcription and the selected/custom prompt. Note generation is performed by the provider selected in the dropdown menu in the note generation module. Generated clinical notes must be reviewed and validated by healthcare personnel before use.</li><br>
 
-  <li><strong>Cost overview:</strong> To see your current usage with OpenAI, click the cost overview link located at the top right of this page.</li><br>
+  <li><strong>Cost overview:</strong> To see your current cost/usage for the different providers, click the cost overview link located at the top right of the main functions page.</li><br>
 
   <li><strong>Security:</strong> Your audio recording is sent directly to the selected provider’s servers (from the dropdown menu) for transcription, and is neither stored (applies only to AWS Bedrock, Google Vertex, and Soniox) nor used for machine learning. The transcribed text is only displayed in your browser and is deleted/disappears as soon as you close the browser or load new content.</li><br>
 

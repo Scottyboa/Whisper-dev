@@ -251,6 +251,11 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 - Mistral Large<br>
 - Gemini 3<br><br>
 
+<strong>Anbefalt bruk i forhold til GDPR:</strong><br>
+- Av de tilgjengelige modellene i denne webappen, så er det Soniox(tale til tekst), Google Vertex(Gemini 2.5 pro) og AWS Bedrock(Claude) som vil være GDPR godkjente.<br>
+- De andre modellene kan ha data prosessering utenfor EUs grenser og midlertidig dataretenstion, som gjør de ugunstige for bruk i klinisk setting med tanke på GDPR og datatilsynets norm.<br>
+- For bruk av denne app i klinisk setting er det derfor sterkt anbefalt å bruke Soniox for tale-til-tekst, og Google Vertex og AWS Bedrock for notatgenerering. Heldigvis er disse modellene også svært gode, og vil gi høy kvalitet både på transkripsjon og notatgenerering.<br><br>
+
 <strong>OpenAI</strong><br>
 – Lag en bruker på OpenAI:<br>
 https://platform.openai.com<br><br>

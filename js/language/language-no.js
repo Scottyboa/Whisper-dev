@@ -283,6 +283,11 @@ https://aistudio.google.com<br><br>
 – All bruk av Gemini 2.5 Pro går da via ditt eget prosjekt; både fakturering og databehandling styres av deg, og du kan velge EU-region for bedre GDPR-tilpasning.<br>
 – Oppsettet kan oppleves litt teknisk, så for en detaljert steg-for-steg-veiledning kan du klikke på «Guide»-lenken ved siden av «Google Vertex»-overskriften over disse feltene på forsiden.<br><br>
 
+<strong>AWS Bedrock (avansert oppsett – kan gi full GDPR-etterlevelse)</strong><br>
+– Dette er et noe mer avansert oppsett enn de fleste andre alternativene i appen, men kan konfigureres slik at det gir et fullt GDPR-tilpasset oppsett.<br>
+– For komplett steg-for-steg-oppsett: klikk på <strong>«Guide»</strong>-lenken ved siden av <strong>AWS Bedrock</strong>-overskriften på forsiden (index.html).<br>
+– Når oppsettet er ferdig, vil du få en <strong>backend URL</strong> og en <strong>secret key</strong>, som du må lime inn i <strong>AWS Bedrock</strong>-feltene på forsiden av webappen.<br><br>
+
 <strong>Lemonfox</strong><br>
 – Lag en bruker på Lemonfox:<br>
 https://www.lemonfox.ai<br><br>

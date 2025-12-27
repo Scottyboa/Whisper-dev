@@ -256,6 +256,29 @@ To use the speech-to-text and note-generation models in this app, you must obtai
 - The other models may involve data processing outside the EU’s borders and temporary data retention, which makes them less suitable for use in a clinical setting with regard to GDPR and the Norwegian Data Protection Authority’s guidance/standards.<br>
 - For use of this app in a clinical setting, it is therefore strongly recommended to use Soniox for speech-to-text, and Google Vertex and/or AWS Bedrock for note generation. Fortunately, these models are also very good and will provide high quality for both transcription and note generation.<br><br>
 
+<strong>Soniox(full GDPR compliance)</strong><br>
+– Create an account at Soniox:<br>
+https://soniox.com<br><br>
+– Generate a Soniox API key and purchase/upload credits (same principle as OpenAI)<br>
+– Store the key securely and paste it into “Soniox API key (EU or US)” on the front page<br>
+– You can now use Soniox speech-to-text (very high-quality and cost-effective, recommended)<br>
+– For EU endpoint (GDPR-compliant): email sales@soniox.com and request an EU API key for clinical doctor–patient use. Usal response time is 1-2 days. When approved, you can create a "new project" on your soniox.com user, in which you may chose EU endpoint. You can then generate a new API key which is linked to this new project.<br>
+– On the main page, you can choose between EU(GDPR compliant) and US endpoints in the dropdown when using Soniox.<br><br>
+
+<strong>AWS Bedrock (full GDPR compliance)</strong><br>
+– For note generation.<br>
+– This is a more advanced setup than most options in the app, but it can be configured in a way that supports full GDPR compliance, with EU endpoint.<br>
+– For step-by-step instructions, click the <strong>“Guide”</strong> link next to the <strong>AWS Bedrock</strong> header on the front page (index.html).<br>
+– When the setup is complete, you will receive a <strong>backend URL</strong> and a <strong>secret key</strong>. You must paste these into the <strong>AWS Bedrock</strong> fields on the front page of the web app.<br><br>
+
+<strong>Google Vertex (Gemini 2.5 Pro – full GDPR compliance)</strong><br>
+– For note generation.<br>
+– This is a more advanced setup designed for users who want to run Gemini through Google Cloud / Vertex AI using a regional EU endpoint (such as europe-west1 or europe-west4).<br>
+– In short: you create your own Google Cloud project, activate Vertex AI, link it to a billing account, and deploy a small backend function (Cloud Run) which gives you a secure HTTPS URL (https://…run.app).<br>
+– In this web app, you paste that URL into the field “Vertex backend URL (https://…run.app)” and your secret BACKEND_SECRET into the “Vertex backend secret” field on the front page.<br>
+– All usage of Gemini 2.5 Pro then runs through *your* project; you control billing, quotas, and can select an EU region, which improves GDPR compliance.<br>
+– The setup is slightly technical, so if you prefer a full step-by-step guide, click the “Guide” link next to the “Google Vertex” header above the input fields on the front page.<br><br>
+
 <strong>OpenAI</strong><br>
 – Create an account at OpenAI:<br>
 https://platform.openai.com<br><br>
@@ -266,15 +289,6 @@ https://platform.openai.com<br><br>
 • Speech-to-text: gpt-4o-transcribe (select “OpenAI” in the Recording Module dropdown on the main page)<br>
 • Text generation: chatgpt-4-latest, GPT-5.1<br><br>
 
-<strong>Soniox(full GDPR compliance)</strong><br>
-– Create an account at Soniox:<br>
-https://soniox.com<br><br>
-– Generate a Soniox API key and purchase/upload credits (same principle as OpenAI)<br>
-– Store the key securely and paste it into “Soniox API key (EU or US)” on the front page<br>
-– You can now use Soniox speech-to-text (very high-quality and cost-effective, recommended)<br>
-– For EU endpoint (GDPR-compliant): email sales@soniox.com and request an EU API key for clinical doctor–patient use. Usal response time is 1-2 days. When approved, you can create a "new project" on your soniox.com user, in which you may chose EU endpoint. You can then generate a new API key which is linked to this new project.<br>
-– On the main page, you can choose between EU(GDPR compliant) and US endpoints in the dropdown when using Soniox.<br><br>
-
 <strong>Google Gemini</strong><br>
 – Create/log in to an account on Google AI Studio:<br>
 https://aistudio.google.com<br><br>
@@ -282,18 +296,6 @@ https://aistudio.google.com<br><br>
 – You normally receive some free credits upon account creation (check inside AI Studio)<br>
 – Store the key securely and paste it into “Google Gemini API key” on the front page<br>
 – Text model: Gemini 3 (currently one of the best text-generation models available)<br><br>
-
-<strong>Google Vertex (Gemini 2.5 Pro – full GDPR compliance)</strong><br>
-– This is a more advanced setup designed for users who want to run Gemini through Google Cloud / Vertex AI using a regional EU endpoint (such as europe-west1 or europe-west4).<br>
-– In short: you create your own Google Cloud project, activate Vertex AI, link it to a billing account, and deploy a small backend function (Cloud Run) which gives you a secure HTTPS URL (https://…run.app).<br>
-– In this web app, you paste that URL into the field “Vertex backend URL (https://…run.app)” and your secret BACKEND_SECRET into the “Vertex backend secret” field on the front page.<br>
-– All usage of Gemini 2.5 Pro then runs through *your* project; you control billing, quotas, and can select an EU region, which improves GDPR compliance.<br>
-– The setup is slightly technical, so if you prefer a full step-by-step guide, click the “Guide” link next to the “Google Vertex” header above the input fields on the front page.<br><br>
-
-<strong>AWS Bedrock (full GDPR compliance)</strong><br>
-– This is a more advanced setup than most options in the app, but it can be configured in a way that supports full GDPR compliance, with EU endpoint.<br>
-– For step-by-step instructions, click the <strong>“Guide”</strong> link next to the <strong>AWS Bedrock</strong> header on the front page (index.html).<br>
-– When the setup is complete, you will receive a <strong>backend URL</strong> and a <strong>secret key</strong>. You must paste these into the <strong>AWS Bedrock</strong> fields on the front page of the web app.<br><br>
 
 <strong>Lemonfox</strong><br>
 – Create an account on Lemonfox:<br>

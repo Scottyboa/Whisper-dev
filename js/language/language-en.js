@@ -242,12 +242,20 @@ To use the speech-to-text and note-generation models in this app, you must obtai
 - Deepgram Nova-3<br><br>
 
 <strong>Text generation models in the app:</strong><br>
-- GPT-5.1 (streaming)<br>
-- GPT-5.1 (non-streaming)<br>
+- GPT-5.2<br>
+- GPT-5.1<br>
 - GPT-4-latest<br>
+- Claude sonnet 4, 4.5 and Claude Haiku 4.5(via AWS Bedrock)<br>
+- Gemini 2.5 pro(via Google Vertex)<br>
 - Lemonfox text generation (Llama 3-based models)<br>
 - Mistral Large<br>
 - Gemini 3<br><br>
+
+"<strong>Recommended use with regard to GDPR:</strong><br>
+- Of the available models in this web app, Soniox (speech-to-text), Google Vertex (Gemini 2.5 Pro), and AWS Bedrock (Claude) will be GDPR-compliant.<br>
+- The other models may involve data processing outside the EU’s borders and temporary data retention, which makes them unfavorable for use in a clinical setting with regard to GDPR and the Norwegian Data Protection Authority’s standard.<br>
+- For use of this app in a clinical setting, it is therefore strongly recommended to use Soniox for speech-to-text, and Google Vertex and AWS Bedrock for note generation. Fortunately, these models are also very good and will provide high quality for both transcription and note generation.<br><br>"
+
 
 <strong>OpenAI</strong><br>
 – Create an account at OpenAI:<br>

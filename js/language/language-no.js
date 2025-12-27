@@ -243,16 +243,18 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 - Voxtral Mini<br>
 - Deepgram Nova-3<br><br>
 
-<strong>Tekstgenereringsmodeller i appen:</strong><br>
-- GPT-5.1 (streaming)<br>
-- GPT-5.1 (non-streaming)<br>
+<strong>Tekst/notat-genereringp:</strong><br>
+- GPT-5.2<br>
+- GPT-5.1<br>
 - GPT-4-latest<br>
-- Lemonfox tekstgenerering (Llama 3-baserte modeller)<br>
+- Claude sonnet 4, 4.5 and Claude Haiku 4.5(via AWS Bedrock)<br>
+- Gemini 2.5 pro(via Google Vertex)<br>
+- Lemonfox text generation (Llama 3-based models)<br>
 - Mistral Large<br>
 - Gemini 3<br><br>
 
 <strong>Anbefalt bruk i forhold til GDPR:</strong><br>
-- Av de tilgjengelige modellene i denne webappen, så er det Soniox(tale til tekst), Google Vertex(Gemini 2.5 pro) og AWS Bedrock(Claude) som vil være GDPR godkjente.<br>
+- Av de tilgjengelige modellene i denne webappen, så er det Soniox for tale-til-tekst, samt Google Vertex(Gemini 2.5 pro) og AWS Bedrock(Claude) for tekst/notat-generering som vil være GDPR godkjente.<br>
 - De andre modellene kan ha data prosessering utenfor EUs grenser og midlertidig dataretenstion, som gjør de ugunstige for bruk i klinisk setting med tanke på GDPR og datatilsynets norm.<br>
 - For bruk av denne app i klinisk setting er det derfor sterkt anbefalt å bruke Soniox for tale-til-tekst, og Google Vertex og AWS Bedrock for notatgenerering. Heldigvis er disse modellene også svært gode, og vil gi høy kvalitet både på transkripsjon og notatgenerering.<br><br>
 

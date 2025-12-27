@@ -258,15 +258,17 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 - De andre modellene kan ha data prosessering utenfor EUs grenser og midlertidig dataretenstion, som gjør de ugunstige for bruk i klinisk setting med tanke på GDPR og datatilsynets norm.<br>
 - For bruk av denne app i klinisk setting er det derfor sterkt anbefalt å bruke Soniox for tale-til-tekst, og Google Vertex og/eller AWS Bedrock for notatgenerering. Heldigvis er disse modellene også svært gode, og vil gi høy kvalitet både på transkripsjon og notatgenerering.<br><br>
 
-<strong>OpenAI</strong><br>
-– Lag en bruker på OpenAI:<br>
-https://platform.openai.com<br><br>
-– Generer en API-nøkkel og sett inn kreditt på kontoen din<br>
-– Lagre API-nøkkelen trygt et sted (lokalt på PC-en, tekstfil, passordmanager, Dropbox osv.)<br>
-– Lim inn nøkkelen i feltet «OpenAI API key» på forsiden<br>
-– Du kan nå bruke OpenAI-modellene i appen:<br>
-• Tale-til-tekst: gpt-4o-transcribe (velg «OpenAI» i Opptaksmodul-nedtrekksmeny på hovedsiden)<br>
-• Tekstgenerering: chatgpt-4-latest, GPT-5.1<br><br>
+<strong>AWS Bedrock (Claude modeller - Full GDPR compliance)</strong><br>
+– Dette er et noe mer avansert oppsett enn de fleste andre alternativene i appen, men kan konfigureres slik at det gir et fullt GDPR-tilpasset oppsett.<br>
+– For komplett steg-for-steg-oppsett: klikk på <strong>«Guide»</strong>-lenken ved siden av <strong>AWS Bedrock</strong>-overskriften på forsiden (index.html).<br>
+– Når oppsettet er ferdig, vil du få en <strong>backend URL</strong> og en <strong>secret key</strong>, som du må lime inn i <strong>AWS Bedrock</strong>-feltene på forsiden av webappen.<br><br>
+
+<strong>Google Vertex (Gemini 2.5 Pro – EU-endepunkt)</strong><br>
+– Dette er et mer avansert oppsett for deg som vil bruke Gemini via Google Cloud / Vertex AI med regionalt EU-endepunkt (f.eks. europe-west1 eller europe-west4).<br>
+– Kort fortalt: Du oppretter et eget Google Cloud-prosjekt, aktiverer Vertex AI, kobler det til en faktureringskonto og deployer en liten backend-funksjon (Cloud Run) som gir deg en HTTPS-adresse (https://…run.app).<br>
+– I denne webappen limer du inn denne adressen i feltet «Vertex backend URL (https://…run.app)» og den hemmelige nøkkelen (BACKEND_SECRET) i feltet «Vertex backend secret» på forsiden.<br>
+– All bruk av Gemini 2.5 Pro går da via ditt eget prosjekt; både fakturering og databehandling styres av deg, og du kan velge EU-region for bedre GDPR-tilpasning.<br>
+– Oppsettet kan oppleves litt teknisk, så for en detaljert steg-for-steg-veiledning kan du klikke på <strong>«Guide»</strong>-lenken ved siden av «Google Vertex»-overskriften over disse feltene på forsiden.<br><br>
 
 <strong>Soniox</strong><br>
 – Lag en bruker på Soniox:<br>
@@ -277,6 +279,17 @@ https://soniox.com<br><br>
 – For å få EU-endepunkt (GDPR-vennlig): send e-post til sales@soniox.com og be om EU API-nøkkel for bruk av tale-til-tekst i klinisk pasient–lege-setting<br>
 – På hovedsiden kan du velge mellom EU- og US-endepunkt i nedtrekksmenyen når du bruker Soniox<br><br>
 
+<strong>OpenAI</strong><br>
+– Lag en bruker på OpenAI:<br>
+https://platform.openai.com<br><br>
+– Generer en API-nøkkel og sett inn kreditt på kontoen din<br>
+– Lagre API-nøkkelen trygt et sted (lokalt på PC-en, tekstfil, passordmanager, Dropbox osv.)<br>
+– Lim inn nøkkelen i feltet «OpenAI API key» på forsiden<br>
+– Du kan nå bruke OpenAI-modellene i appen:<br>
+• Tale-til-tekst: gpt-4o-transcribe (velg «OpenAI» i Opptaksmodul-nedtrekksmeny på hovedsiden)<br>
+• Tekstgenerering: chatgpt-4-latest, GPT-5.1<br><br>
+
+
 <strong>Google Gemini</strong><br>
 – Lag bruker / logg inn på Google AI Studio:<br>
 https://aistudio.google.com<br><br>
@@ -285,17 +298,6 @@ https://aistudio.google.com<br><br>
 – Lagre nøkkelen trygt og lim den inn i feltet «Google Gemini API key» på forsiden<br>
 – Tekstmodell: Gemini 3 (per nå en av de aller beste tekstmodellene for tekstgenerering)<br><br>
 
-<strong>Google Vertex (Gemini 2.5 Pro – EU-endepunkt)</strong><br>
-– Dette er et mer avansert oppsett for deg som vil bruke Gemini via Google Cloud / Vertex AI med regionalt EU-endepunkt (f.eks. europe-west1 eller europe-west4).<br>
-– Kort fortalt: Du oppretter et eget Google Cloud-prosjekt, aktiverer Vertex AI, kobler det til en faktureringskonto og deployer en liten backend-funksjon (Cloud Run) som gir deg en HTTPS-adresse (https://…run.app).<br>
-– I denne webappen limer du inn denne adressen i feltet «Vertex backend URL (https://…run.app)» og den hemmelige nøkkelen (BACKEND_SECRET) i feltet «Vertex backend secret» på forsiden.<br>
-– All bruk av Gemini 2.5 Pro går da via ditt eget prosjekt; både fakturering og databehandling styres av deg, og du kan velge EU-region for bedre GDPR-tilpasning.<br>
-– Oppsettet kan oppleves litt teknisk, så for en detaljert steg-for-steg-veiledning kan du klikke på <strong>«Guide»</strong>-lenken ved siden av «Google Vertex»-overskriften over disse feltene på forsiden.<br><br>
-
-<strong>AWS Bedrock (Full GDPR compliance)</strong><br>
-– Dette er et noe mer avansert oppsett enn de fleste andre alternativene i appen, men kan konfigureres slik at det gir et fullt GDPR-tilpasset oppsett.<br>
-– For komplett steg-for-steg-oppsett: klikk på <strong>«Guide»</strong>-lenken ved siden av <strong>AWS Bedrock</strong>-overskriften på forsiden (index.html).<br>
-– Når oppsettet er ferdig, vil du få en <strong>backend URL</strong> og en <strong>secret key</strong>, som du må lime inn i <strong>AWS Bedrock</strong>-feltene på forsiden av webappen.<br><br>
 
 <strong>Lemonfox</strong><br>
 – Lag en bruker på Lemonfox:<br>

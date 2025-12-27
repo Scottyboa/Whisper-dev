@@ -521,9 +521,9 @@ guideText: `Welcome to the Transcribe Notes Transcription tool. This application
 <strong>How to Use the Functions:</strong><br><br>
 
 <ul>
-  <li><strong>Recording:</strong> The patient’s consent must always be obtained before recording. Click “Start recording” to begin capturing audio.<br><br>
+  <li><strong>Recording:</strong> The patient’s consent must always be obtained before recording. Select desired transcription model from pulldown menu, then click “Start recording” to begin capturing audio.<br><br>
   
-  <strong><u>Important:</u> The recording function does not work in all browsers. We therefore recommend using <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>.</strong> Select the desired transcription model in pulldown menu before starting the recording.</li><br>
+  <strong><u>Important:</u> The recording function does not work in all browsers. We therefore recommend using <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>.</strong></li><br>
 
   <li><strong>Pause and resume:</strong> You can use the “Pause” button to temporarily stop the recording, for example if the consultation is interrupted or you need to leave the office for a moment. When you press “Pause,” the current audio segment is uploaded and transcribed, and the recording is paused. When you are ready to continue, click “Resume,” and the recording will automatically continue with the next segment. The timer continues from where it left off, and the recording can ultimately be ended as usual with “Stop/Done.”</li><br>
 

@@ -78,19 +78,25 @@ STEP 4 — ENABLE AMAZON BEDROCK + ENABLE CLAUDE
 
 You must enable model access in Bedrock before the proxy can call the models:
 
-1) In AWS Console, search for:  Amazon Bedrock
-2) Open Amazon Bedrock
-3) In the left menu, choose:     Model access
-4) Click:                        Modify model access
-5) Enable these models:
-     ✅ Claude Sonnet 4
-     ✅ Claude Sonnet 4.5
-     ✅ Claude Haiku 4.5
-6) Accept/confirm any prompts.
+In the AWS Console, search for: Amazon Bedrock
 
-You may be asked for basic info like company name / website / purpose.
-Example purpose text:
-  “Medical note generation in a doctor-patient setting.”
+Open Amazon Bedrock
+
+In the left-hand menu, select: Model catalog
+
+Click on one of these models:
+✅ Claude Sonnet 4
+✅ Claude Sonnet 4.5
+✅ Claude Haiku 4.5
+(It should be enough to enable just one of them—then the other Claude models will be enabled automatically.)
+
+Accept/confirm any prompts.
+
+You may be asked for basic info such as company name / website / intended use.
+It’s not very important what you enter here.
+
+Example intended-use text (at the bottom):
+“Generation of medical notes in a doctor–patient setting.”
 
 
 ------------------------------------------------------------

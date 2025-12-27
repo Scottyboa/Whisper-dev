@@ -38,9 +38,9 @@ This app exposes several different providers and models. Below is a practical, o
 - For routine use with identifiable patient data, Soniox with an EU endpoint and zero data retention is the best aligned with strict GDPR and health-sector requirements. OpenAI typically uses global endpoints with temporary retention and will often end up in a legal “gray zone” unless you have special contracts and EU data residency explicitly in place.<br><br>
 
 <strong>Note generation</strong><br>
-- The best note-generation quality in this app typically comes from the ChatGPT models (GPT-5.1 / GPT-4o) and the Gemini models (Gemini 3 and Gemini 2.5 Pro).<br>
-- From a GDPR standpoint, the only note-generation setup in this app that can be configured with strict EU data residency and zero data retention is Google Vertex AI with Gemini 2.5 Pro in an EU region. This requires that you set up your own Google Cloud/Vertex project, deploy a backend, and paste the backend URL and secret into the “Google Vertex” fields on the front page.<br>
-- When your own Vertex project is configured with an EU region (for example europe-west1) and zero data retention/no training reuse, this can in principle be used in a fully GDPR-aligned way, subject to your own DPA + DPIA/TIA and local legal assessment.<br><br>
+- The best note-generation quality in this app typically comes from the ChatGPT models (GPT-5.1 / GPT-4o), the Claude models (via AWS Bedrock), and the Gemini models (Gemini 3 and Gemini 2.5 Pro).<br>
+- From a GDPR standpoint, the recommended setup in this app is <strong>AWS Bedrock (Claude)</strong>, because it can be configured for strong data-residency controls (EU/EEA regions), zero data retention, and no-training reuse—making it a highly “GDPR-optimized” path for note generation when set up correctly.<br>
+- A strong alternative is <strong>Google Vertex AI with Gemini 2.5 Pro</strong> in an EU region. This requires that you set up your own Google Cloud/Vertex project, deploy a backend, and paste the backend URL and secret into the “Google Vertex” fields on the front page.<br>
 
 <strong>Other providers in this app</strong><br>
 - Lemonfox, Mistral and Deepgram are included mainly for testing/experimentation and possible non-clinical use. For demanding clinical dictation and note generation, their quality is generally lower than Soniox/OpenAI/Gemini, and their GDPR status depends entirely on which endpoints (EU/global) and options (such as Zero Data Retention) you actually have activated with the provider.<br>

@@ -166,17 +166,18 @@ function updateTranscribeUI(trans) {
   document.getElementById("transcription").placeholder = trans.transcriptionPlaceholder;
 
   const supplementaryInfoEl = document.getElementById("supplementaryInfo");
-  if (supplementaryInfoEl && trans.supplementaryInfoPlaceholder) {
-    supplementaryInfoEl.placeholder = trans.supplementaryInfoPlaceholder;
+  if (supplementaryInfoEl) {
+    supplementaryInfoEl.placeholder =
+      trans.supplementaryInfoPlaceholder ?? "Supplementary information (optional)";
   }
 
   const promptExportBtnEl = document.getElementById("promptExportBtn");
-  if (promptExportBtnEl && trans.promptExportButton) {
-    promptExportBtnEl.textContent = trans.promptExportButton;
+  if (promptExportBtnEl) {
+    promptExportBtnEl.textContent = trans.promptExportButton ?? "Export";
   }
   const promptImportBtnEl = document.getElementById("promptImportBtn");
-  if (promptImportBtnEl && trans.promptImportButton) {
-    promptImportBtnEl.textContent = trans.promptImportButton;
+  if (promptImportBtnEl) {
+    promptImportBtnEl.textContent = trans.promptImportButton ?? "Import";
   }
 
   document.getElementById("startButton").textContent = trans.startButton;

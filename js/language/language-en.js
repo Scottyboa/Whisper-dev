@@ -268,7 +268,7 @@ https://soniox.com<br><br>
 <strong>AWS Bedrock (full GDPR compliance)</strong><br>
 – For note generation.<br>
 – This is a more advanced setup than most options in the app, but it can be configured in a way that supports full GDPR compliance, with EU endpoint.<br>
-– For step-by-step instructions, click the <strong>“Guide”</strong> link next to the <strong>AWS Bedrock</strong> header on the front page (index.html).<br>
+– For step-by-step instructions, click the <a href="#" data-open-guide="bedrock"><strong>“Guide”</strong></a> link next to the <strong>AWS Bedrock</strong> header on the front page.<br>
 – When the setup is complete, you will receive a <strong>backend URL</strong> and a <strong>secret key</strong>. You must paste these into the <strong>AWS Bedrock</strong> fields on the front page of the web app.<br><br>
 
 <strong>Google Vertex (Gemini 2.5 Pro – full GDPR compliance)</strong><br>
@@ -277,7 +277,7 @@ https://soniox.com<br><br>
 – In short: you create your own Google Cloud project, activate Vertex AI, link it to a billing account, and deploy a small backend function (Cloud Run) which gives you a secure HTTPS URL (https://…run.app).<br>
 – In this web app, you paste that URL into the field “Vertex backend URL (https://…run.app)” and your secret BACKEND_SECRET into the “Vertex backend secret” field on the front page.<br>
 – All usage of Gemini 2.5 Pro then runs through *your* project; you control billing, quotas, and can select an EU region, which improves GDPR compliance.<br>
-– The setup is slightly technical, so if you prefer a full step-by-step guide, click the “Guide” link next to the “Google Vertex” header above the input fields on the front page.<br><br>
+– The setup is slightly technical, so if you prefer a full step-by-step guide, click the <a href="#" data-open-guide="vertex"><strong>“Guide”</strong></a> link next to the “Google Vertex” header above the input fields on the front page.<br><br>
 
 <strong>OpenAI</strong><br>
 – Create an account at OpenAI:<br>

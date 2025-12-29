@@ -42,6 +42,17 @@ function updateIndexUI(trans) {
   document.getElementById("header-title").textContent = trans.headerTitle;
   document.getElementById("header-subtitle").textContent = trans.headerSubtitle;
   document.getElementById("start-text").textContent = trans.startText;
+
+  // Optional helper text blocks (may be absent or untranslated in some language packs)
+  const promptProfileHintEl = document.getElementById("prompt-profile-hint");
+  if (promptProfileHintEl && trans.promptProfileHint) {
+    promptProfileHintEl.textContent = trans.promptProfileHint;
+  }
+  const keysIoHintEl = document.getElementById("keysIoHint");
+  if (keysIoHintEl && trans.keysIoHint) {
+    keysIoHintEl.textContent = trans.keysIoHint;
+  }
+
   document.getElementById("apiKeyInput").placeholder = trans.apiPlaceholder;
   document.getElementById("enterTranscriptionBtn").textContent = trans.enterButton;
   const guideBtn = document.getElementById("openGuideButton");
@@ -153,6 +164,21 @@ function updateTranscribeUI(trans) {
   document.getElementById("recordTimer").textContent = trans.recordTimer;
   document.getElementById("transcribeTimer").textContent = trans.transcribeTimer;
   document.getElementById("transcription").placeholder = trans.transcriptionPlaceholder;
+
+  const supplementaryInfoEl = document.getElementById("supplementaryInfo");
+  if (supplementaryInfoEl && trans.supplementaryInfoPlaceholder) {
+    supplementaryInfoEl.placeholder = trans.supplementaryInfoPlaceholder;
+  }
+
+  const promptExportBtnEl = document.getElementById("promptExportBtn");
+  if (promptExportBtnEl && trans.promptExportButton) {
+    promptExportBtnEl.textContent = trans.promptExportButton;
+  }
+  const promptImportBtnEl = document.getElementById("promptImportBtn");
+  if (promptImportBtnEl && trans.promptImportButton) {
+    promptImportBtnEl.textContent = trans.promptImportButton;
+  }
+
   document.getElementById("startButton").textContent = trans.startButton;
   document.getElementById("stopButton").textContent = trans.stopButton;
   document.getElementById("pauseResumeButton").textContent = trans.pauseButton;

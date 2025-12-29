@@ -7,7 +7,7 @@ export const indexTranslations = {
   promptProfileHint: "Used to save your custom prompts on this device independent of your API key.",
   keysIoHint: "Export keys to a file and store it securely. Next time, import the file to refill the fields, which saves time and avoids typing.",
   gdprColumnTitle: "GDPR compliant:",
-  gdprColumnFootnote: "(Full EU data residency/processing + zero data retention)",
+  gdprColumnFootnote: "(EU data residency/processing + zero data retention)",
   nonGdprColumnTitle: "Non-GDPR compliant:",
   nonGdprColumnFootnote: "(Varying degrees of data retention + data processing/residency in US)",
   enterButton: "Enter Transcription Tool",

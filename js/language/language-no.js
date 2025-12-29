@@ -239,7 +239,7 @@ Mange eksisterende leverandører tilbyr lignende tjenester, men tar betydelig me
  
   guideModalHeading: "API nøkkel - Hvordan lage",
 guideModalText: `Hvordan skaffe API-nøkler:<br><br>
-For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du anskaffe én eller flere API-nøkler (OpenAI, Soniox, Google Gemini, Lemonfox, Deepgram, Mistral).<br><br>
+For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du anskaffe tilgang til minst èn tale-til-tekst, og èn tekst-modell.<br><br>
 
 <strong>Tale-til-tekst-modeller i appen:</strong><br>
 - OpenAI: gpt-4o-transcribe<br>
@@ -260,9 +260,9 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 - Gemini 3<br><br>
 
 <strong>Anbefalt bruk i forhold til GDPR:</strong><br>
-- Av de tilgjengelige modellene i denne webappen, så er det Soniox for tale-til-tekst, samt Google Vertex(Gemini 2.5 pro) og AWS Bedrock(Claude) for tekst/notat-generering som vil være GDPR godkjente.<br>
+- Av de tilgjengelige modellene i denne webappen, så er det Soniox for tale-til-tekst, samt Mistral Large 3(Via Mistral), Google Vertex(Gemini 2.5 pro) og AWS Bedrock(Claude) for tekst/notat-generering som vil være GDPR godkjente.<br>
 - De andre modellene kan ha data prosessering utenfor EUs grenser og midlertidig dataretenstion, som gjør de ugunstige for bruk i klinisk setting med tanke på GDPR og datatilsynets norm.<br>
-- For bruk av denne app i klinisk setting er det derfor sterkt anbefalt å bruke Soniox for tale-til-tekst, og Google Vertex og/eller AWS Bedrock for notatgenerering. Heldigvis er disse modellene også svært gode, og vil gi høy kvalitet både på transkripsjon og notatgenerering.<br><br>
+- For bruk av denne app i klinisk setting er det derfor sterkt anbefalt å bruke Soniox for tale-til-tekst, og Mistral Large 3, Google Vertex og/eller AWS Bedrock for notatgenerering. Heldigvis er disse modellene også svært gode, og vil gi høy kvalitet både på transkripsjon og notatgenerering.<br><br>
 
 <strong>Soniox</strong><br>
 – For tale til tekst.<br>
@@ -271,7 +271,7 @@ https://soniox.com<br><br>
 – Generer en Soniox API-nøkkel og kjøp/last opp credits (samme prinsipp som hos OpenAI)<br>
 – Lagre nøkkelen trygt og lim den inn i feltet «Soniox API key» på forsiden<br>
 – Du kan nå bruke tale-til-tekst-modellen Soniox (svært god og rimelig tale-til-tekst-modell, anbefales)<br>
-– For å få EU-endepunkt (GDPR-vennlig): send e-post til sales@soniox.com og be om EU API-nøkkel for bruk av tale-til-tekst i klinisk pasient–lege-setting<br>
+– For å få tilgang til API nøkkel med EU-endepunkt (GDPR-vennlig): send e-post til sales@soniox.com og be om EU API-nøkkel for å kunne oppfylle GDPR krav med tanke på bruk av tale-til-tekst i klinisk pasient–lege-setting<br>
 – På hovedsiden kan du velge mellom EU- og US-endepunkt i nedtrekksmenyen når du bruker Soniox<br>
 - Bruk av Soniox i denne webappen vil ha zero data retention. Dette sammen med API nøkkel med EU endepunkt, gjør Soniox optimal i forhold til GDPR-krav. Samtidig er Soniox også den klart beste og billigste av alle tale-til-tekst modellene som finnes per i dag, noe som gjør den til et klart førstevalg ved bruk av tale-til-tekst i denne appen.<br><br>
 

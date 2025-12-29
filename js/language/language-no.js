@@ -276,6 +276,7 @@ https://soniox.com<br><br>
 - Bruk av Soniox i denne webappen vil ha zero data retention. Dette sammen med API nøkkel med EU endepunkt, gjør Soniox optimal i forhold til GDPR-krav. Samtidig er Soniox også den klart beste og billigste av alle tale-til-tekst modellene som finnes per i dag, noe som gjør den til et klart førstevalg ved bruk av tale-til-tekst i denne appen.<br><br>
 
 <strong>Mistral</strong><br>
+- Anbefalt for notatgenerering.<br>
 – Lag en bruker på Mistral AI og logg inn på konsollen:<br>
 https://console.mistral.ai<br><br>
 – Sett opp betaling om nødvendig, og gå deretter til «API keys» i konsollen for å generere en Mistral API-nøkkel<br>
@@ -288,7 +289,7 @@ https://console.mistral.ai<br><br>
 &nbsp;&nbsp;&nbsp;&nbsp;“I wish to use your API for medical journal note generation in a patient–doctor setting, and wish to comply with my local GDPR regulations. I therefore wish to have Zero Data Retention enabled for my account.”<br>
 &nbsp;&nbsp;• De svarer ofte innen 1–2 dager (varierer).<br>
 – For å <strong>opt-out av modelltrening</strong>: gå til personverninnstillingene i Mistral-kontoen: <a href="https://admin.mistral.ai/plateforme/privacy" target="_blank" rel="noopener noreferrer">admin.mistral.ai/plateforme/privacy</a><br>
-– Når du har <strong>EU-behandling (default) + innvilget ZDR + opt-out av modelltrening</strong>, vil bruk av Mistral sin API/modell ha en høy grad av GDPR-tilpasning (må likevel dokumenteres i DPIA/TIA der dette kreves).<br>
+– Når du har <strong>EU-behandling (default) + innvilget ZDR + opt-out av modelltrening</strong>, vil bruk av Mistral sin API/modell ha en høy grad av GDPR-tilpasning (må likevel dokumenteres i DPIA/TIA der dette kreves).<br><br>
 
 <strong>AWS Bedrock (Claude modeller - Zero data retention + EU-endepunkt)</strong><br>
 – For notatgenerering.<br>
@@ -305,6 +306,7 @@ https://console.mistral.ai<br><br>
 – Oppsettet kan oppleves litt teknisk, så for en detaljert steg-for-steg-veiledning kan du klikke på <a href="#" data-open-guide="vertex"><strong>«Guide»</strong></a>-lenken ved siden av «Google Vertex»-overskriften over disse feltene på forsiden.<br><br>
 
 <strong>OpenAI</strong><br>
+- For tale-til-tekst og notatgenerering.<br>
 – Lag en bruker på OpenAI:<br>
 https://platform.openai.com<br><br>
 – Generer en API-nøkkel og sett inn kreditt på kontoen din<br>
@@ -316,6 +318,7 @@ https://platform.openai.com<br><br>
 
 
 <strong>Google Gemini 3 pro</strong><br>
+. For notatgenerering.<br>
 – Lag bruker / logg inn på Google AI Studio:<br>
 https://aistudio.google.com<br><br>
 – Generer en Gemini API-nøkkel<br>

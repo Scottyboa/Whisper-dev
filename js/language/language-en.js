@@ -4,6 +4,8 @@ export const indexTranslations = {
   headerSubtitle: "Advanced AI-Powered Speech-to-Text and Clinical Note Generation for Healthcare Consultations",
   startText: "You can now also choose between different models from various providers. Read the info modules at the bottom of the frontpage, for instructions on how to use the app.",
   apiPlaceholder: "Enter OpenAI API Key here",
+  promptProfileHint: "Used to save your custom prompts on this device independent of your API key.",
+  keysIoHint: "Export keys to a file and store it securely. Next time, import the file to refill the fields, which saves time and avoids typing.",
   enterButton: "Enter Transcription Tool",
   guideButton: "API guide - How to use",
   securityButton: "Security",

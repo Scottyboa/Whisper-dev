@@ -152,6 +152,63 @@
       box-shadow: 0 0 8px rgba(102,175,233,0.6);
       outline: none;
     }
+
+    /* Provider credentials: 2-column layout */
+    .provider-columns {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 32px;
+      margin-top: 10px;
+    }
+    fieldset.provider-column {
+      flex: 0 1 460px;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0 16px;
+      border: 0; /* remove default fieldset border */
+      min-width: 0; /* prevents overflow in flex containers */
+    }
+    fieldset.provider-column legend {
+      padding: 0;
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .provider-column.non-gdpr {
+      border-left: 1px solid rgba(0, 0, 0, 0.12);
+      padding-left: 32px;
+    }    
+    .provider-column .column-footnote {
+      margin: 0 0 18px;
+      font-size: 13px;
+      color: #666;
+    }
+    .provider-column p {
+      margin: 12px 0 6px;
+    }
+    .credentials-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    @media (max-width: 900px) {
+      .provider-columns {
+        flex-direction: column;
+        gap: 18px;
+      }
+      fieldset.provider-column {
+        flex-basis: auto;
+        max-width: 100%;
+      }
+      .provider-column.non-gdpr {
+        border-left: 0;
+        padding-left: 16px;
+        border-top: 1px solid rgba(0, 0, 0, 0.12);
+        padding-top: 18px;
+      }
+    }
     button {
       background-color: #5a9;
       color: #fff;
@@ -394,86 +451,106 @@
     </p>
     <p id="keysIoStatus" aria-live="polite"></p>
 
-    <!-- New explicit label above the OpenAI field -->
-    <p id="openai-label">OpenAI API key:</p>
-    <input type="text" id="apiKeyInput" placeholder="Enter API Key here" autocomplete="off">
-    <br>
-    <!-- New (Phase 1): Optional Soniox API Key -->
-    <p id="soniox-text">Soniox API key(EU or US):</p>
-    <input type="text" id="sonioxKeyInput" placeholder="Enter Soniox API Key here" autocomplete="off">
-    <br>
-    <!-- New: Optional Lemonfox API Key -->
-    <p id="lemonfox-text">Lemonfox API key:</p>
-    <input type="text" id="lemonfoxKeyInput" placeholder="Enter Lemonfox API Key here" autocomplete="off">
-    <br>
-    <!-- New: Optional Mistral (Voxtral) API Key -->
-    <p id="mistral-text">Mistral (Voxtral) API key:</p>
-    <input type="text" id="mistralKeyInput" placeholder="Enter Mistral API Key here" autocomplete="off">
-    <br>
-    <!-- New: Optional Deepgram API Key -->
-    <p id="deepgram-text">Deepgram API key:</p>
-    <input type="text" id="deepgramKeyInput" placeholder="Enter Deepgram API Key here" autocomplete="off">
-    <br>
-    <!-- New: Optional Google Gemini / Vertex Credentials -->
-    <p id="gemini-text">Google Gemini API key:</p>
-    <div class="gemini-credentials-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-      <input
-        type="text"
-        id="geminiKeyInput"
-        placeholder="Enter Google Gemini API Key here"
-        autocomplete="off"
-      >
-    </div>
+    <!-- Provider credentials (two columns) -->
+    <div class="provider-columns" id="provider-columns">
+      <!-- GDPR compliant -->
+      <fieldset class="provider-column gdpr">
+        <legend><span id="gdpr-column-title">GDPR compliant:</span></legend>
+        <p class="column-footnote" id="gdpr-column-footnote">(Full EU data residency/processing + zero data retention)</p>
 
+        <!-- New (Phase 1): Optional Soniox API Key -->
+        <p id="soniox-text">Soniox API key:</p>
+        <input type="text" id="sonioxKeyInput" placeholder="Enter Soniox API Key here" autocomplete="off">
+        <br>
 
-    <!-- New: Vertex Cloud Run configuration (per-user) -->
-    <p id="vertex-text">
-      Google Vertex (
-      <a
-        href="#"
-        id="vertex-guide-link"
-        role="button"
-      >Guide</a>
-      ):
-    </p>
-    <div class="gemini-credentials-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-      <input
-        type="text"
-        id="vertexBackendUrlInput"
-        placeholder="Vertex backend URL (https://…run.app)"
-        autocomplete="off"
-      >
-      <input
-        type="text"
-        id="vertexBackendSecretInput"
-        placeholder="Vertex backend secret"
-        autocomplete="off"
-     >
-   </div>
+        <!-- New: AWS Bedrock proxy configuration (per-user) -->
+        <p id="bedrock-text">
+          AWS Bedrock (
+          <a
+            href="#"
+            id="bedrock-guide-link"
+            role="button"
+          >Guide</a>
+          ):
+        </p>
+        <div class="credentials-row">
+          <input
+            type="text"
+            id="bedrockBackendUrlInput"
+            placeholder="Bedrock backend URL (https://…lambda-url.eu-north-1.on.aws/)"
+            autocomplete="off"
+          >
+          <input
+            type="text"
+            id="bedrockBackendSecretInput"
+            placeholder="Bedrock backend secret"
+            autocomplete="off"
+          >
+        </div>
 
-    <!-- New: AWS Bedrock proxy configuration (per-user) -->
-    <p id="bedrock-text">
-      AWS Bedrock (
-      <a
-        href="#"
-        id="bedrock-guide-link"
-        role="button"
-      >Guide</a>
-      ):
-    </p>
-    <div class="gemini-credentials-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-      <input
-        type="text"
-        id="bedrockBackendUrlInput"
-        placeholder="Bedrock backend URL (https://…lambda-url.eu-north-1.on.aws/)"
-        autocomplete="off"
-      >
-      <input
-        type="text"
-        id="bedrockBackendSecretInput"
-        placeholder="Bedrock backend secret"
-        autocomplete="off"
-      >
+        <!-- New: Vertex Cloud Run configuration (per-user) -->
+        <p id="vertex-text">
+          Google Vertex (
+          <a
+            href="#"
+            id="vertex-guide-link"
+            role="button"
+          >Guide</a>
+          ):
+        </p>
+        <div class="credentials-row">
+          <input
+            type="text"
+            id="vertexBackendUrlInput"
+            placeholder="Vertex backend URL (https://…run.app)"
+            autocomplete="off"
+          >
+          <input
+            type="text"
+            id="vertexBackendSecretInput"
+            placeholder="Vertex backend secret"
+            autocomplete="off"
+          >
+        </div>
+      </fieldset>
+
+      <!-- Non-GDPR compliant -->
+      <fieldset class="provider-column non-gdpr">
+        <legend><span id="nongdpr-column-title">Non-GDPR compliant:</span></legend>
+        <p class="column-footnote" id="nongdpr-column-footnote">(Varying degrees of data retention + data processing/residency in US)</p>
+
+        <!-- New explicit label above the OpenAI field -->
+        <p id="openai-label">OpenAI API key:</p>
+        <input type="text" id="apiKeyInput" placeholder="Enter API Key here" autocomplete="off">
+        <br>
+
+        <!-- New: Optional Google Gemini / Vertex Credentials -->
+        <p id="gemini-text">Google Gemini API key:</p>
+        <div class="credentials-row">
+          <input
+            type="text"
+            id="geminiKeyInput"
+            placeholder="Enter Google Gemini API Key here"
+            autocomplete="off"
+          >
+        </div>
+        <br>
+
+        <!-- New: Optional Lemonfox API Key -->
+        <p id="lemonfox-text">Lemonfox API key:</p>
+        <input type="text" id="lemonfoxKeyInput" placeholder="Enter Lemonfox API Key here" autocomplete="off">
+        <br>
+
+        <!-- New: Optional Mistral (Voxtral) API Key -->
+        <p id="mistral-text">Mistral (Voxtral) API key:</p>
+        <input type="text" id="mistralKeyInput" placeholder="Enter Mistral API Key here" autocomplete="off">
+        <br>
+
+        <!-- New: Optional Deepgram API Key -->
+        <p id="deepgram-text">Deepgram API key:</p>
+        <input type="text" id="deepgramKeyInput" placeholder="Enter Deepgram API Key here" autocomplete="off">
+        <br>
+      </fieldset>
     </div>
     
     <button id="enterTranscriptionBtn">Enter Transcription Tool</button>

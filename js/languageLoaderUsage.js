@@ -43,6 +43,16 @@ function updateIndexUI(trans) {
   document.getElementById("header-subtitle").textContent = trans.headerSubtitle;
   document.getElementById("start-text").textContent = trans.startText;
 
+  // Provider columns (optional; exists after the 2-column layout change)
+  const gdprTitleEl = document.getElementById("gdpr-column-title");
+  if (gdprTitleEl) gdprTitleEl.textContent = trans.gdprColumnTitle ?? gdprTitleEl.textContent;
+  const gdprFootEl = document.getElementById("gdpr-column-footnote");
+  if (gdprFootEl) gdprFootEl.textContent = trans.gdprColumnFootnote ?? gdprFootEl.textContent;
+  const nonGdprTitleEl = document.getElementById("nongdpr-column-title");
+  if (nonGdprTitleEl) nonGdprTitleEl.textContent = trans.nonGdprColumnTitle ?? nonGdprTitleEl.textContent;
+  const nonGdprFootEl = document.getElementById("nongdpr-column-footnote");
+  if (nonGdprFootEl) nonGdprFootEl.textContent = trans.nonGdprColumnFootnote ?? nonGdprFootEl.textContent;
+
   // Optional helper text blocks (may be absent or untranslated in some language packs)
   const promptProfileHintEl = document.getElementById("prompt-profile-hint");
   if (promptProfileHintEl && trans.promptProfileHint) {

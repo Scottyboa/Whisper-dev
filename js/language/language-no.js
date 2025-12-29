@@ -8,6 +8,10 @@ export const indexTranslations = {
   apiPlaceholder: "Skriv inn OpenAI API-nøkkel her",
   promptProfileHint: "Brukes til å lagre dine egendefinerte prompts på denne enheten uavhengig av API-nøkkelen din.",
   keysIoHint: "Eksporter nøklene til en fil og oppbevar den sikkert. Neste gang kan du importere filen for å fylle inn feltene på nytt, noe som sparer tid og gjør at du slipper å skrive dem inn.",
+  gdprColumnTitle: "GDPR-kompatibel:",
+  gdprColumnFootnote: "(Full EU data-residens/databehandling + ingen datalagring)",
+  nonGdprColumnTitle: "Ikke GDPR-kompatibel:",
+  nonGdprColumnFootnote: "(Varierende grad av datalagring + databehandling/residens i USA)",
   enterButton: "Gå til transkripsjonsverktøyet",
   guideButton: "API-guide – Slik bruker du den",
   securityButton: "Sikkerhet",
@@ -279,7 +283,7 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 – Lag en bruker på Soniox:<br>
 https://soniox.com<br><br>
 – Generer en Soniox API-nøkkel og kjøp/last opp credits (samme prinsipp som hos OpenAI)<br>
-– Lagre nøkkelen trygt og lim den inn i feltet «Soniox API key (EU or US)» på forsiden<br>
+– Lagre nøkkelen trygt og lim den inn i feltet «Soniox API key» på forsiden<br>
 – Du kan nå bruke tale-til-tekst-modellen Soniox (svært god og rimelig tale-til-tekst-modell, anbefales)<br>
 – For å få EU-endepunkt (GDPR-vennlig): send e-post til sales@soniox.com og be om EU API-nøkkel for bruk av tale-til-tekst i klinisk pasient–lege-setting<br>
 – På hovedsiden kan du velge mellom EU- og US-endepunkt i nedtrekksmenyen når du bruker Soniox<br><br>

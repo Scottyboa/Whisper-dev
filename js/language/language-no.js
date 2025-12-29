@@ -261,7 +261,7 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 <strong>AWS Bedrock (Claude modeller - Full GDPR compliance)</strong><br>
 – For notatgenerering.<br>
 – Dette er et noe mer avansert oppsett enn de fleste andre alternativene i appen, men kan konfigureres slik at det gir et fullt GDPR-tilpasset oppsett.<br>
-– For komplett steg-for-steg-oppsett: klikk på <strong>«Guide»</strong>-lenken ved siden av <strong>AWS Bedrock</strong>-overskriften på forsiden (index.html).<br>
+– For komplett steg-for-steg-oppsett: klikk på <a href="#" data-open-guide="bedrock"><strong>«Guide»</strong></a>-lenken ved siden av <strong>AWS Bedrock</strong>-overskriften på forsiden.<br>
 – Når oppsettet er ferdig, vil du få en <strong>backend URL</strong> og en <strong>secret key</strong>, som du må lime inn i <strong>AWS Bedrock</strong>-feltene på forsiden av webappen.<br><br>
 
 <strong>Google Vertex (Gemini 2.5 Pro – EU-endepunkt)</strong><br>
@@ -270,7 +270,7 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 – Kort fortalt: Du oppretter et eget Google Cloud-prosjekt, aktiverer Vertex AI, kobler det til en faktureringskonto og deployer en liten backend-funksjon (Cloud Run) som gir deg en HTTPS-adresse (https://…run.app).<br>
 – I denne webappen limer du inn denne adressen i feltet «Vertex backend URL (https://…run.app)» og den hemmelige nøkkelen (BACKEND_SECRET) i feltet «Vertex backend secret» på forsiden.<br>
 – All bruk av Gemini 2.5 Pro går da via ditt eget prosjekt; både fakturering og databehandling styres av deg, og du kan velge EU-region for bedre GDPR-tilpasning.<br>
-– Oppsettet kan oppleves litt teknisk, så for en detaljert steg-for-steg-veiledning kan du klikke på <strong>«Guide»</strong>-lenken ved siden av «Google Vertex»-overskriften over disse feltene på forsiden.<br><br>
+– Oppsettet kan oppleves litt teknisk, så for en detaljert steg-for-steg-veiledning kan du klikke på <a href="#" data-open-guide="vertex"><strong>«Guide»</strong></a>-lenken ved siden av «Google Vertex»-overskriften over disse feltene på forsiden.<br><br>
 
 <strong>Soniox</strong><br>
 – For tale til tekst.<br>

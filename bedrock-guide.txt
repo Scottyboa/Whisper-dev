@@ -120,12 +120,12 @@ On the CloudFormation Create Stack page, scroll down until you see:
   ProxySecret
 
 1) Enter a strong password (minimum 16 characters).
-2) Save it somewhere safe:
-     • Password manager (best)
+2) Save it somewhere safe(f.ex):
+     • Password manager 
      • Encrypted note / encrypted file
-     • Dropbox is OK ONLY if the file is encrypted/password-protected
+     • Dropbox 
 
-⚠️ You WILL need this secret in the app later.
+⚠️ You WILL need this secret key in the app later.
 
 
 -----------------------------------------------
@@ -137,7 +137,7 @@ Scroll to the bottom of the page.
 You will see 3 acknowledgement checkboxes (IAM + SAM/macro).
 ✅ Tick all three.
 Then click:
-  ✅ Create stack
+✅ Create stack
 
 
 --------------------------------------------
@@ -156,7 +156,7 @@ STEP 9 — COPY YOUR BACKEND URL (THE “FunctionUrl” VALUE)
 
 When the stack is CREATE_COMPLETE:
 
-1) Open the stack’s:  Outputs  tab
+1) Open the stack’s:  "Outputs"  tab
 2) Find:              FunctionUrl
 3) Copy it and store it safely
 

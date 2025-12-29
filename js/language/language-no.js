@@ -380,17 +380,9 @@ https://deepgram.com<br><br>
 
   <p><strong>2. Tekstgenerering – typiske priser (per 1 million tokens)</strong></p>
 
-  <p><strong>OpenAI – GPT-5.1</strong><br>
-  Input: 1.25 USD (≈ 13,75 NOK)<br>
-  Output: 10 USD (≈ 110 NOK)</p>
-
-  <p><strong>OpenAI – chatgpt-4o-latest</strong><br>
-  Input: 5 USD (≈ 55 NOK)<br>
-  Output: 15 USD (≈ 165 NOK)</p>
-
-  <p><strong>Google Gemini 3</strong><br>
-  Input: ca. 2 USD (≈ 22 NOK)<br>
-  Output: ca. 12 USD (≈ 132 NOK)</p>
+  <p><strong>Mistral – Mistral Large 3 (mistral-large-2512)</strong><br>
+  Input: 0.5 USD (≈ 5,50 NOK)<br>
+  Output: 1.5 USD (≈ 16,50 NOK)</p>
 
   <p><strong>AWS Bedrock – Claude Sonnet 4</strong><br>
   Input: 3 USD (≈ 33 NOK)<br>
@@ -404,9 +396,25 @@ https://deepgram.com<br><br>
   Input: 1 USD (≈ 11 NOK)<br>
   Output: 5 USD (≈ 55 NOK)</p>
 
+  <p><strong>Google Vertex – Gemini 2.5 Pro</strong><br>
+  Input: 1.25 USD (≈ 13,75 NOK)<br>
+  Output: 10 USD (≈ 110 NOK)</p>
 
-  <p><strong>Mistral – Mistral Large</strong><br>
-  Ca. 2 USD per 1M input-tokens og 6 USD per 1M output-tokens (≈ 22 og 66 NOK).</p>
+  <p><strong>OpenAI – GPT-5.2</strong><br>
+  Input: 1.75 USD (≈ 19,25 NOK)<br>
+  Output: 14 USD (≈ 154 NOK)</p>
+
+  <p><strong>OpenAI – GPT-5.1</strong><br>
+  Input: 1.25 USD (≈ 13,75 NOK)<br>
+  Output: 10 USD (≈ 110 NOK)</p>
+
+  <p><strong>OpenAI – chatgpt-4o-latest</strong><br>
+  Input: 5 USD (≈ 55 NOK)<br>
+  Output: 15 USD (≈ 165 NOK)</p>
+
+  <p><strong>Google Gemini 3</strong><br>
+  Input: ca. 2 USD (≈ 22 NOK)<br>
+  Output: ca. 12 USD (≈ 132 NOK)</p>
 
   <p><strong>Lemonfox – Llama 3-baserte modeller</strong><br>
   Typisk rundt 0.50 USD per 1M LLM-tokens input og output (≈ 5,50 NOK).</p>
@@ -443,32 +451,37 @@ https://deepgram.com<br><br>
 
   <p><em>Notatgenerering (2200 input + 450 output tokens):</em></p>
   <ul>
-    <li>GPT-5.1: ≈ 0,08 NOK per notat</li>
-    <li>chatgpt-4o-latest: ≈ 0,20 NOK per notat</li>
-    <li>Gemini 3: ≈ 0,11 NOK per notat</li>
-    <li>Mistral Large: ≈ 0,08 NOK per notat</li>
-    <li>Lemonfox LLM: ≈ 0,02 NOK per notat</li>
+    <li>Mistral Large 3: ≈ 0,02 NOK per notat</li>
     <li>AWS Bedrock – Claude Sonnet 4 / 4.5: ≈ 0,15 NOK per notat</li>
     <li>AWS Bedrock – Claude Haiku 4.5: ≈ 0,05 NOK per notat</li>
+    <li>Google Vertex – Gemini 2.5 Pro: ≈ 0,08 NOK per notat</li>
+    <li>GPT-5.2: ≈ 0,11 NOK per notat</li>
+    <li>GPT-5.1: ≈ 0,08 NOK per notat</li>
+    <li>Lemonfox LLM: ≈ 0,02 NOK per notat</li>
+    <li>chatgpt-4o-latest: ≈ 0,20 NOK per notat</li>
+    <li>Gemini 3: ≈ 0,11 NOK per notat</li>
   </ul>
 
   <p><em>Noen typiske kombinasjoner for én 15-minutters konsultasjon:</em></p>
 
   <ul>
-    <li>OpenAI (gpt-4o-transcribe) + GPT-5.1<br>
-      ≈ 1,00 NOK (STT) + 0,08 NOK (notat) ≈ 1,10 NOK per konsultasjon
+    <li>Soniox + Mistral Large 3<br>
+      ≈ 0,30 NOK (STT) + 0,02 NOK (notat) ≈ 0,32 NOK per konsultasjon
     </li>
-    <li>Soniox + GPT-5.1<br>
-      ≈ 0,30 NOK (STT) + 0,08 NOK (notat) ≈ 0,40 NOK per konsultasjon
-    </li>
-    <li>Voxtral + Mistral Large<br>
-      ≈ 0,17 NOK (STT) + 0,08 NOK (notat) ≈ 0,25 NOK per konsultasjon
-    </li>
-    <li>Soniox + Claude Sonnet 4 / 4.5<br>
+    <li>Soniox + Claude Sonnet 4.5<br>
       ≈ 0,30 NOK (STT) + 0,15 NOK (notat) ≈ 0,45 NOK per konsultasjon
     </li>
     <li>Soniox + Claude Haiku 4.5<br>
       ≈ 0,30 NOK (STT) + 0,05 NOK (notat) ≈ 0,35 NOK per konsultasjon
+    </li>
+    <li>Soniox + Google Vertex (Gemini 2.5 Pro)<br>
+      ≈ 0,30 NOK (STT) + 0,08 NOK (notat) ≈ 0,38 NOK per konsultasjon
+    </li>
+    <li>OpenAI (gpt-4o-transcribe) + GPT-5.1<br>
+      ≈ 1,00 NOK (STT) + 0,08 NOK (notat) ≈ 1,08 NOK per konsultasjon
+    </li>
+    <li>OpenAI (gpt-4o-transcribe) + GPT-5.2<br>
+      ≈ 1,00 NOK (STT) + 0,11 NOK (notat) ≈ 1,11 NOK per konsultasjon
     </li>
   </ul>
 
@@ -489,26 +502,23 @@ https://deepgram.com<br><br>
   <p>Da får du omtrent:</p>
 
   <ul>
+    <li>Soniox + Mistral Large 3<br>
+      ≈ 9 USD ≈ 95 NOK per måned
+    </li>
+    <li>Soniox + Claude Sonnet 4.5<br>
+      ≈ 12 USD ≈ 135 NOK per måned
+    </li>
+    <li>Soniox + Claude Haiku 4.5<br>
+      ≈ 9 USD ≈ 105 NOK per måned
+    </li>
+    <li>Soniox + Google Vertex (Gemini 2.5 Pro)<br>
+      ≈ 10 USD ≈ 115 NOK per måned
+    </li>
     <li>OpenAI gpt-4o-transcribe + GPT-5.1<br>
       ≈ 31 USD ≈ 340 NOK per måned
     </li>
-    <li>Soniox + GPT-5.1<br>
-      ≈ 10 USD ≈ 110 NOK per måned
-    </li>
-    <li>Voxtral + Mistral Large<br>
-      ≈ 7 USD ≈ 80 NOK per måned
-    </li>
-    <li>Lemonfox (Whisper v3 + Llama 3)<br>
-      ≈ 14 USD ≈ 150 NOK per måned
-    </li>
-    <li>Deepgram Nova-3 + GPT-5.1<br>
-      ≈ 23 USD ≈ 250 NOK per måned
-    </li>
-    <li>Soniox + Claude Sonnet 4 / 4.5<br>
-      ≈ 12 USD ≈ 130 NOK per måned
-    </li>
-    <li>Soniox + Claude Haiku 4.5<br>
-      ≈ 9 USD ≈ 100 NOK per måned
+    <li>OpenAI gpt-4o-transcribe + GPT-5.2<br>
+      ≈ 32 USD ≈ 355 NOK per måned
     </li>
   </ul>
 

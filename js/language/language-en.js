@@ -44,17 +44,20 @@ This app exposes several different providers and models. Below is a practical, o
 - For routine use with identifiable patient data, Soniox with an EU endpoint and zero data retention is the best aligned with strict GDPR and health-sector requirements. OpenAI typically uses global endpoints with temporary retention and will often end up in a legal “gray zone” unless you have special contracts and EU data residency explicitly in place.<br><br>
 
 <strong>Note generation</strong><br>
-- The best note-generation quality in this app typically comes from the ChatGPT models (GPT-5.1 / GPT-4o), the Claude models (via AWS Bedrock), and the Gemini models (Gemini 3 and Gemini 2.5 Pro).<br>
+- The best note-generation quality in this app typically comes from the ChatGPT models (GPT-5.1 / GPT-4o), Mistral (Mistral Large 3), the Claude models (via AWS Bedrock), and the Gemini models (Gemini 3 and Gemini 2.5 Pro).<br>
 - From a GDPR standpoint, the recommended setup in this app is <strong>AWS Bedrock (Claude)</strong>, because it can be configured for strong data-residency controls (EU/EEA regions), zero data retention, and no-training reuse—making it a highly “GDPR-optimized” path for note generation when set up correctly.<br>
 - A strong alternative is <strong>Google Vertex AI with Gemini 2.5 Pro</strong> in an EU region. This requires that you set up your own Google Cloud/Vertex project, deploy a backend, and paste the backend URL and secret into the “Google Vertex” fields on the front page.<br>
+- <strong>Mistral (EU)</strong> can also be a GDPR-friendly option for note generation when you (1) use EU processing, (2) request <strong>Zero Data Retention</strong> from Mistral support (<a href="https://mistral.ai/contact" target="_blank" rel="noopener noreferrer">mistral.ai/contact</a>), and (3) <strong>opt out of model training</strong> in your Mistral account privacy settings (<a href="https://admin.mistral.ai/plateforme/privacy" target="_blank" rel="noopener noreferrer">admin.mistral.ai/plateforme/privacy</a>). If you have not activated these, treat Mistral as a “gray zone” for identifiable patient data.<br>
 - For setup guidance related to Google Vertex and AWS Bedrock, click on the "Guide" hyperlink next to the input fields on the front page.<br>
 
 <strong>Other providers in this app</strong><br>
-- Lemonfox, Mistral and Deepgram are included mainly for testing/experimentation and possible non-clinical use. For demanding clinical dictation and note generation, their quality is generally lower than Soniox/OpenAI/Gemini, and their GDPR status depends entirely on which endpoints (EU/global) and options (such as Zero Data Retention) you actually have activated with the provider.<br>
-- The GPT models from OpenAI, Deepgram’s default/global endpoints, and Gemini 3 used via Google AI Studio typically involve global infrastructure and temporary data retention. These setups are not automatically GDPR-compliant for identifiable patient data and should be treated as “gray zones” unless you have explicit agreements and EU data residency/ZDR documented.<br><br>
+- Lemonfox and Deepgram are included mainly for testing/experimentation and possible non-clinical use. For demanding clinical dictation and note generation, their quality is generally lower than Soniox/OpenAI/Gemini, and their GDPR status depends entirely on which endpoints (EU/global) and options (such as Zero Data Retention) you actually have activated with the provider.<br>
+- The GPT models from OpenAI, Deepgram’s default/global endpoints, and Gemini 3 used via Google AI Studio typically involve global infrastructure and temporary data retention. These setups are not automatically GDPR-compliant for identifiable patient data and should be treated as “gray zones” unless you have explicit agreements and EU data residency/ZDR documented.<br>
+- Likewise, any non-EU endpoint/region choice (for any provider) can move processing outside the EU/EEA, so make sure your endpoint/region choices match your compliance requirements.<br><br>
 
 <strong>“Most GDPR-optimized” combination in this app</strong><br>
-If you use Soniox with an EU endpoint for speech-to-text and Google Vertex AI (Gemini 2.5 Pro in an EU region with zero data retention) for note generation, the technical data flow in this app can be kept inside the EU with zero data retention and no training reuse at provider side.<br><br>
+If you use Soniox with an EU endpoint for speech-to-text and Google Vertex og AWS Bedrock for note generation, the technical data flow in this app can be kept inside the EU with zero data retention and no training reuse at provider side.<br>
+A strong alternative is Soniox (EU endpoint) + Mistral (EU processing + approved Zero Data Retention + training opt-out enabled).<br><br>
 
 <hr><br>
 

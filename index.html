@@ -823,6 +823,25 @@
         }
       });
     });
+
+
+    // Allow "Guide" links inside injected accordion HTML to open the same modals
+    // as the header links next to the input fields.
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest('a[data-open-guide]');
+      if (!a) return;
+      e.preventDefault();
+
+      const which = a.getAttribute("data-open-guide"); // "bedrock" | "vertex"
+      const id =
+        which === "bedrock" ? "bedrock-guide-link" :
+        which === "vertex"  ? "vertex-guide-link"  :
+        null;
+
+      const realLink = id ? document.getElementById(id) : null;
+      if (realLink) realLink.click();
+    });
+    
   </script>
   
   

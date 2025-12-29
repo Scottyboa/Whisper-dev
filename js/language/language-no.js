@@ -249,20 +249,20 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 - Voxtral Mini<br>
 - Deepgram Nova-3<br><br>
 
-<strong>Tekst/notat-generering:</strong><br>
+<strong>Tekst/notat-genereringp:</strong><br>
 - GPT-5.2<br>
 - GPT-5.1<br>
 - GPT-4-latest<br>
-- Claude sonnet 4, 4.5 and Claude Haiku 4.5 (via AWS Bedrock)<br>
-- Gemini 2.5 pro (via Google Vertex)<br>
-- Mistral Large 3 (mistral-large-2512)<br>
+- Claude sonnet 4, 4.5 and Claude Haiku 4.5(via AWS Bedrock)<br>
+- Gemini 2.5 pro(via Google Vertex)<br>
 - Lemonfox text generation (Llama 3-based models)<br>
-- Gemini 3(Google AI studios)<br><br>
+- Mistral Large<br>
+- Gemini 3<br><br>
 
 <strong>Anbefalt bruk i forhold til GDPR:</strong><br>
-- For klinisk bruk med identifiserbare pasientdata er de mest GDPR-tilpassede valgene i denne appen vanligvis: <strong>Soniox (EU-endepunkt)</strong> for tale-til-tekst, samt <strong>AWS Bedrock (Claude) i EU/EEA</strong>, <strong>Google Vertex (Gemini 2.5 Pro i EU-region)</strong> og/eller <strong>Mistral (EU)</strong> for tekst/notat-generering – forutsatt at dette er satt opp med EU-databehandling og zero data retention / no-training reuse der det er relevant.<br>
-- <strong>Mistral (Mistral Large 3)</strong> er et spesielt attraktivt valg fordi den nyeste modellen gir svært høy notatkvalitet samtidig som den er betydelig billigere enn mange alternativer. For at den skal være “GDPR-compliant” i klinisk bruk må du faktisk ha: (1) <strong>EU-behandling/region</strong> (dette er standard/default hos Mistral, så du trenger ikke å søke om dette), (2) <strong>innvilget Zero Data Retention (ZDR)</strong>, og (3) <strong>opt-out av modelltrening</strong> aktivert i Mistral-kontoen. Hvis dette ikke er aktivert/dokumentert, bør Mistral behandles som en “gråsone” for kliniske pasientdata. Instrukser med tanke på dette er lenger ned i denne infomodulen.<br>
-- De øvrige modellene kan ha global databehandling og/eller midlertidig dataretensjon, som gjør dem mindre egnet i klinisk setting uten eksplisitte avtaler og dokumentasjon (DPIA/TIA) på EU-databehandling og retention/trening.<br><br>
+- Av de tilgjengelige modellene i denne webappen, så er det Soniox for tale-til-tekst, samt Google Vertex(Gemini 2.5 pro) og AWS Bedrock(Claude) for tekst/notat-generering som vil være GDPR godkjente.<br>
+- De andre modellene kan ha data prosessering utenfor EUs grenser og midlertidig dataretenstion, som gjør de ugunstige for bruk i klinisk setting med tanke på GDPR og datatilsynets norm.<br>
+- For bruk av denne app i klinisk setting er det derfor sterkt anbefalt å bruke Soniox for tale-til-tekst, og Google Vertex og/eller AWS Bedrock for notatgenerering. Heldigvis er disse modellene også svært gode, og vil gi høy kvalitet både på transkripsjon og notatgenerering.<br><br>
 
 <strong>Soniox</strong><br>
 – For tale til tekst.<br>
@@ -272,7 +272,8 @@ https://soniox.com<br><br>
 – Lagre nøkkelen trygt og lim den inn i feltet «Soniox API key» på forsiden<br>
 – Du kan nå bruke tale-til-tekst-modellen Soniox (svært god og rimelig tale-til-tekst-modell, anbefales)<br>
 – For å få EU-endepunkt (GDPR-vennlig): send e-post til sales@soniox.com og be om EU API-nøkkel for bruk av tale-til-tekst i klinisk pasient–lege-setting<br>
-– På hovedsiden kan du velge mellom EU- og US-endepunkt i nedtrekksmenyen når du bruker Soniox<br><br>
+– På hovedsiden kan du velge mellom EU- og US-endepunkt i nedtrekksmenyen når du bruker Soniox<br>
+- Bruk av Soniox i denne webappen vil ha zero data retention. Dette sammen med API nøkkel med EU endepunkt, gjør Soniox optimal i forhold til GDPR-krav. Samtidig er Soniox også den klart beste og billigste av alle tale-til-tekst modellene som finnes per i dag, noe som gjør den til et klart førstevalg ved bruk av tale-til-tekst i denne appen.<br><br>
 
 <strong>Mistral</strong><br>
 – Lag en bruker på Mistral AI og logg inn på konsollen:<br>
@@ -280,10 +281,14 @@ https://console.mistral.ai<br><br>
 – Sett opp betaling om nødvendig, og gå deretter til «API keys» i konsollen for å generere en Mistral API-nøkkel<br>
 – Lagre nøkkelen trygt og lim den inn i feltet «Mistral API key» på forsiden<br>
 – Tekstmodell: <strong>Mistral Large 3 (mistral-large-2512)</strong><br>
-– Mistral er EU-basert, og standardoppsettet deres er at API-data behandles/hostes i EU (med egne US-endepunkter dersom man eksplisitt velger det)<br>
-– For høyere GDPR-samsvar kan du be om <strong>Zero Data Retention (ZDR)</strong> via support: <a href="https://mistral.ai/contact" target="_blank" rel="noopener noreferrer">mistral.ai/contact</a><br>
-– Du bør også <strong>reservere deg mot modelltrening</strong> i personverninnstillingene i Mistral-kontoen: <a href="https://admin.mistral.ai/plateforme/privacy" target="_blank" rel="noopener noreferrer">admin.mistral.ai/plateforme/privacy</a><br>
-– Kombinasjonen <strong>EU-behandling + innvilget ZDR + opt-out av modelltrening</strong> gjør Mistral til et av de mest GDPR-vennlige alternativene i denne appen (må dokumenteres i DPIA/TIA)<br><br>
+– EU-behandling / europeisk databehandling er standard hos Mistral (du trenger ikke å søke om EU-endepunkt).<br>
+– <strong>Viktig for GDPR ved klinisk bruk (identifiserbare pasientdata):</strong> For å bruke Mistral på en måte som er mest mulig i tråd med GDPR i en pasient–lege-setting, bør du ha <strong>Zero Data Retention (ZDR)</strong> aktivert for kontoen din, og du bør <strong>reservere deg mot modelltrening</strong>.<br>
+– For å få <strong>ZDR(zero data retention)</strong> aktivert: bruk Mistral sitt kontaktskjema: <a href="https://mistral.ai/contact" target="_blank" rel="noopener noreferrer">mistral.ai/contact</a><br>
+&nbsp;&nbsp;• I skjemaet holder det som regel å skrive en kort begrunnelse. Forslag (engelsk):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;“I wish to use your API for medical journal note generation in a patient–doctor setting, and wish to comply with my local GDPR regulations. I therefore wish to have Zero Data Retention enabled for my account.”<br>
+&nbsp;&nbsp;• De svarer ofte innen 1–2 dager (varierer).<br>
+– For å <strong>opt-out av modelltrening</strong>: gå til personverninnstillingene i Mistral-kontoen: <a href="https://admin.mistral.ai/plateforme/privacy" target="_blank" rel="noopener noreferrer">admin.mistral.ai/plateforme/privacy</a><br>
+– Når du har <strong>EU-behandling (default) + innvilget ZDR + opt-out av modelltrening</strong>, vil bruk av Mistral sin API/modell ha en høy grad av GDPR-tilpasning (må likevel dokumenteres i DPIA/TIA der dette kreves).<br>
 
 <strong>AWS Bedrock (Claude modeller - Zero data retention + EU-endepunkt)</strong><br>
 – For notatgenerering.<br>
@@ -309,13 +314,15 @@ https://platform.openai.com<br><br>
 • Tale-til-tekst: gpt-4o-transcribe (velg «OpenAI» i Opptaksmodul-nedtrekksmeny på hovedsiden)<br>
 • Tekstgenerering: chatgpt-4-latest, GPT-5.1<br><br>
 
-<strong>Google Gemini</strong><br>
+
+<strong>Google Gemini 3 pro</strong><br>
 – Lag bruker / logg inn på Google AI Studio:<br>
 https://aistudio.google.com<br><br>
 – Generer en Gemini API-nøkkel<br>
 – Du får normalt noen gratis credits ved opprettelse av bruker (se oversikt inne i AI Studio)<br>
 – Lagre nøkkelen trygt og lim den inn i feltet «Google Gemini API key» på forsiden<br>
 – Tekstmodell: Gemini 3 (per nå en av de aller beste tekstmodellene for tekstgenerering)<br><br>
+
 
 <strong>Lemonfox</strong><br>
 – Lag en bruker på Lemonfox:<br>
@@ -334,7 +341,6 @@ https://deepgram.com<br><br>
 – Lagre nøkkelen trygt og lim den inn i feltet «Deepgram API key» på forsiden<br>
 – Du kan nå bruke tale-til-tekst-modellen Deepgram Nova-3 i appen<br><br>
 `,  
-
   priceButton: "Pris",
   priceModalHeading: "Kostnadsinformasjon",
   priceModalText: `

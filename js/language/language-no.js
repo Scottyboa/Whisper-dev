@@ -60,7 +60,7 @@ Webappen gir tilgang til flere ulike leverandører og modeller. Nedenfor er en p
 
 <strong>«Mest GDPR-optimaliserte» kombinasjon i denne appen</strong><br>
 Hvis du bruker Soniox med et EU-endepunkt for tale-til-tekst og Google Vertex eller AWS Bedrock for notatgenerering, kan den tekniske dataflyten i denne appen holdes innenfor EU med null datalagring og ingen gjenbruk til trening på leverandørsiden.<br>
-Et sterkt alternativ er Soniox (EU-endepunkt) + Mistral (EU-prosessering + godkjent Zero Data Retention + reservasjon mot trening aktivert).<br><br>
+Et sterkt alternativ er Soniox (EU-endepunkt) + Mistral (EU-prosessering + godkjent Zero Data Retention + reservasjon mot modell-trening aktivert).<br><br>
 
 <hr><br>
 

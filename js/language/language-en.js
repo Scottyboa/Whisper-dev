@@ -531,7 +531,7 @@ export const transcribeTranslations = {
   noteTimer: "Note Generation Timer: 0 sec",
   generatedNotePlaceholder: "Generated note will appear here...",
   customPromptTitle: "Custom Prompt",
-  romptExportButton: "Export",
+  promptExportButton: "Export",
   promptImportButton: "Import",
   promptSlotLabel: "Prompt Slot:",
   customPromptPlaceholder: "Enter custom prompt here",

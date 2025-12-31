@@ -618,8 +618,8 @@
               <label for="bedrockModel" id="bedrockModelLabel">Model:</label>
               <select id="bedrockModel">
                 <option value="haiku-4-5">Claude Haiku 4.5</option>
-                <option value="sonnet-4" selected>Claude Sonnet 4</option>
-                <option value="sonnet-4-5">Claude Sonnet 4.5</option>
+                <option value="sonnet-4-5" selected>Claude Sonnet 4.5</option>
+                <option value="opus-4-5">Claude Opus 4.5</option>
               </select>
             </div>
           </div>
@@ -878,8 +878,19 @@
       // Bedrock model preference (if any)
       if (bedrockModelSelect) {
         const storedBedrockModel = sessionStorage.getItem("bedrock_model");
-        if (storedBedrockModel) {
-          bedrockModelSelect.value = storedBedrockModel;
+        // If user previously had "sonnet-4", migrate to "sonnet-4-5" (since Sonnet 4 is removed from UI)
+        const migrated =
+          storedBedrockModel === "sonnet-4" ? "sonnet-4-5" : storedBedrockModel;
+
+        // Only apply if it exists in the dropdown; otherwise keep the HTML default.
+        if (migrated && Array.from(bedrockModelSelect.options).some(o => o.value === migrated)) {
+          bedrockModelSelect.value = migrated;
+          if (migrated !== storedBedrockModel) {
+            sessionStorage.setItem("bedrock_model", migrated);
+          }
+        } else if (storedBedrockModel) {
+          // Stored value is unknown/outdated; reset to current UI selection.
+          sessionStorage.setItem("bedrock_model", bedrockModelSelect.value);
         }
         bedrockModelSelect.addEventListener("change", () => {
           sessionStorage.setItem("bedrock_model", bedrockModelSelect.value);

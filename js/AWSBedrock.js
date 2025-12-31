@@ -4,8 +4,16 @@
 // sessionStorage keys used:
 //   bedrock_backend_url
 //   bedrock_backend_secret
-//   bedrock_model  (haiku-4-5 | sonnet-4 | sonnet-4-5)
+//   bedrock_model  (haiku-4-5 | sonnet-4 | sonnet-4-5 | opus-4-5)
 
+// Only allow known model keys to be sent to the backend.
+// (Prevents weird/stale values from sessionStorage from causing confusing backend errors.)
+const ALLOWED_BEDROCK_MODEL_KEYS = new Set([
+  "haiku-4-5",
+  "sonnet-4",
+  "sonnet-4-5",
+  "opus-4-5",
+]);
 function formatTime(ms) {
   const seconds = Math.floor(ms / 1000);
   if (seconds < 60) return `${seconds} sec`;
@@ -74,9 +82,12 @@ async function generateNote() {
   }
 
   const modelSelect = document.getElementById("bedrockModel");
-  const modelKey =
+  let modelKey =
     (sessionStorage.getItem("bedrock_model") || "").trim() ||
     (modelSelect ? modelSelect.value : "");
+  if (modelKey && !ALLOWED_BEDROCK_MODEL_KEYS.has(modelKey)) {
+    modelKey = "";
+  }
 
   const combinedPrompt =
     (promptText || "") +

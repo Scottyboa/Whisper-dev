@@ -386,11 +386,7 @@ https://deepgram.com<br><br>
   15 minutters konsultasjon = 0,60 NOK.</p>
 
   <p><strong>2. Tekstgenerering – typiske priser (per 1 million tokens)</strong></p>
-
-  <p><strong>Mistral – Mistral Large 3 (mistral-large-2512)</strong><br>
-  Input: 0.5 USD (≈ 5,50 NOK)<br>
-  Output: 1.5 USD (≈ 16,50 NOK)</p>
-
+  
   <p><strong>AWS Bedrock – Claude Opus 4.5</strong><br>
   Input: 5 USD (≈ 55 NOK)<br>
   Output: 25 USD (≈ 275 NOK)</p>
@@ -406,6 +402,10 @@ https://deepgram.com<br><br>
   <p><strong>Google Vertex – Gemini 2.5 Pro</strong><br>
   Input: 1.25 USD (≈ 13,75 NOK)<br>
   Output: 10 USD (≈ 110 NOK)</p>
+
+  <p><strong>Mistral – Mistral Large 3 (mistral-large-2512)</strong><br>
+  Input: 0.5 USD (≈ 5,50 NOK)<br>
+  Output: 1.5 USD (≈ 16,50 NOK)</p>
 
   <p><strong>OpenAI – GPT-5.2</strong><br>
   Input: 1.75 USD (≈ 19,25 NOK)<br>

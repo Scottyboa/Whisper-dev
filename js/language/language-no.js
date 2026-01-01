@@ -132,7 +132,7 @@ Når et prosjekt er konfigurert med EU-region, behandles lyd og transkripsjoner 
 For å ta i bruk EU-endepunktet i klinisk setting må du typisk kontakte Soniox (for eksempel via e-post til <strong>sales@soniox.com</strong>) og be om tilgang til EU-prosjekt/API-nøkkel og dokumentasjon på dataresidens. Tilgang på EU-endepunkt kan ta 1–2 dager å oppnå etter kontakt.<br>
 Med EU-endepunktet aktivert er Soniox et godt alternativ for GDPR-tilpasset tale-til-tekst, men du må fortsatt gjøre DPIA/TIA og inngå nødvendig DPA.<br><br>
 
-<strong>AWS Bedrock(Claude Sonnet 4.5 + Claude Haiku 4.5 via EU-backend)</strong><br>
+<strong>AWS Bedrock(Claude Sonnet 4.5 + Claude Haiku 4.5 + Claude Opus 4.5 via EU-backend)</strong><br>
 I denne appen brukes AWS Bedrock kun via din egen backend-URL og hemmelige nøkkel, som du legger inn under «AWS Bedrock» på forsiden.<br>
 Hvis man følger setup-guiden forsiden, så vil AWS Bedrock-prosjektet ditt konfigureres til en EU-region (europe-west4) og med zero data retention / ingen gjenbruk av data til trening. Forespørsler og svar behandles derfor innenfor EU, og forespørselsdata vil ikke lagres lenger enn nødvendig for å levere svaret, jf. Googles dokumentasjon.<br>
 Dette oppsettet kan dermed brukes som et EU-resident, null-retensjonsalternativ for notatgenerering.<br>
@@ -260,16 +260,16 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 - GPT-5.2<br>
 - GPT-5.1<br>
 - GPT-4-latest<br>
-- Claude sonnet 4, 4.5 and Claude Haiku 4.5(via AWS Bedrock)<br>
+- Claude sonnet 4.5, Claude Opus 4.5 og Claude Haiku 4.5(via AWS Bedrock)<br>
 - Gemini 2.5 pro(via Google Vertex)<br>
 - Lemonfox text generation (Llama 3-based models)<br>
 - Mistral Large<br>
 - Gemini 3<br><br>
 
-<strong>Anbefalt bruk i forhold til GDPR:</strong><br>
+<strong>Anbefalte modeller i forhold til GDPR:</strong><br>
 - Av de tilgjengelige modellene i denne webappen, så er det Soniox for tale-til-tekst, samt Mistral Large 3(Via Mistral), Google Vertex(Gemini 2.5 pro) og AWS Bedrock(Claude) for tekst/notat-generering som vil være GDPR godkjente.<br>
 - De andre modellene kan ha data prosessering utenfor EUs grenser og midlertidig data-retention, som gjør de ugunstige for bruk i klinisk setting med tanke på GDPR og datatilsynets norm.<br>
-- For bruk av denne app i klinisk setting er det derfor sterkt anbefalt å bruke Soniox for tale-til-tekst, og Mistral Large 3, Google Vertex og/eller AWS Bedrock for notatgenerering. Heldigvis er disse modellene også svært gode, og vil gi høy kvalitet både på transkripsjon og notatgenerering.<br><br>
+- For bruk av denne app i klinisk setting er det derfor sterkt anbefalt å bruke Soniox for tale-til-tekst, og AWS Bedrock, Google Vertex eller Mistral for notatgenerering. Av tekstmodellene, så er Claude Opus 4.5 desidert best, etterfulgt av Gemini 2.5 pro og Claude Sonnet 4.5 på delt 2. plass, med Mistral på 3. plass.<br><br>
 
 <strong>Soniox</strong><br>
 – For tale til tekst.<br>
@@ -391,9 +391,9 @@ https://deepgram.com<br><br>
   Input: 0.5 USD (≈ 5,50 NOK)<br>
   Output: 1.5 USD (≈ 16,50 NOK)</p>
 
-  <p><strong>AWS Bedrock – Claude Sonnet 4</strong><br>
-  Input: 3 USD (≈ 33 NOK)<br>
-  Output: 15 USD (≈ 165 NOK)</p>
+  <p><strong>AWS Bedrock – Claude Opus 4.5</strong><br>
+  Input: 5 USD (≈ 55 NOK)<br>
+  Output: 25 USD (≈ 275 NOK)</p>
 
   <p><strong>AWS Bedrock – Claude Sonnet 4.5</strong><br>
   Input: 3 USD (≈ 33 NOK)<br>
@@ -438,7 +438,7 @@ https://deepgram.com<br><br>
 
   <p>
     15 min konsultasjon ca:<br>
-    2200 input-tokens per 15-minutters konsultasjon (hele transkripsjonen + strukturert tekst som sendes inn),<br>
+    2200 input-tokens per 15-minutters konsultasjon (hele transkripsjonen + instruksjon/prompt-tekst som sendes inn),<br>
     450 output-tokens i det ferdige notatet,<br>
     totalt ca. 2650 tokens per konsultasjon.<br><br>
     Dette betyr at 1 million tokens gir omtrent 350–400 konsultasjoner i denne bruken
@@ -459,6 +459,7 @@ https://deepgram.com<br><br>
   <p><em>Notatgenerering (2200 input + 450 output tokens):</em></p>
   <ul>
     <li>Mistral Large 3: ≈ 0,02 NOK per notat</li>
+    <li>AWS Bedrock – Claude Opus 4.5: ≈ 0,24 NOK per notat</li>
     <li>AWS Bedrock – Claude Sonnet 4 / 4.5: ≈ 0,15 NOK per notat</li>
     <li>AWS Bedrock – Claude Haiku 4.5: ≈ 0,05 NOK per notat</li>
     <li>Google Vertex – Gemini 2.5 Pro: ≈ 0,08 NOK per notat</li>
@@ -478,8 +479,8 @@ https://deepgram.com<br><br>
     <li>Soniox + Claude Sonnet 4.5<br>
       ≈ 0,30 NOK (STT) + 0,15 NOK (notat) ≈ 0,45 NOK per konsultasjon
     </li>
-    <li>Soniox + Claude Haiku 4.5<br>
-      ≈ 0,30 NOK (STT) + 0,05 NOK (notat) ≈ 0,35 NOK per konsultasjon
+    <li>Soniox + Claude Opus 4.5<br>
+    ≈ 0,30 NOK (STT) + 0,24 NOK (notat) ≈ 0,54 NOK per konsultasjon
     </li>
     <li>Soniox + Google Vertex (Gemini 2.5 Pro)<br>
       ≈ 0,30 NOK (STT) + 0,08 NOK (notat) ≈ 0,38 NOK per konsultasjon
@@ -515,8 +516,8 @@ https://deepgram.com<br><br>
     <li>Soniox + Claude Sonnet 4.5<br>
       ≈ 12 USD ≈ 135 NOK per måned
     </li>
-    <li>Soniox + Claude Haiku 4.5<br>
-      ≈ 9 USD ≈ 105 NOK per måned
+    <li>Soniox + Claude Opus 4.5<br>
+      ≈ 16 USD ≈ 173 NOK per måned
     </li>
     <li>Soniox + Google Vertex (Gemini 2.5 Pro)<br>
       ≈ 10 USD ≈ 115 NOK per måned

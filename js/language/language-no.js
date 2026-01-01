@@ -121,8 +121,8 @@ export const indexTranslations = {
   <p>
     De beste tekstmodellene koster ofte mer per token enn enklere modeller. For eksempel er <strong>Claude Opus 4.5</strong> gjerne den dyreste
     tekstmodellen i appen – men den gir ofte best notatkvalitet. Likevel vil total månedskostnad i vanlig bruk ofte være
-    overraskende lav når du sammenligner med abonnementstjenester i markedet som f.eks. <strong>MedBrick</strong>, <strong>Noteless</strong>,
-    <strong>Stenoli</strong> og <strong>Journalia</strong>.
+    overraskende lav når du sammenligner med abonnementstjenester i markedet som f.eks. <strong>MedBric</strong>, <strong>Noteless</strong>,
+    <strong>Stenoly</strong> og <strong>Journalia</strong>.
   </p>
   <p>
     Se “Kostnadsinformasjon”-seksjonen for konkrete priseksempler og forbruk.

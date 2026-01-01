@@ -33,7 +33,7 @@ export const indexTranslations = {
 
   <p><strong>1) Tale-til-tekst (STT) – leverandører/modeller i appen</strong></p>
   <ul>
-    <li><strong>Soniox</strong> (med valgfri høyttalermerking/speaker diarization)</li>
+    <li><strong>Soniox</strong> (med valgfri talegjennkjenning/speaker diarization)</li>
     <li><strong>OpenAI</strong> – gpt-4o-transcribe</li>
     <li><strong>Voxtral Mini</strong> (Mistral)</li>
     <li><strong>Deepgram</strong> – Nova-3</li>
@@ -59,7 +59,7 @@ export const indexTranslations = {
     og prisnivå. I praksis er notatkvaliteten nesten alltid et produkt av to ting:
   </p>
   <ul>
-    <li><strong>1) Hvor god transkripsjonen er</strong> (STT-kvalitet, feilrate, tegnsetting, og evt. høyttalermerking)</li>
+    <li><strong>1) Hvor god transkripsjonen er</strong> (STT-kvalitet, feilrate, tegnsetting, og evt. speaker-labels)</li>
     <li><strong>2) Hvor god tekstmodellen er</strong> til å “forstå” transkripsjonen og følge instruksjonen/prompten</li>
   </ul>
 
@@ -101,7 +101,7 @@ export const indexTranslations = {
   <p><strong>Praktisk “rangering” av tale-til-tekst (kvalitet)</strong></p>
   <ul>
     <li>
-      <strong>1. Soniox</strong> – svært høy transkripsjonskvalitet. Med <strong>høyttalermerking</strong> får du ofte et mye bedre grunnlag
+      <strong>1. Soniox</strong> – svært høy transkripsjonskvalitet. Med <strong>speaker-labels</strong> får du ofte et mye bedre grunnlag
       for notatgenerering (f.eks. “Speaker 1”/“Speaker 2” i lege–pasient-samtaler). Samtidig er Soniox ofte blant de rimeligste STT-valgene.
       EU-endepunkt kan benyttes når det er relevant for etterlevelse.
     </li>

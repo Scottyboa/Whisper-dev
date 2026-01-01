@@ -102,8 +102,7 @@ export const indexTranslations = {
   <ul>
     <li>
       <strong>1. Soniox</strong> – svært høy transkripsjonskvalitet. Med <strong>speaker-labels</strong> får du ofte et mye bedre grunnlag
-      for notatgenerering (f.eks. “Speaker 1”/“Speaker 2” i lege–pasient-samtaler). Samtidig er Soniox ofte blant de rimeligste STT-valgene.
-      EU-endepunkt kan benyttes når det er relevant for etterlevelse.
+      for notatgenerering (f.eks. “Speaker 1”/“Speaker 2” i lege–pasient-samtaler). Samtidig er Soniox ofte blant de rimeligste STT-valgene, med enkel mulighet for EU-endepunkt(se API guide for mer info).
     </li>
     <li>
       <strong>2. OpenAI gpt-4o-transcribe</strong> – også veldig bra, men ofte litt høyere feilrate enn Soniox i praksis.

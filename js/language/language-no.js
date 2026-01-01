@@ -132,10 +132,10 @@ export const indexTranslations = {
 
   <p><strong>Anbefalt oppsett for klinisk bruk</strong></p>
   <p>
-    Hvis målet er <strong>best mulig notatkvalitet</strong> og samtidig et oppsett som typisk er enklere å tilpasse strenge krav,
-    er en sterk kombinasjon ofte:
-    <strong>Soniox (EU-endepunkt) + AWS Bedrock (Claude, f.eks. Opus 4.5)</strong>.
-    Alternativt <strong>Soniox + Google Vertex (Gemini 2.5 Pro)</strong> eller <strong>Soniox + Mistral</strong> (EU-oppsett).
+    Hvis målet er <strong>best mulig notatkvalitet</strong> og samtidig et oppsett som er GDPR-vennlig, så
+    er den sterkste kombinasjon ofte:
+    <strong>Soniox (EU-endepunkt) + AWS Bedrock (Claude Opus 4.5)</strong>.
+    Alternativt <strong>Soniox + Google Vertex (Gemini 2.5 Pro)</strong>, <strong>Soniox + AWS Bedrock(Claude Sonnet 4.5)</strong> eller <strong>Soniox + Mistral</strong> (EU-oppsett).
   </p>
   <p>
     Husk: GDPR/etterlevelse avhenger av din virksomhet, avtaler (DPA), risikovurderinger (DPIA/TIA), samt faktiske region-/retention-innstillinger

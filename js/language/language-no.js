@@ -17,6 +17,132 @@ export const indexTranslations = {
   securityButton: "Sikkerhet",
   aboutButton: "Om",
   adRevenueMessage: "Siden dette nettstedet er gratis å bruke og utelukkende finansieres av annonseinntekter, setter vi stor pris på om du godtar annonser for å støtte tjenesten.",
+  modelsModalHeading: "AI-modeller",
+  modelsModalText: `
+  <div>
+  <p><strong>Modellvalg i Transcribe Notes</strong></p>
+
+  <p>
+    Denne webappen lar deg velge ulike modeller fra flere leverandører – både for <strong>tale-til-tekst (STT)</strong>
+    og for <strong>notat-/tekstgenerering</strong>. Resultatet du får avhenger av begge valgene: først kvaliteten på
+    transkripsjonen, og deretter hvor god tekstmodellen er til å omforme transkripsjonen (pluss eventuell prompt/tilleggsinfo)
+    til et strukturert notat.
+  </p>
+
+  <hr><br>
+
+  <p><strong>1) Tale-til-tekst (STT) – leverandører/modeller i appen</strong></p>
+  <ul>
+    <li><strong>Soniox</strong> (med valgfri høyttalermerking/speaker diarization)</li>
+    <li><strong>OpenAI</strong> – gpt-4o-transcribe</li>
+    <li><strong>Voxtral Mini</strong> (Mistral)</li>
+    <li><strong>Deepgram</strong> – Nova-3</li>
+    <li><strong>Lemonfox</strong> – Speech-to-Text (Whisper v3-basert)</li>
+  </ul>
+
+  <br>
+  <p><strong>2) Notat-/tekstgenerering – leverandører/modeller i appen</strong></p>
+  <ul>
+    <li><strong>AWS Bedrock (Claude)</strong> – Claude Haiku 4.5, Claude Sonnet 4.5, Claude Opus 4.5</li>
+    <li><strong>OpenAI</strong> – GPT-5.2, GPT-5.1, GPT-4-latest</li>
+    <li><strong>Google Gemini (AI Studio)</strong> – Gemini 3</li>
+    <li><strong>Google Vertex</strong> – Gemini 2.5 Pro</li>
+    <li><strong>Mistral</strong> – Mistral Large (Large 3)</li>
+    <li><strong>Lemonfox</strong> – Llama 3-baserte modeller</li>
+  </ul>
+
+  <hr><br>
+
+  <p><strong>Kvalitet</strong></p>
+  <p>
+    Modellene gir <strong>ikke</strong> samme output. Noen modeller er eldre/svakere, og kvaliteten følger ofte både modellgenerasjon
+    og prisnivå. I praksis er notatkvaliteten nesten alltid et produkt av to ting:
+  </p>
+  <ul>
+    <li><strong>1) Hvor god transkripsjonen er</strong> (STT-kvalitet, feilrate, tegnsetting, og evt. høyttalermerking)</li>
+    <li><strong>2) Hvor god tekstmodellen er</strong> til å “forstå” transkripsjonen og følge instruksjonen/prompten</li>
+  </ul>
+
+  <p>
+    Det betyr: Hvis du har <strong>svak transkripsjon</strong> men en <strong>veldig god tekstmodell</strong>, så blir modellen likevel begrenset
+    av manglende/feil informasjon i transkripsjonen. Og motsatt: En <strong>svært god transkripsjon</strong> hjelper mye, men en
+    <strong>svak tekstmodell</strong> kan fortsatt gi et dårligere notat fordi den ikke klarer å strukturere, prioritere og følge instruksjonen
+    like presist.
+  </p>
+
+  <br>
+  <p><strong>Praktisk “rangering” av notatgenerering (kvalitet)</strong></p>
+  <p>
+    Under er en praktisk, litt normativ oversikt basert på typisk notatkvalitet i klinisk bruk:
+  </p>
+  <ul>
+    <li>
+      <strong>Toppnivå:</strong> <strong>Claude Opus 4.5</strong> (oftest best til notater).
+      I samme “toppklasse” ligger ofte <strong>GPT-5.2</strong> og <strong>Gemini 3</strong> – men disse kan være mer utfordrende i klinisk bruk
+      avhengig av dataflyt/region og GDPR-oppsett.
+    </li>
+    <li>
+      <strong>Nivå 2 (sterk kvalitet + enklere GDPR-oppsett):</strong>
+      <strong>Claude Sonnet 4.5</strong> (AWS Bedrock) og <strong>Gemini 2.5 Pro</strong> (Google Vertex).
+      Disse kan settes opp via EU-regioner og med strengere kontroll på databehandling (avhengig av ditt oppsett).
+    </li>
+    <li>
+      <strong>Nivå 3 (bra “value for money”):</strong> <strong>Mistral Large</strong>.
+      Ofte svært rimelig og god nok til mye, men typisk et hakk under toppmodellene på presisjon/struktur i krevende notater.
+    </li>
+    <li>
+      <strong>Sist:</strong> <strong>Lemonfox (Llama 3)</strong>.
+      Veldig billig, men bruker eldre/svakere modell for notatgenerering og er primært inkludert for testing/eksperimentering.
+      Anbefales normalt ikke for best mulig klinisk notatkvalitet.
+    </li>
+  </ul>
+
+  <br>
+  <p><strong>Praktisk “rangering” av tale-til-tekst (kvalitet)</strong></p>
+  <ul>
+    <li>
+      <strong>1. Soniox</strong> – svært høy transkripsjonskvalitet. Med <strong>høyttalermerking</strong> får du ofte et mye bedre grunnlag
+      for notatgenerering (f.eks. “Speaker 1”/“Speaker 2” i lege–pasient-samtaler). Samtidig er Soniox ofte blant de rimeligste STT-valgene.
+      EU-endepunkt kan benyttes når det er relevant for etterlevelse.
+    </li>
+    <li>
+      <strong>2. OpenAI gpt-4o-transcribe</strong> – også veldig bra, men ofte litt høyere feilrate enn Soniox i praksis.
+      I klinisk bruk må man i tillegg være ekstra bevisst på GDPR/oppsett (region, retention og avtaler).
+    </li>
+    <li>
+      <strong>Øvrige alternativer:</strong> Deepgram Nova-3, Voxtral Mini og Lemonfox Whisper v3 kan fungere fint til mye,
+      men gir ofte mer varierende resultater enn toppvalgene over – spesielt i krevende medisinske samtaler.
+    </li>
+  </ul>
+
+  <hr><br>
+
+  <p><strong>Pris vs. kvalitet (og hvorfor “dyrt” likevel kan være billig)</strong></p>
+  <p>
+    De beste tekstmodellene koster ofte mer per token enn enklere modeller. For eksempel er <strong>Claude Opus 4.5</strong> gjerne den dyreste
+    tekstmodellen i appen – men den gir ofte best notatkvalitet. Likevel vil total månedskostnad i vanlig bruk ofte være
+    overraskende lav når du sammenligner med abonnementstjenester i markedet som f.eks. <strong>MedBrick</strong>, <strong>Noteless</strong>,
+    <strong>Stenoli</strong> og <strong>Journalia</strong>.
+  </p>
+  <p>
+    Se “Kostnadsinformasjon”-seksjonen for konkrete priseksempler og forbruk.
+  </p>
+
+  <hr><br>
+
+  <p><strong>Anbefalt oppsett for klinisk bruk</strong></p>
+  <p>
+    Hvis målet er <strong>best mulig notatkvalitet</strong> og samtidig et oppsett som typisk er enklere å tilpasse strenge krav,
+    er en sterk kombinasjon ofte:
+    <strong>Soniox (EU-endepunkt) + AWS Bedrock (Claude, f.eks. Opus 4.5)</strong>.
+    Alternativt <strong>Soniox + Google Vertex (Gemini 2.5 Pro)</strong> eller <strong>Soniox + Mistral</strong> (EU-oppsett).
+  </p>
+  <p>
+    Husk: GDPR/etterlevelse avhenger av din virksomhet, avtaler (DPA), risikovurderinger (DPIA/TIA), samt faktiske region-/retention-innstillinger
+    hos leverandørene. Les “Personvern”-seksjonen for mer detaljer.
+  </p>
+</div>
+`,
   
   securityModalHeading: "Personvern",
 securityModalText: `

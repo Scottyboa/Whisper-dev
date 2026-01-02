@@ -15,6 +15,134 @@ export const indexTranslations = {
   securityButton: "Security",
   aboutButton: "About",
   adRevenueMessage: "As this website is free to use and relies solely on ad revenue, please consent to ads to help support the service.",
+
+  // Accordion tab #1 (left): AI models
+  modelsModalHeading: "AI models",
+  modelsModalText: `
+  <div>
+  <p><strong>Model selection in Transcribe Notes</strong></p>
+
+  <p>
+    This web app lets you choose different models from multiple providers – both for <strong>speech-to-text (STT)</strong>
+    and for <strong>note/text generation</strong>. The result you get depends on both choices: first the quality of
+    the transcription, and then how good the text model is at transforming the transcription (plus any prompt/additional info)
+    into a structured note.
+  </p>
+
+  <hr><br>
+
+  <p><strong>1) Speech-to-text (STT) – providers/models in the app</strong></p>
+  <ul>
+    <li><strong>Soniox</strong> (with optional speaker diarization)</li>
+    <li><strong>OpenAI</strong> – gpt-4o-transcribe</li>
+    <li><strong>Voxtral Mini</strong> (Mistral)</li>
+    <li><strong>Deepgram</strong> – Nova-3</li>
+    <li><strong>Lemonfox</strong> – Speech-to-Text (Whisper v3-based)</li>
+  </ul>
+
+  <br>
+  <p><strong>2) Note/text generation – providers/models in the app</strong></p>
+  <ul>
+    <li><strong>AWS Bedrock (Claude)</strong> – Claude Haiku 4.5, Claude Sonnet 4.5, Claude Opus 4.5</li>
+    <li><strong>OpenAI</strong> – GPT-5.2, GPT-5.1, GPT-4-latest</li>
+    <li><strong>Google Gemini (AI Studio)</strong> – Gemini 3</li>
+    <li><strong>Google Vertex</strong> – Gemini 2.5 Pro</li>
+    <li><strong>Mistral</strong> – Mistral Large (Large 3)</li>
+    <li><strong>Lemonfox</strong> – Llama 3-based models</li>
+  </ul>
+
+  <hr><br>
+
+  <p><strong>Quality</strong></p>
+  <p>
+    The models do <strong>not</strong> produce the same output. Some models are older/weaker, and quality often tracks both model generation
+    and price level. In practice, note quality is almost always a product of two things:
+  </p>
+  <ul>
+    <li><strong>1) How good the transcription is</strong> (STT quality, error rate, punctuation, and optional speaker labels)</li>
+    <li><strong>2) How good the text model is</strong> at “understanding” the transcription and following the instruction/prompt</li>
+  </ul>
+
+  <p>
+    That means: If you have a <strong>weak transcription</strong> but a <strong>very strong text model</strong>, the model will still be limited
+    by missing/incorrect information in the transcription. And conversely: A <strong>very good transcription</strong> helps a lot, but a
+    <strong>weak text model</strong> can still produce a worse note because it fails to structure, prioritize, and follow the instruction
+    as precisely.
+  </p>
+
+  <br>
+  <p><strong>Practical “ranking” of note generation (quality)</strong></p>
+  <p>
+    Below is a practical, somewhat opinionated overview based on typical note quality in clinical use:
+  </p>
+  <ul>
+    <li>
+      <strong>Top tier:</strong> <strong>Claude Opus 4.5</strong> (usually best for notes).
+      In the same “top class” you will often find <strong>GPT-5.2</strong> and <strong>Gemini 3</strong> – but these can be more challenging in clinical use
+      depending on data flow/region and GDPR setup.
+    </li>
+    <li>
+      <strong>Tier 2 (strong quality + simpler GDPR setup):</strong>
+      <strong>Claude Sonnet 4.5</strong> (AWS Bedrock) and <strong>Gemini 2.5 Pro</strong> (Google Vertex).
+      These can be set up via EU regions and with stricter control of data processing (depending on your setup).
+    </li>
+    <li>
+      <strong>Tier 3 (good value for money):</strong> <strong>Mistral Large</strong>.
+      Often very inexpensive and good enough for a lot, but typically a notch below the top models on precision/structure in demanding notes.
+    </li>
+    <li>
+      <strong>Last:</strong> <strong>Lemonfox (Llama 3)</strong>.
+      Very cheap, but uses an older/weaker model for note generation and is primarily included for testing/experimentation.
+      Generally not recommended for the best possible clinical note quality.
+    </li>
+  </ul>
+
+  <br>
+  <p><strong>Practical “ranking” of speech-to-text (quality)</strong></p>
+  <ul>
+    <li>
+      <strong>1. Soniox</strong> – very high transcription quality. With <strong>speaker labels</strong> you often get a much better foundation
+      for note generation (e.g., “Speaker 1”/“Speaker 2” in doctor–patient conversations). At the same time, Soniox is often among the cheapest STT options, with an easy option for an EU endpoint (see API guide for more info).
+    </li>
+    <li>
+      <strong>2. OpenAI gpt-4o-transcribe</strong> – also very good, but often a slightly higher error rate than Soniox in practice.
+      In clinical use you must also be extra mindful of GDPR/setup (region, retention, and agreements).
+    </li>
+    <li>
+      <strong>Other alternatives:</strong> Deepgram Nova-3, Voxtral Mini, and Lemonfox Whisper v3 can work well for many cases,
+      but often produce more variable results than the top choices above – especially in demanding medical conversations.
+    </li>
+  </ul>
+
+  <hr><br>
+
+  <p><strong>Price vs. quality (and why “expensive” can still be cheap)</strong></p>
+  <p>
+    The best text models often cost more per token than simpler models. For example, <strong>Claude Opus 4.5</strong> is usually the most expensive
+    text model in the app – but it often provides the best note quality. Even so, total monthly cost in normal use will often be
+    surprisingly low when you compare it to subscription services on the market such as <strong>MedBric</strong>, <strong>Noteless</strong>,
+    <strong>Stenoly</strong>, and <strong>Journalia</strong>.
+  </p>
+  <p>
+    See the “Cost information” section for concrete pricing examples and usage.
+  </p>
+
+  <hr><br>
+
+  <p><strong>Recommended setup for clinical use</strong></p>
+  <p>
+    If the goal is <strong>the best possible note quality</strong> and at the same time a setup that is GDPR-friendly, then
+    the strongest combination is often:
+    <strong>Soniox (EU endpoint) + AWS Bedrock (Claude Opus 4.5)</strong>.
+    Alternatively <strong>Soniox + Google Vertex (Gemini 2.5 Pro)</strong>, <strong>Soniox + AWS Bedrock(Claude Sonnet 4.5)</strong> or <strong>Soniox + Mistral</strong> (EU setup).
+  </p>
+  <p>
+    Remember: GDPR/compliance depends on your organization, agreements (DPA), risk assessments (DPIA/TIA), and the actual region/retention settings
+    with the vendors. Read the “Privacy” section for more details.
+  </p>
+</div>
+`,
+
   securityModalHeading: "Privacy",
 securityModalText: `
 <strong>Privacy and Data Processing</strong><br><br>
@@ -34,6 +162,7 @@ This includes, among other things:<br>
 The developer of this web app assumes no responsibility for your use or lack of compliance. This is not legal advice; you must involve a data protection officer/legal advisor as needed.<br><br>
 
 <hr><br>
+
 
 <strong>1. Practical model recommendations in this app</strong><br><br>
 

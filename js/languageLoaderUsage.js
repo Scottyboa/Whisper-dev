@@ -95,6 +95,7 @@ function updateIndexUI(trans) {
       anchor.setAttribute("rel", "noopener noreferrer");
     });
   }
+
   const priceContent = document.getElementById("priceModalText");
   if (priceContent) {
     priceContent.innerHTML = trans.priceModalText;
@@ -107,7 +108,8 @@ function updateIndexUI(trans) {
   if (aboutContent) {
     aboutContent.innerHTML = trans.aboutModalText;
   }
-  const accordionHeaders = document.querySelectorAll('.accordion .accordion-header');
+ const accordionHeaders = document.querySelectorAll('.accordion .accordion-header');
+  // Support both old (4 tabs) and new (5 tabs) index.html layouts
   if (accordionHeaders.length >= 5) {
     accordionHeaders[0].textContent = trans.modelsModalHeading ?? accordionHeaders[0].textContent;
     accordionHeaders[1].textContent = trans.guideModalHeading ?? accordionHeaders[1].textContent;
@@ -115,7 +117,6 @@ function updateIndexUI(trans) {
     accordionHeaders[3].textContent = trans.securityModalHeading ?? accordionHeaders[3].textContent;
     accordionHeaders[4].textContent = trans.aboutModalHeading ?? accordionHeaders[4].textContent;
   } else if (accordionHeaders.length >= 4) {
-    // Backward compatibility (older index.html with 4 headers)
     accordionHeaders[0].textContent = trans.guideModalHeading ?? accordionHeaders[0].textContent;
     accordionHeaders[1].textContent = trans.priceModalHeading ?? accordionHeaders[1].textContent;
     accordionHeaders[2].textContent = trans.securityModalHeading ?? accordionHeaders[2].textContent;

@@ -230,7 +230,24 @@
       font-size: 18px;
       margin-bottom: 10px;
       color: #333;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
     }
+    .timer-status:empty { display: none; }
+    .timer-status {
+      font-weight: normal;
+      opacity: 0.85;
+    }
+    /* Secondary completion label shown *below* the timer (only on completion) */
+    .timer-status-below {
+      margin-top: 6px;
+      font-size: 18px;         /* match .timer font-size */
+      font-weight: normal;
+      opacity: 0.85;
+      color: #2e7d32;
+    }
+    .timer-status-below:empty { display: none; }
     /* Cost Overview Hyperlink */
     #openaiUsageLink {
       font-size: 30;
@@ -646,7 +663,11 @@
             </select>
           </div>
           <button id="generateNoteButton">Generate Note</button>
-          <div id="noteTimer" class="timer">Note Generation Timer: 0 sec</div>
+          <div id="noteTimer" class="timer">
+            <span id="noteTimerValue">Note Generation Timer: 0 sec</span>
+            <span id="noteTimerStatus" class="timer-status"></span>
+          </div>
+        <div id="noteTimerStatusBelow" class="timer-status-below"></div>
           <textarea id="generatedNote" placeholder="Generated note will appear here..."></textarea>
         </div>
         <div class="column">
@@ -1377,6 +1398,117 @@
         if (btn) btn.addEventListener('click', refreshAds);
       });
   });
+</script>
+
+<!-- Keep final elapsed time visible; show completion status to the right -->
+<script>
+  (function () {
+    const timerEl = document.getElementById("noteTimer");
+    if (!timerEl) return;
+    const belowEl = document.getElementById("noteTimerStatusBelow");
+
+    const TIMER_PREFIX = "Note Generation Timer:";
+    const COMPLETED_RE = /completed/i;
+    // Treat localized timer text as "timer updates" too, not status.
+    const TIMER_LIKE_RE = /\b\d+\s*(sec|sek|min|mins|minute|minutes|minut|minutter)\b/i;
+
+    let lastTimerText = "";
+    let suppress = false;
+
+    function ensureStructure(timerText, statusText) {
+      suppress = true;
+      try {
+        timerEl.innerHTML = "";
+
+        const valueSpan = document.createElement("span");
+        valueSpan.id = "noteTimerValue";
+        valueSpan.textContent = timerText || `${TIMER_PREFIX} 0 sec`;
+
+        const statusSpan = document.createElement("span");
+        statusSpan.id = "noteTimerStatus";
+        statusSpan.className = "timer-status";
+        statusSpan.textContent = statusText || "";
+
+        timerEl.appendChild(valueSpan);
+        timerEl.appendChild(statusSpan);
+      } finally {
+        // Let the DOM settle before re-enabling observer reactions
+        setTimeout(() => { suppress = false; }, 0);
+      }
+    }
+
+    function setBelowStatus(text) {
+      if (!belowEl) return;
+      belowEl.textContent = text || "";
+    }
+
+    // Initialize wrapper around any existing content
+    const initialText = (timerEl.textContent || "").trim();
+    if (initialText.startsWith(TIMER_PREFIX)) lastTimerText = initialText;
+    ensureStructure(lastTimerText || `${TIMER_PREFIX} 0 sec`, "");
+    setBelowStatus("");
+
+    const observer = new MutationObserver(() => {
+      if (suppress) return;
+
+      // If our spans are present, we’re already structured—no action needed.
+      const valueSpan = timerEl.querySelector("#noteTimerValue");
+      const statusSpan = timerEl.querySelector("#noteTimerStatus");
+      if (valueSpan && statusSpan) {
+        const v = (valueSpan.textContent || "").trim();
+        if (v.startsWith(TIMER_PREFIX)) lastTimerText = v;
+        return;
+      }
+
+      // Provider scripts often replace innerText entirely; capture that.
+      const raw = (timerEl.textContent || "").trim();
+
+      if (!raw) {
+        // Some providers blank the timer on errors; restore last known timer if we have one.
+        ensureStructure(lastTimerText || `${TIMER_PREFIX} 0 sec`, "");
+        setBelowStatus("");
+        return;
+      }
+
+      
+      if (COMPLETED_RE.test(raw)) {
+        // Completion: freeze the last timer value and show status ONLY below the timer
+        const finalTimer = lastTimerText || `${TIMER_PREFIX} 0 sec`;
+        ensureStructure(finalTimer, "");      // <-- keep right-side status empty
+        setBelowStatus("Completed!");         // <-- show only below
+        return;                               // <-- IMPORTANT: prevent fallback from clearing it
+      }
+
+      // Timer ticking updates (including localized strings) should never become "status".
+      if (raw.startsWith(TIMER_PREFIX) || TIMER_LIKE_RE.test(raw)) {
+        lastTimerText = raw;
+        ensureStructure(raw, "");
+        setBelowStatus("");
+        return;
+      }
+
+      // Any other unexpected text: keep timer frozen, but DO NOT show it as status
+      // (prevents duplicate timer strings like "Notatgenereringstimer: 0 sek" appearing on the right).
+      ensureStructure(lastTimerText || `${TIMER_PREFIX} 0 sec`, "");
+      setBelowStatus("");
+    });
+
+    observer.observe(timerEl, { childList: true, characterData: true, subtree: true });
+
+    // On a new run, reset display immediately (providers will start ticking as usual)
+    const genBtn = document.getElementById("generateNoteButton");
+    if (genBtn) {
+      genBtn.addEventListener(
+        "click",
+        () => {
+          lastTimerText = `${TIMER_PREFIX} 0 sec`;
+          ensureStructure(lastTimerText, "");
+          setBelowStatus("");
+        },
+        true // capture: run before any bubbling handlers
+      );
+    }
+  })();
 </script>
 </body>
 </html>

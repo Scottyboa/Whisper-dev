@@ -203,7 +203,7 @@ export const transcribeTranslations = {
   statusMessage: "Bienvenue ! Cliquez sur « Commencer l'enregistrement » pour débuter.",
   noteGenerationTitle: "Génération de notes",
   generateNoteButton: "Générer une note",
-  noteTimer: "Chronomètre de génération de notes : 0 sec",
+  noteTimer: "Chronomètre d'achèvement : 0 sec",
   generatedNotePlaceholder: "La note générée apparaîtra ici…",
   customPromptTitle: "Invite personnalisée",
   promptSlotLabel: "Emplacement de l'invite :",

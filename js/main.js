@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize the recording functionality dynamically by provider.
   (async function initRecordingByProvider() {
-    const provider = (sessionStorage.getItem('transcribe_provider') || 'openai').toLowerCase();
+    const provider = (sessionStorage.getItem('transcribe_provider') || 'soniox').toLowerCase();
     try {
       const moduleByProvider = {
         soniox:      './SONIOX_UPDATE.js',
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Phase 3: Initialize note generation based on note_provider.
   (async function initNoteByProvider() {
-    const choice = (sessionStorage.getItem('note_provider') || 'gpt5').toLowerCase();
+    const choice = (sessionStorage.getItem('note_provider') || 'aws-bedrock').toLowerCase();
     // Map dropdown choice → module path (ALL note modules are in /js)
     const path =
     choice === 'gpt4'          ? './noteGeneration.js'          :
@@ -131,9 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.parentNode.replaceChild(clone, btn);
     }
 
-    sessionStorage.setItem('note_provider', (next || 'gpt5').toLowerCase());
+    sessionStorage.setItem('note_provider', (next || 'aws-bedrock').toLowerCase());
 
-    const choice = (sessionStorage.getItem('note_provider') || 'gpt5').toLowerCase();
+    const choice = (sessionStorage.getItem('note_provider') || 'aws-bedrock').toLowerCase();
     const path =
       choice === 'gpt4'          ? './noteGeneration.js'          :
       choice === 'lemonfox'      ? './LemonfoxTXT.js'             :
@@ -171,8 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    sessionStorage.setItem('transcribe_provider', (next || 'openai').toLowerCase());
-    const provider = (sessionStorage.getItem('transcribe_provider') || 'openai').toLowerCase();
+    sessionStorage.setItem('transcribe_provider', (next || 'soniox').toLowerCase());
+    const provider = (sessionStorage.getItem('transcribe_provider') || 'soniox').toLowerCase();
 
     // Choose module path
     const moduleByProvider = {

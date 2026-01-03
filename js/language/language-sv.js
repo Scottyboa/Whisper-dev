@@ -506,7 +506,7 @@ export const transcribeTranslations = {
   statusMessage: "Välkommen! Klicka på \"Starta inspelning\" för att börja.",
   noteGenerationTitle: "Anteckningsgenerering",
   generateNoteButton: "Generera anteckning",
-  noteTimer: "Anteckningsgenereringstid: 0 sek",
+  noteTimer: "Slutförandetid: 0 sek",
   generatedNotePlaceholder: "Genererad anteckning kommer att visas här...",
   customPromptTitle: "Anpassad prompt",
   promptSlotLabel: "Promptplats:",

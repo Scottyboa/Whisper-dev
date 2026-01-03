@@ -595,12 +595,12 @@
           <div id="note-provider-container" style="display:flex; align-items:center; gap:8px; margin: 6px 0 6px;">
             <label for="noteProvider" id="noteProviderLabel">Provider:</label>
             <select id="noteProvider">
-              <option value="openai" selected>OpenAI</option>
+              <option value="openai">OpenAI</option>
               <option value="lemonfox">Lemonfox</option>
               <option value="mistral">Mistral</option>
               <option value="gemini3">Gemini 3(Google AI studio)</option> <!-- Gemini via public API -->
               <option value="gemini3-vertex">Google Vertex</option> <!-- Vertex-backed models (e.g. Gemini 2.5 Pro) -->
-              <option value="aws-bedrock">AWS Bedrock</option>
+              <option value="aws-bedrock" selected>AWS Bedrock</option>
             </select>
             <!-- OpenAI model selector (shown only when Provider = OpenAI) -->
             <div id="openai-model-container"
@@ -634,9 +634,11 @@
                  style="display:none; align-items:center; gap:6px; margin-left:8px;">
               <label for="bedrockModel" id="bedrockModelLabel">Model:</label>
               <select id="bedrockModel">
-                <option value="haiku-4-5">Claude Haiku 4.5</option>
-                <option value="sonnet-4-5" selected>Claude Sonnet 4.5</option>
-                <option value="opus-4-5">Claude Opus 4.5</option>
+               <option value="haiku-4-5">Claude Haiku 4.5</option>
+               <option value="sonnet-4-5">Claude Sonnet 4.5</option>
+               <option value="opus-4-5" selected>Claude Opus 4.5</option>
+                
+               
               </select>
             </div>
           </div>
@@ -757,7 +759,7 @@
       // --- Soniox Region handling ---
       function isSoniox(p) { return p === SONIOX || p === SONIOX_DIA; }
       function currentRegion() {
-        const r = (sessionStorage.getItem("soniox_region") || "us").toLowerCase();
+        const r = (sessionStorage.getItem("soniox_region") || "eu").toLowerCase();
         return (r === "eu") ? "eu" : "us";
       }
       function applyRegionVisibility(p) {
@@ -784,8 +786,12 @@
         });
       }
 
-      // Initialize from previous choice or default to OpenAI
-      const stored = sessionStorage.getItem("transcribe_provider") || OPENAI;
+      // Initialize from previous choice or default to Soniox (non-speaker-labels)
+      const stored = sessionStorage.getItem("transcribe_provider") || SONIOX;
+      // Default Soniox region to EU on first load (only if not previously set)
+      if (!sessionStorage.getItem("soniox_region")) {
+        sessionStorage.setItem("soniox_region", "eu");
+      }
       sel.value = stored;
       applyProvider(stored);
       // Ensure Region UI is in correct state on load
@@ -822,7 +828,7 @@
   <!-- Phase 3: Note provider persistence (no reload; module chosen in main.js) -->
 <script>
     (function () {
-      const DEFAULT_PROVIDER = "openai";
+      const DEFAULT_PROVIDER = "aws-bedrock";
       const DEFAULT_OPENAI_MODEL = "gpt5";
       const providerSel = document.getElementById("noteProvider");
       const openaiModelContainer = document.getElementById("openai-model-container");
@@ -911,6 +917,9 @@
           }
         } else if (storedBedrockModel) {
           // Stored value is unknown/outdated; reset to current UI selection.
+          sessionStorage.setItem("bedrock_model", bedrockModelSelect.value);
+        } else {
+          // First load: persist the HTML default (Opus 4.5 after the change above)
           sessionStorage.setItem("bedrock_model", bedrockModelSelect.value);
         }
         bedrockModelSelect.addEventListener("change", () => {

@@ -657,7 +657,7 @@ export const transcribeTranslations = {
   statusMessage: "Welcome! Click \"Start Recording\" to begin.",
   noteGenerationTitle: "Note Generation",
   generateNoteButton: "Generate Note",
-  noteTimer: "Note Generation Timer: 0 sec",
+  noteTimer: "Completion Timer: 0 sec",
   generatedNotePlaceholder: "Generated note will appear here...",
   customPromptTitle: "Custom Prompt",
   promptExportButton: "Export",

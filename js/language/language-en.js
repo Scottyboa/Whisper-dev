@@ -5,7 +5,7 @@ export const indexTranslations = {
   startText: "You can now also choose between different models from various providers. Read the info modules at the bottom of the frontpage, for instructions on how to use the app.",
   apiPlaceholder: "Enter OpenAI API Key here",
   promptProfileHint: "Used to save your custom prompts on this device independent of your API key.",
-  keysIoHint: "Export keys to a file and store it securely. Next time, import the file to refill the fields, which saves time and avoids typing.",
+  keysIoHint: "Export keys to a file and store it securely. Next time, import the file to refill the fields, which saves time and avoids typing. The keys are deleted automatically when you close the webapp/tab, or manually by clicking Clear keys.",
   gdprColumnTitle: "GDPR compliant:",
   gdprColumnFootnote: "(EU data residency/processing + zero data retention)",
   nonGdprColumnTitle: "Non-GDPR compliant:",

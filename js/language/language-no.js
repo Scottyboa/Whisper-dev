@@ -683,7 +683,7 @@ export const transcribeTranslations = {
   statusMessage: "Velkommen! Klikk på \"Start opptak\" for å begynne.",
   noteGenerationTitle: "Notatgenerering",
   generateNoteButton: "Generer notat",
-  noteTimer: "Notatgenereringstimer: 0 sek",
+  noteTimer: "Fullføringstimer: 0 sek",,
   generatedNotePlaceholder: "Generert notat vil vises her...",
   customPromptTitle: "Tilpasset prompt",
   promptExportButton: "Eksporter",

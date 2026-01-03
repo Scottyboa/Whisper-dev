@@ -202,7 +202,7 @@ export const transcribeTranslations = {
   statusMessage: "Willkommen! Klicken Sie auf 'Aufnahme starten', um zu beginnen.",
   noteGenerationTitle: "Notizenerstellung",
   generateNoteButton: "Notiz generieren",
-  noteTimer: "Notiz-Timer: 0 sek",
+  noteTimer: "Abschlusstimer: 0 sek",
   generatedNotePlaceholder: "Generierte Notiz erscheint hier...",
   customPromptTitle: "Benutzerdefinierter Prompt",
   promptSlotLabel: "Prompt-Slot:",

@@ -116,7 +116,7 @@ export const indexTranslations = {
 
   <hr><br>
 
-  <p><strong>Price vs. quality (and why “expensive” can still be cheap)</strong></p>
+  <p><strong>Price vs. quality</strong></p>
   <p>
     The best text models often cost more per token than simpler models. For example, <strong>Claude Opus 4.5</strong> is usually the most expensive
     text model in the app – but it often provides the best note quality. Even so, total monthly cost in normal use will often be

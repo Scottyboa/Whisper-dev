@@ -224,6 +224,90 @@ function updateTranscribeUI(trans) {
   // document.getElementById("adUnit").textContent = trans.adUnitText;
   document.getElementById("guideHeading").textContent = trans.guideHeading;
   document.getElementById("guideText").innerHTML = trans.guideText;
+  // Guard timers against provider modules overwriting localized labels/units
+  // when recording/note-generation starts ticking.
+  installTimerI18nGuards(trans);
+}
+function installTimerI18nGuards(trans) {
+  const templates = {
+    recordTimer: trans.recordTimer,
+    transcribeTimer: trans.transcribeTimer,
+    noteTimer: trans.noteTimer,
+  };
+
+  // Reinstall on every language change (disconnect old observers).
+  window.__timerI18nState = window.__timerI18nState || {};
+  const state = window.__timerI18nState;
+  if (Array.isArray(state.observers)) {
+    state.observers.forEach((o) => {
+      try { o.disconnect(); } catch {}
+    });
+  }
+  state.observers = [];
+
+  Object.entries(templates).forEach(([id, template]) => {
+    const el = document.getElementById(id);
+    if (!el || typeof template !== "string") return;
+
+    const tpl = parseTimerTemplate(template);
+
+    // Normalize immediately (covers the “just clicked start and it flashed English” case)
+    normalizeTimerText(el, tpl);
+
+    const obs = new MutationObserver(() => normalizeTimerText(el, tpl));
+    obs.observe(el, { childList: true, characterData: true, subtree: true });
+    state.observers.push(obs);
+  });
+}
+
+function parseTimerTemplate(template) {
+  // Example templates:
+  // "Completion Timer: 0 sec"
+  // "Fullføringstimer: 0 sek"
+  const m = template.match(/^(.*?:\s*)0\s+(\S+)\s*$/);
+  return {
+    prefix: m ? m[1] : (template.replace(/\d.*$/, "") || ""),
+    secUnit: m ? m[2] : "sec",
+    minUnit: "min",
+  };
+}
+
+function parseElapsedSecondsFromTimerText(text) {
+  // Pull the part after the first colon (works with "Timer: 3 sec" style strings)
+  const timePart = (text.match(/:\s*(.*)$/)?.[1] || text || "").trim();
+  if (!timePart) return null;
+
+  const minMatch = timePart.match(/(\d+)\s*min\b/i);
+  // Accept common second units (sec/sek). If a provider uses something else,
+  // we still fall back to "first number".
+  const secMatch = timePart.match(/(\d+)\s*(sec|sek)\b/i);
+
+  const minutes = minMatch ? parseInt(minMatch[1], 10) : 0;
+  const seconds = secMatch
+    ? parseInt(secMatch[1], 10)
+    : (() => {
+        const n = timePart.match(/(\d+)/);
+        return n ? parseInt(n[1], 10) : null;
+      })();
+
+  if (seconds == null && !minMatch) return null;
+  return minutes * 60 + (seconds || 0);
+}
+
+function formatSecondsLocalized(totalSec, units) {
+  if (totalSec < 60) return `${totalSec} ${units.secUnit}`;
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return s > 0 ? `${m} ${units.minUnit} ${s} ${units.secUnit}` : `${m} ${units.minUnit}`;
+}
+
+function normalizeTimerText(el, tpl) {
+  const current = (el.textContent || "").trim();
+  const totalSec = parseElapsedSecondsFromTimerText(current);
+  if (totalSec == null) return; // e.g. "", or "Text generation completed!"
+
+  const desired = `${tpl.prefix}${formatSecondsLocalized(totalSec, tpl)}`;
+  if (current !== desired) el.textContent = desired;
 }
 
 export default { initIndexLanguage, initTranscribeLanguage };

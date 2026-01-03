@@ -203,7 +203,7 @@ export const transcribeTranslations = {
   statusMessage: "Benvenuto! Clicca su \"Avvia Registrazione\" per iniziare.",
   noteGenerationTitle: "Generazione delle Note",
   generateNoteButton: "Genera Nota",
-  noteTimer: "Timer per la Generazione della Nota: 0 sec",
+  noteTimer: "Timer di Completamento: 0 sec",
   generatedNotePlaceholder: "La nota generata apparirà qui...",
   customPromptTitle: "Prompt Personalizzato",
   promptSlotLabel: "Slot del Prompt:",

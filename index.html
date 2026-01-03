@@ -26,7 +26,10 @@
   <!-- Import Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Vollkorn&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
   <!-- New: JSON-LD schema for medical/pharma context -->
   <script type="application/ld+json">
   {
@@ -97,16 +100,50 @@
       text-align: center;
       position: relative;
     }
+
+    .header-center {
+      display: inline-grid;
+      grid-template-columns: auto auto auto; /* mic | title | spacer */
+      column-gap: 12px; /* adjust “snugness” here */
+      align-items: center;
+      position: relative;
+      left: 60px; /* move the whole group right; tweak value */
+      top: 9px;   /* move the whole group DOWN; tweak value */
+      transform: scale(1.08); /* change this: 1.00 normal, 1.05, 1.10, etc */
+      transform-origin: center;
+    }
+    .title-block {
+      display: inline-block;
+      text-align: left;
+      max-width: 900px;
+    }
     header h1 {
-      font-family: 'Vollkorn', sans-serif;
-      font-weight: 300;
+      font-family: 'Inter', 'Roboto', sans-serif;
+      font-weight: 450;
       font-size: 48px;
+      line-height: 1.05;
       margin: 0;
+      letter-spacing: 0.2px;
     }
     header p {
-      font-family: 'Vollkorn', sans-serif;
-      font-size: 20px;
+      font-family: 'Inter', 'Roboto', sans-serif;
+      font-weight: 500;
       margin-top: 10px;
+    }
+    .header-mic {
+      width: 82px; /* adjust size here */
+      height: auto;
+      opacity: 0.95;
+      pointer-events: none;
+      user-select: none;
+    }
+    .header-mic-spacer {
+      width: 82px; /* adjust size here */
+      height: 1px;
+    }
+
+    @media (max-width: 850px) {
+      .header-mic, .header-mic-spacer { display: none; }
     }
     /* Language Icon & Dropdown */
     #lang-container {
@@ -385,7 +422,7 @@
     }
     #bedrockGuideText {
       white-space: pre-wrap;
-      font-family: inherit;
+      font-family: 'Inter', 'Roboto', sans-serif;
       font-size: 14px;
       line-height: 1.4;
       margin: 0;
@@ -450,9 +487,15 @@
     </select>
   </div>
   
-  <header>
-    <h1 id="header-title">Transcribe Notes</h1>
-    <p id="header-subtitle">Advanced AI-Powered Speech-to-Text & Clinical Note Generation for Healthcare Consultations</p>
+  <header>    
+    <div class="header-center">
+      <img class="header-mic" src="mic-icon.png" alt="" aria-hidden="true">
+      <div class="title-block">
+        <h1 id="header-title">Transcribe Notes</h1>
+        <p id="header-subtitle">Advanced AI-Powered Speech-to-Text & Clinical Note Generation for Healthcare Consultations</p>
+      </div>
+      <div class="header-mic-spacer" aria-hidden="true"></div>
+    </div>
   </header>
   
   <div class="container">
@@ -1185,4 +1228,3 @@
   
 </body>
 </html>
-

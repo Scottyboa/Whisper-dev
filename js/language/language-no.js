@@ -7,7 +7,7 @@ export const indexTranslations = {
   startText: "Du kan nå også velge mellom ulike modeller fra forskjellige leverandører. For instruksjoner om hvordan å bruke denne webappen, les info-modulene nederst på forsiden.",
   apiPlaceholder: "Skriv inn OpenAI API-nøkkel her",
   promptProfileHint: "Brukes til å lagre dine egendefinerte prompts på denne enheten uavhengig av API-nøkkelen din.",
-  keysIoHint: "Eksporter nøklene til en fil og oppbevar den sikkert. Neste gang kan du importere filen for å fylle inn feltene på nytt, noe som sparer tid og gjør at du slipper å skrive dem inn. Nøklene slettes automatisk når du lukker fanen, eller manuelt med Clear keys.",
+  keysIoHint: "Eksporter nøklene til en fil og oppbevar den sikkert. Neste gang kan du importere filen for å fylle inn feltene på nytt, noe som sparer tid og gjør at du slipper å skrive dem inn. Nøklene slettes automatisk når du lukker webappen/nettleser-fanen, eller manuelt med Clear keys.",
   gdprColumnTitle: "GDPR-kompatibel:",
   gdprColumnFootnote: "(EU data-residens/databehandling + ingen datalagring)",
   nonGdprColumnTitle: "Ikke GDPR-kompatibel:",

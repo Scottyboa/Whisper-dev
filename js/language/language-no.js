@@ -116,7 +116,7 @@ export const indexTranslations = {
 
   <hr><br>
 
-  <p><strong>Pris vs. kvalitet (og hvorfor “dyrt” likevel kan være billig)</strong></p>
+  <p><strong>Pris vs. kvalitet</strong></p>
   <p>
     De beste tekstmodellene koster ofte mer per token enn enklere modeller. For eksempel er <strong>Claude Opus 4.5</strong> gjerne den dyreste
     tekstmodellen i appen – men den gir ofte best notatkvalitet. Likevel vil total månedskostnad i vanlig bruk ofte være

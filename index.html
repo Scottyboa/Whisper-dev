@@ -243,6 +243,27 @@
       border-radius: 8px;
       min-width: 110px;
     }
+    /* Discreet "ghost" button for Clear keys */
+    .keys-io-btn--ghost-green {
+      background: transparent;
+      color: #2e7d32;
+      border: 1px solid rgba(46, 125, 50, 0.45);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-width: 120px;
+      opacity: 0.9;
+    }
+    .keys-io-btn--ghost-green:hover {
+      /* Overrides the global button:hover background */
+      background-color: rgba(46, 125, 50, 0.10);
+      opacity: 1;
+    }
+    .keys-io-btn--ghost-green .btn-icon {
+      font-size: 14px;
+      line-height: 1;
+    }
     #keysIoHint {
       font-size: 12px;
       color: #666;
@@ -453,6 +474,14 @@
     <div class="keys-io-row">
       <button type="button" id="importKeysBtn" class="keys-io-btn">Import keys</button>
       <button type="button" id="exportKeysBtn" class="keys-io-btn">Export keys</button>
+      <button
+        type="button"
+        id="clearKeysBtn"
+        class="keys-io-btn keys-io-btn--ghost-green"
+        title="Clears key/secret/url fields (does not affect Prompt profile)"
+      >
+        <span>Clear keys</span>
+      </button>
       <input type="file" id="importKeysFile" accept="application/json" style="display:none">
     </div>
     <p id="keysIoHint">
@@ -774,6 +803,7 @@
     // Import/Export key bundle (local JSON file that YOU store; not uploaded anywhere)
     const exportKeysBtn  = document.getElementById("exportKeysBtn");
     const importKeysBtn  = document.getElementById("importKeysBtn");
+    const clearKeysBtn   = document.getElementById("clearKeysBtn");
     const importKeysFile = document.getElementById("importKeysFile");
     const keysIoStatus   = document.getElementById("keysIoStatus");
 
@@ -830,6 +860,25 @@
       // Back-compat: default active key remains OpenAI
       try { sessionStorage.setItem("user_api_key", (data.openai_api_key || "").toString()); } catch {}
     }
+    function clearAllKeyFields() {
+      // Confirm to prevent accidental wipe
+      const ok = window.confirm(
+        "Clear all key/secret/url fields and remove them from this tab’s session?"
+      );
+      if (!ok) return;
+
+      KEY_FIELDS.forEach(({ id, storageKey }) => {
+        const el = document.getElementById(id);
+        if (el && typeof el.value === "string") el.value = "";
+        try { sessionStorage.removeItem(storageKey); } catch {}
+      });
+
+      // Also clear the derived active key
+      try { sessionStorage.removeItem("user_api_key"); } catch {}
+
+      setKeysIoStatus("Cleared keys from fields and session.", false);
+    }
+
 
     if (exportKeysBtn) {
       exportKeysBtn.addEventListener("click", function () {
@@ -860,6 +909,10 @@
         }
       });
     }
+    if (clearKeysBtn) {
+      clearKeysBtn.addEventListener("click", clearAllKeyFields);
+    }
+
 
     if (importKeysBtn && importKeysFile) {
       importKeysBtn.addEventListener("click", function () {

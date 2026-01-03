@@ -29,6 +29,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
   <!-- New: JSON-LD schema for medical/pharma context -->
   <script type="application/ld+json">
@@ -85,13 +86,26 @@
   <style>
     /* Base styles */
     body {
-      font-family: 'Roboto', sans-serif;
+      font-family: 'Inter', 'Roboto', sans-serif;
+      font-weight: 400;
       background-color: #f8f8f8;
       color: #333;
       margin: 0;
       padding: 0;
       text-align: center;
       position: relative;
+    }
+
+    /* Make all form UI use the same font as the page text */
+    input, select, textarea, button {
+      font-family: inherit;
+      font-weight: 400;
+    }
+
+    /* Most “field header” labels should not look bold */
+    label {
+      font-family: inherit;
+      font-weight: 400;
     }
     header {
       background: linear-gradient(135deg, #5a9 0%, #489 100%);
@@ -107,9 +121,9 @@
       column-gap: 12px; /* adjust “snugness” here */
       align-items: center;
       position: relative;
-      left: 60px; /* move the whole group right; tweak value */
+      left: 65px; /* move the whole group right; tweak value */
       top: 9px;   /* move the whole group DOWN; tweak value */
-      transform: scale(1.08); /* change this: 1.00 normal, 1.05, 1.10, etc */
+      transform: scale(1.15); /* change this: 1.00 normal, 1.05, 1.10, etc */
       transform-origin: center;
     }
     .title-block {
@@ -317,17 +331,22 @@
       color: #555;
       display: none !important; /* TEMP: hide ad-revenue message */
     }
-    /* New Horizontal Accordion (Tabbed Interface) */
+   /* New Horizontal Accordion (Tabbed Interface) */
     .accordion {
       margin: 20px auto;
-      max-width: 960px;
+      /* make this section wider so 5 tabs fit without wrapping/scrolling */
+      max-width: 1280px;              /* tweak: 1100 / 1200 / 1400 */
+      width: calc(100% - 40px);       /* keeps nice side padding on small screens */
     }
     .accordion-headers {
       display: flex;
       justify-content: center;
       gap: 10px;
       margin-bottom: 10px;
-      flex-wrap: wrap; /* lets 5 tabs breathe on smaller widths */
+     flex-wrap: nowrap;           /* keep all 5 on ONE line */
+     overflow-x: auto;            /* if too tight, scroll instead of wrapping */
+     -webkit-overflow-scrolling: touch;
+     padding: 4px 0;              /* tiny vertical breathing room */
     }
     .accordion-header {
       background-color: #5a9;
@@ -338,6 +357,8 @@
       font-size: 18px;
       border-radius: 5px;
       transition: background-color 0.3s;
+    white-space: nowrap;
+    flex: 0 0 auto;
     }
 
     /* Slightly tighter tabs on smaller screens */

@@ -44,14 +44,9 @@ const DEBUG = true;
      logInfo("Silero VAD: speech started");
      recordingActive = true;
      chunkStartTime = Date.now();
-     // Start timer on first speech
-    // Always show “Recording…” when speech starts, even on Resume
+     // Always show “Recording…” when speech starts, even on Resume
     updateStatusMessage("Recording…", "green");
-    // And still only start the timer once
-    if (!recordingTimerInterval) {
-      recordingStartTime     = Date.now();
-      recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-    }
+   
    },
    onSpeechEnd: (audioFloat32) => {
      // Prevent VAD callbacks after stop
@@ -95,10 +90,7 @@ const MIN_CHUNK_DURATION = 120000; // 120 seconds
  let mediaStream = null;
 let processedAnyAudioFrames = false;
 let audioReader = null;
-let recordingStartTime = 0;
-// Accumulate time from all active segments
-let accumulatedRecordingTime = 0;
-let recordingTimerInterval;
+
 let completionTimerInterval = null;
 let completionStartTime = 0;
 let groupId = null;
@@ -139,15 +131,6 @@ function formatTime(ms) {
     const minutes = Math.floor(totalSec / 60);
     const seconds = totalSec % 60;
     return minutes + " min" + (seconds > 0 ? " " + seconds + " sec" : "");
-  }
-}
-
-function updateRecordingTimer() {
-  // Timer shows accumulated time plus current active segment time
-  const elapsed = accumulatedRecordingTime + (Date.now() - recordingStartTime);
-  const timerElem = document.getElementById("recordTimer");
-  if (timerElem) {
-    timerElem.innerText = "Recording Timer: " + formatTime(elapsed);
   }
 }
 
@@ -580,10 +563,7 @@ function resetRecordingState() {
   Object.values(pollingIntervals).forEach(interval => clearInterval(interval));
   pollingIntervals = {};
   clearTimeout(chunkTimeoutId);
-  if (recordingTimerInterval) {
-    clearInterval(recordingTimerInterval);
-    recordingTimerInterval = null;
-  }
+  
 
   transcriptChunks = {};
   audioFrames = [];
@@ -594,15 +574,10 @@ function resetRecordingState() {
   recordingPaused = false;
   groupId = Date.now().toString();
   chunkNumber = 1;
-  // Reset accumulated recording time for a new session
-   accumulatedRecordingTime = 0;
-   processedAnyAudioFrames = false;
-  // reset VAD & UI timer
+  processedAnyAudioFrames = false;
+  // reset VAD state
   recordingActive    = false;
-  // lastSpeechTime removed (legacy)
-  const recTimerElem = document.getElementById("recordTimer");
-  if (recTimerElem) recTimerElem.innerText = "Recording Timer: 0 sec";
-}
+  }
 
 function initRecording() {
   const startButton       = document.getElementById("startButton");
@@ -635,14 +610,7 @@ function initRecording() {
           recordingActive = true;
           chunkStartTime  = Date.now();
 
-          // Only start the on-screen timer on the very first chunk
-          if (chunkNumber === 1) {
-            recordingStartTime = Date.now();
-            if (recordingTimerInterval) clearInterval(recordingTimerInterval);
-            recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-            pauseResumeButton.innerText = "Pause Recording";
-            updateStatusMessage("Recording…", "green");
-          }
+          
 
           scheduleChunk();
         }
@@ -700,10 +668,7 @@ pauseResumeButton.addEventListener("click", async () => {
       sileroVAD = await vad.MicVAD.new(sileroVADOptions);
       await sileroVAD.start();
       recordingPaused = false;
-      // Restart timer
-      recordingStartTime = Date.now();
-      if (recordingTimerInterval) clearInterval(recordingTimerInterval);
-      recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+      
       pauseResumeButton.innerText = "Pause Recording";
       updateStatusMessage("Listening for speech…", "green");
       logInfo("Silero VAD resumed");
@@ -733,31 +698,13 @@ pauseResumeButton.addEventListener("click", async () => {
     } catch (err) {
       logError("Error pausing Silero VAD:", err);
     }
- // **actually stop the mic** that Silero opened:
- if (sileroVAD.stream) {
-   sileroVAD.stream.getTracks().forEach(t => t.stop());
- }
-    // **new**: cut the mic feed so the browser indicator goes off
-    stopMicrophone();
-    // Stop the mic stream so the browser tab indicator turns off
-    stopMicrophone();
-    // Flush buffer if any
-    if (pendingVADChunks.length > 0) {
-      const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-      const combined = new Float32Array(totalSamples);
-      let offset = 0;
-      for (const seg of pendingVADChunks) {
-        combined.set(seg, offset);
-        offset += seg.length;
-      }
-      const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-      enqueueTranscription(wavBlob, chunkNumber++);
-      pendingVADChunks = [];
+    // Stop the mic Silero opened + kill any leftover media tracks
+    if (sileroVAD.stream) {
+      sileroVAD.stream.getTracks().forEach(t => t.stop());
     }
+    stopMicrophone();
     recordingPaused = true;
-    // Accumulate elapsed time before pausing
-    accumulatedRecordingTime += Date.now() - recordingStartTime;
-    clearInterval(recordingTimerInterval);
+    
     pauseResumeButton.innerText = "Resume Recording";
     updateStatusMessage("Recording paused", "orange");
     logInfo("Recording paused; buffered speech flushed");
@@ -794,26 +741,10 @@ stopButton.addEventListener("click", async () => {
     sileroVAD = null;
   }
   // **new**: absolutely kill the media tracks
-  stopMicrophone();
-     // Stop the mic stream so the browser tab indicator turns off
+  
     stopMicrophone();
 
-    // — FLUSH and SEND any pending VAD segments before stopping —
-    if (pendingVADChunks.length > 0) {
-      const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-      const combined     = new Float32Array(totalSamples);
-      let offset         = 0;
-      for (const seg of pendingVADChunks) {
-        combined.set(seg, offset);
-        offset += seg.length;
-      }
-      const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-      enqueueTranscription(wavBlob, chunkNumber++);
-      pendingVADChunks = [];
-    }
-    // drain the queue so the final chunk is actually sent
-    await processTranscriptionQueue();
-    // Flush remaining buffered segments even if below threshold
+      // — FLUSH any pending VAD segments before stopping —
     if (pendingVADChunks.length > 0) {
       const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
       const combined = new Float32Array(totalSamples);
@@ -826,6 +757,8 @@ stopButton.addEventListener("click", async () => {
       enqueueTranscription(wavBlob, chunkNumber++);
       pendingVADChunks = [];
     }
+    // drain the queue so the final chunk is actually sent
+    await processTranscriptionQueue();
    // ─── NOW compute how many chunks we’re actually waiting on ───
     expectedChunks = chunkNumber - 1;
     if (expectedChunks > 0 && !completionTimerInterval) {
@@ -839,10 +772,7 @@ stopButton.addEventListener("click", async () => {
     }
     manualStop = true;
     clearTimeout(chunkTimeoutId);
-    if (recordingTimerInterval) {
-      clearInterval(recordingTimerInterval);
-      recordingTimerInterval = null;
-    }
+   
     // keep existing stopMicrophone, timers and flush logic intact
   // ── If there's nothing left to transcribe (e.g. paused + all chunks done) ──
   if (audioFrames.length === 0 && pendingVADChunks.length === 0) {
@@ -912,10 +842,7 @@ stopButton.addEventListener("click", async () => {
         if (compTimerElem) {
           compTimerElem.innerText = "Completion Timer: 0 sec";
         }
-        const recTimerElem = document.getElementById("recordTimer");
-        if (recTimerElem) {
-          recTimerElem.innerText = "Recording Timer: 0 sec";
-        }
+        
         updateStatusMessage("Recording reset. Ready to start.", "green");
         const startButton = document.getElementById("startButton");
         if (startButton) startButton.disabled = false;

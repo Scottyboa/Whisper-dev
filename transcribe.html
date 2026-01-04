@@ -72,6 +72,7 @@
     href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&family=Merriweather:wght@300;400&display=swap"
     rel="stylesheet"
   />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -131,9 +132,22 @@
       padding: 0;
     }
     body {
-      font-family: 'Roboto', sans-serif;
+      font-family: 'Inter', 'Roboto', sans-serif;
+      font-weight: 400;
       background-color: #f8f8f8;
       color: #333;
+    }
+
+    /* Make all form UI use the same font as the page text */
+    input, select, textarea, button {
+      font-family: inherit;
+      font-weight: 400;
+    }
+
+    /* Avoid “random bold” label rendering */
+    label {
+      font-family: inherit;
+      font-weight: 400;
     }
     /* Grid Layout: Single Row, 3 Columns */
     .grid-container {
@@ -225,6 +239,29 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 10px;
+    }
+
+    /* Provider row (between Recording Area header and timer) */
+    .transcribe-provider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 6px 0 10px;
+    }
+    .transcribe-provider-row label { white-space: nowrap; }
+    #provider-container,
+    #soniox-region-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+    }
+    #soniox-region-note {
+      margin: 0;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.2;
     }
     .timer {
       font-size: 18px;
@@ -516,32 +553,7 @@
     </select>
   </div>
 
-  <!-- New (Phase 2): Transcription Provider selector -->
-  <div id="provider-container" style="display:flex; align-items:center; gap:8px; margin-left:12px;">
-    <label for="transcribeProvider" id="providerLabel">Provider:</label>
-    <select id="transcribeProvider">
-      <option value="openai">OpenAI</option>
-      <option value="soniox">Soniox</option>
-      <option value="soniox_dia">Soniox(speaker labels)</option>
-      <option value="lemonfox">Lemonfox</option>
-      <option value="voxtral">Voxtral Mini</option>
-      <option value="deepgram">Deepgram Nova-3</option>
-    </select>
-  </div>
-  <!-- Soniox Region selector (shown only for Soniox providers) -->
-  <div id="soniox-region-container" style="display:none; align-items:center; gap:8px; margin-left:12px;">
-    <label for="sonioxRegion" id="sonioxRegionLabel">Region:</label>
-    <select id="sonioxRegion">
-      <option value="us">US</option>
-      <option value="eu">EU (GDPR Compliant)</option>
-    </select>
-  </div>
-  <!-- Note under Region dropdown (visible only when Soniox provider is selected) -->
-  <div id="soniox-region-note" style="display:none; margin:4px 0 0 12px; font-size:12px; color:#666; line-height:1.2;">
-    (EU endpoint requires
-    <a href="https://docs.google.com/forms/d/e/1FAIpQLSe_D5ePa1HmVStWEiMnwtFbE2R0RaKAlxM1pbdaCvXRJE9AJg/viewform"
-       target="_blank" rel="noopener noreferrer">EU API key</a> from SONIOX)
-  </div>
+  
 </div>
       <!-- Recording Area -->
       <div class="recording-area">
@@ -550,7 +562,39 @@
   <a id="openaiUsageLink" href="#" role="button" aria-controls="billingLinksView">
     Cost usage overview
   </a>
-  </div>
+ </div>
+        <!-- Provider row moved here (between header and timer) -->
+        <div class="transcribe-provider-row">
+          <!-- Transcription Provider selector -->
+          <div id="provider-container">
+            <label for="transcribeProvider" id="providerLabel">Provider:</label>
+            <select id="transcribeProvider">
+              <option value="openai">OpenAI</option>
+              <option value="soniox">Soniox</option>
+              <option value="soniox_dia">Soniox(speaker labels)</option>
+              <option value="lemonfox">Lemonfox</option>
+              <option value="voxtral">Voxtral Mini</option>
+              <option value="deepgram">Deepgram Nova-3</option>
+            </select>
+          </div>
+
+          <!-- Soniox Region selector (shown only for Soniox providers) -->
+          <div id="soniox-region-container" style="display:none;">
+            <label for="sonioxRegion" id="sonioxRegionLabel">Region:</label>
+            <select id="sonioxRegion">
+              <option value="us">US</option>
+              <option value="eu">EU (GDPR Compliant)</option>
+            </select>
+          </div>
+
+          <!-- EU note (shown only when Region = EU) -->
+          <div id="soniox-region-note" style="display:none;">
+            (EU endpoint requires
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSe_D5ePa1HmVStWEiMnwtFbE2R0RaKAlxM1pbdaCvXRJE9AJg/viewform"
+               target="_blank" rel="noopener noreferrer">EU API key</a> from SONIOX)
+          </div>
+        </div>
+
         <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
         <div id="transcribeTimer" class="timer">Completion Timer: 0 sec</div>
         <textarea
@@ -583,7 +627,6 @@
    <button id="startButton">Start</button>
     <button id="stopButton" disabled>Stop</button>
   <button id="pauseResumeButton" disabled>Pause Recording</button>
-    </button>
         </div>
         <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
       </div>
@@ -768,7 +811,11 @@
           regionContainer.style.display = "flex";
           // Initialize selector from storage (default 'us')
           regionSel.value = currentRegion();
-          if (regionNote) regionNote.style.display = "block";
+          // Note should only show for EU region
+          if (regionNote) {
+            const val = (regionSel.value || "us").toLowerCase();
+            regionNote.style.display = (val === "eu") ? "block" : "none";
+          }
         } else {
           regionContainer.style.display = "none";
           if (regionNote) regionNote.style.display = "none";
@@ -1245,8 +1292,7 @@
   });
 </script>
 
-  <script type="module" src="./js/promptManager.js"></script>
-
+  
   <!-- Centralized prompt slot control (bound to transcribe.html) -->
   <script type="module">
     import { PromptManager } from "./js/promptManager.js";
@@ -1408,6 +1454,176 @@
       });
   });
 </script>
+  <!-- Centralized Recording Timer
+       Rules:
+       Start  -> reset + run
+       Pause  -> freeze
+       Resume -> continue (no speech required)
+       Stop   -> freeze (no reset). Only Start can reset+run again.
+  -->
+  <script>
+    (function () {
+      // Prevent double-init (in case of soft reloads / hot switches)
+      if (window.__recordTimerControllerInitialized) return;
+      window.__recordTimerControllerInitialized = true;
+
+      const PREFIX = "Recording Timer:";
+
+      const timerEl = document.getElementById("recordTimer");
+      const startBtn = document.getElementById("startButton");
+      const stopBtn = document.getElementById("stopButton");
+      const pauseBtn = document.getElementById("pauseResumeButton");
+
+      if (!timerEl || !startBtn || !stopBtn || !pauseBtn) return;
+
+      let elapsedMs = 0;          // accumulated frozen time
+      let running = false;        // true while ticking
+      let startedAtMs = 0;        // Date.now() when last (re)started
+      let intervalId = null;
+      let blockedUntilStart = true; // blocks resume after Stop (and before first Start)
+      let pendingStart = false;      // Start clicked, waiting for Stop to be enabled
+      let pendingStartTimeoutId = null;
+      let pendingStartPollId = null;
+
+      function formatTime(ms) {
+        const totalSec = Math.floor(ms / 1000);
+        if (totalSec < 60) return `${totalSec} sec`;
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        return s > 0 ? `${m} min ${s} sec` : `${m} min`;
+      }
+
+      function currentElapsedMs() {
+        return running ? (elapsedMs + (Date.now() - startedAtMs)) : elapsedMs;
+      }
+
+      function render() {
+        timerEl.textContent = `${PREFIX} ${formatTime(currentElapsedMs())}`;
+      }
+
+      function clearTick() {
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      }
+
+      function startTicking() {
+        clearTick();
+        intervalId = setInterval(render, 1000);
+      }
+
+      function clearPendingStartTimeout() {
+        if (pendingStartTimeoutId) {
+          clearTimeout(pendingStartTimeoutId);
+          pendingStartTimeoutId = null;
+        }
+      }
+
+      function clearPendingStartPoll() {
+        if (pendingStartPollId) {
+          clearInterval(pendingStartPollId);
+          pendingStartPollId = null;
+        }
+      }
+
+      // Start clicked: reset display, then wait until STOP becomes enabled to begin ticking.
+      function armStart() {
+        clearPendingStartTimeout();
+        clearPendingStartPoll();
+
+        pendingStart = true;
+        blockedUntilStart = true; // don't allow resume until start is confirmed
+
+        elapsedMs = 0;
+        running = false;
+        clearTick();
+        render();
+
+        // Poll for the *current* stop button (survives main.js button cloning)
+        pendingStartPollId = setInterval(() => {
+          if (!pendingStart) return;
+          const sb = document.getElementById("stopButton");
+          if (sb && sb.disabled === false) {
+            confirmStart();
+          }
+        }, 100);
+
+        // Safety timeout: if Stop never enables, treat it as not started
+        pendingStartTimeoutId = setTimeout(() => {
+          if (!pendingStart) return;
+          cancelStart();
+        }, 60000);
+      }
+
+      function confirmStart() {
+        if (!pendingStart) return;
+        pendingStart = false;
+        clearPendingStartTimeout();
+        clearPendingStartPoll();
+
+        blockedUntilStart = false;
+        elapsedMs = 0;
+        running = true;
+        startedAtMs = Date.now();
+        render();
+        startTicking();
+      }
+
+      function cancelStart() {
+        if (!pendingStart) return;
+        pendingStart = false;
+        clearPendingStartTimeout();
+        clearPendingStartPoll();
+
+        blockedUntilStart = true;
+        running = false;
+        elapsedMs = 0;
+        clearTick();
+        render();
+      }
+
+      function freeze() {
+        if (!running) {
+          render();
+          return;
+        }
+        elapsedMs += Date.now() - startedAtMs;
+        running = false;
+        clearTick();
+        render();
+      }
+
+      function resume() {
+        if (blockedUntilStart) return;   // after Stop, only Start can restart
+        if (running) return;
+        if (elapsedMs <= 0) return;      // nothing to resume yet
+        running = true;
+        startedAtMs = Date.now();
+        render();
+        startTicking();
+      }
+
+      // Initial render should match existing HTML text
+      render();
+
+      // Capture-phase delegation so provider “button cloning” doesn’t break us
+      document.addEventListener("click", (e) => {
+        const id = e.target && e.target.id;
+        if (id === "startButton") {
+          armStart();
+        } else if (id === "stopButton") {
+          // If Start never actually succeeded, cancel the pending start cleanly
+          cancelStart();
+          freeze();
+          blockedUntilStart = true; // stop behaves like “end session”
+        } else if (id === "pauseResumeButton") {
+          if (running) freeze();
+          else resume();
+        }
+      }, true);
+    })();
+  </script>
 
 <!-- Keep final elapsed time visible; show completion status to the right -->
 <script>
@@ -1519,6 +1735,28 @@
     }
   })();
 </script>
+  <!-- Lock provider switching while recording is active.
+       Recording is considered "active" when Stop is enabled (disabled === false). -->
+  <script>
+    (function () {
+      function setLocked(locked) {
+        const providerSel = document.getElementById("transcribeProvider");
+        const regionSel = document.getElementById("sonioxRegion");
+        if (providerSel) providerSel.disabled = !!locked;
+        if (regionSel) regionSel.disabled = !!locked;
+      }
+
+      let lastLocked = null;
+      setInterval(() => {
+        const stopBtn = document.getElementById("stopButton");
+        const locked = !!(stopBtn && stopBtn.disabled === false);
+        if (locked !== lastLocked) {
+          setLocked(locked);
+          lastLocked = locked;
+        }
+      }, 200);
+    })();
+  </script>
 </body>
 </html>
 

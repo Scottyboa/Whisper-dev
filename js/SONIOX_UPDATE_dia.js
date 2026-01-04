@@ -44,15 +44,10 @@ const DEBUG = true;
      logInfo("Silero VAD: speech started");
      recordingActive = true;
      chunkStartTime = Date.now();
-     // Start timer on first speech
-    // Always show “Recording…” when speech starts, even on Resume
-    updateStatusMessage("Recording…", "green");
+     // Always show “Recording…” when speech starts, even on Resume
+     updateStatusMessage("Recording…", "green");
      resetCompletionTimerDisplay();
-    // And still only start the timer once
-    if (!recordingTimerInterval) {
-      recordingStartTime     = Date.now();
-      recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
-    }
+    
    },
    onSpeechEnd: (audioFloat32) => {
      // Prevent VAD callbacks after stop
@@ -96,10 +91,7 @@ const MIN_CHUNK_DURATION = 120000; // 120 seconds
  let mediaStream = null;
 let processedAnyAudioFrames = false;
 let audioReader = null;
-let recordingStartTime = 0;
-// Accumulate time from all active segments
-let accumulatedRecordingTime = 0;
-let recordingTimerInterval;
+
 let completionTimerInterval = null;
 let completionStartTime = 0;
 let completionTimerRunning = false;
@@ -201,14 +193,7 @@ function formatTime(ms) {
   }
 }
 
-function updateRecordingTimer() {
-  // Timer shows accumulated time plus current active segment time
-  const elapsed = accumulatedRecordingTime + (Date.now() - recordingStartTime);
-  const timerElem = document.getElementById("recordTimer");
-  if (timerElem) {
-    timerElem.innerText = "Recording Timer: " + formatTime(elapsed);
-  }
-}
+
 
 function stopMicrophone() {
   if (mediaStream) {
@@ -906,10 +891,7 @@ function resetRecordingState() {
   Object.values(pollingIntervals).forEach(interval => clearInterval(interval));
   pollingIntervals = {};
   clearTimeout(chunkTimeoutId);
-  if (recordingTimerInterval) {
-    clearInterval(recordingTimerInterval);
-    recordingTimerInterval = null;
-  }
+  
 
   transcriptChunks = {};
   transcriptFrozen = false;
@@ -922,14 +904,12 @@ function resetRecordingState() {
   recordingPaused = false;
   groupId = Date.now().toString();
   chunkNumber = 1;
-  // Reset accumulated recording time for a new session
-   accumulatedRecordingTime = 0;
+  
    processedAnyAudioFrames = false;
-  // reset VAD & UI timer
+  // reset VAD state
   recordingActive    = false;
   // lastSpeechTime removed (legacy)
-  const recTimerElem = document.getElementById("recordTimer");
-  if (recTimerElem) recTimerElem.innerText = "Recording Timer: 0 sec";
+  
 }
 
 function initRecording() {
@@ -963,11 +943,9 @@ function initRecording() {
           recordingActive = true;
           chunkStartTime  = Date.now();
 
-          // Only start the on-screen timer on the very first chunk
+          // First-chunk UX tweaks (recording timer is centralized in transcribe.html)
           if (chunkNumber === 1) {
-            recordingStartTime = Date.now();
-            if (recordingTimerInterval) clearInterval(recordingTimerInterval);
-            recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+            
             pauseResumeButton.innerText = "Pause Recording";
             updateStatusMessage("Recording…", "green");
             resetCompletionTimerDisplay();
@@ -1043,10 +1021,7 @@ pauseResumeButton.addEventListener("click", async () => {
       sileroVAD = await vad.MicVAD.new(sileroVADOptions);
       await sileroVAD.start();
       recordingPaused = false;
-      // Restart timer
-      recordingStartTime = Date.now();
-      if (recordingTimerInterval) clearInterval(recordingTimerInterval);
-      recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+      
       pauseResumeButton.innerText = "Pause Recording";
       updateStatusMessage("Listening for speech…", "green");
       logInfo("Silero VAD resumed");
@@ -1109,9 +1084,7 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
 }
 
     recordingPaused = true;
-    // Accumulate elapsed time before pausing
-    accumulatedRecordingTime += Date.now() - recordingStartTime;
-    clearInterval(recordingTimerInterval);
+    
     pauseResumeButton.innerText = "Resume Recording";
     updateStatusMessage("Recording paused", "orange");
     logInfo("Recording paused; buffered speech flushed");
@@ -1197,10 +1170,7 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
 
     manualStop = true;
     clearTimeout(chunkTimeoutId);
-    if (recordingTimerInterval) {
-      clearInterval(recordingTimerInterval);
-      recordingTimerInterval = null;
-    }
+    
     // keep existing stopMicrophone, timers and flush logic intac
 
   // NEW: If the recording is paused, finalize immediately.
@@ -1245,10 +1215,7 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
       await safeProcessAudioChunk(true);
       if (!processedAnyAudioFrames) {
         resetRecordingState();
-        const recTimerElem = document.getElementById("recordTimer");
-        if (recTimerElem) {
-          recTimerElem.innerText = "Recording Timer: 0 sec";
-        }
+        
         updateStatusMessage("Recording reset. Ready to start.", "green");
         const startButton = document.getElementById("startButton");
         if (startButton) startButton.disabled = false;

@@ -720,8 +720,8 @@ stopButton.addEventListener("click", async () => {
         pendingVADChunks.push(audio);
       }
     }
-  manualStop = true;
-    // First pause VAD to emit final onSpeechEnd
+    // First pause VAD to emit final onSpeechEnd.
+    // IMPORTANT: do not set manualStop until after pause(), otherwise onSpeechEnd is ignored.
   if (sileroVAD) {
     try {
       await sileroVAD.pause();     // pause VAD to emit final onSpeechEnd
@@ -743,6 +743,8 @@ stopButton.addEventListener("click", async () => {
 
     // Flush any pending VAD segments before stopping
     flushPendingVADChunks();
+  // Now block further VAD callbacks / UI writes
+    manualStop = true;
     // drain the queue so the final chunk is actually sent
     await processTranscriptionQueue();
     

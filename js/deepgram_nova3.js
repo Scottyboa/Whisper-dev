@@ -774,8 +774,7 @@ stopButton.addEventListener("click", async () => {
         pendingVADChunks.push(audio);
       }
     }
-    // Block VAD callbacks as early as possible during stop
-    manualStop = true;
+    
     // First pause VAD to emit final onSpeechEnd
   if (sileroVAD) {
     try {
@@ -804,6 +803,7 @@ stopButton.addEventListener("click", async () => {
   stopMicrophone();
 
     await flushPendingVADSegments();
+  manualStop = true;
 
     await Promise.resolve(); // ensure any flush enqueues are visible
     

@@ -1,7 +1,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script type='text/javascript' src='https://scottyboa.github.io/m9keifQtEsUKAQHyb0BVL_5OQmDIpiUbnZShjIRGkGjZIMos-5YQt9xX9vQ3C-Rhwe-iLfDVkw8IREYF9wDSMii3Sa2HDllYIJIq4piJBH1Ja0QHxNTiLhZhCbt2dzFlnKs0kYj4RzuB__sLprsEhY-ejy1v7mhjqSLm0rx0s58b2OLJK5rgxe7KcuOYnz2n7I69Bai72O4XSmJFRwwqb2q2YSn1KthAFgUiBWJgM_oe1jMwXen5fLyBw4VSgonezSUqu2JORsn70fe7ppPONSN7JWw9i-XRggw_0arxjqCxOcfP7ydXbqL-WGnzQukgF-Ct9rqHHU-Tq7PUgZfPxEqQ59Xn9iXlMW1i17-rZJalaJytvEPYciW234bCg_-s80OfeQNryFo9n3xmVCZUx7tVVIwXGdrOr-dn_eltaGGg0UTh2aM_WG0xhoohaBoG0TqE3hC7jeGXwoMbj1He22-xxDs9_IbX1tHmt-RmWPwj5uv82ZpsEEiY'></script>
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/dist/bundle.min.js"></script>
 <!-- Removed hard-coded recording.js include; provider will choose module -->
@@ -447,6 +447,20 @@
     }
     #guideView.active {
       display: block;
+    }
+    #guideClose {
+      position: sticky;
+      top: 10px;
+      float: right;
+      background: none;
+      border: none;
+      color: red;
+      font-size: 26px;
+      line-height: 1;
+      cursor: pointer;
+      margin: 0;     /* override global button margin */
+      padding: 0 6px;/* override global button padding */
+      z-index: 2001;
     }
 
     /* Costs & Billing Links Overlay Styles */
@@ -1079,6 +1093,7 @@
 
   <!-- Guide Overlay (outside the grid container) -->
   <div id="guideView">
+    <button id="guideClose" type="button" aria-label="Close">×</button>
     <h3 id="guideHeading">Guide & Instructions</h3>
     <p id="guideText"></p>
   </div>
@@ -1099,6 +1114,13 @@
     document.addEventListener("DOMContentLoaded", function () {
       const btnGuide = document.getElementById("btnGuide");
       const guideView = document.getElementById("guideView");
+      const guideClose = document.getElementById("guideClose");
+
+      if (guideClose) {
+        guideClose.addEventListener("click", function () {
+          guideView.classList.remove("active");
+        });
+      }
       if (btnGuide && guideView) {
         btnGuide.addEventListener("click", function () {
           guideView.classList.toggle("active");

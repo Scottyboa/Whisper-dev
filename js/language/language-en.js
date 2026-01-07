@@ -400,12 +400,12 @@ https://soniox.com<br><br>
 – Generate a Soniox API key and purchase/upload credits (same principle as OpenAI)<br>
 – Store the key securely and paste it into “Soniox API key (EU or US)” on the front page<br>
 – You can now use Soniox speech-to-text (very high-quality and cost-effective, recommended)<br>
-– For EU endpoint (GDPR-compliant): email sales@soniox.com and request an EU API key for clinical doctor–patient use.<br>
+– For EU endpoint (GDPR-compliant): email sales@soniox.com and request an EU API key for clinical doctor–patient use.<br><br>
 &nbsp;&nbsp;Example email:<br>
-&nbsp;&nbsp;Greetings!<br><br>
+&nbsp;&nbsp;"Greetings!<br><br>
 &nbsp;&nbsp;I work as a family doctor in Norway, and I wish to use the Soniox speech-to-text API to transcribe medical doctor-patient consultations in a clinical setting. In order for me to do this in a way that complies with my local GDPR regulations, I need to have access to a project/API-key with EU regional endpoint. I hope this is possible, as I am highly satisfied with the transcription quality of your speech-to-text model so far.<br><br>
 &nbsp;&nbsp;Regards<br>
-&nbsp;&nbsp;[Dr. "navn"]<br>
+&nbsp;&nbsp;[Dr. "navn"]"<br><br>
 – Usual response time is 1-2 days. When approved, you can create a "new project" on your soniox.com user, in which you may chose EU endpoint. You can then generate a new API key which is linked to this new project.<br>
 – On the main page, you can choose between EU(GDPR compliant) and US endpoints in the dropdown when using Soniox. To use the the model with EU endpoint, simply paste your new EU API key in the Soniox API key infput field on the front page, before entering the main page.<br><br>
 

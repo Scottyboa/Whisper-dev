@@ -403,12 +403,12 @@ https://soniox.com<br><br>
 – Generer en Soniox API-nøkkel og kjøp/last opp credits (samme prinsipp som hos OpenAI)<br>
 – Lagre nøkkelen trygt og lim den inn i feltet «Soniox API key» på forsiden<br>
 – Du kan nå bruke tale-til-tekst-modellen Soniox (svært god og rimelig tale-til-tekst-modell, anbefales)<br>
-– For å få tilgang til API nøkkel med EU-endepunkt (GDPR-vennlig): send e-post til sales@soniox.com og be om EU API-nøkkel for å kunne oppfylle GDPR krav med tanke på bruk av tale-til-tekst i klinisk pasient–lege-setting.<br>
+– For å få tilgang til API nøkkel med EU-endepunkt (GDPR-vennlig): send e-post til sales@soniox.com og be om EU API-nøkkel for å kunne oppfylle GDPR krav med tanke på bruk av tale-til-tekst i klinisk pasient–lege-setting.<br><br>
 &nbsp;&nbsp;Eksempel email:<br>
-&nbsp;&nbsp;Greetings!<br><br>
+&nbsp;&nbsp;"Greetings!<br><br>
 &nbsp;&nbsp;I work as a family doctor in Norway, and I wish to use the Soniox speech-to-text API to transcribe medical doctor-patient consultations in a clinical setting. In order for me to do this in a way that complies with my local GDPR regulations, I need to have access to a project/API-key with EU regional endpoint. I hope this is possible, as I am highly satisfied with the transcription quality of your speech-to-text model so far.<br><br>
 &nbsp;&nbsp;Regards<br>
-&nbsp;&nbsp;[Dr. "navn"]<br><br>
+&nbsp;&nbsp;[Dr. "navn"]"<br><br>
 – På hovedsiden kan du velge mellom EU- og US-endepunkt i nedtrekksmenyen når du bruker Soniox<br>
 - Bruk av Soniox i denne webappen vil ha zero data retention. Dette sammen med API nøkkel med EU endepunkt, gjør Soniox optimal i forhold til GDPR-krav. Samtidig er Soniox også den klart beste og billigste av alle tale-til-tekst modellene som finnes per i dag, noe som gjør den til et klart førstevalg ved bruk av tale-til-tekst i denne appen.<br><br>
 

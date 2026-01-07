@@ -40,7 +40,7 @@ STEG-FOR-STEG OPPSETT
 STEG 1 — OPPRETT / LOGG INN I AWS
 ---------------------------------
 
-1) Opprett en AWS-konto(Free-tier) (eller logg inn hvis du allerede har en).
+1) Opprett en AWS-konto (https://aws.amazon.com/) (Free-tier) (eller logg inn hvis du allerede har en).
 2) For dette engangsoppsettet er det OK å bruke AWS “root user” (konto-eier).
    (Senere kan du eventuelt opprette en vanlig admin-bruker — valgfritt.)
 

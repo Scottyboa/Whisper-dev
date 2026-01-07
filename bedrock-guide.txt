@@ -41,7 +41,7 @@ STEP-BY-STEP SETUP
 STEP 1 — CREATE / SIGN IN TO AWS
 ---------------------------------
 
-1) Create an AWS account (or sign in if you already have one).
+1) Create an AWS account(https://aws.amazon.com/) (or sign in if you already have one).
 2) For this setup, it’s okay to use your AWS “root user” (account owner login).
    (Later you can create a normal admin user if you want — optional.)
 

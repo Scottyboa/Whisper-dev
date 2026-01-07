@@ -1298,9 +1298,10 @@
       sessionStorage.getItem('vertex_model') ||
       '';
 
+    // Column I already stores provider; Column J should store "model" (or effective id)
     const effectiveForLog =
-      (effective === 'aws-bedrock' && bedrockModel) ? `aws-bedrock/${bedrockModel}` :
-      (effective === 'gemini3-vertex' && vertexModel) ? `gemini3-vertex/${vertexModel}` :
+      (effective === 'aws-bedrock' && bedrockModel) ? bedrockModel :
+      (effective === 'gemini3-vertex' && vertexModel) ? vertexModel :
       effective;
 
     return {

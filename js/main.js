@@ -64,17 +64,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize the recording functionality dynamically by provider.
   (async function initRecordingByProvider() {
-    const provider = (sessionStorage.getItem('transcribe_provider') || 'soniox').toLowerCase();
+    let provider = (sessionStorage.getItem('transcribe_provider') || 'soniox').toLowerCase();
+    // Back-compat: old stored value "soniox_dia" becomes "soniox" + speaker labels on
+    if (provider === 'soniox_dia') {
+      provider = 'soniox';
+      sessionStorage.setItem('transcribe_provider', 'soniox');
+      sessionStorage.setItem('soniox_speaker_labels', 'on');
+    }
     try {
-      const moduleByProvider = {
-        soniox:      './SONIOX_UPDATE.js',
-        soniox_dia:  './SONIOX_UPDATE_dia.js',
-        lemonfox:    './LemonfoxSTT.js',
-        voxtral:     './VoxtralminiSTT.js',
-        openai:      './recording.js',
-        deepgram:    './deepgram_nova3.js', // NEW: Deepgram Nova-3
-      };
-      const path = moduleByProvider[provider] || './recording.js';
+      function getSonioxPath() {
+        const v = (sessionStorage.getItem('soniox_speaker_labels') || 'off').toLowerCase();
+        return (v === 'on') ? './SONIOX_UPDATE_dia.js' : './SONIOX_UPDATE.js';
+      }
+      const path =
+        provider === 'soniox'   ? getSonioxPath()          :
+        provider === 'lemonfox' ? './LemonfoxSTT.js'       :
+        provider === 'voxtral'  ? './VoxtralminiSTT.js'    :
+        provider === 'openai'   ? './recording.js'         :
+        provider === 'deepgram' ? './deepgram_nova3.js'    : // Deepgram Nova-3
+                                  './recording.js';
       console.info('[recording:init] provider:', provider, 'module:', path);
       const mod = await import(path);
       if (mod && typeof mod.initRecording === 'function') {
@@ -172,18 +180,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     sessionStorage.setItem('transcribe_provider', (next || 'soniox').toLowerCase());
-    const provider = (sessionStorage.getItem('transcribe_provider') || 'soniox').toLowerCase();
+    let provider = (sessionStorage.getItem('transcribe_provider') || 'soniox').toLowerCase();
+    // Back-compat: old stored value "soniox_dia"
+    if (provider === 'soniox_dia') {
+      provider = 'soniox';
+      sessionStorage.setItem('transcribe_provider', 'soniox');
+      sessionStorage.setItem('soniox_speaker_labels', 'on');
+    }
 
-    // Choose module path
-    const moduleByProvider = {
-      soniox:      './SONIOX_UPDATE.js',
-      soniox_dia:  './SONIOX_UPDATE_dia.js',
-      lemonfox:    './LemonfoxSTT.js',
-      voxtral:     './VoxtralminiSTT.js',
-      openai:      './recording.js',
-      deepgram: './deepgram_nova3.js', // NEW: Deepgram Nova-3
-    };
-    const path = moduleByProvider[provider] || './recording.js';
+    function getSonioxPath() {
+      const v = (sessionStorage.getItem('soniox_speaker_labels') || 'off').toLowerCase();
+      return (v === 'on') ? './SONIOX_UPDATE_dia.js' : './SONIOX_UPDATE.js';
+    }
+    const path =
+      provider === 'soniox'   ? getSonioxPath()          :
+      provider === 'lemonfox' ? './LemonfoxSTT.js'       :
+      provider === 'voxtral'  ? './VoxtralminiSTT.js'    :
+      provider === 'openai'   ? './recording.js'         :
+      provider === 'deepgram' ? './deepgram_nova3.js'    :
+                                './recording.js';
     console.info('[recording:switch] provider:', provider, 'module:', path);
 
     try {

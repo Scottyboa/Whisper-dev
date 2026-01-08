@@ -720,7 +720,7 @@ guideText: `Velkommen til <strong>Transcribe Notes</strong>. Denne applikasjonen
 
   <li><strong>Kostnadsoversikt:</strong> For å se ditt nåværende forbruk hos de ulike tilbyderne, klikk på lenken for kostnadsoversikt som er plassert oppe til høyre på hovedsiden.</li><br>
 
-  <li><strong>Sikkerhet:</strong> Lydopptaket ditt sendes direkte til valgte tilbyder (fra nedtrekksmenuen) sine servere for transkribering, og hverken lagres(gjelder bare for AWS Bedrock, Google Vertex og Soniox) eller brukes for maskinlæring. Den transkriberte teksten vises kun i nettleseren din, og slettes/forsvinner så snart du lukker nettleseren eller laster inn nytt innhold.</li><br>
+  <li><strong>Sikkerhet:</strong> Lydopptaket ditt sendes direkte til valgte tilbyder (fra nedtrekksmenuen) sine servere for transkribering, og hverken lagres(dette gjelder bare for Mistral(*se personvern info på forsiden)AWS Bedrock, Google Vertex og Soniox) eller brukes for maskinlæring. Den transkriberte teksten vises kun i nettleseren din, og slettes/forsvinner så snart du lukker nettleseren eller laster inn nytt innhold.</li><br>
 
   <li><strong>Guide-knapp:</strong> Klikk på "Guide"-knappen igjen for å gå tilbake til hovedvisningen.</li>
 </ul><br><br>

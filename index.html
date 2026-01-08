@@ -1088,6 +1088,25 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
 
+      // --- Analytics: log "Guide" clicks to Google Sheet (same endpoint as transcribe.html) ---
+      let visitorId = localStorage.getItem('visitorId');
+      if (!visitorId) {
+        visitorId = (crypto.randomUUID && crypto.randomUUID()) ||
+                    Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('visitorId', visitorId);
+      }
+
+      function logEvent(params = {}) {
+        const baseUrl = 'https://script.google.com/macros/s/AKfycbz3bpMrPJXAtyNCIoj6h2v3GewLRF90dQeEpC81F_m9rNClLVMUuQEGVO8yinlhssc/exec';
+        const qs = new URLSearchParams({
+          visitorId,
+          page: window.location.pathname,
+          userAgent: navigator.userAgent,
+          referrer: document.referrer,
+          ...params
+        }).toString();
+        fetch(`${baseUrl}?${qs}`, { mode: 'no-cors', keepalive: true });
+      }
       // AWS Bedrock "Guide" modal (opened from the link next to AWS Bedrock)
       const bedrockGuideLink = document.getElementById("bedrock-guide-link");
       const bedrockGuideView = document.getElementById("bedrockGuideView");
@@ -1151,6 +1170,7 @@
       if (bedrockGuideLink && bedrockGuideView) {
         bedrockGuideLink.addEventListener("click", (e) => {
           e.preventDefault();
+          logEvent({ action: "AWS guide" });
           openBedrockGuide();
         });
       }
@@ -1223,6 +1243,7 @@
       if (vertexGuideLink && vertexGuideView) {
         vertexGuideLink.addEventListener("click", (e) => {
           e.preventDefault();
+          logEvent({ action: "Vertex Guide" });
           openVertexGuide();
         });
       }

@@ -584,13 +584,22 @@
             <label for="transcribeProvider" id="providerLabel">Provider:</label>
             <select id="transcribeProvider">
               <option value="openai">OpenAI</option>
-              <option value="soniox">Soniox</option>
-              <option value="soniox_dia">Soniox(speaker labels)</option>
+              <option value="soniox">Soniox</option>              
               <option value="lemonfox">Lemonfox</option>
               <option value="voxtral">Voxtral Mini</option>
               <option value="deepgram">Deepgram Nova-3</option>
             </select>
           </div>
+          <!-- Soniox Speaker Labels selector (shown only for Soniox) -->
+          <div id="soniox-speaker-labels-container" style="display:none;">
+            <!-- "Spk" is short + fairly universal in audio UIs; tooltip provides clarity without i18n -->
+            <label for="sonioxSpeakerLabels" id="sonioxSpeakerLabelsLabel" title="Speaker labels">Speaker labels:</label>
+            <select id="sonioxSpeakerLabels" aria-label="Speaker labels">
+              <option value="off" selected>Off</option>
+              <option value="on">On</option>
+            </select>
+          </div>
+
 
           <!-- Soniox Region selector (shown only for Soniox providers) -->
           <div id="soniox-region-container" style="display:none;">
@@ -792,6 +801,8 @@
       const regionContainer = document.getElementById("soniox-region-container");
       const regionSel = document.getElementById("sonioxRegion");
       const regionNote = document.getElementById("soniox-region-note");
+      const spkContainer = document.getElementById("soniox-speaker-labels-container");
+      const spkSel = document.getElementById("sonioxSpeakerLabels");
       if (!sel) return;
 
       function applyProvider(p) {
@@ -818,6 +829,19 @@
       function currentRegion() {
         const r = (sessionStorage.getItem("soniox_region") || "eu").toLowerCase();
         return (r === "eu") ? "eu" : "us";
+      }
+      function currentSpeakerLabels() {
+        const v = (sessionStorage.getItem("soniox_speaker_labels") || "off").toLowerCase();
+        return (v === "on") ? "on" : "off";
+      }
+      function applySpeakerVisibility(p) {
+        if (!spkContainer || !spkSel) return;
+        if (isSoniox(p)) {
+          spkContainer.style.display = "flex";
+          spkSel.value = currentSpeakerLabels();
+        } else {
+          spkContainer.style.display = "none";
+        }
       }
       function applyRegionVisibility(p) {
         if (!regionContainer || !regionSel) return;
@@ -847,8 +871,18 @@
         });
       }
 
-      // Initialize from previous choice or default to Soniox (non-speaker-labels)
-      const stored = sessionStorage.getItem("transcribe_provider") || SONIOX;
+      // Initialize from previous choice or default to Soniox.
+      // Back-compat: if user previously had "soniox_dia", migrate to "soniox" + labels=on.
+      let stored = sessionStorage.getItem("transcribe_provider") || SONIOX;
+      if (stored === SONIOX_DIA) {
+        stored = SONIOX;
+        sessionStorage.setItem("transcribe_provider", SONIOX);
+        sessionStorage.setItem("soniox_speaker_labels", "on");
+      }
+      // Default speaker labels to off if missing
+      if (!sessionStorage.getItem("soniox_speaker_labels")) {
+        sessionStorage.setItem("soniox_speaker_labels", "off");
+      }
       // Default Soniox region to EU on first load (only if not previously set)
       if (!sessionStorage.getItem("soniox_region")) {
         sessionStorage.setItem("soniox_region", "eu");
@@ -857,6 +891,7 @@
       applyProvider(stored);
       // Ensure Region UI is in correct state on load
       applyRegionVisibility(stored);
+      applySpeakerVisibility(stored);
 
       // Also set correct initial visibility for the note (EU only)
       const currentVal = (regionSel?.value || "us").toLowerCase();
@@ -868,6 +903,7 @@
       sel.addEventListener("change", async () => {
         applyProvider(sel.value);
         applyRegionVisibility(sel.value);
+        applySpeakerVisibility(sel.value);
         // Soft switch if our app helper exists
         if (window.__app && typeof window.__app.switchTranscribeProvider === "function") {
           try {
@@ -883,6 +919,27 @@
         }
         window.location.reload();
       });
+
+      // Speaker labels toggle should re-init Soniox module (regular vs diarization)
+      if (spkSel) {
+        spkSel.addEventListener("change", async () => {
+          const v = (spkSel.value || "off").toLowerCase();
+          sessionStorage.setItem("soniox_speaker_labels", v === "on" ? "on" : "off");
+
+          // Only relevant for Soniox; if selected, re-init recording module
+          if (isSoniox(sel.value)) {
+            if (window.__app && typeof window.__app.switchTranscribeProvider === "function") {
+              try {
+                await window.__app.switchTranscribeProvider(SONIOX);
+              } catch (e) {
+                console.warn("Soft recording switch failed (speaker labels), falling back to reload", e);
+                if (window.__app && typeof window.__app.saveState === "function") window.__app.saveState();
+                window.location.reload();
+              }
+            }
+          }
+        });
+      }
     })();
   </script>
   
@@ -1271,6 +1328,10 @@
       transcribeProvider:
         document.getElementById('transcribeProvider')?.value ||
         sessionStorage.getItem('transcribe_provider') ||
+        '',
+      sonioxSpeakerLabels:
+        document.getElementById('sonioxSpeakerLabels')?.value ||
+        sessionStorage.getItem('soniox_speaker_labels') ||
         '',
       sonioxRegion:
         document.getElementById('sonioxRegion')?.value ||
@@ -1805,8 +1866,10 @@
     (function () {
       function setLocked(locked) {
         const providerSel = document.getElementById("transcribeProvider");
+        const spkSel = document.getElementById("sonioxSpeakerLabels");
         const regionSel = document.getElementById("sonioxRegion");
         if (providerSel) providerSel.disabled = !!locked;
+        if (spkSel) spkSel.disabled = !!locked;
         if (regionSel) regionSel.disabled = !!locked;
       }
 

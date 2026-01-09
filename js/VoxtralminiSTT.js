@@ -167,6 +167,48 @@ function base64ToArrayBuffer(base64) {
   return bytes;
 }
 
+async function blobToBase64(blob) {
+  const buffer = await blob.arrayBuffer();
+  return arrayBufferToBase64(buffer);
+}
+
+async function sendChunkChat({ apiKey, model, audioBase64 }, retries = 5, backoff = 2000) {
+  try {
+    return await fetch("https://api.mistral.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "input_audio", input_audio: audioBase64 },
+              {
+                type: "text",
+                text:
+                  "Transcribe the audio verbatim in Norwegian (Bokmål). " +
+                  "Do NOT translate. Output ONLY the transcript text.",
+              },
+            ],
+          },
+        ],
+        temperature: 0,
+      }),
+    });
+  } catch (err) {
+    if (retries > 0) {
+      console.warn(`Chunk failed, retrying in ${backoff}ms… (${retries} left)`);
+      await new Promise(res => setTimeout(res, backoff));
+      return sendChunkChat({ apiKey, model, audioBase64 }, retries - 1, backoff * 1.5);
+    }
+    throw err;
+  }
+}
+
 // --- Device Token Management ---
 function getDeviceToken() {
   let token = localStorage.getItem("device_token");
@@ -189,7 +231,7 @@ async function sendChunk(formData, retries = 5, backoff = 2000) {
   if (!apiKey) throw new Error("API key not available");
    try {
      return await fetch(
-       "https://api.mistral.ai/v1/audio/transcriptions",
+       "https://api.mistral.ai/v1/chat/completions",
        {
          method: "POST",
          headers: { Authorization: `Bearer ${apiKey}` },
@@ -309,14 +351,13 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
   const apiKey = getAPIKey();
   if (!apiKey) throw new Error("API key not available for transcription");
   
-  const formData = new FormData();
-  formData.append("file", wavBlob, `chunk_${chunkNum}.wav`);
-  formData.append("model", "voxtral-mini-latest");
-  // Optional: you can add "language" if you want to force transcription language
-  // formData.append("language", "nb"); // e.g., Norwegian Bokmål
+
+  // Voxtral Small: use chat completions with audio input
+  const model = "voxtral-small-latest";
+  const audioBase64 = await blobToBase64(wavBlob);
 
   try {
-     const response = await sendChunk(formData);
+    const response = await sendChunkChat({ apiKey, model, audioBase64 });
     if (!response.ok) {
       // Try JSON first, otherwise text
       let msg = "";
@@ -329,10 +370,11 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
       throw new Error(`Mistral STT error: ${msg || `${response.status} ${response.statusText}`}`);
     }
     const result = await response.json();
-    return result.text || "";
+    // Chat completions response shape:
+    return result?.choices?.[0]?.message?.content || "";
   } catch (error) {
     logError(`Error transcribing chunk ${chunkNum}:`, error);
-    updateStatusMessage("Error transcribing with Mistral Voxtral Mini. Please try again.", "red");
+    updateStatusMessage("Error transcribing with Mistral Voxtral Small. Please try again.", "red");
     transcriptionError = true;
     return `[Error transcribing chunk ${chunkNum}]`;
   }

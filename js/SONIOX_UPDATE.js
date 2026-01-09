@@ -122,6 +122,60 @@ let audioFrames = []; // Buffer for audio frames
 let transcriptionQueue = [];  // Queue of { chunkNumber, blob }
 let isProcessingQueue = false;
 let enqueuedChunks = 0;  
+// --- Session invalidation (Start = fresh session) ---
+// If the user clicks Start again while old transcriptions/uploads are still running,
+// we abort/ignore everything from the previous session so the new recording is truly fresh.
+let activeSessionId = 0;
+let processingSessionId = 0;
+let sessionAbortController = new AbortController();
+
+function makeAbortError(message = "Aborted") {
+  const e = new Error(message);
+  e.name = "AbortError";
+  return e;
+}
+function isLiveSession(sessionId) {
+  return sessionId === activeSessionId;
+}
+function assertLiveSession(sessionId) {
+  if (!isLiveSession(sessionId)) throw makeAbortError("Session reset");
+}
+function beginFreshSession() {
+  // Invalidate previous async work (queue workers, fetches, retries)
+  activeSessionId += 1;
+  processingSessionId = 0;
+
+  stopFinishWatchdog();
+
+  try { sessionAbortController.abort("session-reset"); } catch {}
+  sessionAbortController = new AbortController();
+
+  // Hard reset local pipeline so Start never waits on old work
+  transcriptionQueue = [];
+  isProcessingQueue = false;
+  enqueuedChunks = 0;
+  pendingVADChunks = [];
+  pendingVADLock = false;
+  transcriptFrozen = false;
+
+  return activeSessionId;
+}
+
+async function sleepSession(ms, sessionId) {
+  assertLiveSession(sessionId);
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(resolve, ms);
+    sessionAbortController.signal.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(t);
+        reject(makeAbortError("Session reset"));
+      },
+      { once: true }
+    );
+  });
+}
+
 
 // --- Utility Functions ---
 function updateStatusMessage(message, color = "#333") {
@@ -130,6 +184,16 @@ function updateStatusMessage(message, color = "#333") {
     statusElem.innerText = message;
     statusElem.style.color = color;
   }
+}
+
+// Only allow UI/error mutations for the active session
+function safeUpdateStatus(sessionId, message, color = "#333") {
+  if (!isLiveSession(sessionId)) return;
+  updateStatusMessage(message, color);
+}
+function safeSetTranscriptionError(sessionId, value = true) {
+  if (!isLiveSession(sessionId)) return;
+  transcriptionError = value;
 }
 
 // ───── Completion timer helpers (single-signal control) ──────────────────────
@@ -161,6 +225,38 @@ function resetCompletionTimerDisplay() {
   const timerElem = document.getElementById("transcribeTimer");
   if (timerElem) timerElem.innerText = "Completion Timer: 0 sec";
 }
+// ───── Finish watchdog (ensures "Finishing..." always resolves) ─────────────
+let finishWatchdogInterval = null;
+function stopFinishWatchdog() {
+  if (finishWatchdogInterval) {
+    clearInterval(finishWatchdogInterval);
+    finishWatchdogInterval = null;
+  }
+}
+
+// Session-aware "pending work" checks (prevents old sessions blocking "finished")
+function queueHasSessionWork(sessionId = activeSessionId) {
+  return transcriptionQueue.some(item => item && item.sessionId === sessionId);
+}
+function isProcessingThisSession(sessionId = activeSessionId) {
+  return isProcessingQueue && processingSessionId === sessionId;
+}
+function startFinishWatchdog(sessionId) {
+  stopFinishWatchdog();
+  finishWatchdogInterval = setInterval(() => {
+    // If a new Start happened, don’t let an old watchdog touch UI.
+    if (typeof isLiveSession === "function" && !isLiveSession(sessionId)) {
+      stopFinishWatchdog();
+      return;
+    }
+   if (manualStop && !queueHasSessionWork(sessionId) && !isProcessingThisSession(sessionId)) {
+      stopFinishWatchdog();
+      // This will set "Transcription finished!" and freeze the timer.
+      updateTranscriptionOutput();
+    }
+  }, 200);
+}
+
 
 
 // ────────────────────────────────
@@ -169,7 +265,24 @@ function resetCompletionTimerDisplay() {
 // ✅ REPLACE your existing fetchWithTimeout() with this one
 async function fetchWithTimeout(resource, options = {}, timeoutMs = 30000) {
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
+
+  // Abort when the session is invalidated (new Start)
+  const onSessionAbort = () => controller.abort(sessionAbortController.signal.reason || "session-reset");
+  if (sessionAbortController.signal.aborted) {
+    onSessionAbort();
+  } else {
+    sessionAbortController.signal.addEventListener("abort", onSessionAbort, { once: true });
+  }
+
+  // If a caller passes their own signal, respect it too.
+  const upstream = options.signal;
+  if (upstream) {
+    if (upstream.aborted) controller.abort(upstream.reason || "aborted");
+    else upstream.addEventListener("abort", () => controller.abort(upstream.reason || "aborted"), { once: true });
+  }
+
+  const id = setTimeout(() => controller.abort("timeout"), timeoutMs);
+
   try {
     const response = await fetch(resource, { ...options, signal: controller.signal });
     if (response.status === 401 || response.status === 403) {
@@ -370,10 +483,11 @@ async function createSonioxTranscription(fileId, context, retries = 5, backoff =
   }
 }
 
-async function pollSonioxTranscription(transcriptionId, timeoutMs = 300000, intervalMs = 1500) {
+async function pollSonioxTranscription(transcriptionId, timeoutMs = 300000, intervalMs = 1500, sessionId = activeSessionId) {
   const apiKey = getAPIKey();
   const start = Date.now();
   while (true) {
+    if (!isLiveSession(sessionId)) throw makeAbortError("Session reset");
     // Use timeout wrapper so a single stalled poll request doesn't hang indefinitely.
     let rsp;
     try {
@@ -385,6 +499,7 @@ async function pollSonioxTranscription(transcriptionId, timeoutMs = 300000, inte
     } catch (err) {
       // If a single poll request times out/aborts, retry this same job ID
       if (err && err.name === "AbortError") {
+               if (!isLiveSession(sessionId)) throw makeAbortError("Session reset");
         logDebug(`Poll ${transcriptionId} aborted after 30s; retrying…`);
         // optional small delay to avoid hot-looping
         await new Promise(r => setTimeout(r, intervalMs));
@@ -412,12 +527,14 @@ async function fetchSonioxTranscriptText(
   transcriptionId,
   retries = 5,
   delayMs = 2000,
-  perAttemptTimeoutMs = 30000
+  perAttemptTimeoutMs = 30000,
+  sessionId = activeSessionId
 ) {
-  const apiKey = getAPIKey();
-  let attempt = 0;
+   const apiKey = getAPIKey();
+   let attempt = 0;
 
   while (true) {
+    if (!isLiveSession(sessionId)) throw makeAbortError("Session reset");
     try {
       const rsp = await fetchWithTimeout(
         `${getSonioxBase()}/transcriptions/${transcriptionId}/transcript`,
@@ -438,7 +555,8 @@ async function fetchSonioxTranscriptText(
     } catch (err) {
       // Treat aborted/timeout attempts as retryable
       if (err && err.name === "AbortError") {
-        // fall through to retry logic below
+        if (!isLiveSession(sessionId)) throw makeAbortError("Session reset");
+        // else fall through to retry logic below (timeout etc.)
       }
       attempt += 1;
       if (attempt > retries) {
@@ -586,7 +704,7 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
  // --- New: Transcribe Chunk Directly ---
 
 // Sends the WAV blob to Soniox and returns the transcript text; cleans up after.
- async function transcribeChunkDirectly(wavBlob, chunkNum) {
+ async function transcribeChunkDirectly(wavBlob, chunkNum, sessionId = activeSessionId) {
    // Build a domain/context string like your old prompt, but Soniox expects 'context'
   const context =
     "Doctor-patient consultation. Mostly Norwegian; sometimes English. " +
@@ -602,22 +720,24 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
     // 3) poll until done, timeout scales with audio length
     const secs = estimateWavSeconds(wavBlob);
     const timeoutMs = Math.max(300000, Math.ceil(secs * 4000)); // >=5 min, ~4× audio length
-    await pollSonioxTranscription(txId, timeoutMs, 1500);
+    await pollSonioxTranscription(txId, timeoutMs, 1500, sessionId);
     // 4) fetch final text
-    const text = await fetchSonioxTranscriptText(txId);
+    const text = await fetchSonioxTranscriptText(txId, 5, 2000, 30000, sessionId);
     // 5) best-effort cleanup
     await cleanupSonioxResources({ transcriptionId: txId, fileId });
     return text || "";
   } catch (error) {
-     logError(`Error transcribing chunk ${chunkNum}:`, error);
-    // try to clean up anything we created
+    // If user hit Start again, this is expected — don't poison the new session UI/state.
+    if (!isLiveSession(sessionId) || error?.name === "AbortError") {
+      await cleanupSonioxResources({ transcriptionId: txId, fileId });
+      return "";
+    }
+
+    logError(`Error transcribing chunk ${chunkNum}:`, error);
     await cleanupSonioxResources({ transcriptionId: txId, fileId });
-     updateStatusMessage(
-       "Transcription error with Soniox API. Check key/credits or try again.",
-       "red"
-     );
-     transcriptionError = true;
-     return `[Error transcribing chunk ${chunkNum}]`;
+    safeUpdateStatus(sessionId, "Transcription error with Soniox API. Check key/credits or try again.", "red");
+    safeSetTranscriptionError(sessionId, true);
+    return `[Error transcribing chunk ${chunkNum}]`;
    }
  }
 
@@ -625,48 +745,62 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
 // --- Transcription Queue Processing ---
 // Adds a processed chunk to the queue and processes chunks sequentially.
 function enqueueTranscription(wavBlob, chunkNum) {
-  transcriptionQueue.push({ chunkNum, wavBlob });
+  const sessionId = activeSessionId;
+  transcriptionQueue.push({ sessionId, chunkNum, wavBlob });
   enqueuedChunks += 1;
 
     // Always schedule a kick; the worker will no-op if already running.
   // Using a microtask avoids races where isProcessingQueue flips after we check it.
   queueMicrotask(() => {
-    processTranscriptionQueue();
+    processTranscriptionQueue(sessionId);
   });
 }
 
 
-async function processTranscriptionQueue() {
-  // If queue already in progress, wait for it to finish before continuing.
-  if (isProcessingQueue) {
-    while (isProcessingQueue) {
-      await new Promise(r => setTimeout(r, 100));
+async function processTranscriptionQueue(sessionId = activeSessionId) {
+  // Don't let a previous session block this one.
+  if (!isLiveSession(sessionId)) return;
+
+  // If a worker is already running for THIS session, no-op.
+  if (isProcessingQueue && processingSessionId === sessionId) return;
+
+  // If an old-session worker is still running, we *don't* wait.
+  // It will self-terminate on the session checks below.
+  isProcessingQueue = true;
+  processingSessionId = sessionId;
+
+  try {
+    while (transcriptionQueue.length > 0) {
+      const item = transcriptionQueue.shift();
+      if (!item || item.sessionId !== sessionId) continue;
+
+      const { chunkNum } = item;
+      let { wavBlob } = item;
+
+      assertLiveSession(sessionId);
+      logInfo(`Transcribing chunk ${chunkNum}...`);
+
+      const transcript = await transcribeChunkDirectly(wavBlob, chunkNum, sessionId);
+      if (!isLiveSession(sessionId)) return;
+
+      if (transcript) {
+        transcriptChunks[chunkNum] = transcript;
+        updateTranscriptionOutput();
+      }
+
+      wavBlob = null;
+    }
+  } finally {
+    if (processingSessionId === sessionId) {
+      isProcessingQueue = false;
+      if (manualStop && transcriptionQueue.length === 0 && !transcriptFrozen) {
+        updateTranscriptionOutput();
+      }
     }
   }
 
-  isProcessingQueue = true;
 
-  while (transcriptionQueue.length > 0) {
-    let { chunkNum, wavBlob } = transcriptionQueue.shift();
-    logInfo(`Transcribing chunk ${chunkNum}...`);
-
-    const transcript = await transcribeChunkDirectly(wavBlob, chunkNum);
-    transcriptChunks[chunkNum] = transcript;
-    updateTranscriptionOutput();
-    // free this chunk’s audio immediately
-    wavBlob = null;
-  }
-  
-
-  // Queue fully drained: flip the flag, then trigger a final UI update
-  // so the completion condition (requires !isProcessingQueue) can fire.
-  isProcessingQueue = false;
-
-  // Avoid a second final write after we've already frozen.
-  if (manualStop && transcriptionQueue.length === 0 && !transcriptFrozen) {
-    updateTranscriptionOutput();
-  }
- 
+   
 }
 
 // --- Removed: Polling functions (pollChunkTranscript) since we now transcribe directly ---
@@ -773,13 +907,15 @@ function updateTranscriptionOutput() {
   if (transcriptionElem) {
     transcriptionElem.value = combinedTranscript.trim();
   }
-  if (manualStop && transcriptionQueue.length === 0 && !isProcessingQueue) {
+  const sid = activeSessionId;
+  if (manualStop && !queueHasSessionWork(sid) && !isProcessingThisSession(sid)) {
     freezeCompletionTimer();
     if (!transcriptionError) {
       updateStatusMessage("Transcription finished!", "green");
       logInfo("Transcription complete.");
     } else {
-      logInfo("Transcription complete with errors; keeping error message visible.");
+      updateStatusMessage("Transcription finished (with errors)", "orange");
+      logInfo("Transcription complete with errors.");
     }
     transcriptFrozen = true;
   }
@@ -846,10 +982,16 @@ function scheduleChunk() {
 }
 
 function resetRecordingState() {
+  stopFinishWatchdog();
   // ─── Clear our quota-error flag for this session ───
   transcriptionError = false;
   // ─── Clear any old completion timer (we’re starting fresh) ───
-  resetCompletionTimerDisplay();enqueuedChunks = 0;
+  resetCompletionTimerDisplay();
+  enqueuedChunks = 0;
+  transcriptionQueue = [];
+isProcessingQueue = false;
+processingSessionId = 0;
+
   expectedChunks = 0;
   Object.values(pollingIntervals).forEach(interval => clearInterval(interval));
   pollingIntervals = {};
@@ -934,7 +1076,8 @@ function initRecording() {
     alert("Please enter your Soniox API key first.");
     return;
   }
-
+  // 🔥 Hard reset: abort/discard anything still pending from a previous Stop.
+  beginFreshSession();
     // NEW: Purge Soniox-side data immediately when a new recording session starts.
     // Fire-and-forget so the UI doesn't stall if Soniox is slow.
     cleanupSonioxAll().catch((err) => {
@@ -1144,12 +1287,14 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
   // Continue with the existing logic if not paused:
   if (audioFrames.length === 0 && !processedAnyAudioFrames) {
     // No speech ever detected: check if any real work exists
-    const hasWork =
-      transcriptionQueue.length > 0 || isProcessingQueue || pendingVADChunks.length > 0;
-    if (hasWork) {
-      updateStatusMessage("Finishing transcription...", "blue");
-      startCompletionTimer();
-    } else {
+const sid = activeSessionId;
+const hasWork = queueHasSessionWork(sid) || isProcessingThisSession(sid) || pendingVADChunks.length > 0;
+        if (hasWork) {
+          updateStatusMessage("Finishing transcription...", "blue");
+          startCompletionTimer();
+          // Ensure we ALWAYS flip to "finished" once the queue drains.
+          startFinishWatchdog(activeSessionId);
+        } else {
       // Pure silence → finalize immediately; timer remains 0
       updateTranscriptionOutput();
     }
@@ -1182,11 +1327,13 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
       } else {
         finalChunkProcessed = true;
         // There was speech/processing — decide based on remaining work.
-        const hasWork =
-          transcriptionQueue.length > 0 || isProcessingQueue || pendingVADChunks.length > 0;
+const sid = activeSessionId;
+const hasWork = queueHasSessionWork(sid) || isProcessingThisSession(sid) || pendingVADChunks.length > 0;
         if (hasWork) {
           updateStatusMessage("Finishing transcription...", "blue");
           startCompletionTimer();
+          // Ensure we ALWAYS flip to "finished" once the queue drains.
+          startFinishWatchdog(activeSessionId);
         } else {
           // Nothing left; finalize now (timer freezes via updateTranscriptionOutput)
           updateTranscriptionOutput();

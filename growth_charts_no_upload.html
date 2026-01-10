@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Bergen Growth Study – Auto PDF Digitizer (GitHub Pages)</title>
+  <title>Bergen Growth Study – Auto PDF Digitizer (No Upload)</title>
   <style>
     :root { color-scheme: light; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 16px; }
@@ -22,17 +22,6 @@
     #debugSvgHost { position:absolute; left:-99999px; top:-99999px; width:1px; height:1px; overflow:hidden; }
     .warn { color:#8a4b00; }
   </style>
-
-  <!--
-    ✅ No uploads, runs on GitHub Pages.
-    Put PDFs in: /vekstkurver/ at repo root, e.g.
-      /vekstkurver/gutter01.pdf
-      /vekstkurver/gutter15.pdf
-      /vekstkurver/jenter01.pdf
-      /vekstkurver/jenter15.pdf
-      /vekstkurver/BGS1-20210307N4-19M.pdf
-      /vekstkurver/BGS1-20200307N4-19F.pdf
-  -->
 </head>
 <body>
   <h1>Bergen Growth Study – auto digitized growth charts (no upload)</h1>
@@ -40,9 +29,9 @@
   <div class="card">
     <div class="row">
       <div class="muted" style="flex:1; min-width: 360px;">
-        Loads the correct PDF automatically based on <b>sex</b> + <b>age</b> and digitizes percentile curves at runtime.
+        Runs fully in-browser. Loads the correct PDF automatically based on <b>sex</b> + <b>age</b> and digitizes percentile curves at runtime.
         <div class="warn" style="margin-top:6px;">
-          Note: PDF.js SVG backend is deprecated (warning in console), but still works. This build prefers heuristic panel layout for 0–1 and 1–5 charts.
+          PDFs must be in <code>./vekstkurver/</code> next to this HTML in your GitHub Pages output.
         </div>
       </div>
 
@@ -57,35 +46,26 @@
   <div class="card">
     <div class="row">
       <label>
-        Sex
+        Gender
         <select id="sex">
-          <option value="male">Male (gutter)</option>
-          <option value="female">Female (jenter)</option>
+          <option value="male">Boy</option>
+          <option value="female">Girl</option>
         </select>
       </label>
 
       <label>
         Age (years)
-        <input id="ageYears" type="number" min="0" max="19" step="1" value="2" />
+        <input id="ageYears" type="number" min="0" max="19" step="0.1" value="10" />
       </label>
 
       <label>
-        Age (months)
-        <input id="ageMonthsPart" type="number" min="0" max="11" step="1" value="0" />
+        Height (cm)
+        <input id="heightCm" type="number" step="0.1" value="140" />
       </label>
 
       <label>
-        Metric
-        <select id="metric">
-          <option value="weight-for-age">Weight-for-age (kg)</option>
-          <option value="height-for-age">Height/length-for-age (cm)</option>
-          <option value="head-circumference-for-age">Head circumference-for-age (cm)</option>
-        </select>
-      </label>
-
-      <label id="valLabel">
-        Value
-        <input id="value" type="number" step="0.1" value="12" />
+        Weight (kg)
+        <input id="weightKg" type="number" step="0.1" value="50" />
       </label>
 
       <button id="plotBtn">Show chart</button>
@@ -93,9 +73,9 @@
     </div>
 
     <div class="row" style="margin-top:10px;">
-      <div class="pill">Selected chart: <span id="chartKey">–</span></div>
-      <div class="pill">Computed point: <span id="pointInfo">–</span></div>
-      <div class="pill">Percentile estimate: <span id="pctInfo">–</span></div>
+      <div class="pill">Selected PDF: <span id="chartKey">–</span></div>
+      <div class="pill">Plotted points: <span id="pointInfo">–</span></div>
+      <div class="pill">Percentiles: <span id="pctInfo">–</span></div>
     </div>
   </div>
 
@@ -111,19 +91,21 @@
 
   <div id="debugSvgHost"></div>
 
-  <!-- PDF.js (legacy UMD build) -->
+  <!-- PDF.js (legacy UMD build so this works as a single HTML file) -->
   <script src="https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.min.js"></script>
 
   <script>
     /********************************************************************
-     * In-memory dataset output:
+     * In-memory dataset output (as requested):
      * curves[sex][ageRange][metric][percentile] = [{age: months, value: ...}, ...]
      ********************************************************************/
     const curves = { male: {}, female: {} };
     const PERCENTILES = [3,10,25,50,75,90,97];
+
+    // Extraction render scale (higher = more accurate, slower)
     const EXTRACT_SCALE = 2.5;
 
-    // PDFs are served from /vekstkurver on GitHub Pages
+    // PDF catalog (no upload).
     const pdfCatalog = {
       male: {
         "0-1": "./vekstkurver/gutter01.pdf",
@@ -137,15 +119,23 @@
       },
     };
 
-    // Optional overrides (not used by default)
+    /********************************************************************
+     * Optional manual calibration override:
+     * panelCalOverride[sex][ageRange][metric] = {
+     *   x: { minAge, maxAge, leftPx, rightPx },
+     *   y: { minVal, maxVal, bottomPx, topPx }
+     * }
+     ********************************************************************/
     const panelCalOverride = {
       male: { "0-1": {}, "1-5": {}, "4-19": {} },
       female: { "0-1": {}, "1-5": {}, "4-19": {} },
     };
 
+    // Caches
     const pdfCache = new Map();    // url -> pdfDoc
     const pageCache = new Map();   // url -> { page, viewport, canvas, svg, textItems, panels, meta }
 
+    // UI
     const $ = (id) => document.getElementById(id);
     const statusEl = $("status");
     const debugWrap = $("debugWrap");
@@ -159,37 +149,6 @@
     function setDebugVisible(on) { debugWrap.style.display = on ? "block" : "none"; }
     function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
-    function metricUnit(metric) {
-      if (metric === "weight-for-age") return "kg";
-      if (metric === "height-for-age") return "cm";
-      if (metric === "head-circumference-for-age") return "cm";
-      return "";
-    }
-    function updateValueInputLabel() {
-      const metric = $("metric").value;
-      const unit = metricUnit(metric);
-      $("valLabel").childNodes[0].textContent = `Value (${unit})`;
-      $("value").step = "0.1";
-    }
-
-    function getAgeMonthsFromInputs() {
-      const years = parseInt($("ageYears").value || "0", 10);
-      const mos = parseInt($("ageMonthsPart").value || "0", 10);
-      return years * 12 + mos;
-    }
-    function ageToRangeKey(ageMonths) {
-      if (ageMonths <= 12) return "0-1";
-      if (ageMonths <= 60) return "1-5";
-      if (ageMonths <= 228) return "4-19";
-      return null;
-    }
-    function rangeKeyToMinMaxMonths(rangeKey) {
-      if (rangeKey === "0-1") return { minAge: 0, maxAge: 12 };
-      if (rangeKey === "1-5") return { minAge: 12, maxAge: 60 };
-      if (rangeKey === "4-19") return { minAge: 48, maxAge: 228 };
-      return null;
-    }
-
     function clearCanvas() {
       chartCanvas.width = 10;
       chartCanvas.height = 10;
@@ -197,6 +156,29 @@
       $("pointInfo").textContent = "–";
     }
 
+    function getAgeMonthsFromInput() {
+      const years = parseFloat($("ageYears").value || "0");
+      const y = clamp(isFinite(years) ? years : 0, 0, 19);
+      return Math.round(y * 12);
+    }
+
+    function ageToRangeKey(ageMonths) {
+      if (ageMonths <= 12) return "0-1";
+      if (ageMonths <= 60) return "1-5";
+      if (ageMonths <= 228) return "4-19";
+      return null;
+    }
+
+    function rangeKeyToMinMaxMonths(rangeKey) {
+      if (rangeKey === "0-1") return { minAge: 0, maxAge: 12 };
+      if (rangeKey === "1-5") return { minAge: 12, maxAge: 60 };
+      if (rangeKey === "4-19") return { minAge: 48, maxAge: 228 };
+      return null;
+    }
+
+    /********************************************************************
+     * PDF load (auto from catalog)
+     ********************************************************************/
     async function loadPdf(url) {
       if (pdfCache.has(url)) return pdfCache.get(url);
 
@@ -317,7 +299,7 @@
         if (bb.width < W * 0.45) continue;
         if (bb.height < H * 0.12) continue;
 
-        candidates.push({ x: bb.x, y: bb.y, width: bb.width, height: bb.height });
+        candidates.push({ x: bb.x, y: bb.y, width: bb.width, height: bb.height, el });
       }
 
       candidates.sort((a,b) => bboxArea(b) - bboxArea(a));
@@ -335,7 +317,6 @@
       const W = viewport.width, H = viewport.height;
       const ageRange = meta?.ageRange || null;
 
-      // Central plot region bounds (normalized)
       const left = 0.08 * W;
       const right = 0.92 * W;
       const top = 0.18 * H;
@@ -353,39 +334,16 @@
         ];
       }
 
-      if (ageRange === "4-19") return [{ x: left, y: top, width: w, height: h }];
+      if (ageRange === "4-19") {
+        return [{ x: left, y: top, width: w, height: h }];
+      }
+
       return [{ x: left, y: top, width: w, height: h }];
     }
 
     function associateMetricsToPanels(textItems, panels, ageRangeKey) {
-      const labelItems = textItems
-        .filter(t => /Vekt|Lengde|Høyde|Hodeomkrets/i.test(t.str))
-        .map(t => ({...t, lc: t.str.toLowerCase()}));
-
-      function metricFromLabel(lc) {
-        if (lc.includes("vekt")) return "weight-for-age";
-        if (lc.includes("lengde") || lc.includes("høyde") || lc.includes("hoyde")) return "height-for-age";
-        if (lc.includes("hodeomkrets")) return "head-circumference-for-age";
-        return null;
-      }
-
-      // IMPORTANT: don't wipe metrics if already present (heuristic panels set metric)
+      // Keep metrics if already set (heuristic panels do this)
       for (const p of panels) p.metric = (p.metric ?? null);
-
-      if (labelItems.length) {
-        for (const li of labelItems) {
-          const m = metricFromLabel(li.lc);
-          if (!m) continue;
-          let best = null;
-          for (const p of panels) {
-            const cx = p.x + p.width/2, cy = p.y + p.height/2;
-            const d = Math.hypot(li.x - cx, li.y - cy);
-            if (!best || d < best.d) best = { p, d, m };
-          }
-          // Only set if missing (avoid overriding heuristic mapping)
-          if (best && !best.p.metric) best.p.metric = best.m;
-        }
-      }
 
       const desired = (panels.length >= 3)
         ? ["head-circumference-for-age","height-for-age","weight-for-age"]
@@ -402,6 +360,7 @@
           if (p.metric === "head-circumference-for-age") p.metric = null;
         }
       }
+
       return panels;
     }
 
@@ -411,11 +370,11 @@
         if (t.x < box.xMin || t.x > box.xMax || t.y < box.yMin || t.y > box.yMax) continue;
         if (/^P\d+$/i.test(t.str)) continue;
 
-        // Accept "12", "12.5", "12,5", and "120cm" / "12 kg" (strip units/spaces)
         let s = (t.str || "").trim();
         s = s.replace(/\s+/g, "");
         const m = s.match(/^(-?\d+(?:[.,]\d+)?)/);
         if (!m) continue;
+
         const val = parseFloat(m[1].replace(",", "."));
         if (!isFinite(val)) continue;
         nums.push({ val, x: t.x, y: t.y, raw: t.str });
@@ -440,7 +399,6 @@
         yMax: panel.y + H * 1.14
       };
 
-      // also include a narrow band inside the panel edges (some PDFs place ticks inside)
       const innerLeft = {
         xMin: panel.x - W * 0.02,
         xMax: panel.x + W * 0.14,
@@ -454,14 +412,16 @@
         yMax: panel.y + H * 1.08
       };
 
-      const nums = [
+      let nums = [
         ...findNumericTextInBox(textItems, leftBox),
         ...findNumericTextInBox(textItems, rightBox),
         ...findNumericTextInBox(textItems, innerLeft),
         ...findNumericTextInBox(textItems, innerRight),
       ];
 
-      // de-dup by value
+      // Filter out labels far below/above panel
+      nums = nums.filter(n => n.y <= panel.y + H * 1.02 && n.y >= panel.y - H * 0.02);
+
       const byVal = new Map();
       for (const n of nums) {
         const k = n.val.toFixed(3);
@@ -471,11 +431,24 @@
 
       const ticks = [];
       for (const arr of byVal.values()) {
-        // pick median y to stabilize
         arr.sort((a,b) => a.y - b.y);
         ticks.push(arr[Math.floor(arr.length/2)]);
       }
       ticks.sort((a,b) => a.y - b.y);
+      return ticks;
+    }
+
+    function filterTickValuesForMetric(ageRangeKey, metric, ticks) {
+      if (metric === "weight-for-age") {
+        const upper = (ageRangeKey === "4-19") ? 160 : 60;
+        return ticks.filter(t => t.val >= 0 && t.val <= upper);
+      }
+      if (metric === "height-for-age") {
+        return ticks.filter(t => t.val >= 60 && t.val <= 230);
+      }
+      if (metric === "head-circumference-for-age") {
+        return ticks.filter(t => t.val >= 25 && t.val <= 80);
+      }
       return ticks;
     }
 
@@ -488,7 +461,9 @@
         return { x: { ...override.x }, y: { ...override.y }, source: "manual-override" };
       }
 
-      const ticks = extractYTicks(textItems, panel);
+      const ticksRaw = extractYTicks(textItems, panel);
+      const ticks = filterTickValuesForMetric(ageRangeKey, metric, ticksRaw);
+
       let minVal = null, maxVal = null;
       if (ticks.length >= 2) {
         minVal = Math.min(...ticks.map(t => t.val));
@@ -560,8 +535,16 @@
       const ySplit = (topYs[topYs.length-1] + botYs[0]) / 2;
 
       const pad = P.height * 0.01;
-      const topPanel = { x: P.x, y: P.y, width: P.width, height: Math.max(10, (ySplit - pad) - P.y), metric: "height-for-age" };
-      const botPanel = { x: P.x, y: Math.min(P.y + P.height - 10, ySplit + pad), width: P.width, height: Math.max(10, (P.y + P.height) - (ySplit + pad)), metric: "weight-for-age" };
+      const topPanel = {
+        x: P.x, y: P.y, width: P.width, height: Math.max(10, (ySplit - pad) - P.y),
+        metric: "height-for-age",
+      };
+      const botPanel = {
+        x: P.x, y: Math.min(P.y + P.height - 10, ySplit + pad), width: P.width,
+        height: Math.max(10, (P.y + P.height) - (ySplit + pad)),
+        metric: "weight-for-age",
+      };
+
       return [topPanel, botPanel];
     }
 
@@ -582,7 +565,6 @@
 
       const meta = parseSexAndAgeRangeFromText(textItems);
 
-      // ✅ Force heuristic panels for 0–1 and 1–5 (stable layout, avoids SVG over-detection)
       let panels;
       if (meta?.ageRange === "0-1" || meta?.ageRange === "1-5") {
         panels = detectPanelsHeuristic(meta, viewport);
@@ -604,7 +586,7 @@
     }
 
     /********************************************************************
-     * Curve extraction (vector-first; raster fallback)
+     * Curve extraction
      ********************************************************************/
     function getRgb(strokeStr) {
       if (!strokeStr) return null;
@@ -646,12 +628,13 @@
 
       if (!stroke || stroke === "none") return false;
       if (!(fill === "none" || fill === "rgba(0, 0, 0, 0)" || fill === "transparent")) return false;
+
       if (!(sw > 0.18 && sw < 2.6)) return false;
 
       const rgb = getRgb(stroke);
       if (rgb) {
         const s = rgbSum(rgb);
-        if (s > 620) return false; // drop very light gridlines
+        if (s > 620) return false;
       }
 
       if (bb.width < panel.width * 0.25) return false;
@@ -660,6 +643,7 @@
       let len = 0;
       try { len = pathEl.getTotalLength(); } catch { return false; }
       if (len < panel.width * 0.9) return false;
+
       return true;
     }
 
@@ -761,6 +745,62 @@
       return picked.slice(0, 7).map(x => x.poly);
     }
 
+    async function extractCurvesForPanel(pageInfo, panel) {
+      const { meta, textItems, svg, canvas } = pageInfo;
+      const sex = meta.sex, ageRangeKey = meta.ageRange;
+      const metric = panel.metric;
+
+      if (!sex || !ageRangeKey || !metric) return { ok: false, reason: "Missing page meta or metric." };
+
+      const cal = calibratePanel(panel, sex, ageRangeKey, metric, textItems);
+      if (!cal) return { ok: false, reason: "Calibration failed (no range)." };
+      if (cal.y.minVal == null || cal.y.maxVal == null) {
+        return { ok: false, reason: "Calibration failed: couldn't parse y-axis tick labels (min/max)." };
+      }
+
+      const store = (curves[sex][ageRangeKey] ||= {});
+      (store[metric] ||= {});
+      (store._cal ||= {});
+
+      let out = {};
+      let used = "vector";
+
+      if (svg) {
+        const allPaths = Array.from(svg.querySelectorAll("path"));
+        const candidates = allPaths.filter(p => isLikelyPercentilePath(p, panel));
+
+        const polys = candidates.map(p => samplePathPoints(p, panel, 560));
+        const picked = pickSevenCurves(polys, panel.width, panel.height);
+
+        for (let i=0; i<picked.length && i<PERCENTILES.length; i++) {
+          const pct = PERCENTILES[i];
+          const data = polyToData(picked[i], cal, panel.width, panel.height);
+          if (data) out[pct] = data;
+        }
+
+        if (Object.keys(out).length < 6) {
+          used = "raster-fallback";
+          out = await rasterFallbackExtract(panel, canvas, cal);
+        }
+      } else {
+        used = "raster-only";
+        out = await rasterFallbackExtract(panel, canvas, cal);
+      }
+
+      for (const [pct, series] of Object.entries(out)) store[metric][pct] = series;
+
+      store._cal[metric] = {
+        x: cal.x, y: cal.y,
+        panelPx: { w: panel.width, h: panel.height },
+        panelBox: { x: panel.x, y: panel.y, w: panel.width, h: panel.height },
+        source: cal.source,
+        extractedBy: used,
+        pdfUrl: pageInfo.url
+      };
+
+      return { ok: true, used, cal, curveCount: Object.keys(out).length };
+    }
+
     function grayMask(imgData, w, h) {
       const mask = new Uint8Array(w*h);
       const d = imgData.data;
@@ -772,7 +812,6 @@
       }
       return mask;
     }
-
     function traceCurvesFromMask(mask, w, h, desiredTracks = 7) {
       const tracks = [];
       const maxJump = Math.max(10, Math.round(h * 0.05));
@@ -840,7 +879,6 @@
       polys.sort((A,B) => (yAtX(B, midX) - yAtX(A, midX)));
       return polys;
     }
-
     async function rasterFallbackExtract(panel, pageCanvas, cal) {
       const tmp = document.createElement("canvas");
       tmp.width = Math.ceil(panel.width);
@@ -862,61 +900,6 @@
         if (data) out[p] = data;
       }
       return out;
-    }
-
-    async function extractCurvesForPanel(pageInfo, panel) {
-      const { meta, textItems, svg, canvas } = pageInfo;
-      const sex = meta.sex, ageRangeKey = meta.ageRange;
-      const metric = panel.metric;
-
-      if (!sex || !ageRangeKey || !metric) return { ok: false, reason: "Missing page meta or metric." };
-
-      const cal = calibratePanel(panel, sex, ageRangeKey, metric, textItems);
-      if (!cal) return { ok: false, reason: "Calibration failed (no range)." };
-      if (cal.y.minVal == null || cal.y.maxVal == null) {
-        return { ok: false, reason: "Calibration failed: couldn't parse y-axis tick labels (min/max)." };
-      }
-
-      const store = (curves[sex][ageRangeKey] ||= {});
-      (store[metric] ||= {});
-      (store._cal ||= {});
-
-      let out = {};
-      let used = "vector";
-
-      if (svg) {
-        const allPaths = Array.from(svg.querySelectorAll("path"));
-        const candidates = allPaths.filter(p => isLikelyPercentilePath(p, panel));
-        const polys = candidates.map(p => samplePathPoints(p, panel, 560));
-        const picked = pickSevenCurves(polys, panel.width, panel.height);
-
-        for (let i=0; i<picked.length && i<PERCENTILES.length; i++) {
-          const pct = PERCENTILES[i];
-          const data = polyToData(picked[i], cal, panel.width, panel.height);
-          if (data) out[pct] = data;
-        }
-
-        if (Object.keys(out).length < 6) {
-          used = "raster-fallback";
-          out = await rasterFallbackExtract(panel, canvas, cal);
-        }
-      } else {
-        used = "raster-only";
-        out = await rasterFallbackExtract(panel, canvas, cal);
-      }
-
-      for (const [pct, series] of Object.entries(out)) store[metric][pct] = series;
-
-      store._cal[metric] = {
-        x: cal.x, y: cal.y,
-        panelPx: { w: panel.width, h: panel.height },
-        panelBox: { x: panel.x, y: panel.y, w: panel.width, h: panel.height },
-        source: cal.source,
-        extractedBy: used,
-        pdfUrl: pageInfo.url
-      };
-
-      return { ok: true, used, cal, curveCount: Object.keys(out).length };
     }
 
     async function ensureExtracted(sex, ageRangeKey) {
@@ -989,104 +972,147 @@
       return { ok:false, reason:"Failed to bracket (unexpected curve ordering)." };
     }
 
+    function drawBigDot(ctx, x, y) {
+      const r = 9;
+      ctx.save();
+      ctx.beginPath();
+      ctx.fillStyle = "red";
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 4;
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 1.5;
+      ctx.arc(x, y, r + 1, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawCurvesOnFullPage(ctx, cal, metricCurves) {
+      if (!cal || !metricCurves) return;
+
+      const box = cal.panelBox;
+      const panelW = cal.panelPx.w;
+      const panelH = cal.panelPx.h;
+
+      ctx.save();
+      ctx.lineWidth = 1.3;
+      ctx.globalAlpha = 0.55;
+      ctx.strokeStyle = "#000";
+
+      for (const p of PERCENTILES) {
+        const series = metricCurves[p];
+        if (!series) continue;
+        ctx.beginPath();
+        for (let i=0; i<series.length; i++) {
+          const pt = series[i];
+          const xRel = ((pt.age - cal.x.minAge) / (cal.x.maxAge - cal.x.minAge)) * panelW;
+          const yRel = panelH - ((pt.value - cal.y.minVal) / (cal.y.maxVal - cal.y.minVal)) * panelH;
+          const x = box.x + xRel;
+          const y = box.y + yRel;
+          if (i === 0) ctx.moveTo(x,y);
+          else ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function pointForMetric(cal, ageMonths, value) {
+      const box = cal.panelBox;
+      const panelW = cal.panelPx.w;
+      const panelH = cal.panelPx.h;
+      const xRel = ((ageMonths - cal.x.minAge) / (cal.x.maxAge - cal.x.minAge)) * panelW;
+      const yRel = panelH - ((value - cal.y.minVal) / (cal.y.maxVal - cal.y.minVal)) * panelH;
+      return { x: box.x + xRel, y: box.y + yRel };
+    }
+
     async function drawSelectedChart() {
       const sex = $("sex").value;
-      const metric = $("metric").value;
-      const ageMonths = getAgeMonthsFromInputs();
+      const ageMonths = getAgeMonthsFromInput();
       const rangeKey = ageToRangeKey(ageMonths);
 
-      $("chartKey").textContent = `${sex} / ${rangeKey || "out-of-range"} / ${metric}`;
-
       if (!rangeKey) {
+        $("chartKey").textContent = "–";
         $("pctInfo").textContent = "Age out of supported ranges (0–19y).";
-        clearCanvas();
-        return;
-      }
-      if (metric === "head-circumference-for-age" && rangeKey === "4-19") {
-        $("pctInfo").textContent = "Head circumference chart is not present for 4–19 in these PDFs.";
         clearCanvas();
         return;
       }
 
       setStatus("");
       appendStatus("Preparing selected chart...");
+      $("chartKey").textContent = `${sex} / ${rangeKey}`;
 
       await ensureExtracted(sex, rangeKey);
 
-      const cal = curves?.[sex]?.[rangeKey]?._cal?.[metric];
-      const metricCurves = curves?.[sex]?.[rangeKey]?.[metric];
-      if (!cal || !metricCurves) {
-        $("pctInfo").textContent = "Curves/calibration missing for this selection.";
+      const store = curves?.[sex]?.[rangeKey];
+      const calH = store?._cal?.["height-for-age"];
+      const calW = store?._cal?.["weight-for-age"];
+
+      const pdfUrl = calW?.pdfUrl || calH?.pdfUrl;
+      if (!pdfUrl) {
+        $("pctInfo").textContent = "Missing PDF calibration.";
         clearCanvas();
         return;
       }
 
-      const value = parseFloat($("value").value);
-      if (!isFinite(value)) {
-        $("pctInfo").textContent = "Enter a numeric value.";
-        clearCanvas();
-        return;
-      }
+      const pageInfo = await extractFromPdfUrl(pdfUrl);
 
-      const pageInfo = await extractFromPdfUrl(cal.pdfUrl);
-
-      chartCanvas.width = Math.ceil(cal.panelPx.w);
-      chartCanvas.height = Math.ceil(cal.panelPx.h);
-
-      const box = cal.panelBox;
+      chartCanvas.width = pageInfo.canvas.width;
+      chartCanvas.height = pageInfo.canvas.height;
       chartCtx.clearRect(0,0,chartCanvas.width,chartCanvas.height);
-      chartCtx.drawImage(pageInfo.canvas, box.x, box.y, box.w, box.h, 0, 0, chartCanvas.width, chartCanvas.height);
+      chartCtx.drawImage(pageInfo.canvas, 0, 0);
 
-      // Overlay curves
-      chartCtx.save();
-      chartCtx.lineWidth = 1.6;
-      chartCtx.globalAlpha = 0.95;
-      for (const p of PERCENTILES) {
-        const series = metricCurves[p];
-        if (!series) continue;
-        chartCtx.beginPath();
-        for (let i=0; i<series.length; i++) {
-          const pt = series[i];
-          const x = ((pt.age - cal.x.minAge) / (cal.x.maxAge - cal.x.minAge)) * chartCanvas.width;
-          const y = chartCanvas.height - ((pt.value - cal.y.minVal) / (cal.y.maxVal - cal.y.minVal)) * chartCanvas.height;
-          if (i === 0) chartCtx.moveTo(x,y); else chartCtx.lineTo(x,y);
-        }
-        chartCtx.stroke();
+      if (calH && store?.["height-for-age"]) drawCurvesOnFullPage(chartCtx, calH, store["height-for-age"]);
+      if (calW && store?.["weight-for-age"]) drawCurvesOnFullPage(chartCtx, calW, store["weight-for-age"]);
+
+      const heightVal = parseFloat($("heightCm").value);
+      const weightVal = parseFloat($("weightKg").value);
+
+      const points = [];
+      const pctLines = [];
+
+      if (isFinite(heightVal) && calH && store?.["height-for-age"]) {
+        const pt = pointForMetric(calH, ageMonths, heightVal);
+        drawBigDot(chartCtx, pt.x, pt.y);
+        points.push(`height@(${pt.x.toFixed(0)},${pt.y.toFixed(0)})`);
+        const est = percentileEstimate(sex, rangeKey, "height-for-age", ageMonths, heightVal);
+        pctLines.push(`Height: ${est.ok ? est.text : "n/a"}`);
+      } else {
+        pctLines.push("Height: –");
       }
-      chartCtx.restore();
 
-      // User dot
-      const x = ((ageMonths - cal.x.minAge) / (cal.x.maxAge - cal.x.minAge)) * chartCanvas.width;
-      const y = chartCanvas.height - ((value - cal.y.minVal) / (cal.y.maxVal - cal.y.minVal)) * chartCanvas.height;
+      if (isFinite(weightVal) && calW && store?.["weight-for-age"]) {
+        const pt = pointForMetric(calW, ageMonths, weightVal);
+        drawBigDot(chartCtx, pt.x, pt.y);
+        points.push(`weight@(${pt.x.toFixed(0)},${pt.y.toFixed(0)})`);
+        const est = percentileEstimate(sex, rangeKey, "weight-for-age", ageMonths, weightVal);
+        pctLines.push(`Weight: ${est.ok ? est.text : "n/a"}`);
+      } else {
+        pctLines.push("Weight: –");
+      }
 
-      chartCtx.save();
-      chartCtx.fillStyle = "red";
-      chartCtx.strokeStyle = "white";
-      chartCtx.lineWidth = 2;
-      chartCtx.beginPath();
-      chartCtx.arc(x, y, 5, 0, Math.PI*2);
-      chartCtx.fill();
-      chartCtx.stroke();
-      chartCtx.restore();
-
-      $("pointInfo").textContent = `age=${ageMonths}mo, value=${value} ${metricUnit(metric)} → px=(${x.toFixed(0)},${y.toFixed(0)})`;
-      const est = percentileEstimate(sex, rangeKey, metric, ageMonths, value);
-      $("pctInfo").textContent = est.ok ? est.text : `Error: ${est.reason}`;
+      $("pointInfo").textContent = points.length ? points.join(" | ") : "–";
+      $("pctInfo").textContent = pctLines.join("  •  ");
 
       if ($("debugToggle").checked) {
         debugOut.textContent =
-          `Selection: ${sex}/${rangeKey}/${metric}\n` +
-          `PDF: ${cal.pdfUrl}\n` +
-          `Calibration: x=[${cal.x.minAge},${cal.x.maxAge}] months; y=[${cal.y.minVal},${cal.y.maxVal}] ${metricUnit(metric)}\n` +
-          `Extraction: ${cal.extractedBy} (${cal.source})\n` +
-          `Curves present: ${PERCENTILES.filter(p=>metricCurves[p]).length}/7\n`;
+          `Selection: ${sex}/${rangeKey} (age=${ageMonths} months)\n` +
+          `PDF: ${pdfUrl}\n` +
+          `Height cal: ${calH ? `y=[${calH.y.minVal},${calH.y.maxVal}]` : "missing"}\n` +
+          `Weight cal: ${calW ? `y=[${calW.y.minVal},${calW.y.maxVal}]` : "missing"}\n`;
       }
     }
 
     $("debugToggle").addEventListener("change", (e) => setDebugVisible(e.target.checked));
-    $("metric").addEventListener("change", () => updateValueInputLabel());
-    $("ageYears").addEventListener("change", () => $("ageYears").value = clamp(parseInt($("ageYears").value || "0", 10), 0, 19));
-    $("ageMonthsPart").addEventListener("change", () => $("ageMonthsPart").value = clamp(parseInt($("ageMonthsPart").value || "0", 10), 0, 11));
+    $("ageYears").addEventListener("change", () => {
+      const v = parseFloat($("ageYears").value || "0");
+      $("ageYears").value = clamp(isFinite(v) ? v : 0, 0, 19);
+    });
 
     $("plotBtn").addEventListener("click", () => {
       drawSelectedChart().catch(e => {
@@ -1102,9 +1128,8 @@
       alert("Curves dataset is in the console as `curves`.");
     });
 
-    updateValueInputLabel();
     clearCanvas();
-    setStatus("Ready. Choose sex/age/metric, enter a value, then click “Show chart”.");
+    setStatus("Ready. Enter gender, age (years), height and/or weight, then click “Show chart”.");
   </script>
 </body>
 </html>

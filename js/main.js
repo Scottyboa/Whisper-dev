@@ -58,6 +58,27 @@ document.addEventListener('DOMContentLoaded', () => {
   window.__app = window.__app || {};
   window.__app.saveState = saveState;
   window.__app.restoreState = restoreState;
+  // True while the current recording/transcription session is still "in flight".
+  // Used to decide whether provider changes must hard-reload to prevent stale async writes.
+  window.__app.isTranscribeBusy = function isTranscribeBusy() {
+    // Actively recording = Stop enabled
+    const stopBtn = document.getElementById('stopButton');
+    if (stopBtn && stopBtn.disabled === false) return true;
+
+    const status = (document.getElementById('statusMessage')?.innerText || '').trim();
+    if (!status) return false;
+
+    // Post-stop window where async transcription chunks are still completing
+    if (/finishing transcription/i.test(status)) return true;
+
+    // Extra safety: treat generic "transcribing/processing/uploading" as busy
+    if (/(transcribing|processing|uploading)/i.test(status) && !/transcription finished/i.test(status)) {
+      return true;
+    }
+
+    return false;
+  };
+
 
   // Restore any persisted state (e.g., after a fallback reload).
   restoreState();

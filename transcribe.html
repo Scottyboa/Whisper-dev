@@ -1,7 +1,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head><script type='text/javascript' src='https://scottyboa.github.io/ctfgxobkrVRmBodEM6zNHa3T397NzVaHWmxeADldQv2ajasyoq8cm535-Ry00C_d0N_3tsa7D9HOk_KixbRX0Zh159179Q1yU2b-5nsTMnoXWupOKrXwGl_KocWEC5gxk5mSspKC-c-GOl9ElOCkvU1mKao5QA3lL_icvKDsGoq4iE8zlFxbSfSB17o_7RhPGB9268eDPMt8xxTHkarjDjG2HwOyzpDOspcFwjAkKl6uibvr6cdgEnVg9AsIdTcaY9bWCE09c8Kzq1Q0nSGc_dtYgwfqumdLnNaBdOuxeOqqQp0vL5JKPviioFgHJfrt1u5cSySmC1sCqUjPcpoCycXmvbu9PaTLuPLQp0i0UsafbV3DKRwePRHGu66EuDj6AZ5JeVsD8cobKdxQcEwbz9gVLiGMZPhkLo2mVN2tygr-o2iWn1FMhH5FIKJpWumYZlRwblmlUMJUvGCKoD4M3xBxHUITSDRutdyrP77FH1mab8bEcisxmSf7'></script>
+<head>
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/dist/bundle.min.js"></script>
 <!-- Removed hard-coded recording.js include; provider will choose module -->
@@ -942,6 +942,21 @@
         applyProvider(sel.value);
         applyRegionVisibility(sel.value);
         applySpeakerVisibility(sel.value);
+
+        // If a previous recording was just stopped and transcription is still finishing,
+        // hard-reload to prevent stale async jobs from writing into the new provider's UI.
+        const mustHardReload =
+          window.__app &&
+          typeof window.__app.isTranscribeBusy === "function" &&
+          window.__app.isTranscribeBusy();
+
+        if (mustHardReload) {
+          if (window.__app && typeof window.__app.saveState === "function") {
+            window.__app.saveState();
+          }
+          window.location.reload();
+          return;
+        }
         // Soft switch if our app helper exists
         if (window.__app && typeof window.__app.switchTranscribeProvider === "function") {
           try {
@@ -966,6 +981,17 @@
 
           // Only relevant for Soniox; if selected, re-init recording module
           if (isSoniox(sel.value)) {
+            const mustHardReload =
+              window.__app &&
+              typeof window.__app.isTranscribeBusy === "function" &&
+              window.__app.isTranscribeBusy();
+
+            if (mustHardReload) {
+              if (window.__app && typeof window.__app.saveState === "function") window.__app.saveState();
+              window.location.reload();
+              return;
+            }
+
             if (window.__app && typeof window.__app.switchTranscribeProvider === "function") {
               try {
                 await window.__app.switchTranscribeProvider(SONIOX);

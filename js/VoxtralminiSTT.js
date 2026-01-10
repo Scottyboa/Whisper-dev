@@ -114,6 +114,32 @@ let audioFrames = []; // Buffer for audio frames
 let transcriptionQueue = [];  // Queue of { chunkNumber, blob }
 let isProcessingQueue = false;
 
+// --- NEW: Session cancel / abort plumbing ---
+// Each time Start is clicked, we create a fresh session + abort controller.
+// Anything still running from the previous session gets aborted and/or ignored.
+let transcriptionSessionAbortController = new AbortController();
+let processingQueueSessionId = null; // tracks which session currently owns the queue worker
+
+function beginFreshTranscriptionSession() {
+  // Abort any in-flight network requests/transcriptions from the previous session.
+  try { transcriptionSessionAbortController.abort("new session started"); } catch (_) {}
+  transcriptionSessionAbortController = new AbortController();
+
+  // Hard-clear any pending work so Start always begins clean.
+  transcriptionQueue = [];
+  isProcessingQueue = false;
+  processingQueueSessionId = null;
+
+  // Also clear any buffered VAD segments so we don't accidentally flush old audio.
+  pendingVADChunks = [];
+
+  // Release chunk stop/flush locks if they were left set by an earlier run.
+  chunkProcessingLock = false;
+  pendingStop = false;
+  manualStop = false;
+}
+
+
 // --- Utility Functions ---
 function updateStatusMessage(message, color = "#333") {
   const statusElem = document.getElementById("statusMessage");
@@ -147,7 +173,7 @@ function stopMicrophone() {
     audioReader = null;
   }
 }
-  
+
 // --- Base64 Helper Functions (kept for legacy) ---
 function arrayBufferToBase64(buffer) {
   let binary = "";
@@ -172,10 +198,11 @@ async function blobToBase64(blob) {
   return arrayBufferToBase64(buffer);
 }
 
-async function sendChunkChat({ apiKey, model, audioBase64 }, retries = 5, backoff = 2000) {
+async function sendChunkChat({ apiKey, model, audioBase64 }, { signal } = {}, retries = 5, backoff = 2000) {
   try {
     return await fetch("https://api.mistral.ai/v1/chat/completions", {
       method: "POST",
+      signal,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
@@ -200,10 +227,11 @@ async function sendChunkChat({ apiKey, model, audioBase64 }, retries = 5, backof
       }),
     });
   } catch (err) {
+    if (signal?.aborted) throw err;
     if (retries > 0) {
       console.warn(`Chunk failed, retrying in ${backoff}ms… (${retries} left)`);
       await new Promise(res => setTimeout(res, backoff));
-      return sendChunkChat({ apiKey, model, audioBase64 }, retries - 1, backoff * 1.5);
+      return sendChunkChat({ apiKey, model, audioBase64 }, { signal }, retries - 1, backoff * 1.5);
     }
     throw err;
   }
@@ -225,29 +253,30 @@ function getAPIKey() {
   return sessionStorage.getItem("user_api_key");
 }
 
-async function sendChunk(formData, retries = 5, backoff = 2000) {
+async function sendChunk(formData, { signal } = {}, retries = 5, backoff = 2000) {
   // grab the API key at call-time
   const apiKey = getAPIKey();
   if (!apiKey) throw new Error("API key not available");
-   try {
-     return await fetch(
-       "https://api.mistral.ai/v1/chat/completions",
-       {
-         method: "POST",
-         headers: { Authorization: `Bearer ${apiKey}` },
-         body: formData,
-       }
-     );
-   } catch (err) {
-     if (retries > 0) {
-       console.warn(`Chunk failed, retrying in ${backoff}ms… (${retries} left)`);
-       await new Promise(res => setTimeout(res, backoff));
-       return sendChunk(formData, retries - 1, backoff * 1.5);
-     }
-     // out of retries → bubble error
-     throw err;
-   }
- }
+  try {
+    return await fetch(
+      "https://api.mistral.ai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: formData,
+        signal,
+      }
+    );
+  } catch (err) {
+    if (retries > 0) {
+      console.warn(`Chunk failed, retrying in ${backoff}ms… (${retries} left)`);
+      await new Promise(res => setTimeout(res, backoff));
+      return sendChunk(formData, { signal }, retries - 1, backoff * 1.5);
+    }
+    throw err;
+  }
+}
+
 
 // --- File Blob Processing ---
 // Previously used for encryption; now simply returns the original blob along with markers.
@@ -273,14 +302,14 @@ async function encryptFileBlob(blob) {
 // It returns a 16-bit PCM WAV Blob.
 async function processAudioUsingOfflineContext(pcmFloat32, originalSampleRate, numChannels) {
   const targetSampleRate = 16000;
-  
+
   // Calculate the number of frames
   const numFrames = pcmFloat32.length / numChannels;
-  
+
   // Create an AudioBuffer in a temporary AudioContext
   let tempCtx = new AudioContext();
   let originalBuffer = tempCtx.createBuffer(numChannels, numFrames, originalSampleRate);
-  
+
   if (numChannels === 1) {
     originalBuffer.copyToChannel(pcmFloat32, 0);
   } else {
@@ -310,15 +339,15 @@ async function processAudioUsingOfflineContext(pcmFloat32, originalSampleRate, n
     monoBuffer = originalBuffer;
   }
   tempCtx.close();
-  
+
   // Set up OfflineAudioContext for resampling
   const duration = monoBuffer.duration;
   const offlineLength = Math.max(1, Math.ceil(targetSampleRate * duration));
   const offlineCtx = new OfflineAudioContext(1, offlineLength, targetSampleRate);
-  
+
   const source = offlineCtx.createBufferSource();
   source.buffer = monoBuffer;
-  
+
 // Modified code snippet to fix the negative time error:
 const gainNode = offlineCtx.createGain();
 const fadeDuration = 0.3;
@@ -333,10 +362,10 @@ if (duration < fadeDuration * 2) {
 
 gainNode.gain.setValueAtTime(1, fadeOutStart);
 gainNode.gain.linearRampToValueAtTime(0, duration);
-  
+
   source.connect(gainNode).connect(offlineCtx.destination);
   source.start(0);
-  
+
   const renderedBuffer = await offlineCtx.startRendering();
   const processedData = renderedBuffer.getChannelData(0);
   const processedInt16 = floatTo16BitPCM(processedData);
@@ -347,17 +376,17 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
 
 // --- New: Transcribe Chunk Directly ---
 // Sends the WAV blob directly to OpenAI's Whisper API and returns the transcript.
-async function transcribeChunkDirectly(wavBlob, chunkNum) {
+async function transcribeChunkDirectly(wavBlob, chunkNum, { signal, sessionId } = {}) {
   const apiKey = getAPIKey();
   if (!apiKey) throw new Error("API key not available for transcription");
-  
+
 
   // Voxtral Small: use chat completions with audio input
   const model = "voxtral-small-latest";
   const audioBase64 = await blobToBase64(wavBlob);
 
   try {
-    const response = await sendChunkChat({ apiKey, model, audioBase64 });
+    const response = await sendChunkChat({ apiKey, model, audioBase64 }, { signal });
     if (!response.ok) {
       // Try JSON first, otherwise text
       let msg = "";
@@ -373,6 +402,10 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
     // Chat completions response shape:
     return result?.choices?.[0]?.message?.content || "";
   } catch (error) {
+    // If user started a new session, treat this as a silent cancel.
+    if (signal?.aborted || (sessionId && sessionId !== groupId)) {
+      return "";
+    }
     logError(`Error transcribing chunk ${chunkNum}:`, error);
     updateStatusMessage("Error transcribing with Mistral Voxtral Small. Please try again.", "red");
     transcriptionError = true;
@@ -383,7 +416,7 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
 // --- Transcription Queue Processing ---
 // Adds a processed chunk to the queue and processes chunks sequentially.
 function enqueueTranscription(wavBlob, chunkNum) {
-  transcriptionQueue.push({ chunkNum, wavBlob });
+  transcriptionQueue.push({ sessionId: groupId, signal: transcriptionSessionAbortController.signal, chunkNum, wavBlob });
   processTranscriptionQueue();
 }
 function flushPendingVADChunks() {
@@ -401,21 +434,54 @@ function flushPendingVADChunks() {
 }
 
 async function processTranscriptionQueue() {
-  if (isProcessingQueue) return;
+  const mySessionId = groupId;
+  const mySignal = transcriptionSessionAbortController.signal;
+
+  // If a worker is already running for THIS SAME session, just let it drain.
+  if (isProcessingQueue && processingQueueSessionId === mySessionId) return;
+
+  // If a worker is running for an OLD session, do NOT wait for it.
+  // Start a fresh worker for the current session (the old one will become a no-op once aborted).
   isProcessingQueue = true;
-  
-  while (transcriptionQueue.length > 0) {
-    let { chunkNum, wavBlob } = transcriptionQueue.shift();
-    logInfo(`Transcribing chunk ${chunkNum}...`);
-    const transcript = await transcribeChunkDirectly(wavBlob, chunkNum);
-    transcriptChunks[chunkNum] = transcript;
-    updateTranscriptionOutput();
-    // free this chunk’s audio immediately
-    wavBlob = null;
+  processingQueueSessionId = mySessionId;
+
+  try {
+    while (transcriptionQueue.length > 0) {
+      // If a new session started, abandon this worker immediately.
+      if (groupId !== mySessionId || mySignal.aborted) break;
+
+      const item = transcriptionQueue.shift();
+      if (!item) continue;
+
+      // Skip anything not belonging to this session.
+      if (item.sessionId !== mySessionId) continue;
+
+      let { chunkNum, wavBlob } = item;
+      logInfo(`Transcribing chunk ${chunkNum}...`);
+
+      const transcript = await transcribeChunkDirectly(wavBlob, chunkNum, {
+        signal: item.signal || mySignal,
+        sessionId: mySessionId,
+      });
+
+      // If a new session started while we were transcribing, ignore the result.
+      if (groupId !== mySessionId || mySignal.aborted) break;
+
+      transcriptChunks[chunkNum] = transcript;
+      updateTranscriptionOutput();
+
+      // free this chunk’s audio immediately
+      wavBlob = null;
+    }
+  } finally {
+    // Only the owning worker may clear the flag.
+    if (processingQueueSessionId === mySessionId) {
+      isProcessingQueue = false;
+      processingQueueSessionId = null;
+    }
   }
-  
-  isProcessingQueue = false;
 }
+
 
 // --- Removed: Polling functions (pollChunkTranscript) since we now transcribe directly ---
 
@@ -427,7 +493,7 @@ async function processAudioChunkInternal(force = false) {
   }
   // Mark that we have processed at least one frame set.
   processedAnyAudioFrames = true;
-  
+
   logInfo(`Processing ${audioFrames.length} audio frames for chunk ${chunkNumber}.`);
   const framesToProcess = audioFrames;
   audioFrames = []; // Clear the buffer
@@ -464,7 +530,7 @@ async function processAudioChunkInternal(force = false) {
     pcmFloat32.set(arr, offset);
     offset += arr.length;
   }
-  
+
   // Process the raw audio samples using OfflineAudioContext:
   // Convert to mono, resample to 16kHz, and apply 0.3s fade-in/out.
   // No extra silence padding—just resample & fade the raw PCM
@@ -473,10 +539,10 @@ async function processAudioChunkInternal(force = false) {
     sampleRate,
     numChannels
   );
-  
+
   // Instead of uploading to a backend, enqueue this processed chunk for direct transcription.
   enqueueTranscription(wavBlob, chunkNumber);
-  
+
   chunkNumber++;
 }
 
@@ -605,7 +671,7 @@ function resetRecordingState() {
   Object.values(pollingIntervals).forEach(interval => clearInterval(interval));
   pollingIntervals = {};
   clearTimeout(chunkTimeoutId);
-  
+
 
   transcriptChunks = {};
   audioFrames = [];
@@ -616,11 +682,11 @@ function resetRecordingState() {
   recordingPaused = false;
   groupId = Date.now().toString();
   chunkNumber = 1;
-  
+
    processedAnyAudioFrames = false;
   // reset VAD state
   recordingActive    = false;
-  
+
 }
 
 function initRecording() {
@@ -656,7 +722,7 @@ function initRecording() {
 
           // First-chunk UX tweaks (recording timer is centralized in transcribe.html)
           if (chunkNumber === 1) {
-            
+
             pauseResumeButton.innerText = "Pause Recording";
             updateStatusMessage("Recording…", "green");
           }
@@ -681,10 +747,13 @@ function initRecording() {
       alert("Please enter your Mistral (Voxtral) API key before starting the recording.");
       return;
     }
+
+    // NEW: Start is a hard reset: abort/clear any pending transcription work.
+    beginFreshTranscriptionSession();
     resetRecordingState();
     const transcriptionElem = document.getElementById("transcription");
     if (transcriptionElem) transcriptionElem.value = "";
-    
+
     // initialize and start Silero VAD
     updateStatusMessage("Loading voice-activity model...", "orange");
     try {
@@ -717,7 +786,7 @@ pauseResumeButton.addEventListener("click", async () => {
       sileroVAD = await vad.MicVAD.new(sileroVADOptions);
       await sileroVAD.start();
       recordingPaused = false;
-      
+
       pauseResumeButton.innerText = "Pause Recording";
       updateStatusMessage("Listening for speech…", "green");
       logInfo("Silero VAD resumed");
@@ -744,7 +813,7 @@ pauseResumeButton.addEventListener("click", async () => {
     // Flush again after pausing (captures forced final segment if submitUserSpeechOnPause fired)
     flushPendingVADChunks();
     recordingPaused = true;
-    
+
     pauseResumeButton.innerText = "Resume Recording";
     updateStatusMessage("Recording paused", "orange");
     logInfo("Recording paused; buffered speech flushed");
@@ -789,7 +858,7 @@ stopButton.addEventListener("click", async () => {
     manualStop = true;
     // drain the queue so the final chunk is actually sent
     await processTranscriptionQueue();
-    
+
    // ─── NOW compute how many chunks we’re actually waiting on ───
     expectedChunks = chunkNumber - 1;
     if (expectedChunks > 0 && !completionTimerInterval) {
@@ -801,9 +870,9 @@ stopButton.addEventListener("click", async () => {
         }
       }, 1000);
     }
-    
+
     clearTimeout(chunkTimeoutId);
-    
+
     // keep existing stopMicrophone, timers and flush logic intact
   // ── If there's nothing left to transcribe (e.g. paused + all chunks done) ──
   if (audioFrames.length === 0 && pendingVADChunks.length === 0) {
@@ -836,7 +905,7 @@ stopButton.addEventListener("click", async () => {
       compTimerElem.innerText = "Completion Timer: 0 sec";
     }
 
-  
+
     const startButton = document.getElementById("startButton");
     if (startButton) startButton.disabled = false;
     stopButton.disabled = true;
@@ -873,7 +942,7 @@ stopButton.addEventListener("click", async () => {
         if (compTimerElem) {
           compTimerElem.innerText = "Completion Timer: 0 sec";
         }
-        
+
         updateStatusMessage("Recording reset. Ready to start.", "green");
         const startButton = document.getElementById("startButton");
         if (startButton) startButton.disabled = false;

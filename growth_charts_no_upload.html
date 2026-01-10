@@ -65,7 +65,7 @@
 
       <label>
         Weight (kg)
-        <input id="weightKg" type="number" step="0.1" value="50" />
+        <input id="weightKg" type="number" step="0.1" value="34" />
       </label>
 
       <button id="plotBtn">Show chart</button>
@@ -96,16 +96,13 @@
 
   <script>
     /********************************************************************
-     * In-memory dataset output (as requested):
+     * In-memory dataset output:
      * curves[sex][ageRange][metric][percentile] = [{age: months, value: ...}, ...]
      ********************************************************************/
     const curves = { male: {}, female: {} };
     const PERCENTILES = [3,10,25,50,75,90,97];
-
-    // Extraction render scale (higher = more accurate, slower)
     const EXTRACT_SCALE = 2.5;
 
-    // PDF catalog (no upload).
     const pdfCatalog = {
       male: {
         "0-1": "./vekstkurver/gutter01.pdf",
@@ -119,23 +116,14 @@
       },
     };
 
-    /********************************************************************
-     * Optional manual calibration override:
-     * panelCalOverride[sex][ageRange][metric] = {
-     *   x: { minAge, maxAge, leftPx, rightPx },
-     *   y: { minVal, maxVal, bottomPx, topPx }
-     * }
-     ********************************************************************/
     const panelCalOverride = {
       male: { "0-1": {}, "1-5": {}, "4-19": {} },
       female: { "0-1": {}, "1-5": {}, "4-19": {} },
     };
 
-    // Caches
-    const pdfCache = new Map();    // url -> pdfDoc
-    const pageCache = new Map();   // url -> { page, viewport, canvas, svg, textItems, panels, meta }
+    const pdfCache = new Map();
+    const pageCache = new Map();
 
-    // UI
     const $ = (id) => document.getElementById(id);
     const statusEl = $("status");
     const debugWrap = $("debugWrap");
@@ -161,14 +149,12 @@
       const y = clamp(isFinite(years) ? years : 0, 0, 19);
       return Math.round(y * 12);
     }
-
     function ageToRangeKey(ageMonths) {
       if (ageMonths <= 12) return "0-1";
       if (ageMonths <= 60) return "1-5";
       if (ageMonths <= 228) return "4-19";
       return null;
     }
-
     function rangeKeyToMinMaxMonths(rangeKey) {
       if (rangeKey === "0-1") return { minAge: 0, maxAge: 12 };
       if (rangeKey === "1-5") return { minAge: 12, maxAge: 60 };
@@ -176,14 +162,10 @@
       return null;
     }
 
-    /********************************************************************
-     * PDF load (auto from catalog)
-     ********************************************************************/
     async function loadPdf(url) {
       if (pdfCache.has(url)) return pdfCache.get(url);
 
       const commonDocOpts = { isEvalSupported: false };
-
       const resolvedUrl = new URL(url, location.href).toString();
       appendStatus(`Loading PDF: ${resolvedUrl}`);
       const resp = await fetch(resolvedUrl, { cache: "no-store" });
@@ -342,7 +324,6 @@
     }
 
     function associateMetricsToPanels(textItems, panels, ageRangeKey) {
-      // Keep metrics if already set (heuristic panels do this)
       for (const p of panels) p.metric = (p.metric ?? null);
 
       const desired = (panels.length >= 3)
@@ -382,46 +363,47 @@
       return nums;
     }
 
-    function extractYTicks(textItems, panel) {
+    function extractYTicks(textItems, panel, side = "both") {
+      // side: "left" | "right" | "both"
       const W = panel.width;
       const H = panel.height;
+
+      // Tighten y bounds to this panel to avoid stealing ticks from neighbor panels.
+      const yMin = panel.y - H * 0.06;
+      const yMax = panel.y + H * 1.06;
 
       const leftBox = {
         xMin: panel.x - W * 0.70,
         xMax: panel.x + W * 0.16,
-        yMin: panel.y - H * 0.14,
-        yMax: panel.y + H * 1.14
+        yMin, yMax,
       };
       const rightBox = {
         xMin: panel.x + W * 0.84,
         xMax: panel.x + W * 1.70,
-        yMin: panel.y - H * 0.14,
-        yMax: panel.y + H * 1.14
+        yMin, yMax,
       };
-
       const innerLeft = {
         xMin: panel.x - W * 0.02,
         xMax: panel.x + W * 0.14,
-        yMin: panel.y - H * 0.08,
-        yMax: panel.y + H * 1.08
+        yMin, yMax,
       };
       const innerRight = {
         xMin: panel.x + W * 0.86,
         xMax: panel.x + W * 1.02,
-        yMin: panel.y - H * 0.08,
-        yMax: panel.y + H * 1.08
+        yMin, yMax,
       };
 
-      let nums = [
-        ...findNumericTextInBox(textItems, leftBox),
-        ...findNumericTextInBox(textItems, rightBox),
-        ...findNumericTextInBox(textItems, innerLeft),
-        ...findNumericTextInBox(textItems, innerRight),
-      ];
+      let nums = [];
+      if (side === "left" || side === "both") {
+        nums.push(...findNumericTextInBox(textItems, leftBox));
+        nums.push(...findNumericTextInBox(textItems, innerLeft));
+      }
+      if (side === "right" || side === "both") {
+        nums.push(...findNumericTextInBox(textItems, rightBox));
+        nums.push(...findNumericTextInBox(textItems, innerRight));
+      }
 
-      // Filter out labels far below/above panel
-      nums = nums.filter(n => n.y <= panel.y + H * 1.02 && n.y >= panel.y - H * 0.02);
-
+      // de-dup by value
       const byVal = new Map();
       for (const n of nums) {
         const k = n.val.toFixed(3);
@@ -431,6 +413,7 @@
 
       const ticks = [];
       for (const arr of byVal.values()) {
+        // pick median y for stability
         arr.sort((a,b) => a.y - b.y);
         ticks.push(arr[Math.floor(arr.length/2)]);
       }
@@ -438,16 +421,25 @@
       return ticks;
     }
 
+    function tickSideForMetric(ageRangeKey, metric) {
+      // Critical: in 4–19, height ticks are typically on the LEFT and weight ticks on the RIGHT.
+      if (ageRangeKey === "4-19") {
+        if (metric === "height-for-age") return "left";
+        if (metric === "weight-for-age") return "right";
+      }
+      return "both";
+    }
+
     function filterTickValuesForMetric(ageRangeKey, metric, ticks) {
       if (metric === "weight-for-age") {
-        const upper = (ageRangeKey === "4-19") ? 160 : 60;
+        const upper = (ageRangeKey === "4-19") ? 200 : 60;
         return ticks.filter(t => t.val >= 0 && t.val <= upper);
       }
       if (metric === "height-for-age") {
-        return ticks.filter(t => t.val >= 60 && t.val <= 230);
+        return ticks.filter(t => t.val >= 60 && t.val <= 240);
       }
       if (metric === "head-circumference-for-age") {
-        return ticks.filter(t => t.val >= 25 && t.val <= 80);
+        return ticks.filter(t => t.val >= 25 && t.val <= 85);
       }
       return ticks;
     }
@@ -458,22 +450,125 @@
 
       const override = panelCalOverride?.[sex]?.[ageRangeKey]?.[metric];
       if (override) {
-        return { x: { ...override.x }, y: { ...override.y }, source: "manual-override" };
+        // Manual override keeps backwards-compatibility:
+        // override.y: { minVal, maxVal, topPx, bottomPx } (absolute page coords)
+        const y = override.y || {};
+        const topRel = (y.topPx != null) ? (y.topPx - panel.y) : 0;
+        const bottomRel = (y.bottomPx != null) ? (y.bottomPx - panel.y) : panel.height;
+        const ySpan = (bottomRel - topRel) || panel.height;
+        const m = (y.maxVal - y.minVal) / (topRel - bottomRel || -ySpan); // negative slope
+        const c = y.maxVal - m * topRel;
+
+        return {
+          x: { ...override.x },
+          y: {
+            minVal: y.minVal, maxVal: y.maxVal,
+            m, c,
+            side: "manual-override",
+            maxErrPx: 0,
+            meanErrPx: 0
+          },
+          source: "manual-override"
+        };
       }
 
-      const ticksRaw = extractYTicks(textItems, panel);
-      const ticks = filterTickValuesForMetric(ageRangeKey, metric, ticksRaw);
+      // --- Robust Y calibration ---
+      // Fit: value = m * yRel + c  (yRel is px from panel top, increasing downward)
+      // using ALL tick labels we can read. We auto-choose tick side by minimizing fit error.
 
-      let minVal = null, maxVal = null;
-      if (ticks.length >= 2) {
-        minVal = Math.min(...ticks.map(t => t.val));
-        maxVal = Math.max(...ticks.map(t => t.val));
+      function fitLineY(ticks) {
+        if (!ticks || ticks.length < 3) return null;
+        let sumX = 0, sumY = 0, sumXX = 0, sumXY = 0;
+        for (const t of ticks) {
+          const x = t.y - panel.y; // yRel
+          const yv = t.val;
+          sumX += x; sumY += yv;
+          sumXX += x*x; sumXY += x*yv;
+        }
+        const n = ticks.length;
+        const denom = (n * sumXX - sumX * sumX);
+        if (Math.abs(denom) < 1e-6) return null;
+        const m = (n * sumXY - sumX * sumY) / denom;
+        const c = (sumY - m * sumX) / n;
+
+        let maxErr = 0, sumErr = 0, cnt = 0;
+        for (const t of ticks) {
+          const yRelTrue = t.y - panel.y;
+          const yRelPred = (t.val - c) / (m || 1e-9);
+          const err = Math.abs(yRelPred - yRelTrue);
+          if (isFinite(err)) { maxErr = Math.max(maxErr, err); sumErr += err; cnt++; }
+        }
+        const meanErr = cnt ? (sumErr / cnt) : Infinity;
+        return { m, c, maxErrPx: maxErr, meanErrPx: meanErr };
+      }
+
+      const preferred = tickSideForMetric(ageRangeKey, metric);
+      const sideCandidates = (preferred === "both")
+        ? ["both", "left", "right"]
+        : [preferred, "both", (preferred === "left" ? "right" : "left")];
+
+      let best = null;
+
+      for (const side of sideCandidates) {
+        const ticksRaw = extractYTicks(textItems, panel, side);
+        const ticks = filterTickValuesForMetric(ageRangeKey, metric, ticksRaw);
+
+        // unique by numeric value
+        const uniq = new Map();
+        for (const t of ticks) uniq.set(t.val.toFixed(3), t);
+        const ticksU = Array.from(uniq.values());
+        if (ticksU.length < 3) continue;
+
+        const fit = fitLineY(ticksU);
+        if (!fit) continue;
+        if (!(fit.m < -1e-6)) continue;
+
+        const score = fit.maxErrPx + fit.meanErrPx * 0.25 - ticksU.length * 0.02;
+        if (!best || score < best.score) {
+          best = {
+            score,
+            side,
+            m: fit.m,
+            c: fit.c,
+            maxErrPx: fit.maxErrPx,
+            meanErrPx: fit.meanErrPx,
+            minVal: min(ticksU),
+            maxVal: max(ticksU),
+          };
+        }
+
+        function min(arr){ return Math.min(...arr.map(t => t.val)); }
+        function max(arr){ return Math.max(...arr.map(t => t.val)); }
+      }
+
+      if (!best) {
+        // Fallback: try preferred side with min/max only (might be rough)
+        const ticksRaw = extractYTicks(textItems, panel, preferred);
+        const ticks = filterTickValuesForMetric(ageRangeKey, metric, ticksRaw);
+        let minVal = null, maxVal = null;
+        if (ticks.length >= 2) {
+          minVal = Math.min(...ticks.map(t => t.val));
+          maxVal = Math.max(...ticks.map(t => t.val));
+        }
+        return {
+          x: { minAge: range.minAge, maxAge: range.maxAge, leftPx: panel.x, rightPx: panel.x + panel.width },
+          y: { minVal, maxVal, m: null, c: null, side: preferred, maxErrPx: Infinity, meanErrPx: Infinity },
+          source: "auto-partial"
+        };
       }
 
       return {
         x: { minAge: range.minAge, maxAge: range.maxAge, leftPx: panel.x, rightPx: panel.x + panel.width },
-        y: { minVal, maxVal, bottomPx: panel.y + panel.height, topPx: panel.y },
-        source: (minVal == null || maxVal == null) ? "auto-partial" : "auto"
+        y: {
+          minVal: best.minVal,
+          maxVal: best.maxVal,
+          m: best.m,
+          c: best.c,
+          side: best.side,
+          maxErrPx: best.maxErrPx,
+          meanErrPx: best.meanErrPx
+        },
+        source: "auto"
       };
     }
 
@@ -544,7 +639,6 @@
         height: Math.max(10, (P.y + P.height) - (ySplit + pad)),
         metric: "weight-for-age",
       };
-
       return [topPanel, botPanel];
     }
 
@@ -585,9 +679,6 @@
       return cached;
     }
 
-    /********************************************************************
-     * Curve extraction
-     ********************************************************************/
     function getRgb(strokeStr) {
       if (!strokeStr) return null;
       const s = strokeStr.trim();
@@ -628,7 +719,6 @@
 
       if (!stroke || stroke === "none") return false;
       if (!(fill === "none" || fill === "rgba(0, 0, 0, 0)" || fill === "transparent")) return false;
-
       if (!(sw > 0.18 && sw < 2.6)) return false;
 
       const rgb = getRgb(stroke);
@@ -688,15 +778,18 @@
     function polyToData(poly, cal, panelW, panelH) {
       const out = [];
       const { minAge, maxAge } = cal.x;
-      const { minVal, maxVal } = cal.y;
-      if (minVal == null || maxVal == null) return null;
+      const { minVal, maxVal, m, c } = cal.y;
+      if (minVal == null || maxVal == null || !isFinite(m) || !isFinite(c)) return null;
 
       const stepMonths = Math.max(0.25, (maxAge - minAge) / 260);
       let lastAge = -Infinity;
 
       for (const p of poly) {
         const age = minAge + (p.x / panelW) * (maxAge - minAge);
-        const val = minVal + ((panelH - p.y) / panelH) * (maxVal - minVal);
+
+        // value = m * yRel + c
+        const yRel = p.y; // already relative to panel
+        const val = m * yRel + c;
 
         if (!isFinite(age) || !isFinite(val)) continue;
         if (age < minAge - 0.5 || age > maxAge + 0.5) continue;
@@ -745,62 +838,7 @@
       return picked.slice(0, 7).map(x => x.poly);
     }
 
-    async function extractCurvesForPanel(pageInfo, panel) {
-      const { meta, textItems, svg, canvas } = pageInfo;
-      const sex = meta.sex, ageRangeKey = meta.ageRange;
-      const metric = panel.metric;
-
-      if (!sex || !ageRangeKey || !metric) return { ok: false, reason: "Missing page meta or metric." };
-
-      const cal = calibratePanel(panel, sex, ageRangeKey, metric, textItems);
-      if (!cal) return { ok: false, reason: "Calibration failed (no range)." };
-      if (cal.y.minVal == null || cal.y.maxVal == null) {
-        return { ok: false, reason: "Calibration failed: couldn't parse y-axis tick labels (min/max)." };
-      }
-
-      const store = (curves[sex][ageRangeKey] ||= {});
-      (store[metric] ||= {});
-      (store._cal ||= {});
-
-      let out = {};
-      let used = "vector";
-
-      if (svg) {
-        const allPaths = Array.from(svg.querySelectorAll("path"));
-        const candidates = allPaths.filter(p => isLikelyPercentilePath(p, panel));
-
-        const polys = candidates.map(p => samplePathPoints(p, panel, 560));
-        const picked = pickSevenCurves(polys, panel.width, panel.height);
-
-        for (let i=0; i<picked.length && i<PERCENTILES.length; i++) {
-          const pct = PERCENTILES[i];
-          const data = polyToData(picked[i], cal, panel.width, panel.height);
-          if (data) out[pct] = data;
-        }
-
-        if (Object.keys(out).length < 6) {
-          used = "raster-fallback";
-          out = await rasterFallbackExtract(panel, canvas, cal);
-        }
-      } else {
-        used = "raster-only";
-        out = await rasterFallbackExtract(panel, canvas, cal);
-      }
-
-      for (const [pct, series] of Object.entries(out)) store[metric][pct] = series;
-
-      store._cal[metric] = {
-        x: cal.x, y: cal.y,
-        panelPx: { w: panel.width, h: panel.height },
-        panelBox: { x: panel.x, y: panel.y, w: panel.width, h: panel.height },
-        source: cal.source,
-        extractedBy: used,
-        pdfUrl: pageInfo.url
-      };
-
-      return { ok: true, used, cal, curveCount: Object.keys(out).length };
-    }
-
+    // Raster fallback (kept minimal)
     function grayMask(imgData, w, h) {
       const mask = new Uint8Array(w*h);
       const d = imgData.data;
@@ -902,6 +940,61 @@
       return out;
     }
 
+    async function extractCurvesForPanel(pageInfo, panel) {
+      const { meta, textItems, svg, canvas } = pageInfo;
+      const sex = meta.sex, ageRangeKey = meta.ageRange;
+      const metric = panel.metric;
+
+      if (!sex || !ageRangeKey || !metric) return { ok: false, reason: "Missing page meta or metric." };
+
+      const cal = calibratePanel(panel, sex, ageRangeKey, metric, textItems);
+      if (!cal) return { ok: false, reason: "Calibration failed (no range)." };
+      if (cal.y.minVal == null || cal.y.maxVal == null) {
+        return { ok: false, reason: "Calibration failed: couldn't parse y-axis tick labels (min/max)." };
+      }
+
+      const store = (curves[sex][ageRangeKey] ||= {});
+      (store[metric] ||= {});
+      (store._cal ||= {});
+
+      let out = {};
+      let used = "vector";
+
+      if (svg) {
+        const allPaths = Array.from(svg.querySelectorAll("path"));
+        const candidates = allPaths.filter(p => isLikelyPercentilePath(p, panel));
+        const polys = candidates.map(p => samplePathPoints(p, panel, 560));
+        const picked = pickSevenCurves(polys, panel.width, panel.height);
+
+        for (let i=0; i<picked.length && i<PERCENTILES.length; i++) {
+          const pct = PERCENTILES[i];
+          const data = polyToData(picked[i], cal, panel.width, panel.height);
+          if (data) out[pct] = data;
+        }
+
+        if (Object.keys(out).length < 6) {
+          used = "raster-fallback";
+          out = await rasterFallbackExtract(panel, canvas, cal);
+        }
+      } else {
+        used = "raster-only";
+        out = await rasterFallbackExtract(panel, canvas, cal);
+      }
+
+      for (const [pct, series] of Object.entries(out)) store[metric][pct] = series;
+
+      store._cal[metric] = {
+        x: cal.x, y: cal.y,
+        panelPx: { w: panel.width, h: panel.height },
+        panelBox: { x: panel.x, y: panel.y, w: panel.width, h: panel.height },
+        source: cal.source,
+        extractedBy: used,
+        pdfUrl: pageInfo.url
+      };
+
+      return { ok: true, used, cal, curveCount: Object.keys(out).length };
+    }
+
     async function ensureExtracted(sex, ageRangeKey) {
       curves[sex][ageRangeKey] ||= {};
       if (curves[sex][ageRangeKey]._extracted === true) return;
@@ -991,12 +1084,18 @@
       ctx.restore();
     }
 
+    function yRelFromValue(cal, value) {
+      const { m, c } = cal.y;
+      // Invert: value = m*yRel + c  -> yRel = (value - c) / m
+      if (!isFinite(m) || Math.abs(m) < 1e-9 || !isFinite(c)) return null;
+      return (value - c) / m;
+    }
+
     function drawCurvesOnFullPage(ctx, cal, metricCurves) {
       if (!cal || !metricCurves) return;
 
       const box = cal.panelBox;
       const panelW = cal.panelPx.w;
-      const panelH = cal.panelPx.h;
 
       ctx.save();
       ctx.lineWidth = 1.3;
@@ -1010,7 +1109,8 @@
         for (let i=0; i<series.length; i++) {
           const pt = series[i];
           const xRel = ((pt.age - cal.x.minAge) / (cal.x.maxAge - cal.x.minAge)) * panelW;
-          const yRel = panelH - ((pt.value - cal.y.minVal) / (cal.y.maxVal - cal.y.minVal)) * panelH;
+          const yRel = yRelFromValue(cal, pt.value);
+          if (yRel == null) continue;
           const x = box.x + xRel;
           const y = box.y + yRel;
           if (i === 0) ctx.moveTo(x,y);
@@ -1018,16 +1118,17 @@
         }
         ctx.stroke();
       }
-
       ctx.restore();
     }
 
     function pointForMetric(cal, ageMonths, value) {
       const box = cal.panelBox;
       const panelW = cal.panelPx.w;
-      const panelH = cal.panelPx.h;
       const xRel = ((ageMonths - cal.x.minAge) / (cal.x.maxAge - cal.x.minAge)) * panelW;
-      const yRel = panelH - ((value - cal.y.minVal) / (cal.y.maxVal - cal.y.minVal)) * panelH;
+
+      const yRel = yRelFromValue(cal, value);
+      if (yRel == null) return null;
+
       return { x: box.x + xRel, y: box.y + yRel };
     }
 
@@ -1062,6 +1163,7 @@
 
       const pageInfo = await extractFromPdfUrl(pdfUrl);
 
+      // Show whole PDF page
       chartCanvas.width = pageInfo.canvas.width;
       chartCanvas.height = pageInfo.canvas.height;
       chartCtx.clearRect(0,0,chartCanvas.width,chartCanvas.height);
@@ -1078,8 +1180,8 @@
 
       if (isFinite(heightVal) && calH && store?.["height-for-age"]) {
         const pt = pointForMetric(calH, ageMonths, heightVal);
-        drawBigDot(chartCtx, pt.x, pt.y);
-        points.push(`height@(${pt.x.toFixed(0)},${pt.y.toFixed(0)})`);
+        if (pt) drawBigDot(chartCtx, pt.x, pt.y);
+        if (pt) points.push(`height@(${pt.x.toFixed(0)},${pt.y.toFixed(0)})`);
         const est = percentileEstimate(sex, rangeKey, "height-for-age", ageMonths, heightVal);
         pctLines.push(`Height: ${est.ok ? est.text : "n/a"}`);
       } else {
@@ -1088,8 +1190,8 @@
 
       if (isFinite(weightVal) && calW && store?.["weight-for-age"]) {
         const pt = pointForMetric(calW, ageMonths, weightVal);
-        drawBigDot(chartCtx, pt.x, pt.y);
-        points.push(`weight@(${pt.x.toFixed(0)},${pt.y.toFixed(0)})`);
+        if (pt) drawBigDot(chartCtx, pt.x, pt.y);
+        if (pt) points.push(`weight@(${pt.x.toFixed(0)},${pt.y.toFixed(0)})`);
         const est = percentileEstimate(sex, rangeKey, "weight-for-age", ageMonths, weightVal);
         pctLines.push(`Weight: ${est.ok ? est.text : "n/a"}`);
       } else {
@@ -1100,12 +1202,28 @@
       $("pctInfo").textContent = pctLines.join("  •  ");
 
       if ($("debugToggle").checked) {
+        const fmtCal = (cal) => {
+          if (!cal) return "missing";
+          const y = cal.y || {};
+          const minV = (y.minVal != null) ? y.minVal : "n/a";
+          const maxV = (y.maxVal != null) ? y.maxVal : "n/a";
+          const side = y.side ?? "n/a";
+          const err = isFinite(y.maxErrPx) ? y.maxErrPx.toFixed(2) : "n/a";
+          const m = isFinite(y.m) ? y.m.toExponential(3) : "n/a";
+          return `y=[${minV},${maxV}] sideFit=${side} errMaxPx=${err} m=${m}`;
+        };
+
         debugOut.textContent =
-          `Selection: ${sex}/${rangeKey} (age=${ageMonths} months)\n` +
-          `PDF: ${pdfUrl}\n` +
-          `Height cal: ${calH ? `y=[${calH.y.minVal},${calH.y.maxVal}]` : "missing"}\n` +
-          `Weight cal: ${calW ? `y=[${calW.y.minVal},${calW.y.maxVal}]` : "missing"}\n`;
+          `Selection: ${sex}/${rangeKey} (age=${ageMonths} months)
+` +
+          `PDF: ${pdfUrl}
+` +
+          `Height cal: ${fmtCal(calH)}
+` +
+          `Weight cal: ${fmtCal(calW)}
+`;
       }
+
     }
 
     $("debugToggle").addEventListener("change", (e) => setDebugVisible(e.target.checked));

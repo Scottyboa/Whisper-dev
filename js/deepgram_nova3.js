@@ -1,8 +1,7 @@
-
 // deepgram_nova3.js
 // Updated recording module without encryption/HMAC mechanisms,
 // processing audio chunks using OfflineAudioContext,
-// and implementing a client‑side transcription queue that sends each processed chunk directly to OpenAI's Whisper API.
+// and implementing a client-side transcription queue that sends each processed chunk directly to OpenAI's Whisper API.
 let transcriptionError = false;
 
 function hashString(str) {
@@ -122,6 +121,34 @@ let transcriptionQueue = [];  // Queue of { chunkNumber, blob }
 let isProcessingQueue = false;
 let enqueuedChunks = 0;  
 
+// --- NEW: Session cancel / abort plumbing ---
+// Each time Start is clicked, we create a fresh session + abort controller.
+// Anything still running from the previous session gets aborted and/or ignored.
+let transcriptionSessionAbortController = new AbortController();
+let processingQueueSessionId = null; // tracks which session currently owns the queue worker
+
+function beginFreshTranscriptionSession() {
+  // Abort any in-flight Deepgram requests for the previous session.
+  try { transcriptionSessionAbortController.abort("new session started"); } catch (_) {}
+  transcriptionSessionAbortController = new AbortController();
+
+  // Hard-clear any pending work so Start always begins clean.
+  transcriptionQueue = [];
+  isProcessingQueue = false;
+  processingQueueSessionId = null;
+
+  // Also clear any buffered VAD segments so we don't accidentally flush old audio.
+  pendingVADChunks = [];
+  pendingVADLock = false;
+
+  // Release chunk stop/flush locks if they were left set by an earlier run.
+  chunkProcessingLock = false;
+  pendingStop = false;
+
+  // Clear any partial transcript aggregation from the prior run.
+  transcriptChunks = {};
+}
+
 // --- Utility Functions ---
 function updateStatusMessage(message, color = "#333") {
   const statusElem = document.getElementById("statusMessage");
@@ -166,13 +193,34 @@ function resetCompletionTimerDisplay() {
 // ADD THIS HELPER JUST BELOW updateStatusMessage()
 // ────────────────────────────────
 async function fetchWithTimeout(resource, options = {}, timeoutMs = 30000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutController = new AbortController();
+  const id = setTimeout(() => timeoutController.abort(), timeoutMs);
+
+  // Optional: also abort this request if the caller's signal aborts
+  // (e.g. Start clicked → session reset).
+  const callerSignal = options?.signal;
+  let onAbort = null;
+  if (callerSignal) {
+    onAbort = () => {
+      try { timeoutController.abort(); } catch (_) {}
+    };
+    if (callerSignal.aborted) {
+      onAbort();
+    } else {
+      callerSignal.addEventListener("abort", onAbort, { once: true });
+    }
+  }
+
   try {
-    const response = await fetch(resource, { ...options, signal: controller.signal });
+    // Remove any caller-provided signal and replace with our controller's signal.
+    const { signal: _ignored, ...rest } = options || {};
+    const response = await fetch(resource, { ...rest, signal: timeoutController.signal });
     return response;
   } finally {
     clearTimeout(id);
+    if (callerSignal && onAbort) {
+      try { callerSignal.removeEventListener("abort", onAbort); } catch (_) {}
+    }
   }
 }
 
@@ -273,7 +321,7 @@ function estimateWavSeconds(wavBlob) {
 
 // --- OfflineAudioContext Processing ---
 // This function takes interleaved PCM samples (Float32Array), the original sample rate, and the number of channels,
-// converts the audio to mono (averaging channels if needed), resamples to 16kHz, and applies 0.3s fade‑in/out.
+// converts the audio to mono (averaging channels if needed), resamples to 16kHz, and applies 0.3s fade-in/out.
 // It returns a 16-bit PCM WAV Blob.
 async function processAudioUsingOfflineContext(pcmFloat32, originalSampleRate, numChannels) {
   const targetSampleRate = 16000;
@@ -354,10 +402,15 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
 // --- Transcription Queue Processing ---
 // Adds a processed chunk to the queue and processes chunks sequentially.
 function enqueueTranscription(wavBlob, chunkNum) {
-  transcriptionQueue.push({ chunkNum, wavBlob });
+  transcriptionQueue.push({
+    sessionId: groupId,
+    signal: transcriptionSessionAbortController.signal,
+    chunkNum,
+    wavBlob
+  });
   enqueuedChunks += 1;
 
-    // Always schedule a kick; the worker will no-op if already running.
+  // Always schedule a kick; the worker will no-op if already running.
   // Using a microtask avoids races where isProcessingQueue flips after we check it.
   queueMicrotask(() => {
     processTranscriptionQueue();
@@ -365,7 +418,7 @@ function enqueueTranscription(wavBlob, chunkNum) {
 }
 
 // Sends the WAV blob to Deepgram (pre-recorded) and returns the transcript text.
-async function transcribeChunkDirectly(wavBlob, chunkNum) {
+async function transcribeChunkDirectly(wavBlob, chunkNum, { signal, sessionId } = {}) {
   const apiKey = sessionStorage.getItem("user_api_key") || "";
   if (!apiKey) {
     updateStatusMessage("Missing Deepgram API key.", "red");
@@ -381,7 +434,8 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
         "Authorization": `Token ${apiKey}`,
         "Content-Type": "audio/wav"
       },
-      body: wavBlob
+      body: wavBlob,
+      signal
     }, 60000);
     if (!rsp.ok) {
       const txt = await rsp.text().catch(() => "");
@@ -391,6 +445,10 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
     const text = data?.results?.channels?.[0]?.alternatives?.[0]?.transcript || "";
     return text;
   } catch (error) {
+    // If user started a new session, treat this as a silent cancel.
+    if (signal?.aborted || (sessionId && sessionId !== groupId)) {
+      return "";
+    }
     logError(`Error transcribing chunk ${chunkNum} with Deepgram:`, error);
     updateStatusMessage("Transcription error with Deepgram API. Check key/usage.", "red");
     transcriptionError = true;
@@ -399,35 +457,54 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
 }
 
 async function processTranscriptionQueue() {
-  // If queue already in progress, wait for it to finish before continuing.
-  if (isProcessingQueue) {
-    while (isProcessingQueue) {
-      await new Promise(r => setTimeout(r, 100));
-    }
-  }
+  const mySessionId = groupId;
+  const mySignal = transcriptionSessionAbortController.signal;
 
+  // If a worker is already running for THIS SAME session, just let it drain.
+  if (isProcessingQueue && processingQueueSessionId === mySessionId) return;
+
+  // If a worker is running for an OLD session, do NOT wait for it.
+  // Start a fresh worker for the current session (the old one will become a no-op once aborted).
   isProcessingQueue = true;
+  processingQueueSessionId = mySessionId;
 
-  while (transcriptionQueue.length > 0) {
-    let { chunkNum, wavBlob } = transcriptionQueue.shift();
-    logInfo(`Transcribing chunk ${chunkNum}...`);
+  try {
+    while (transcriptionQueue.length > 0) {
+      // If a new session started, abandon this worker immediately.
+      if (groupId !== mySessionId || mySignal.aborted) break;
 
-    const transcript = await transcribeChunkDirectly(wavBlob, chunkNum);
-    transcriptChunks[chunkNum] = transcript;
-    updateTranscriptionOutput();
-    // free this chunk’s audio immediately
-    wavBlob = null;
-  }
-  
+      const item = transcriptionQueue.shift();
+      if (!item) continue;
 
-  // Queue fully drained: flip the flag, then trigger a final UI update
-  // so the completion condition (requires !isProcessingQueue) can fire.
-  isProcessingQueue = false;
+      // Skip anything not belonging to this session.
+      if (item.sessionId !== mySessionId) continue;
 
-  // If the user pressed Stop and there's nothing left to process,
-  // ensure the status moves from "Finishing…" to "Transcription finished!"
-  if (manualStop && transcriptionQueue.length === 0) {
-    updateTranscriptionOutput();
+      let { chunkNum, wavBlob } = item;
+      logInfo(`Transcribing chunk ${chunkNum}...`);
+
+      const transcript = await transcribeChunkDirectly(wavBlob, chunkNum, {
+        signal: item.signal || mySignal,
+        sessionId: mySessionId,
+      });
+
+      // If a new session started while we were transcribing, ignore the result.
+      if (groupId !== mySessionId || mySignal.aborted) break;
+
+      transcriptChunks[chunkNum] = transcript;
+      updateTranscriptionOutput();
+      wavBlob = null;
+    }
+  } finally {
+    // Only the owning worker may clear the flag.
+    if (processingQueueSessionId === mySessionId) {
+      isProcessingQueue = false;
+      processingQueueSessionId = null;
+    }
+
+    // Preserve your existing "stop finishing" behavior, but only for the active session.
+    if (groupId === mySessionId && manualStop && transcriptionQueue.length === 0) {
+      updateTranscriptionOutput();
+    }
   }
 }
 
@@ -597,10 +674,10 @@ function scheduleChunk() {
     lastSpeechTime   = Date.now();
     logInfo("Listening for speech…");
 
-    // after closing a chunk we do NOT immediately re‑arm the timer;
+    // after closing a chunk we do NOT immediately re-arm the timer;
     // we’ll wait for next `onSpeechStart` to call scheduleChunk again
   } else {
-    // only re‑schedule while still in the middle of a potential chunk
+    // only re-schedule while still in the middle of a potential chunk
     chunkTimeoutId = setTimeout(scheduleChunk, 500);
   }
 }
@@ -693,6 +770,10 @@ function initRecording() {
     alert("Please enter your Deepgram API key first.");
     return;
   }
+
+    // NEW: Start is a hard reset: abort/clear any pending transcription work.
+    beginFreshTranscriptionSession();
+
     resetRecordingState();
     const transcriptionElem = document.getElementById("transcription");
     if (transcriptionElem) transcriptionElem.value = "";

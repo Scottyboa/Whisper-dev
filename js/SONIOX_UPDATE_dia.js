@@ -121,6 +121,35 @@ let transcriptionQueue = [];  // Queue of { chunkNumber, blob }
 let isProcessingQueue = false;
 let enqueuedChunks = 0;  
 
+
+
+// --- NEW: Session cancel / abort plumbing ---
+// Each time Start is clicked, we create a fresh session + abort controller.
+// Anything still running from the previous session gets aborted and/or ignored.
+let transcriptionSessionAbortController = new AbortController();
+let processingQueueSessionId = null; // tracks which session currently owns the queue worker
+
+function beginFreshTranscriptionSession() {
+  // Abort any in-flight network requests/polls for the previous session.
+  try { transcriptionSessionAbortController.abort("new session started"); } catch (_) {}
+  transcriptionSessionAbortController = new AbortController();
+
+  // Hard-clear any pending work so Start always begins clean.
+  transcriptionQueue = [];
+  isProcessingQueue = false;
+  processingQueueSessionId = null;
+
+  // Also clear any buffered VAD segments so we don't accidentally flush old audio.
+  pendingVADChunks = [];
+  pendingVADLock = false;
+
+  // Release chunk stop/flush locks if they were left set by an earlier run.
+  chunkProcessingLock = false;
+  pendingStop = false;
+
+  // Ensure UI writes are allowed again for the new session.
+  transcriptFrozen = false;
+}
 // --- Utility Functions ---
 function updateStatusMessage(message, color = "#333") {
   const statusElem = document.getElementById("statusMessage");
@@ -168,18 +197,39 @@ function resetCompletionTimerDisplay() {
 // ADD THIS HELPER JUST BELOW updateStatusMessage()
 
 async function fetchWithTimeout(resource, options = {}, timeoutMs = 30000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutController = new AbortController();
+  const id = setTimeout(() => timeoutController.abort(), timeoutMs);
+
+  // Optional: also abort this request if the caller's signal aborts (e.g. Start clicked → session reset).
+  const callerSignal = options?.signal;
+  let onAbort = null;
+  if (callerSignal) {
+    onAbort = () => {
+      try { timeoutController.abort(); } catch (_) {}
+    };
+    if (callerSignal.aborted) {
+      onAbort();
+    } else {
+      callerSignal.addEventListener("abort", onAbort, { once: true });
+    }
+  }
+
   try {
-    const response = await fetch(resource, { ...options, signal: controller.signal });
+    // Remove any caller-provided signal and replace with our controller's signal.
+    const { signal: _ignored, ...rest } = options || {};
+    const response = await fetch(resource, { ...rest, signal: timeoutController.signal });
     if (response.status === 401 || response.status === 403) {
       updateStatusMessage("Soniox: Unauthorized – check your API key or region.", "red");
     }
     return response;
   } finally {
     clearTimeout(id);
+    if (callerSignal && onAbort) {
+      try { callerSignal.removeEventListener("abort", onAbort); } catch (_) {}
+    }
   }
 }
+
 
 
 function formatTime(ms) {
@@ -251,7 +301,7 @@ function getSonioxBase() {
 }
 const AUTO_CLEAN_ON_LOAD = true;
 
-async function uploadToSonioxFile(wavBlob, filename, retries = 5, backoff = 2000) {
+async function uploadToSonioxFile(wavBlob, filename, { signal } = {}, retries = 5, backoff = 2000) {
   const apiKey = getAPIKey();
   if (!apiKey) throw new Error("API key not available");
   const fd = new FormData();
@@ -260,22 +310,24 @@ async function uploadToSonioxFile(wavBlob, filename, retries = 5, backoff = 2000
     const rsp = await fetchWithTimeout(`${getSonioxBase()}/files`, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
-     body: fd,
+     body: fd,      signal,
     }, 30000);
     if (!rsp.ok) throw new Error(`Soniox file upload failed: ${await rsp.text()}`);
     const j = await rsp.json();
     return j.id; // file_id
   } catch (err) {
-    if (retries > 0) {
+    
+    if (signal?.aborted) throw err;
+if (retries > 0) {
       console.warn(`Upload failed, retrying in ${backoff}ms… (${retries} left)`);
       await new Promise(r => setTimeout(r, backoff));
-      return uploadToSonioxFile(wavBlob, filename, retries - 1, Math.floor(backoff * 1.5));
+      return uploadToSonioxFile(wavBlob, filename, { signal }, retries - 1, Math.floor(backoff * 1.5));
     }
     throw err;
   }
 }
 
-async function createSonioxTranscription(fileId, context, retries = 5, backoff = 2000) {
+async function createSonioxTranscription(fileId, context, { signal } = {}, retries = 5, backoff = 2000) {
   const apiKey = getAPIKey();
   if (!apiKey) throw new Error("API key not available");
   const body = {
@@ -296,22 +348,23 @@ async function createSonioxTranscription(fileId, context, retries = 5, backoff =
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(body),      signal,
     }, 30000);
     if (!rsp.ok) throw new Error(`Create transcription failed: ${await rsp.text()}`);
     const j = await rsp.json();
     return j.id; // transcription_id
   } catch (err) {
+    if (signal?.aborted) throw err;
     if (retries > 0) {
       console.warn(`Create failed, retrying in ${backoff}ms… (${retries} left)`);
       await new Promise(r => setTimeout(r, backoff));
-      return createSonioxTranscription(fileId, context, retries - 1, Math.floor(backoff * 1.5));
+      return createSonioxTranscription(fileId, context, { signal }, retries - 1, Math.floor(backoff * 1.5));
     }
     throw err;
   }
 }
 
-async function pollSonioxTranscription(transcriptionId, timeoutMs = 300000, intervalMs = 1500) {
+async function pollSonioxTranscription(transcriptionId, timeoutMs = 300000, intervalMs = 1500, { signal } = {}) {
   const apiKey = getAPIKey();
   const start = Date.now();
   while (true) {
@@ -320,12 +373,14 @@ async function pollSonioxTranscription(transcriptionId, timeoutMs = 300000, inte
     try {
       rsp = await fetchWithTimeout(
         `${getSonioxBase()}/transcriptions/${transcriptionId}`,
-        { headers: { Authorization: `Bearer ${apiKey}` } },
+        { headers: { Authorization: `Bearer ${apiKey}` }, signal },
         30000 // 30 s per poll attempt
       );
     } catch (err) {
       // If a single poll request times out/aborts, retry this same job ID
       if (err && err.name === "AbortError") {
+        // If this session was explicitly aborted (e.g. user clicked Start again), stop immediately.
+        if (signal?.aborted) throw err;
         logDebug(`Poll ${transcriptionId} aborted after 30s; retrying…`);
         // optional small delay to avoid hot-looping
         await new Promise(r => setTimeout(r, intervalMs));
@@ -348,15 +403,17 @@ async function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-async function fetchSonioxTranscriptText(transcriptionId, retries = 5, delayMs = 2000) {
+async function fetchSonioxTranscriptText(transcriptionId, { signal } = {}, retries = 5, delayMs = 2000, perAttemptTimeoutMs = 30000) {
   const apiKey = getAPIKey();
   let attempt = 0;
 
   while (true) {
     try {
-      const rsp = await fetch(`${getSonioxBase()}/transcriptions/${transcriptionId}/transcript`, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-      });
+      const rsp = await fetchWithTimeout(
+        `${getSonioxBase()}/transcriptions/${transcriptionId}/transcript`,
+        { headers: { Authorization: `Bearer ${apiKey}` }, signal },
+        perAttemptTimeoutMs
+      );
 
       if (!rsp.ok) {
         const body = await rsp.text().catch(() => "");
@@ -375,6 +432,7 @@ async function fetchSonioxTranscriptText(transcriptionId, retries = 5, delayMs =
       // Fallback: plain text
       return j.text || "";
     } catch (err) {
+      if (signal?.aborted) throw err;
       attempt += 1;
       if (attempt > retries) {
         logError(`Get transcript failed after ${retries} retries:`, err);
@@ -612,7 +670,7 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
  // --- New: Transcribe Chunk Directly ---
 
 // Sends the WAV blob to Soniox and returns the transcript text; cleans up after.
- async function transcribeChunkDirectly(wavBlob, chunkNum) {
+ async function transcribeChunkDirectly(wavBlob, chunkNum, { signal, sessionId } = {}) {
    // Build a domain/context string like your old prompt, but Soniox expects 'context'
   const context =
     "Doctor-patient consultation. Mostly Norwegian; sometimes English. " +
@@ -622,20 +680,25 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
   try {
     const filename = `chunk_${chunkNum}.wav`;
     // 1) upload the WAV
-    fileId = await uploadToSonioxFile(wavBlob, filename);
+    fileId = await uploadToSonioxFile(wavBlob, filename, { signal });
     // 2) create a transcription job on Soniox async model
-    txId = await createSonioxTranscription(fileId, context);
+    txId = await createSonioxTranscription(fileId, context, { signal });
     // 3) poll until done, timeout scales with audio length
     const secs = estimateWavSeconds(wavBlob);
     const timeoutMs = Math.max(300000, Math.ceil(secs * 4000)); // >=5 min, ~4× audio length
-    await pollSonioxTranscription(txId, timeoutMs, 1500);
+    await pollSonioxTranscription(txId, timeoutMs, 1500, { signal });
     // 4) fetch final text
-    const text = await fetchSonioxTranscriptText(txId);
+    const text = await fetchSonioxTranscriptText(txId, { signal });
     // 5) best-effort cleanup
     await cleanupSonioxResources({ transcriptionId: txId, fileId });
     return text || "";
   } catch (error) {
-     logError(`Error transcribing chunk ${chunkNum}:`, error);
+    // If user started a new session, treat this as a silent cancel.
+    if (signal?.aborted || (sessionId && sessionId !== groupId)) {
+      await cleanupSonioxResources({ transcriptionId: txId, fileId });
+      return "";
+    }
+    logError(`Error transcribing chunk ${chunkNum}:`, error);
     // try to clean up anything we created
     await cleanupSonioxResources({ transcriptionId: txId, fileId });
      updateStatusMessage(
@@ -651,7 +714,7 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
 // --- Transcription Queue Processing ---
 // Adds a processed chunk to the queue and processes chunks sequentially.
 function enqueueTranscription(wavBlob, chunkNum) {
-  transcriptionQueue.push({ chunkNum, wavBlob });
+  transcriptionQueue.push({ sessionId: groupId, signal: transcriptionSessionAbortController.signal, chunkNum, wavBlob });
   enqueuedChunks += 1;
 
     // Always schedule a kick; the worker will no-op if already running.
@@ -663,36 +726,60 @@ function enqueueTranscription(wavBlob, chunkNum) {
 
 
 async function processTranscriptionQueue() {
-  // If queue already in progress, wait for it to finish before continuing.
-  if (isProcessingQueue) {
-    while (isProcessingQueue) {
-      await new Promise(r => setTimeout(r, 100));
+  const mySessionId = groupId;
+  const mySignal = transcriptionSessionAbortController.signal;
+
+  // If a worker is already running for THIS SAME session, just let it drain.
+  if (isProcessingQueue && processingQueueSessionId === mySessionId) return;
+
+  // If a worker is running for an OLD session, do NOT wait for it.
+  // Start a fresh worker for the current session (the old one will become a no-op once aborted).
+  isProcessingQueue = true;
+  processingQueueSessionId = mySessionId;
+
+  try {
+    while (transcriptionQueue.length > 0) {
+      // If a new session started, abandon this worker immediately.
+      if (groupId !== mySessionId || mySignal.aborted) break;
+
+      const item = transcriptionQueue.shift();
+      if (!item) continue;
+
+      // Skip anything not belonging to this session.
+      if (item.sessionId !== mySessionId) continue;
+
+      let { chunkNum, wavBlob } = item;
+      logInfo(`Transcribing chunk ${chunkNum}...`);
+
+      const transcript = await transcribeChunkDirectly(wavBlob, chunkNum, {
+        signal: item.signal || mySignal,
+        sessionId: mySessionId,
+      });
+
+      // If a new session started while we were transcribing, ignore the result.
+      if (groupId !== mySessionId || mySignal.aborted) break;
+
+      // Only write results for the active session.
+      transcriptChunks[chunkNum] = transcript;
+      updateTranscriptionOutput();
+
+      // free this chunk’s audio immediately
+      wavBlob = null;
+    }
+  } finally {
+    // Only the owning worker may clear the flag.
+    if (processingQueueSessionId === mySessionId) {
+      isProcessingQueue = false;
+      processingQueueSessionId = null;
+    }
+
+    // If we stopped and nothing remains, do one last write only if not frozen and still same session.
+    if (groupId === mySessionId && manualStop && transcriptionQueue.length === 0 && !transcriptFrozen) {
+      updateTranscriptionOutput();
     }
   }
-
-  isProcessingQueue = true;
-
-  while (transcriptionQueue.length > 0) {
-    let { chunkNum, wavBlob } = transcriptionQueue.shift();
-    logInfo(`Transcribing chunk ${chunkNum}...`);
-
-    const transcript = await transcribeChunkDirectly(wavBlob, chunkNum);
-    transcriptChunks[chunkNum] = transcript;
-    updateTranscriptionOutput();
-    // free this chunk’s audio immediately
-    wavBlob = null;
-  }
-  
-
-  // Queue fully drained: flip the flag, then trigger a final UI update
-  // so the completion condition (requires !isProcessingQueue) can fire.
-  isProcessingQueue = false;
-
-  // If we stopped and nothing remains, do one last write only if not frozen.
-  if (manualStop && transcriptionQueue.length === 0 && !transcriptFrozen) {
-    updateTranscriptionOutput();
-  }
 }
+
 
 // --- Removed: Polling functions (pollChunkTranscript) since we now transcribe directly ---
 
@@ -972,6 +1059,9 @@ function initRecording() {
     return;
   }
 
+
+    // NEW: Start is a hard reset: abort/clear any pending transcription work.
+    beginFreshTranscriptionSession();
     // NEW: Purge Soniox-side data immediately when a new recording session starts.
     // Fire-and-forget so the UI doesn't stall if Soniox is slow.
     cleanupSonioxAll().catch((err) => {

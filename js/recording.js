@@ -114,6 +114,31 @@ let audioFrames = []; // Buffer for audio frames
 let transcriptionQueue = [];  // Queue of { chunkNumber, blob }
 let isProcessingQueue = false;
 
+
+
+// --- NEW: Session cancel / abort plumbing ---
+// Each time Start is clicked, we create a fresh session + abort controller.
+// Anything still running from the previous session gets aborted and/or ignored.
+let transcriptionSessionAbortController = new AbortController();
+let processingQueueSessionId = null; // tracks which session currently owns the queue worker
+
+function beginFreshTranscriptionSession() {
+  // Abort any in-flight network requests for the previous session.
+  try { transcriptionSessionAbortController.abort("new session started"); } catch (_) {}
+  transcriptionSessionAbortController = new AbortController();
+
+  // Hard-clear any pending work so Start always begins clean.
+  transcriptionQueue = [];
+  isProcessingQueue = false;
+  processingQueueSessionId = null;
+
+  // Clear any buffered VAD segments so we don't accidentally flush old audio.
+  pendingVADChunks = [];
+
+  // Release chunk stop/flush locks if they were left set by an earlier run.
+  chunkProcessingLock = false;
+  pendingStop = false;
+}
 // --- Utility Functions ---
 function updateStatusMessage(message, color = "#333") {
   const statusElem = document.getElementById("statusMessage");
@@ -181,24 +206,32 @@ function getAPIKey() {
   return sessionStorage.getItem("user_api_key");
 }
 
-async function sendChunk(formData, retries = 5, backoff = 2000) {
+async function sendChunk(formData, { signal } = {}, retries = 5, backoff = 2000) {
   // grab the API key at call-time
   const apiKey = getAPIKey();
   if (!apiKey) throw new Error("API key not available");
-   try {
+   
+  if (signal?.aborted) {
+    const e = new Error("Aborted");
+    e.name = "AbortError";
+    throw e;
+  }
+try {
      return await fetch(
        "https://api.openai.com/v1/audio/transcriptions",
        {
          method: "POST",
          headers: { Authorization: `Bearer ${apiKey}` },
          body: formData,
+         signal,
        }
      );
-   } catch (err) {
+     } catch (err) {
+     if (signal?.aborted || err?.name === "AbortError") throw err;
      if (retries > 0) {
        console.warn(`Chunk failed, retrying in ${backoff}ms… (${retries} left)`);
        await new Promise(res => setTimeout(res, backoff));
-       return sendChunk(formData, retries - 1, backoff * 1.5);
+       return sendChunk(formData, { signal }, retries - 1, backoff * 1.5);
      }
      // out of retries → bubble error
      throw err;
@@ -302,7 +335,7 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
 
 // --- New: Transcribe Chunk Directly ---
 // Sends the WAV blob directly to OpenAI's Whisper API and returns the transcript.
-async function transcribeChunkDirectly(wavBlob, chunkNum) {
+async function transcribeChunkDirectly(wavBlob, chunkNum, { signal, sessionId } = {}) {
   const apiKey = getAPIKey();
   if (!apiKey) throw new Error("API key not available for transcription");
   
@@ -316,7 +349,7 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
 );
 
   try {
-     const response = await sendChunk(formData);
+     const response = await sendChunk(formData, { signal });
     if (!response.ok) {
       // Attempt to parse JSON error
       let err;
@@ -338,6 +371,10 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
     const result = await response.json();
     return result.text || "";
   } catch (error) {
+    // If user started a new session, treat this as a silent cancel.
+    if (signal?.aborted || error?.name === "AbortError" || (sessionId && sessionId !== groupId)) {
+      return "";
+    }
     logError(`Error transcribing chunk ${chunkNum}:`, error);
     // Show tailored message if it really was a quota issue
     updateStatusMessage(
@@ -354,26 +391,65 @@ async function transcribeChunkDirectly(wavBlob, chunkNum) {
 // --- Transcription Queue Processing ---
 // Adds a processed chunk to the queue and processes chunks sequentially.
 function enqueueTranscription(wavBlob, chunkNum) {
-  transcriptionQueue.push({ chunkNum, wavBlob });
-  processTranscriptionQueue();
+  transcriptionQueue.push({ sessionId: groupId, signal: transcriptionSessionAbortController.signal, chunkNum, wavBlob });
+  // Always schedule a kick; the worker will no-op if already running.
+  // Using a microtask avoids races where isProcessingQueue flips after we check it.
+  queueMicrotask(() => {
+    processTranscriptionQueue();
+  });
 }
 
 async function processTranscriptionQueue() {
-  if (isProcessingQueue) return;
+  const mySessionId = groupId;
+  const mySignal = transcriptionSessionAbortController.signal;
+
+  // If a worker is already running for THIS SAME session, just let it drain.
+  if (isProcessingQueue && processingQueueSessionId === mySessionId) return;
+
   isProcessingQueue = true;
-  
-  while (transcriptionQueue.length > 0) {
-    let { chunkNum, wavBlob } = transcriptionQueue.shift();
-    logInfo(`Transcribing chunk ${chunkNum}...`);
-    const transcript = await transcribeChunkDirectly(wavBlob, chunkNum);
-    transcriptChunks[chunkNum] = transcript;
-    updateTranscriptionOutput();
-    // free this chunk’s audio immediately
-    wavBlob = null;
+  processingQueueSessionId = mySessionId;
+
+  try {
+    while (transcriptionQueue.length > 0) {
+      // If a new session started, abandon this worker immediately.
+      if (groupId !== mySessionId || mySignal.aborted) break;
+
+      const item = transcriptionQueue.shift();
+      if (!item) continue;
+
+      // Skip anything not belonging to this session.
+      if (item.sessionId !== mySessionId) continue;
+
+      let { chunkNum, wavBlob } = item;
+      logInfo(`Transcribing chunk ${chunkNum}...`);
+
+      const transcript = await transcribeChunkDirectly(wavBlob, chunkNum, {
+        signal: item.signal || mySignal,
+        sessionId: mySessionId,
+      });
+
+      // If a new session started while we were transcribing, ignore the result.
+      if (groupId !== mySessionId || mySignal.aborted) break;
+
+      transcriptChunks[chunkNum] = transcript;
+      updateTranscriptionOutput();
+
+      wavBlob = null;
+    }
+  } finally {
+    // Only the owning worker may clear the flag.
+    if (processingQueueSessionId === mySessionId) {
+      isProcessingQueue = false;
+      processingQueueSessionId = null;
+    }
+
+    // If new items arrived after we flipped flags, kick again.
+    if (!isProcessingQueue && transcriptionQueue.length > 0) {
+      queueMicrotask(() => processTranscriptionQueue());
+    }
   }
-  
-  isProcessingQueue = false;
 }
+
 
 // --- Removed: Polling functions (pollChunkTranscript) since we now transcribe directly ---
 
@@ -632,6 +708,9 @@ function initRecording() {
       alert("Please enter a valid OpenAI API key before starting the recording.");
       return;
     }
+
+    // NEW: Start is a hard reset: abort/clear any pending transcription work.
+    beginFreshTranscriptionSession();
     resetRecordingState();
     const transcriptionElem = document.getElementById("transcription");
     if (transcriptionElem) transcriptionElem.value = "";
@@ -757,8 +836,8 @@ stopButton.addEventListener("click", async () => {
       enqueueTranscription(wavBlob, chunkNumber++);
       pendingVADChunks = [];
     }
-    // drain the queue so the final chunk is actually sent
-    await processTranscriptionQueue();
+    // Kick the queue worker (do NOT await; Start should be available immediately)
+    processTranscriptionQueue();
    // ─── NOW compute how many chunks we’re actually waiting on ───
     expectedChunks = chunkNumber - 1;
     if (expectedChunks > 0 && !completionTimerInterval) {
@@ -773,9 +852,15 @@ stopButton.addEventListener("click", async () => {
     manualStop = true;
     clearTimeout(chunkTimeoutId);
    
-    // keep existing stopMicrophone, timers and flush logic intact
+    
+
+    // NEW: Make Start available immediately; transcription continues in background.
+    finalizeStop();
+// keep existing stopMicrophone, timers and flush logic intact
+
+    const hasWork = transcriptionQueue.length > 0 || isProcessingQueue;
   // ── If there's nothing left to transcribe (e.g. paused + all chunks done) ──
-  if (audioFrames.length === 0 && pendingVADChunks.length === 0) {
+  if (audioFrames.length === 0 && pendingVADChunks.length === 0 && !hasWork) {
     // stop the completion timer if it was running
     clearInterval(completionTimerInterval);
 
@@ -818,6 +903,12 @@ stopButton.addEventListener("click", async () => {
   // Continue with the existing logic if not paused:
   if (audioFrames.length === 0 && !processedAnyAudioFrames) {
     // No speech ever detected → treat as instant transcription complete
+    // If we *do* have queued/in-flight transcription work (Silero VAD path),
+    // don't reset the UI or timer — let it finish in background.
+    if (hasWork) {
+      logInfo("Stop clicked: transcription continues in background.");
+      return;
+    }
     resetRecordingState();
     // Force completion timer back to zero
     const compTimerElem = document.getElementById("transcribeTimer");

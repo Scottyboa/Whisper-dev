@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Bergen Growth Study – Auto PDF Digitizer (No Upload)</title>
+  <title>Bergen Growth Study – Auto PDF Digitizer (GitHub Pages)</title>
   <style>
     :root { color-scheme: light; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 16px; }
@@ -24,33 +24,25 @@
   </style>
 
   <!--
-    ✅ NO UPLOAD UI.
-    This HTML expects the PDFs to be in the SAME FOLDER as this file with EXACT names:
-
-      gutter01.pdf
-      gutter15.pdf
-      jenter01.pdf
-      jenter15.pdf
-      BGS1-20210307N4-19M.pdf
-      BGS1-20200307N4-19F.pdf
-
-    IMPORTANT: Most browsers block fetch() from file://
-      Run a tiny local server in this folder:
-        python3 -m http.server 8000
-      then open:
-        http://localhost:8000/thisfile.html
+    ✅ No uploads, runs on GitHub Pages.
+    Put PDFs in: /vekstkurver/ at repo root, e.g.
+      /vekstkurver/gutter01.pdf
+      /vekstkurver/gutter15.pdf
+      /vekstkurver/jenter01.pdf
+      /vekstkurver/jenter15.pdf
+      /vekstkurver/BGS1-20210307N4-19M.pdf
+      /vekstkurver/BGS1-20200307N4-19F.pdf
   -->
 </head>
 <body>
-  <h1>Bergen Growth Study – growth percentiles digitized from local PDFs (no upload)</h1>
+  <h1>Bergen Growth Study – auto digitized growth charts (no upload)</h1>
 
   <div class="card">
     <div class="row">
       <div class="muted" style="flex:1; min-width: 360px;">
-        This tool loads the correct PDF automatically based on <b>sex</b> + <b>age</b> and digitizes
-        the percentile curves from the PDF vectors at runtime.
+        Loads the correct PDF automatically based on <b>sex</b> + <b>age</b> and digitizes percentile curves at runtime.
         <div class="warn" style="margin-top:6px;">
-          If charts don't load, run via <code>http://</code> (local server), not <code>file://</code>.
+          Note: PDF.js SVG backend is deprecated (warning in console), but still works. This build prefers heuristic panel layout for 0–1 and 1–5 charts.
         </div>
       </div>
 
@@ -119,22 +111,19 @@
 
   <div id="debugSvgHost"></div>
 
-  <!-- PDF.js (legacy UMD build so this works in a single local HTML file) -->
+  <!-- PDF.js (legacy UMD build) -->
   <script src="https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.min.js"></script>
 
   <script>
     /********************************************************************
-     * In-memory dataset output (as requested):
+     * In-memory dataset output:
      * curves[sex][ageRange][metric][percentile] = [{age: months, value: ...}, ...]
      ********************************************************************/
     const curves = { male: {}, female: {} };
     const PERCENTILES = [3,10,25,50,75,90,97];
-
-    // Extraction render scale (higher = more accurate, slower)
     const EXTRACT_SCALE = 2.5;
 
-    // PDF catalog (no upload, no user selection).
-    // Keep PDFs next to this HTML with these exact names.
+    // PDFs are served from /vekstkurver on GitHub Pages
     const pdfCatalog = {
       male: {
         "0-1": "./vekstkurver/gutter01.pdf",
@@ -148,23 +137,15 @@
       },
     };
 
-    /********************************************************************
-     * Optional manual calibration override:
-     * panelCalOverride[sex][ageRange][metric] = {
-     *   x: { minAge, maxAge, leftPx, rightPx },
-     *   y: { minVal, maxVal, bottomPx, topPx }
-     * }
-     ********************************************************************/
+    // Optional overrides (not used by default)
     const panelCalOverride = {
       male: { "0-1": {}, "1-5": {}, "4-19": {} },
       female: { "0-1": {}, "1-5": {}, "4-19": {} },
     };
 
-    // Caches
     const pdfCache = new Map();    // url -> pdfDoc
     const pageCache = new Map();   // url -> { page, viewport, canvas, svg, textItems, panels, meta }
 
-    // UI
     const $ = (id) => document.getElementById(id);
     const statusEl = $("status");
     const debugWrap = $("debugWrap");
@@ -174,7 +155,7 @@
     const chartCtx = chartCanvas.getContext("2d");
 
     function setStatus(msg) { statusEl.textContent = msg; }
-    function appendStatus(msg) { statusEl.textContent += (statusEl.textContent ? "\\n" : "") + msg; }
+    function appendStatus(msg) { statusEl.textContent += (statusEl.textContent ? "\n" : "") + msg; }
     function setDebugVisible(on) { debugWrap.style.display = on ? "block" : "none"; }
     function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
 
@@ -216,21 +197,32 @@
       $("pointInfo").textContent = "–";
     }
 
-    /********************************************************************
-     * PDF load (auto from catalog)
-     ********************************************************************/
     async function loadPdf(url) {
       if (pdfCache.has(url)) return pdfCache.get(url);
 
-      // Security hardening for PDF.js
       const commonDocOpts = { isEvalSupported: false };
 
-      appendStatus(`Loading PDF: ${url}`);
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`Failed to fetch ${url} (HTTP ${resp.status})`);
+      const resolvedUrl = new URL(url, location.href).toString();
+      appendStatus(`Loading PDF: ${resolvedUrl}`);
+      const resp = await fetch(resolvedUrl, { cache: "no-store" });
+      appendStatus(`Fetch status: ${resp.status} ${resp.statusText}`);
+      if (!resp.ok) throw new Error(`Failed to fetch ${resolvedUrl} (HTTP ${resp.status})`);
+
+      const contentType = (resp.headers.get("content-type") || "").toLowerCase();
+      appendStatus(`content-type: ${contentType || "(missing)"}`);
       const buf = await resp.arrayBuffer();
 
-      // Worker can fail under file://, so disable worker.
+      const sigBytes = new Uint8Array(buf.slice(0, 16));
+      const sigText = String.fromCharCode(...sigBytes);
+      if (!sigText.startsWith("%PDF-")) {
+        const first = new TextDecoder("utf-8", { fatal: false }).decode(sigBytes);
+        throw new Error(
+          `Fetched a non-PDF response for: ${resolvedUrl}\n` +
+          `content-type: ${contentType || "(missing)"}\n` +
+          `first-bytes: ${JSON.stringify(first)}`
+        );
+      }
+
       try {
         pdfjsLib.GlobalWorkerOptions.workerSrc = "https://unpkg.com/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js";
       } catch {}
@@ -308,34 +300,6 @@
       return inter / area;
     }
 
-    function getRgb(strokeStr) {
-      if (!strokeStr) return null;
-      const s = strokeStr.trim();
-      if (s.startsWith("rgb")) {
-        const m = s.match(/rgb(a)?\(([^)]+)\)/i);
-        if (!m) return null;
-        const parts = m[2].split(",").map(x => parseFloat(x.trim()));
-        return { r: parts[0], g: parts[1], b: parts[2] };
-      }
-      if (s.startsWith("#")) {
-        const hex = s.slice(1);
-        if (hex.length === 3) {
-          const r = parseInt(hex[0] + hex[0], 16);
-          const g = parseInt(hex[1] + hex[1], 16);
-          const b = parseInt(hex[2] + hex[2], 16);
-          return { r, g, b };
-        }
-        if (hex.length >= 6) {
-          const r = parseInt(hex.slice(0,2), 16);
-          const g = parseInt(hex.slice(2,4), 16);
-          const b = parseInt(hex.slice(4,6), 16);
-          return { r, g, b };
-        }
-      }
-      return null;
-    }
-    function rgbSum(rgb) { return (rgb?.r||0) + (rgb?.g||0) + (rgb?.b||0); }
-
     function detectPanelsFromSVG(svg, viewport) {
       const W = viewport.width, H = viewport.height;
       const pageArea = W * H;
@@ -348,34 +312,49 @@
         if (!bb || bb.width <= 0 || bb.height <= 0) continue;
 
         const area = bboxArea(bb);
-        if (area < pageArea * 0.06) continue;
-        if (area > pageArea * 0.92) continue;
+        if (area < pageArea * 0.045) continue;
+        if (area > pageArea * 0.85) continue;
+        if (bb.width < W * 0.45) continue;
+        if (bb.height < H * 0.12) continue;
 
-        const cs = getComputedStyle(el);
-        const stroke = cs.stroke;
-        const fill = cs.fill;
-        const sw = parseFloat(cs.strokeWidth || "0");
-
-        const rgb = getRgb(stroke);
-        const isDark = rgb && rgbSum(rgb) < 260; // axis boxes are near black
-        const fillNone = (fill === "none" || fill === "rgba(0, 0, 0, 0)" || fill === "transparent");
-        if (!isDark) continue;
-        if (!fillNone) continue;
-        if (!(sw > 0.3 && sw < 6)) continue;
-
-        candidates.push({ x: bb.x, y: bb.y, width: bb.width, height: bb.height, el, sw });
+        candidates.push({ x: bb.x, y: bb.y, width: bb.width, height: bb.height });
       }
 
       candidates.sort((a,b) => bboxArea(b) - bboxArea(a));
       const picked = [];
       for (const c of candidates) {
-        if (picked.some(p => iou(p, c) > 0.70)) continue;
+        if (picked.some(p => iou(p, c) > 0.75)) continue;
         picked.push(c);
-        if (picked.length >= 4) break; // (0-1 and 1-5 have 3 panels; keep a spare)
+        if (picked.length >= 6) break;
+      }
+      picked.sort((a,b) => (a.y - b.y) || (a.x - b.x));
+      return picked;
+    }
+
+    function detectPanelsHeuristic(meta, viewport) {
+      const W = viewport.width, H = viewport.height;
+      const ageRange = meta?.ageRange || null;
+
+      // Central plot region bounds (normalized)
+      const left = 0.08 * W;
+      const right = 0.92 * W;
+      const top = 0.18 * H;
+      const bottom = 0.93 * H;
+      const w = right - left;
+      const h = bottom - top;
+
+      if (ageRange === "0-1" || ageRange === "1-5") {
+        const gap = 0.02 * H;
+        const panelH = (h - 2 * gap) / 3;
+        return [
+          { x: left, y: top, width: w, height: panelH, metric: "head-circumference-for-age" },
+          { x: left, y: top + panelH + gap, width: w, height: panelH, metric: "height-for-age" },
+          { x: left, y: top + 2 * (panelH + gap), width: w, height: panelH, metric: "weight-for-age" },
+        ];
       }
 
-      picked.sort((a,b) => (a.y - b.y) || (a.x - b.x)); // top-to-bottom
-      return picked;
+      if (ageRange === "4-19") return [{ x: left, y: top, width: w, height: h }];
+      return [{ x: left, y: top, width: w, height: h }];
     }
 
     function associateMetricsToPanels(textItems, panels, ageRangeKey) {
@@ -390,7 +369,8 @@
         return null;
       }
 
-      for (const p of panels) p.metric = null;
+      // IMPORTANT: don't wipe metrics if already present (heuristic panels set metric)
+      for (const p of panels) p.metric = (p.metric ?? null);
 
       if (labelItems.length) {
         for (const li of labelItems) {
@@ -402,13 +382,13 @@
             const d = Math.hypot(li.x - cx, li.y - cy);
             if (!best || d < best.d) best = { p, d, m };
           }
-          if (best) best.p.metric = best.m;
+          // Only set if missing (avoid overriding heuristic mapping)
+          if (best && !best.p.metric) best.p.metric = best.m;
         }
       }
 
-      // Fallback by order if still missing
       const desired = (panels.length >= 3)
-        ? ["head-circumference-for-age","height-for-age","weight-for-age"] // (top, mid, bottom)
+        ? ["head-circumference-for-age","height-for-age","weight-for-age"]
         : (panels.length === 2)
           ? ["height-for-age","weight-for-age"]
           : [];
@@ -422,7 +402,6 @@
           if (p.metric === "head-circumference-for-age") p.metric = null;
         }
       }
-
       return panels;
     }
 
@@ -430,48 +409,69 @@
       const nums = [];
       for (const t of textItems) {
         if (t.x < box.xMin || t.x > box.xMax || t.y < box.yMin || t.y > box.yMax) continue;
-        if (/^P\\d+$/i.test(t.str)) continue;
-        const m = t.str.match(/^-?\\d+(\\.\\d+)?$/);
+        if (/^P\d+$/i.test(t.str)) continue;
+
+        // Accept "12", "12.5", "12,5", and "120cm" / "12 kg" (strip units/spaces)
+        let s = (t.str || "").trim();
+        s = s.replace(/\s+/g, "");
+        const m = s.match(/^(-?\d+(?:[.,]\d+)?)/);
         if (!m) continue;
-        const val = parseFloat(t.str);
+        const val = parseFloat(m[1].replace(",", "."));
         if (!isFinite(val)) continue;
-        nums.push({ val, x: t.x, y: t.y });
+        nums.push({ val, x: t.x, y: t.y, raw: t.str });
       }
       return nums;
     }
 
     function extractYTicks(textItems, panel) {
-      // Search BOTH left and right margins adjacent to the panel (these PDFs often label y ticks on the right).
       const W = panel.width;
       const H = panel.height;
 
       const leftBox = {
-        xMin: panel.x - W * 0.28,
-        xMax: panel.x + W * 0.06,
-        yMin: panel.y - H * 0.06,
-        yMax: panel.y + H * 1.06
+        xMin: panel.x - W * 0.70,
+        xMax: panel.x + W * 0.16,
+        yMin: panel.y - H * 0.14,
+        yMax: panel.y + H * 1.14
       };
       const rightBox = {
-        xMin: panel.x + W * 0.94,
-        xMax: panel.x + W * 1.28,
-        yMin: panel.y - H * 0.06,
-        yMax: panel.y + H * 1.06
+        xMin: panel.x + W * 0.84,
+        xMax: panel.x + W * 1.70,
+        yMin: panel.y - H * 0.14,
+        yMax: panel.y + H * 1.14
+      };
+
+      // also include a narrow band inside the panel edges (some PDFs place ticks inside)
+      const innerLeft = {
+        xMin: panel.x - W * 0.02,
+        xMax: panel.x + W * 0.14,
+        yMin: panel.y - H * 0.08,
+        yMax: panel.y + H * 1.08
+      };
+      const innerRight = {
+        xMin: panel.x + W * 0.86,
+        xMax: panel.x + W * 1.02,
+        yMin: panel.y - H * 0.08,
+        yMax: panel.y + H * 1.08
       };
 
       const nums = [
         ...findNumericTextInBox(textItems, leftBox),
         ...findNumericTextInBox(textItems, rightBox),
+        ...findNumericTextInBox(textItems, innerLeft),
+        ...findNumericTextInBox(textItems, innerRight),
       ];
 
       // de-dup by value
       const byVal = new Map();
       for (const n of nums) {
-        const k = n.val.toFixed(2);
+        const k = n.val.toFixed(3);
         if (!byVal.has(k)) byVal.set(k, []);
         byVal.get(k).push(n);
       }
+
       const ticks = [];
       for (const arr of byVal.values()) {
+        // pick median y to stabilize
         arr.sort((a,b) => a.y - b.y);
         ticks.push(arr[Math.floor(arr.length/2)]);
       }
@@ -503,17 +503,13 @@
     }
 
     function kmeans1D(values, k=2, iters=8) {
-      if (!values.length) return [];
+      if (!values.length) return null;
       const sorted = [...values].sort((a,b)=>a-b);
-      // init centroids at quantiles
       const cents = [];
-      for (let i=0; i<k; i++) {
-        cents.push(sorted[Math.floor((i+0.5) * (sorted.length / k))]);
-      }
-      let assigns = new Array(values.length).fill(0);
+      for (let i=0; i<k; i++) cents.push(sorted[Math.floor((i+0.5) * (sorted.length / k))]);
+      const assigns = new Array(values.length).fill(0);
 
       for (let iter=0; iter<iters; iter++) {
-        // assign
         for (let i=0; i<values.length; i++) {
           let best = 0, bestD = Infinity;
           for (let c=0; c<k; c++) {
@@ -522,7 +518,6 @@
           }
           assigns[i] = best;
         }
-        // recompute
         for (let c=0; c<k; c++) {
           let sum = 0, cnt = 0;
           for (let i=0; i<values.length; i++) {
@@ -536,21 +531,18 @@
     }
 
     function splitCombinedPanelIfNeeded(meta, panels, textItems) {
-      // The 4–19 PDFs are typically one large axes box containing BOTH height (top) and weight (bottom).
-      // If we only detected 1 panel rectangle, split it into 2 by clustering right-side y tick label positions.
       if (meta?.ageRange !== "4-19") return panels;
       if (panels.length !== 1) return panels;
 
       const P = panels[0];
       const rightTicksBox = {
-        xMin: P.x + P.width * 0.92,
-        xMax: P.x + P.width * 1.30,
-        yMin: P.y + P.height * 0.05,
-        yMax: P.y + P.height * 0.98,
+        xMin: P.x + P.width * 0.82,
+        xMax: P.x + P.width * 1.75,
+        yMin: P.y + P.height * 0.03,
+        yMax: P.y + P.height * 0.99,
       };
       const nums = findNumericTextInBox(textItems, rightTicksBox);
-
-      if (nums.length < 16) return panels; // not enough to robustly split
+      if (nums.length < 16) return panels;
 
       const ys = nums.map(n => n.y);
       const km = kmeans1D(ys, 2, 10);
@@ -561,7 +553,6 @@
       cluster[0].sort((a,b)=>a-b);
       cluster[1].sort((a,b)=>a-b);
 
-      // Identify top vs bottom cluster by centroid
       const idxTop = (km.cents[0] < km.cents[1]) ? 0 : 1;
       const idxBot = 1 - idxTop;
 
@@ -569,16 +560,8 @@
       const ySplit = (topYs[topYs.length-1] + botYs[0]) / 2;
 
       const pad = P.height * 0.01;
-      const topPanel = {
-        x: P.x, y: P.y, width: P.width, height: Math.max(10, (ySplit - pad) - P.y),
-        metric: "height-for-age",
-      };
-      const botPanel = {
-        x: P.x, y: Math.min(P.y + P.height - 10, ySplit + pad), width: P.width,
-        height: Math.max(10, (P.y + P.height) - (ySplit + pad)),
-        metric: "weight-for-age",
-      };
-
+      const topPanel = { x: P.x, y: P.y, width: P.width, height: Math.max(10, (ySplit - pad) - P.y), metric: "height-for-age" };
+      const botPanel = { x: P.x, y: Math.min(P.y + P.height - 10, ySplit + pad), width: P.width, height: Math.max(10, (P.y + P.height) - (ySplit + pad)), metric: "weight-for-age" };
       return [topPanel, botPanel];
     }
 
@@ -598,7 +581,20 @@
       ]);
 
       const meta = parseSexAndAgeRangeFromText(textItems);
-      let panels = svg ? detectPanelsFromSVG(svg, viewport) : [];
+
+      // ✅ Force heuristic panels for 0–1 and 1–5 (stable layout, avoids SVG over-detection)
+      let panels;
+      if (meta?.ageRange === "0-1" || meta?.ageRange === "1-5") {
+        panels = detectPanelsHeuristic(meta, viewport);
+        appendStatus(`Using heuristic panels for ageRange=${meta?.ageRange} (stable 3-panel layout).`);
+      } else {
+        panels = svg ? detectPanelsFromSVG(svg, viewport) : [];
+        if (!panels.length) {
+          appendStatus("SVG panel detection returned 0 panels; using heuristic panel boxes.");
+          panels = detectPanelsHeuristic(meta, viewport);
+        }
+      }
+
       panels = splitCombinedPanelIfNeeded(meta, panels, textItems);
       associateMetricsToPanels(textItems, panels, meta.ageRange);
 
@@ -608,8 +604,36 @@
     }
 
     /********************************************************************
-     * Curve extraction (vector-first; raster fallback kept)
+     * Curve extraction (vector-first; raster fallback)
      ********************************************************************/
+    function getRgb(strokeStr) {
+      if (!strokeStr) return null;
+      const s = strokeStr.trim();
+      if (s.startsWith("rgb")) {
+        const m = s.match(/rgb(a)?\(([^)]+)\)/i);
+        if (!m) return null;
+        const parts = m[2].split(",").map(x => parseFloat(x.trim()));
+        return { r: parts[0], g: parts[1], b: parts[2] };
+      }
+      if (s.startsWith("#")) {
+        const hex = s.slice(1);
+        if (hex.length === 3) {
+          const r = parseInt(hex[0] + hex[0], 16);
+          const g = parseInt(hex[1] + hex[1], 16);
+          const b = parseInt(hex[2] + hex[2], 16);
+          return { r, g, b };
+        }
+        if (hex.length >= 6) {
+          const r = parseInt(hex.slice(0,2), 16);
+          const g = parseInt(hex.slice(2,4), 16);
+          const b = parseInt(hex.slice(4,6), 16);
+          return { r, g, b };
+        }
+      }
+      return null;
+    }
+    function rgbSum(rgb) { return (rgb?.r||0) + (rgb?.g||0) + (rgb?.b||0); }
+
     function isLikelyPercentilePath(pathEl, panel) {
       let bb;
       try { bb = pathEl.getBBox(); } catch { return false; }
@@ -622,30 +646,24 @@
 
       if (!stroke || stroke === "none") return false;
       if (!(fill === "none" || fill === "rgba(0, 0, 0, 0)" || fill === "transparent")) return false;
-
-      // Exclude very thick decorative strokes (title bars etc)
-      if (!(sw > 0.18 && sw < 2.4)) return false;
+      if (!(sw > 0.18 && sw < 2.6)) return false;
 
       const rgb = getRgb(stroke);
       if (rgb) {
         const s = rgbSum(rgb);
-        // Gridlines tend to be light gray; keep darker strokes.
-        if (s > 560) return false;
+        if (s > 620) return false; // drop very light gridlines
       }
 
-      // Percentile curves have "shape": not basically 1px tall or 1px wide.
       if (bb.width < panel.width * 0.25) return false;
       if (bb.height < panel.height * 0.05) return false;
 
-      // Must be long-ish compared to panel width
       let len = 0;
       try { len = pathEl.getTotalLength(); } catch { return false; }
       if (len < panel.width * 0.9) return false;
-
       return true;
     }
 
-    function samplePathPoints(pathEl, panel, N = 520) {
+    function samplePathPoints(pathEl, panel, N = 560) {
       const pts = [];
       const len = pathEl.getTotalLength();
       for (let i = 0; i <= N; i++) {
@@ -715,18 +733,15 @@
       const scored = polys
         .map(poly => {
           const y = yAtX(poly, midX);
-          // approximate length by sum of segment lengths
           let L = 0;
           for (let i=0; i<poly.length-1; i++) L += Math.hypot(poly[i+1].x - poly[i].x, poly[i+1].y - poly[i].y);
           return { poly, midY: y, L };
         })
         .filter(x => x.midY != null)
-        // bottom to top (bigger y => lower value => smaller percentile)
         .sort((a,b) => (b.midY - a.midY) || (b.L - a.L));
 
       const picked = [];
       for (const cand of scored) {
-        // skip near-duplicate midYs (same curve may be duplicated)
         const near = picked.find(p => Math.abs(p.midY - cand.midY) < minSep);
         if (near) {
           if (cand.L > near.L) { near.poly = cand.poly; near.L = cand.L; near.midY = cand.midY; }
@@ -735,8 +750,6 @@
         picked.push({ ...cand });
         if (picked.length >= 7) break;
       }
-
-      // If we still don't have 7 (rare), just take the next best candidates
       if (picked.length < 7) {
         for (const cand of scored) {
           if (picked.length >= 7) break;
@@ -744,78 +757,16 @@
           picked.push({ ...cand });
         }
       }
-
-      picked.sort((a,b)=>b.midY-a.midY); // ensure P3..P97 order
+      picked.sort((a,b)=>b.midY-a.midY);
       return picked.slice(0, 7).map(x => x.poly);
     }
 
-    async function extractCurvesForPanel(pageInfo, panel) {
-      const { meta, textItems, svg, canvas } = pageInfo;
-      const sex = meta.sex, ageRangeKey = meta.ageRange;
-      const metric = panel.metric;
-
-      if (!sex || !ageRangeKey || !metric) return { ok: false, reason: "Missing page meta or metric." };
-
-      const cal = calibratePanel(panel, sex, ageRangeKey, metric, textItems);
-      if (!cal) return { ok: false, reason: "Calibration failed (no range)." };
-      if (cal.y.minVal == null || cal.y.maxVal == null) {
-        return { ok: false, reason: "Calibration failed: couldn't parse y-axis tick labels (min/max)." };
-      }
-
-      const store = (curves[sex][ageRangeKey] ||= {});
-      (store[metric] ||= {});
-      (store._cal ||= {});
-
-      let out = {};
-      let used = "vector";
-
-      if (svg) {
-        const allPaths = Array.from(svg.querySelectorAll("path"));
-        const candidates = allPaths.filter(p => isLikelyPercentilePath(p, panel));
-
-        // Sample candidate paths into polylines
-        const polys = candidates.map(p => samplePathPoints(p, panel, 560));
-
-        const picked = pickSevenCurves(polys, panel.width, panel.height);
-
-        for (let i=0; i<picked.length && i<PERCENTILES.length; i++) {
-          const pct = PERCENTILES[i];
-          const data = polyToData(picked[i], cal, panel.width, panel.height);
-          if (data) out[pct] = data;
-        }
-
-        // If not enough curves, fallback to raster tracing
-        if (Object.keys(out).length < 6) {
-          used = "raster-fallback";
-          out = await rasterFallbackExtract(panel, canvas, cal);
-        }
-      } else {
-        used = "raster-only";
-        out = await rasterFallbackExtract(panel, canvas, cal);
-      }
-
-      for (const [pct, series] of Object.entries(out)) store[metric][pct] = series;
-
-      store._cal[metric] = {
-        x: cal.x, y: cal.y,
-        panelPx: { w: panel.width, h: panel.height },
-        panelBox: { x: panel.x, y: panel.y, w: panel.width, h: panel.height },
-        source: cal.source,
-        extractedBy: used,
-        pdfUrl: pageInfo.url
-      };
-
-      return { ok: true, used, cal, curveCount: Object.keys(out).length };
-    }
-
-    // --- Raster fallback (kept minimal; mostly unused for these vector PDFs) ---
     function grayMask(imgData, w, h) {
       const mask = new Uint8Array(w*h);
       const d = imgData.data;
       for (let i=0, p=0; i<d.length; i+=4, p++) {
         const r = d[i], g = d[i+1], b = d[i+2], a = d[i+3];
         if (a < 40) continue;
-        // keep dark pixels
         const lum = 0.2126*r + 0.7152*g + 0.0722*b;
         if (lum < 110) mask[p] = 1;
       }
@@ -843,7 +794,6 @@
         return out;
       }
 
-      // init at first informative column
       let x0 = 0;
       while (x0 < w) {
         const ys = segmentsAtX(x0);
@@ -902,7 +852,6 @@
       const mask = grayMask(img, tmp.width, tmp.height);
       let polys = traceCurvesFromMask(mask, tmp.width, tmp.height, 7);
 
-      // Sort so bottom curve => P3
       polys.sort((A,B) => yAtX(B, tmp.width*0.55) - yAtX(A, tmp.width*0.55));
       polys = polys.slice(0, 7);
 
@@ -915,27 +864,76 @@
       return out;
     }
 
-    /********************************************************************
-     * Lazy extraction entrypoint (no manual "load" step)
-     ********************************************************************/
+    async function extractCurvesForPanel(pageInfo, panel) {
+      const { meta, textItems, svg, canvas } = pageInfo;
+      const sex = meta.sex, ageRangeKey = meta.ageRange;
+      const metric = panel.metric;
+
+      if (!sex || !ageRangeKey || !metric) return { ok: false, reason: "Missing page meta or metric." };
+
+      const cal = calibratePanel(panel, sex, ageRangeKey, metric, textItems);
+      if (!cal) return { ok: false, reason: "Calibration failed (no range)." };
+      if (cal.y.minVal == null || cal.y.maxVal == null) {
+        return { ok: false, reason: "Calibration failed: couldn't parse y-axis tick labels (min/max)." };
+      }
+
+      const store = (curves[sex][ageRangeKey] ||= {});
+      (store[metric] ||= {});
+      (store._cal ||= {});
+
+      let out = {};
+      let used = "vector";
+
+      if (svg) {
+        const allPaths = Array.from(svg.querySelectorAll("path"));
+        const candidates = allPaths.filter(p => isLikelyPercentilePath(p, panel));
+        const polys = candidates.map(p => samplePathPoints(p, panel, 560));
+        const picked = pickSevenCurves(polys, panel.width, panel.height);
+
+        for (let i=0; i<picked.length && i<PERCENTILES.length; i++) {
+          const pct = PERCENTILES[i];
+          const data = polyToData(picked[i], cal, panel.width, panel.height);
+          if (data) out[pct] = data;
+        }
+
+        if (Object.keys(out).length < 6) {
+          used = "raster-fallback";
+          out = await rasterFallbackExtract(panel, canvas, cal);
+        }
+      } else {
+        used = "raster-only";
+        out = await rasterFallbackExtract(panel, canvas, cal);
+      }
+
+      for (const [pct, series] of Object.entries(out)) store[metric][pct] = series;
+
+      store._cal[metric] = {
+        x: cal.x, y: cal.y,
+        panelPx: { w: panel.width, h: panel.height },
+        panelBox: { x: panel.x, y: panel.y, w: panel.width, h: panel.height },
+        source: cal.source,
+        extractedBy: used,
+        pdfUrl: pageInfo.url
+      };
+
+      return { ok: true, used, cal, curveCount: Object.keys(out).length };
+    }
+
     async function ensureExtracted(sex, ageRangeKey) {
       curves[sex][ageRangeKey] ||= {};
-      const have = curves[sex][ageRangeKey]._extracted === true;
-      if (have) return;
+      if (curves[sex][ageRangeKey]._extracted === true) return;
 
       const url = pdfCatalog?.[sex]?.[ageRangeKey];
       if (!url) throw new Error(`No PDF mapped for ${sex}/${ageRangeKey}`);
 
-      appendStatus(`\\n--- Extracting ${sex}/${ageRangeKey} from ${url} ---`);
+      appendStatus(`\n--- Extracting ${sex}/${ageRangeKey} from ${url} ---`);
       const pageInfo = await extractFromPdfUrl(url);
 
       if (!pageInfo.meta.sex || !pageInfo.meta.ageRange) {
         appendStatus("Warning: couldn't detect sex/ageRange from PDF text; continuing with requested selection.");
       }
+      if (!pageInfo.panels.length) throw new Error(`No panels detected in ${url}`);
 
-      if (!pageInfo.panels.length) throw new Error(`No panels detected in ${url} (SVG extraction failed?)`);
-
-      // Extract for each panel with a known metric
       let okCount = 0;
       for (const p of pageInfo.panels) {
         if (!p.metric) continue;
@@ -949,9 +947,6 @@
       appendStatus(`Finished ${sex}/${ageRangeKey}. Panels OK: ${okCount}/${pageInfo.panels.length}`);
     }
 
-    /********************************************************************
-     * Percentile interpolation
-     ********************************************************************/
     function interpolateCurveValue(points, age) {
       if (!points || points.length < 2) return null;
       if (age <= points[0].age) return points[0].value;
@@ -994,9 +989,6 @@
       return { ok:false, reason:"Failed to bracket (unexpected curve ordering)." };
     }
 
-    /********************************************************************
-     * Plotting (single chart visible)
-     ********************************************************************/
     async function drawSelectedChart() {
       const sex = $("sex").value;
       const metric = $("metric").value;
@@ -1010,14 +1002,13 @@
         clearCanvas();
         return;
       }
-
       if (metric === "head-circumference-for-age" && rangeKey === "4-19") {
         $("pctInfo").textContent = "Head circumference chart is not present for 4–19 in these PDFs.";
         clearCanvas();
         return;
       }
 
-      setStatus(""); // reset status per plot
+      setStatus("");
       appendStatus("Preparing selected chart...");
 
       await ensureExtracted(sex, rangeKey);
@@ -1037,26 +1028,19 @@
         return;
       }
 
-      // Load page background for the correct PDF so the user sees the same chart.
       const pageInfo = await extractFromPdfUrl(cal.pdfUrl);
 
-      // Canvas to panel pixel size
       chartCanvas.width = Math.ceil(cal.panelPx.w);
       chartCanvas.height = Math.ceil(cal.panelPx.h);
 
       const box = cal.panelBox;
       chartCtx.clearRect(0,0,chartCanvas.width,chartCanvas.height);
-      chartCtx.drawImage(
-        pageInfo.canvas,
-        box.x, box.y, box.w, box.h,
-        0, 0, chartCanvas.width, chartCanvas.height
-      );
+      chartCtx.drawImage(pageInfo.canvas, box.x, box.y, box.w, box.h, 0, 0, chartCanvas.width, chartCanvas.height);
 
-      // Overlay extracted curves (digital)
+      // Overlay curves
       chartCtx.save();
       chartCtx.lineWidth = 1.6;
       chartCtx.globalAlpha = 0.95;
-
       for (const p of PERCENTILES) {
         const series = metricCurves[p];
         if (!series) continue;
@@ -1065,14 +1049,13 @@
           const pt = series[i];
           const x = ((pt.age - cal.x.minAge) / (cal.x.maxAge - cal.x.minAge)) * chartCanvas.width;
           const y = chartCanvas.height - ((pt.value - cal.y.minVal) / (cal.y.maxVal - cal.y.minVal)) * chartCanvas.height;
-          if (i === 0) chartCtx.moveTo(x,y);
-          else chartCtx.lineTo(x,y);
+          if (i === 0) chartCtx.moveTo(x,y); else chartCtx.lineTo(x,y);
         }
         chartCtx.stroke();
       }
       chartCtx.restore();
 
-      // User point
+      // User dot
       const x = ((ageMonths - cal.x.minAge) / (cal.x.maxAge - cal.x.minAge)) * chartCanvas.width;
       const y = chartCanvas.height - ((value - cal.y.minVal) / (cal.y.maxVal - cal.y.minVal)) * chartCanvas.height;
 
@@ -1087,36 +1070,41 @@
       chartCtx.restore();
 
       $("pointInfo").textContent = `age=${ageMonths}mo, value=${value} ${metricUnit(metric)} → px=(${x.toFixed(0)},${y.toFixed(0)})`;
-
       const est = percentileEstimate(sex, rangeKey, metric, ageMonths, value);
       $("pctInfo").textContent = est.ok ? est.text : `Error: ${est.reason}`;
 
       if ($("debugToggle").checked) {
         debugOut.textContent =
-          `Selection: ${sex}/${rangeKey}/${metric}\\n` +
-          `PDF: ${cal.pdfUrl}\\n` +
-          `Calibration: x=[${cal.x.minAge},${cal.x.maxAge}] months; y=[${cal.y.minVal},${cal.y.maxVal}] ${metricUnit(metric)}\\n` +
-          `Extraction: ${cal.extractedBy} (${cal.source})\\n` +
-          `Curves present: ${PERCENTILES.filter(p=>metricCurves[p]).length}/7\\n`;
+          `Selection: ${sex}/${rangeKey}/${metric}\n` +
+          `PDF: ${cal.pdfUrl}\n` +
+          `Calibration: x=[${cal.x.minAge},${cal.x.maxAge}] months; y=[${cal.y.minVal},${cal.y.maxVal}] ${metricUnit(metric)}\n` +
+          `Extraction: ${cal.extractedBy} (${cal.source})\n` +
+          `Curves present: ${PERCENTILES.filter(p=>metricCurves[p]).length}/7\n`;
       }
     }
 
-    /********************************************************************
-     * Wire UI
-     ********************************************************************/
     $("debugToggle").addEventListener("change", (e) => setDebugVisible(e.target.checked));
     $("metric").addEventListener("change", () => updateValueInputLabel());
     $("ageYears").addEventListener("change", () => $("ageYears").value = clamp(parseInt($("ageYears").value || "0", 10), 0, 19));
     $("ageMonthsPart").addEventListener("change", () => $("ageMonthsPart").value = clamp(parseInt($("ageMonthsPart").value || "0", 10), 0, 11));
-    $("plotBtn").addEventListener("click", () => drawSelectedChart().catch(e => $("pctInfo").textContent = `Plot error: ${e?.message || e}`));
-    $("exportBtn").addEventListener("click", () => { console.log("curves dataset:", curves); alert("Curves dataset is in the console as `curves`."); });
+
+    $("plotBtn").addEventListener("click", () => {
+      drawSelectedChart().catch(e => {
+        const msg = e?.stack || e?.message || String(e);
+        $("pctInfo").textContent = `Plot error: ${e?.message || e}`;
+        setStatus("ERROR:\n" + msg);
+        console.error(e);
+      });
+    });
+
+    $("exportBtn").addEventListener("click", () => {
+      console.log("curves dataset:", curves);
+      alert("Curves dataset is in the console as `curves`.");
+    });
 
     updateValueInputLabel();
     clearCanvas();
-    setStatus(
-      "Ready.\\n" +
-      "Put the PDFs next to this HTML (see comment at top), run a local server, and click “Show chart”."
-    );
+    setStatus("Ready. Choose sex/age/metric, enter a value, then click “Show chart”.");
   </script>
 </body>
 </html>

@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="no">
-<head>
-  <meta charset="UTF-8" />
+<head> <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fri androgen-indeks og fritt testosteron – kalkulator</title>
 
@@ -316,13 +315,7 @@
   </div>
 
   <script>
-    // Back to frontpage (same pattern as transcribe.html) :contentReference[oaicite:2]{index=2}
-    document.getElementById('backToHomeButton').addEventListener('click', () => {
-      const loc = window.location;
-      const newPath = loc.pathname.replace(/\/[^\/]*$/, '/index.html');
-      window.location.href = loc.origin + newPath + loc.search + loc.hash;
-    });
-
+    
     // --- Helpers ---
     function parseNumber(v) {
       if (v == null) return NaN;

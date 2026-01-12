@@ -129,6 +129,11 @@
       background: #fff;
       color: #333;
     }
+    /* Placeholder styling */
+    .control::placeholder { color: #999; }
+    /* Grey placeholder for selects (when value="") */
+    select.control:invalid { color: #999; }
+    select.control option { color: #333; }
     .control-row {
       display: grid;
       grid-template-columns: 1fr 140px;
@@ -234,7 +239,8 @@
           <div class="form-grid">
             <div class="field">
               <label for="sex">Kjønn</label>
-              <select id="sex" class="control">
+              <select id="sex" class="control" required>
+                <option value="" disabled selected>..</option>
                 <option value="male">Mann</option>
                 <option value="female">Kvinne</option>
               </select>
@@ -242,29 +248,31 @@
 
             <div class="field">
               <label for="age">Alder (år)</label>
-              <input id="age" class="control" type="number" inputmode="numeric" min="30" max="90" step="1" value="55" />
+              <input id="age" class="control" type="number" inputmode="numeric" min="30" max="90" step="1" placeholder="f.ex 55" />
               <div class="hint">Fargesonene brukes for 45–74 år. Utenfor dette vises risiko, men sone merkes som “individuell vurdering”.</div>
             </div>
 
             <div class="field">
               <label for="smoker">Røyker (daglig)</label>
-              <select id="smoker" class="control">
-                <option value="no" selected>Nei</option>
+              <select id="smoker" class="control" required>
+                <option value="" disabled selected>..</option>
+                <option value="no">Nei</option>
                 <option value="yes">Ja</option>
               </select>
             </div>
 
             <div class="field">
               <label for="bpmed">Tar blodtrykksmedisin</label>
-              <select id="bpmed" class="control">
-                <option value="no" selected>Nei</option>
+              <select id="bpmed" class="control" required>
+                <option value="" disabled selected>..</option>
+                <option value="no">Nei</option>
                 <option value="yes">Ja</option>
               </select>
             </div>
 
             <div class="field">
               <label for="sbp">Systolisk blodtrykk (mmHg)</label>
-              <input id="sbp" class="control" type="number" inputmode="decimal" min="70" max="260" step="1" value="140" />
+              <input id="sbp" class="control" type="number" inputmode="decimal" min="70" max="260" step="1" placeholder="f.ex 140" />
             </div>
 
             <div class="field">
@@ -279,7 +287,7 @@
             <div class="field">
               <label>Total-kolesterol</label>
               <div class="control-row">
-                <input id="tc" class="control" type="number" inputmode="decimal" min="1" max="25" step="0.1" value="6.0" />
+                <input id="tc" class="control" type="number" inputmode="decimal" min="1" max="25" step="0.1" placeholder="f.ex 6,0" />
                 <select id="tcUnit" class="control">
                   <option value="mmol" selected>mmol/L</option>
                   <option value="mgdl">mg/dL</option>
@@ -290,7 +298,7 @@
             <div class="field">
               <label>HDL-kolesterol</label>
               <div class="control-row">
-                <input id="hdl" class="control" type="number" inputmode="decimal" min="0.1" max="15" step="0.1" value="1.2" />
+                <input id="hdl" class="control" type="number" inputmode="decimal" min="0.1" max="15" step="0.1" placeholder="f.ex 1,2" />
                 <select id="hdlUnit" class="control">
                   <option value="mmol" selected>mmol/L</option>
                   <option value="mgdl">mg/dL</option>
@@ -466,6 +474,11 @@
     function validateInputs(vals) {
       const issues = [];
 
+      if (vals.sex !== "male" && vals.sex !== "female") issues.push("Kjønn må velges.");
+      if (vals.smoker !== true && vals.smoker !== false) issues.push("Røyker (daglig) må velges.");
+      if (vals.bpmed !== true && vals.bpmed !== false) issues.push("Tar blodtrykksmedisin må velges.");
+
+
       if (!Number.isFinite(vals.age)) issues.push("Alder må være et tall.");
       if (!Number.isFinite(vals.sbp)) issues.push("Systolisk blodtrykk må være et tall.");
       if (!Number.isFinite(vals.tcMmol)) issues.push("Total-kolesterol må være et tall.");
@@ -481,7 +494,8 @@
     }
 
     function readForm() {
-      const sex = $("sex").value === "female" ? "female" : "male";
+      const sexSel = $("sex").value;
+      const sex = (sexSel === "male" || sexSel === "female") ? sexSel : null;
 
       const age = toNumber($("age").value);
       const sbp = toNumber($("sbp").value);
@@ -493,9 +507,10 @@
       const hdlRaw = toNumber($("hdl").value);
       const hdlUnit = $("hdlUnit").value;
       const hdlMmol = cholToMmol(hdlRaw, hdlUnit);
-
-      const smoker = $("smoker").value === "yes";
-      const bpmed = $("bpmed").value === "yes";
+      const smokerSel = $("smoker").value;
+      const smoker = smokerSel === "yes" ? true : (smokerSel === "no" ? false : null);
+      const bpmedSel = $("bpmed").value;
+      const bpmed = bpmedSel === "yes" ? true : (bpmedSel === "no" ? false : null);
       const famCount = Number($("family").value) || 0;
 
       return { sex, age, sbp, tcMmol, hdlMmol, smoker, bpmed, famCount };
@@ -581,7 +596,7 @@
       const vals = readForm();
       const issues = validateInputs(vals);
 
-      const fatal = issues.filter((x) => x.includes("må være et tall"));
+      const fatal = issues.filter((x) => x.includes("må være et tall") || x.includes("må velges"));
       if (fatal.length) {
         renderResult({
           riskPercent: NaN,

@@ -113,12 +113,20 @@ async function generateNote() {
     }
 
     const data = await resp.json().catch(() => ({}));
-    const noteText = (data && (data.noteText || data.text || data.output || data.note)) || "";
+const noteText = (data && (data.noteText || data.text || data.output || data.note)) || "";
 
-    clearInterval(noteTimerInterval);
-    if (noteTimerElement) noteTimerElement.innerText = "Text generation completed!";
+const usage = data && data.usage;
+if (usage) {
+  console.log(`Input tokens: ${usage.inputTokens}`);
+  console.log(`Output tokens: ${usage.outputTokens}`);
+}
 
-    generatedNoteField.value = noteText || "[No text returned from Bedrock backend]";
+clearInterval(noteTimerInterval);
+if (noteTimerElement) noteTimerElement.innerText = "Text generation completed!";
+
+generatedNoteField.value = noteText || "[No text returned from Bedrock backend]";
+
+    
   } catch (err) {
     console.error("Bedrock note error:", err);
     clearInterval(noteTimerInterval);

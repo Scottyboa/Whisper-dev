@@ -1482,6 +1482,17 @@
       } else if (id === 'generateNoteButton') {
         // Note event: only include note provider context
         logEvent({ action: 'noteGeneration', ...getNoteProviderSnapshot() });
+      } else if (id === 'medicalCalcOpenBtn') {
+        // Clinical tool open event: encode selection into the existing "action" column
+        const sel = document.getElementById('medicalCalcSelect');
+        const href = sel?.value || '';
+        const label =
+          (sel?.selectedOptions?.[0]?.textContent || '').trim();
+        if (href) {
+          // Example action:
+          // openClinicalTool|./growth_charts_no_upload.html|Vektskurver WHO barn 0-19 år
+          logEvent({ action: `openClinicalTool|${href}|${label}` });
+        }
       }
     }, true);
   // Clear button logic for supplementary field
@@ -1969,7 +1980,6 @@
   </script>
 </body>
 </html>
-
 
 
 

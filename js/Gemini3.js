@@ -1,5 +1,3 @@
-
-
 // Utility function to hash a string (used for storing prompts keyed by API key)
 function hashString(str) {
   let hash = 0;
@@ -34,7 +32,6 @@ function base64ToArrayBuffer(base64) {
 // Since encryption is no longer needed, the decryption functions are removed.
 // We now assume that the plain API key is stored in sessionStorage under "user_api_key".
 
-
 // Auto-resizes a textarea based on its content
 function autoResize(textarea) {
   textarea.style.height = "auto";
@@ -53,8 +50,6 @@ function formatTime(ms) {
   }
 }
 
-// Handles the note generation process using the OpenAI API
-// Handles the note generation process using the Gemini API (non-streaming)
 // Handles the note generation process using the Gemini API with streaming
 async function generateNote() {
   const transcriptionElem = document.getElementById("transcription");
@@ -70,15 +65,17 @@ async function generateNote() {
 
   const customPromptTextarea = document.getElementById("customPrompt");
   const promptText = customPromptTextarea ? customPromptTextarea.value : "";
+
   // Supplementary info (prepended before transcription)
   const supplementaryElem = document.getElementById("supplementaryInfo");
   const supplementaryRaw = supplementaryElem ? supplementaryElem.value.trim() : "";
 
   // EXACT required format:
-  // Supplerende informasjon:"[content]"
+  // Tilleggsopplysninger(brukes som kontekst):"[content]"
   const supplementaryWrapped = supplementaryRaw
     ? `Tilleggsopplysninger(brukes som kontekst):"${supplementaryRaw}"`
     : "";
+
   const generatedNoteField = document.getElementById("generatedNote");
   if (!generatedNoteField) return;
 
@@ -111,19 +108,19 @@ All headings should be plain text with a colon.
 `.trim();
 
   const finalPromptText =
-  (promptText || "") +
-  "\n\n" +
-  baseInstruction +
-  "\n\n" +
-  (supplementaryWrapped ? supplementaryWrapped + "\n\n" : "") +
-  "TRANSCRIPTION:\n" +
-  transcriptionText;
-
+    (promptText || "") +
+    "\n\n" +
+    baseInstruction +
+    "\n\n" +
+    (supplementaryWrapped ? supplementaryWrapped + "\n\n" : "") +
+    "TRANSCRIPTION:\n" +
+    transcriptionText;
 
   // Determine Gemini reasoning level from dropdown (default: "low")
   const geminiReasoningSelect = document.getElementById("geminiReasoning");
-  const geminiThinkingLevel = geminiReasoningSelect ? geminiReasoningSelect.value : "low";
-
+  const geminiThinkingLevel = geminiReasoningSelect
+    ? geminiReasoningSelect.value
+    : "low";
 
   // Helper to build the URL for different API versions
   const makeUrl = (apiVersion) =>
@@ -192,18 +189,109 @@ All headings should be plain text with a colon.
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;
       },
-      onDone: () => {
+      onDone: (usage) => {
         clearInterval(noteTimerInterval);
         if (noteTimerElement) {
           noteTimerElement.innerText = "Text generation completed!";
         }
+
+        // ---- Token usage logging (input/output/reasoning/total) ----
+        if (!usage) {
+          console.log("[Gemini] Token usage: (not provided in stream)");
+          return;
+        }
+
+        const {
+          promptTokenCount,
+          candidatesTokenCount,
+          thoughtsTokenCount,
+          toolUsePromptTokenCount,
+          cachedContentTokenCount,
+          totalTokenCount
+        } = usage;
+
+        const inputTokens = Number(promptTokenCount ?? 0);
+        const outputTokens = Number(candidatesTokenCount ?? 0);
+        const reasoningTokens =
+          typeof thoughtsTokenCount === "number" ? Number(thoughtsTokenCount) : 0;
+        const toolTokens =
+          typeof toolUsePromptTokenCount === "number"
+            ? Number(toolUsePromptTokenCount)
+            : 0;
+
+        const outputIncludingReasoning =
+          typeof thoughtsTokenCount === "number"
+            ? outputTokens + reasoningTokens
+            : null;
+
+        const computedTotal = inputTokens + toolTokens + outputTokens + reasoningTokens;
+
+        console.log("[Gemini] usageMetadata:", usage);
+        console.log(
+          `[Gemini] input(promptTokenCount)=${promptTokenCount ?? "?"}` +
+            (typeof cachedContentTokenCount === "number"
+              ? ` (cached=${cachedContentTokenCount})`
+              : "") +
+            ` | output(candidatesTokenCount)=${candidatesTokenCount ?? "?"}` +
+            ` | reasoning(thoughtsTokenCount)=${
+              typeof thoughtsTokenCount === "number" ? thoughtsTokenCount : "?"
+            }` +
+            (typeof toolUsePromptTokenCount === "number"
+              ? ` | toolUsePromptTokenCount=${toolUsePromptTokenCount}`
+              : "") +
+            ` | output+reasoning=${
+              outputIncludingReasoning !== null ? outputIncludingReasoning : "?"
+            }` +
+            ` | totalTokenCount=${totalTokenCount ?? "?"}` +
+            (typeof totalTokenCount === "number"
+              ? ` (computed=${computedTotal})`
+              : "")
+        );
+        // ---- USD cost estimation (Gemini API pricing) ----
+        // Prices are per 1,000,000 tokens. Output pricing includes thinking tokens. :contentReference[oaicite:2]{index=2}
+        const MODEL_ID = "gemini-3-pro-preview";
+        const PRICING_USD_PER_1M = {
+          "gemini-3-pro-preview": {
+            // Tiering for this model is based on prompt size (<=200k vs >200k tokens). :contentReference[oaicite:3]{index=3}
+            standard: { input: 2.0, output: 12.0 }, // prompts <= 200k tokens
+            long: { input: 4.0, output: 18.0 }      // prompts > 200k tokens
+          }
+        };
+
+        const tier = inputTokens > 200_000 ? "long" : "standard";
+        const modelPricing = PRICING_USD_PER_1M[MODEL_ID] && PRICING_USD_PER_1M[MODEL_ID][tier];
+        if (!modelPricing) {
+          console.warn("[Gemini] Pricing table missing for model/tier:", MODEL_ID, tier);
+          return;
+        }
+
+        // Treat tool-use prompt tokens as additional input tokens when present.
+        // Note: cachedContentTokenCount may have separate caching charges; not included here. :contentReference[oaicite:4]{index=4}
+        const billableInputTokens = inputTokens + toolTokens;
+        const billableOutputTokens = outputTokens + reasoningTokens; // reasoning billed at output rate :contentReference[oaicite:5]{index=5}
+
+        const inputCostUsd = (billableInputTokens / 1_000_000) * modelPricing.input;
+        const outputCostUsd = (billableOutputTokens / 1_000_000) * modelPricing.output;
+        const totalCostUsd = inputCostUsd + outputCostUsd;
+
+        console.log(
+          `[Gemini] pricing model=${MODEL_ID} tier=${tier} ` +
+          `rates: input=$${modelPricing.input}/1M, output=$${modelPricing.output}/1M`
+        );
+        console.log(
+          `[Gemini] cost estimate (USD): ` +
+          `input=${inputCostUsd.toFixed(6)} ` +
+          `output(incl reasoning)=${outputCostUsd.toFixed(6)} ` +
+          `total=${totalCostUsd.toFixed(6)} ` +
+          `(billableInputTokens=${billableInputTokens}, billableOutputTokens=${billableOutputTokens})`
+        );
+        // -----------------------------------------------------------
       },
       onError: (err) => {
         console.error("Gemini streaming error:", err);
         clearInterval(noteTimerInterval);
         if (generatedNoteField) {
-          generatedNoteField.value =
-            "Error during note generation: " + String(err);
+          generatedNoteField.value = "Error during note generation: " + String(err);
         }
         if (noteTimerElement) {
           noteTimerElement.innerText = "";
@@ -216,15 +304,16 @@ All headings should be plain text with a colon.
     if (generatedNoteField) {
       generatedNoteField.value = "Error generating note: " + error;
     }
-
   }
 }
+
 async function streamGeminiSSE(body, callbacks) {
   const { onDelta, onDone, onError } = callbacks;
   const reader = body.getReader();
   const decoder = new TextDecoder("utf-8");
 
   let buffer = "";
+  let lastUsage = null;
 
   try {
     while (true) {
@@ -245,7 +334,7 @@ async function streamGeminiSSE(body, callbacks) {
         }
 
         if (trimmed === "data: [DONE]") {
-          if (typeof onDone === "function") onDone();
+          if (typeof onDone === "function") onDone(lastUsage);
           return;
         }
 
@@ -260,6 +349,11 @@ async function streamGeminiSSE(body, callbacks) {
         } catch (e) {
           console.warn("Failed to parse SSE JSON chunk:", e, jsonStr);
           continue;
+        }
+
+        // Capture token usage if/when it appears (often near the end of the stream)
+        if (payload && payload.usageMetadata) {
+          lastUsage = payload.usageMetadata;
         }
 
         try {
@@ -282,7 +376,7 @@ async function streamGeminiSSE(body, callbacks) {
     }
 
     // Stream ended without explicit [DONE]
-    if (typeof onDone === "function") onDone();
+    if (typeof onDone === "function") onDone(lastUsage);
   } catch (err) {
     if (typeof onError === "function") onError(err);
   }
@@ -296,10 +390,12 @@ function initNoteGeneration() {
   // Disable note generation if consent isn’t accepted
   if (document.cookie.indexOf("user_consent=accepted") === -1) {
     generateNoteButton.disabled = true;
-    generateNoteButton.title = "Note generation is disabled until you accept cookies/ads.";
+    generateNoteButton.title =
+      "Note generation is disabled until you accept cookies/ads.";
   }
 
   // Attach click handler only
-  generateNoteButton.addEventListener("click", generateNote);}
- 
+  generateNoteButton.addEventListener("click", generateNote);
+}
+
 export { initNoteGeneration };

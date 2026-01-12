@@ -1472,6 +1472,25 @@
   document.addEventListener('DOMContentLoaded', () => {
     // Optional: keep pageview lean (no provider fields)
     logEvent({ action: 'pageview' });
+    function formatClinicalToolAction(href, label) {
+      // Prefer the visible label; normalize it to be short + consistent.
+      const normalizedLabel = (label || "")
+        .replace(/\s*\/\s*/g, "/")  // "BMI / KMI" -> "BMI/KMI"
+        .replace(/\s+/g, " ")      // collapse whitespace
+        .trim();
+
+      // Fallback: derive something readable from the filename if label is missing
+      const fallbackFromHref = (href || "")
+        .split("/")
+        .pop()
+        ?.replace(/\.html$/i, "")
+        .replace(/_/g, " ")
+        .trim();
+
+      const tool = normalizedLabel || fallbackFromHref || "Unknown";
+      return `Clin. Tool/${tool}`;
+    }
+
 
     document.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest ? e.target.closest('button') : null;
@@ -1483,15 +1502,16 @@
         // Note event: only include note provider context
         logEvent({ action: 'noteGeneration', ...getNoteProviderSnapshot() });
       } else if (id === 'medicalCalcOpenBtn') {
-        // Clinical tool open event: encode selection into the existing "action" column
+        /// Clinical tool open event: keep action short + readable in the sheet
         const sel = document.getElementById('medicalCalcSelect');
         const href = sel?.value || '';
         const label =
           (sel?.selectedOptions?.[0]?.textContent || '').trim();
         if (href) {
-          // Example action:
-          // openClinicalTool|./growth_charts_no_upload.html|Vektskurver WHO barn 0-19 år
-          logEvent({ action: `openClinicalTool|${href}|${label}` });
+          // Examples:
+          //   Clin. Tool/BMI/KMI
+          //   Clin. Tool/NORRISK 2
+          logEvent({ action: formatClinicalToolAction(href, label) });
         }
       }
     }, true);
@@ -1980,6 +2000,7 @@
   </script>
 </body>
 </html>
+
 
 
 

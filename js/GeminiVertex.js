@@ -81,6 +81,9 @@ function formatTime(ms) {
 }
 
 async function generateNote() {
+  // Clear previous token/cost display immediately on new run
+  try { window.__app?.clearNoteUsageAndCost?.(); } catch (_) {}
+
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
     alert("No transcription text available.");
@@ -177,6 +180,23 @@ async function generateNote() {
     const usage = data.usage || null;
     const modelId = data.modelId || null;
 
+    // Report token usage to UI (USD is calculated centrally in transcribe.html)
+    if (usage) {
+      try {
+        window.__app?.setNoteUsageAndCost?.({
+          providerKey: "gemini3-vertex",
+          modelId: modelId,
+          // Pass Vertex-style usage object. transcribe.html can normalize or directly use it.
+          usage: {
+            promptTokens: usage.promptTokens,
+            outputTokens: usage.outputTokens,
+            totalTokens: usage.totalTokens,
+            raw: usage.raw || null,
+          },
+        });
+      } catch (_) {}
+    }
+
     // Log token usage (and optional cost) in the browser console
     if (usage && (usage.promptTokens != null || usage.outputTokens != null || usage.totalTokens != null)) {
       console.log(
@@ -221,6 +241,24 @@ async function generateNote() {
     generatedNoteField.value =
       "Error generating note via Vertex backend: " + String(err);
   }
+
+      // Report to UI (same gray line as OpenAI/Bedrock)
+      try {
+        window.__app?.setNoteUsageAndCost?.({
+          providerKey: "gemini3-vertex",
+          modelId,
+          // send Vertex-style usage so transcribe.html can normalize
+          usage: {
+            promptTokens: usage.promptTokens,
+            outputTokens: usage.outputTokens,
+            totalTokens: usage.totalTokens,
+            raw: usage.raw || null,
+          },
+          // Also send estimatedUsd directly (works even if transcribe has no Vertex pricing yet)
+          estimatedUsd: cost ? cost.totalUsd : null,
+          meta: { vertex: usage.raw || null, tier: cost ? cost.tier : null },
+        });
+      } catch (_) {}
 }
 
 function initNoteGeneration() {

@@ -1,7 +1,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script type='text/javascript' src='https://scottyboa.github.io/zsBaXUpWlAF7N5huPIErbwPdBLVGTD7xb_wUocWNGQfdEGozS5iRfbfscEM8Cuf0kS5QSBU6_-d3CyWfC2gWsV4rYD63A3IEl4yDnMqOWv9AXhB7sieJrOrtE1Ch5SqlajoVbZZ1zPlKsGZfF04pTYVGiegF-NWOjEOjP_kNNpAl6D5qCz0k4hGKJP8K-awxUzVkpFfptLX5u0YF4PNEvTDfJV39GNjqFs8owNpH2NcBPR0NNEHDIQWRiBkJVFkVHDZPrCnJbeoZj6nKWwkt8DRla7EE-w9Qz2SvugtodPwTUftNeN9OTBNGuDCwx6LVpCweAuJmeiUNaN66wo2zKUJ1zBFwJ6n4MCTcQ_4jnWHAwKgRtcUjCGGw6d1SQ1cpz7Y7YqZYpOYR-jK80CDtKwTHDOtyqM4F8IVQ1Zxlm-se7v_KIU4A7sAK2bd4nOb4dyIF-d0LnwZJ8yZPIn-h-TJrmV1JOOLOUpyjUAxmg56OWfxsdlZBdZV1'></script>
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/dist/bundle.min.js"></script>
 <!-- Removed hard-coded recording.js include; provider will choose module -->
@@ -1273,6 +1273,19 @@
         "GPT-5.1": { input: 1.25, output: 10.0 },
         "GPT-5.2": { input: 1.75, output: 14.0 },
       };
+      // AWS Bedrock (Claude 4.5 only) — USD per 1M tokens
+      const BEDROCK_CLAUDE45_USD_PER_MTOK = {
+        "haiku-4-5":  { input: 1.0, output: 5.0 },
+        "sonnet-4-5": { input: 3.0, output: 15.0 },
+        "opus-4-5":   { input: 5.0, output: 25.0 },
+      };
+
+      function getSelectedBedrockModelKey() {
+        // Prefer UI dropdown (truth), fallback to sessionStorage
+        const sel = document.getElementById("bedrockModel");
+        const v = (sel && sel.value) || sessionStorage.getItem("bedrock_model") || null;
+        return v ? String(v).trim() : null;
+      }
 
       function estimateUsdFromRates({ rates, inputTokens, outputTokens }) {
         const inTok = Number(inputTokens);
@@ -1288,16 +1301,61 @@
         if (payload.estimatedUsd != null) return payload.estimatedUsd;
         if (payload.inputTokens == null || payload.outputTokens == null) return null;
 
-        // For now: OpenAI only, based on modelId
-        const modelId = payload.modelId;
-        const rates = modelId ? OPENAI_USD_PER_MTOK[modelId] : null;
-        if (!rates) return null;
+        const providerKey = (payload.providerKey || "").toString().trim().toLowerCase();
 
-        return estimateUsdFromRates({
-          rates,
-          inputTokens: payload.inputTokens,
-          outputTokens: payload.outputTokens,
-        });
+        // OpenAI (existing): based on modelId
+        if (providerKey.startsWith("gpt") || providerKey === "openai" || providerKey === "gpt4") {
+          const modelId = payload.modelId;
+          const rates = modelId ? OPENAI_USD_PER_MTOK[modelId] : null;
+          if (!rates) return null;
+          return estimateUsdFromRates({
+            rates,
+            inputTokens: payload.inputTokens,
+            outputTokens: payload.outputTokens,
+          });
+        }
+
+        // AWS Bedrock (Claude 4.5): based on current Bedrock dropdown selection
+        if (providerKey === "aws-bedrock" || providerKey.includes("bedrock")) {
+          const modelKeyRaw = getSelectedBedrockModelKey();
+          const modelKey = modelKeyRaw ? String(modelKeyRaw).trim() : null;
+          const rates = modelKey ? BEDROCK_CLAUDE45_USD_PER_MTOK[modelKey] : null;
+          if (!rates) return null;
+          return estimateUsdFromRates({
+            rates,
+            inputTokens: payload.inputTokens,
+            outputTokens: payload.outputTokens,
+          });
+        }
+
+        return null;
+        
+
+        // OpenAI: based on modelId
+        if (providerKey.startsWith("gpt") || providerKey === "openai" || providerKey === "gpt4") {
+          const modelId = payload.modelId;
+          const rates = modelId ? OPENAI_USD_PER_MTOK[modelId] : null;
+          if (!rates) return null;
+          return estimateUsdFromRates({
+            rates,
+            inputTokens: payload.inputTokens,
+            outputTokens: payload.outputTokens,
+          });
+        }
+
+        // AWS Bedrock (Claude 4.5 only): use the model the user selected in the dropdown
+        if (providerKey === "aws-bedrock" || providerKey.includes("bedrock")) {
+          const modelKey = getSelectedBedrockModelKey();
+          const rates = modelKey ? BEDROCK_CLAUDE45_USD_PER_MTOK[modelKey] : null;
+          if (!rates) return null;
+          return estimateUsdFromRates({
+            rates,
+            inputTokens: payload.inputTokens,
+            outputTokens: payload.outputTokens,
+          });
+        }
+
+        return null;
       }
 
 

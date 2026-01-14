@@ -208,6 +208,16 @@ const resp = await fetch("https://api.openai.com/v1/responses", {
     }
 
     const json = await resp.json();
+    const usage = json?.usage;
+    if (usage) {
+      console.log(
+        "[OpenAI token usage]",
+        "input=", usage.input_tokens,
+        "output=", usage.output_tokens,
+        "total=", usage.total_tokens,
+        "reasoning=", usage.output_tokens_details?.reasoning_tokens ?? 0
+      );
+    }
     const fullText = extractResponseText(json);
     generatedNoteField.value = fullText || "";
 

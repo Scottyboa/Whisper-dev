@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1279,6 +1280,13 @@
         "sonnet-4-5": { input: 3.0, output: 15.0 },
         "opus-4-5":   { input: 5.0, output: 25.0 },
       };
+      // Gemini API (AI Studio): Gemini 3 Pro Preview (USD per 1M tokens)
+     // Tiering is based on prompt size (<=200K vs >200K input tokens).
+      const GEMINI_3_PRO_API_USD_PER_MTOK = {
+        thresholdInputTokens: 200_000,
+        short: { input: 2.0, output: 12.0 }, // <= 200K input tokens
+        long:  { input: 4.0, output: 18.0 }, // > 200K input tokens
+      };
       // Vertex AI: Gemini 2.5 Pro (USD per 1M tokens)
       // Source: Vertex AI Generative AI pricing page (Gemini 2.5 Pro row).
       const GEMINI_25_PRO_VERTEX_USD_PER_MTOK = {
@@ -1334,6 +1342,28 @@
             outputTokens: payload.outputTokens,
           });
        }
+        // Gemini API (AI Studio): Gemini 3 Pro Preview
+        // Output price includes thinking/reasoning tokens; tool-use prompt tokens add to input.
+        if (pk === "gemini3" || (pk.includes("gemini3") && !pk.includes("vertex"))) {
+          const promptTokens = Number(payload.inputTokens);
+          const outTokens = Number(payload.outputTokens);
+          if (!Number.isFinite(promptTokens) || !Number.isFinite(outTokens)) return null;
+
+          const g = payload.meta && payload.meta.gemini ? payload.meta.gemini : null;
+          const toolUsePrompt =
+            g && typeof g.toolUsePromptTokenCount === "number" ? g.toolUsePromptTokenCount : 0;
+          const thoughts =
+            g && typeof g.thoughtsTokenCount === "number" ? g.thoughtsTokenCount : 0;
+
+          const billableInput = promptTokens + toolUsePrompt;
+          const billableOutput = outTokens + thoughts;
+
+          const tier =
+            promptTokens > GEMINI_3_PRO_API_USD_PER_MTOK.thresholdInputTokens ? "long" : "short";
+          const rates = GEMINI_3_PRO_API_USD_PER_MTOK[tier];
+
+          return estimateUsdFromRates({ rates, inputTokens: billableInput, outputTokens: billableOutput });
+        }
         // Vertex Gemini 2.5 Pro
         if (pk.includes("vertex") || pk.includes("gemini3-vertex")) {
           const promptTokens = Number(payload.inputTokens);
@@ -1399,6 +1429,17 @@
             inputTokens = toFiniteInt(usage.prompt_tokens);
             outputTokens = toFiniteInt(usage.completion_tokens);
             totalTokens = toFiniteInt(usage.total_tokens);
+          }
+          // Gemini API usageMetadata (AI Studio)
+          if (inputTokens == null && ("promptTokenCount" in usage || "candidatesTokenCount" in usage)) {
+            inputTokens = toFiniteInt(usage.promptTokenCount);
+            outputTokens = toFiniteInt(usage.candidatesTokenCount);
+            totalTokens = toFiniteInt(usage.totalTokenCount);
+            outMeta.gemini = {
+              thoughtsTokenCount: toFiniteInt(usage.thoughtsTokenCount),
+              toolUsePromptTokenCount: toFiniteInt(usage.toolUsePromptTokenCount),
+              cachedContentTokenCount: toFiniteInt(usage.cachedContentTokenCount),
+            };
           }
           // Vertex / custom backend style
           if (inputTokens == null && ("promptTokens" in usage || "outputTokens" in usage)) {

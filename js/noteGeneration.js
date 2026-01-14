@@ -54,6 +54,9 @@ function formatTime(ms) {
 
 // Handles the note generation process using the OpenAI API
 async function generateNote() {
+  // Clear previous token/cost display immediately on new run
+  try { window.__app?.clearNoteUsageAndCost?.(); } catch (_) {}
+
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
     alert("No transcription text available.");

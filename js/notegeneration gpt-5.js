@@ -168,6 +168,30 @@ All headings should be plain text with a colon.`.trim();
             "total=", usage.total_tokens,
             "reasoning=", usage.output_tokens_details?.reasoning_tokens ?? 0
           );
+
+          // Push token usage to UI (OpenAI cost calc happens in transcribe.html)
+          try {
+            const providerKey = (sessionStorage.getItem("note_provider") || "openai").trim();
+            const modelId = "gpt-5.1";
+            window.__app?.setNoteUsageAndCost?.(
+              window.__app?.normalizeNoteUsage
+                ? window.__app.normalizeNoteUsage({
+                    providerKey,
+                    modelId,
+                    usage,
+                    meta: { reasoningTokens: usage.output_tokens_details?.reasoning_tokens ?? 0 },
+                  })
+                : {
+                    providerKey,
+                    modelId,
+                    inputTokens: usage.input_tokens ?? null,
+                    outputTokens: usage.output_tokens ?? null,
+                    totalTokens: usage.total_tokens ?? null,
+                    estimatedUsd: null,
+                    meta: { reasoningTokens: usage.output_tokens_details?.reasoning_tokens ?? 0 },
+                  }
+            );
+          } catch (_) {}
         }
       },
       onError: (err) => {
@@ -204,6 +228,7 @@ async function streamOpenAIResponse(resp, {
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let lastEventPayload = null;
 
   try {
     while (true) {
@@ -223,10 +248,20 @@ async function streamOpenAIResponse(resp, {
           if (line.startsWith("data:"))  dataStr = line.slice(5).trim();
         }
         if (!dataStr) continue;
-        if (dataStr === "[DONE]") { onDone(); return; }
+        if (dataStr === "[DONE]") { onDone(lastEventPayload); return; }
 
         let payload;
         try { payload = JSON.parse(dataStr); } catch { continue; }
+        // Save the last meaningful payload so onDone() can still see usage if the stream ends with [DONE]
+        // Typical Responses API events include { type: "...", response: {...} }
+        if (payload && typeof payload === "object") {
+          if (payload.response && typeof payload.response === "object") {
+            lastEventPayload = payload;
+          } else if (payload.type === "response.completed") {
+            lastEventPayload = payload;
+          }
+        }
+
 
         if (payload.type === "response.output_text.delta" && typeof payload.delta === "string") {
           onDelta(payload.delta);
@@ -241,7 +276,7 @@ async function streamOpenAIResponse(resp, {
         }
       }
     }
-    onDone();
+    onDone(lastEventPayload);
   } catch (e) {
     onError(e);
   }

@@ -145,6 +145,35 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
             "total=", usage.total_tokens,
             "reasoning=", usage.output_tokens_details?.reasoning_tokens ?? 0
           );
+
+          // Step 3: push token usage to UI (cost comes later)
+          try {
+            const providerKey = (sessionStorage.getItem("note_provider") || "openai").trim();
+            const modelId = "chatgpt-4o-latest";
+            if (window.__app?.setNoteUsageAndCost) {
+              if (window.__app.normalizeNoteUsage) {
+                const payload = window.__app.normalizeNoteUsage({
+                  providerKey,
+                  modelId,
+                  usage,
+                  meta: {
+                    reasoningTokens: usage.output_tokens_details?.reasoning_tokens ?? 0,
+                  },
+                });
+                window.__app.setNoteUsageAndCost(payload);
+              } else {
+                window.__app.setNoteUsageAndCost({
+                  providerKey,
+                  modelId,
+                  inputTokens: usage.input_tokens ?? null,
+                  outputTokens: usage.output_tokens ?? null,
+                  totalTokens: usage.total_tokens ?? null,
+                  estimatedUsd: null,
+                  meta: { reasoningTokens: usage.output_tokens_details?.reasoning_tokens ?? 0 },
+                });
+              }
+            }
+          } catch (_) {}
         }
       },
       onError: (err) => {

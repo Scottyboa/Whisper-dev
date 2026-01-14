@@ -16,6 +16,58 @@
 //       provider: "gemini",
 //       modelVariant: "g25"
 //     }
+// -----------------------------------------------------------
+// Vertex "note" generator (Cloud Run backend)
+// -----------------------------------------------------------
+
+// Vertex AI pricing for Gemini 2.5 Pro (USD per 1M tokens)
+// Source: Vertex AI Generative AI pricing page.
+const GEMINI_25_PRO_VERTEX_PRICING_USD_PER_M = {
+  thresholdInputTokens: 200_000,
+  short: { input: 1.25, output: 10.0 }, // <= 200K input tokens
+  long: { input: 2.5, output: 15.0 },   // > 200K input tokens
+};
+
+function estimateGemini25ProVertexCostUSD({ modelId, usage }) {
+  if (!usage) return null;
+  if (!modelId || typeof modelId !== "string") return null;
+  if (!modelId.startsWith("gemini-2.5-pro")) return null;
+
+  const promptTokens = typeof usage.promptTokens === "number" ? usage.promptTokens : null;
+  const outputTokens = typeof usage.outputTokens === "number" ? usage.outputTokens : null;
+  if (promptTokens == null || outputTokens == null) return null;
+
+  // Extra breakdown is available on Vertex as usage.raw (usageMetadata)
+  const raw = usage.raw || {};
+  const toolUsePromptTokens =
+    typeof raw.toolUsePromptTokenCount === "number" ? raw.toolUsePromptTokenCount : 0;
+  const thoughtsTokens =
+    typeof raw.thoughtsTokenCount === "number" ? raw.thoughtsTokenCount : 0;
+
+  // Billing aligns with "Text output (response and reasoning)" for output.
+  const billableInputTokens = promptTokens + toolUsePromptTokens;
+  const billableOutputTokens = outputTokens + thoughtsTokens;
+
+  const tier =
+    promptTokens > GEMINI_25_PRO_VERTEX_PRICING_USD_PER_M.thresholdInputTokens ? "long" : "short";
+  const rates = GEMINI_25_PRO_VERTEX_PRICING_USD_PER_M[tier];
+
+  const inputUsd = (billableInputTokens / 1_000_000) * rates.input;
+  const outputUsd = (billableOutputTokens / 1_000_000) * rates.output;
+  const totalUsd = inputUsd + outputUsd;
+
+  return {
+    tier,
+    ratesUsdPerMTokens: { input: rates.input, output: rates.output },
+    billableInputTokens,
+    billableOutputTokens,
+    thoughtsTokens,
+    toolUsePromptTokens,
+    inputUsd,
+    outputUsd,
+    totalUsd,
+  };
+}
 
 function formatTime(ms) {
   const totalSec = Math.floor(ms / 1000);
@@ -122,6 +174,36 @@ async function generateNote() {
 
     const data = await resp.json().catch(() => ({}));
     const noteText = data.note || "";
+    const usage = data.usage || null;
+    const modelId = data.modelId || null;
+
+    // Log token usage (and optional cost) in the browser console
+    if (usage && (usage.promptTokens != null || usage.outputTokens != null || usage.totalTokens != null)) {
+      console.log(
+        "[Vertex usage]",
+        "input:", usage.promptTokens ?? "?",
+        "output:", usage.outputTokens ?? "?",
+        "total:", usage.totalTokens ?? "?"
+      );
+
+      // USD estimate (browser-side) for Gemini 2.5 Pro on Vertex AI
+      const cost = estimateGemini25ProVertexCostUSD({ modelId, usage });
+      if (cost) {
+        console.log(
+          "[Vertex cost]",
+          `model=${modelId}`,
+          `tier=${cost.tier}`,
+          `inputBillable=${cost.billableInputTokens}`,
+          `outputBillable=${cost.billableOutputTokens}`,
+          `($${cost.totalUsd.toFixed(6)} total)`
+        );
+        // Optional deeper breakdown (uncomment if you want it)
+        // console.log("[Vertex cost breakdown]", cost);
+      }
+    } else {
+      console.log("[Vertex usage] (missing in backend response)", data);
+    }
+
 
     clearInterval(noteTimerInterval);
     if (noteTimerElement) {

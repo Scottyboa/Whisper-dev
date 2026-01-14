@@ -786,9 +786,26 @@
             </select>
           </div>
           <button id="generateNoteButton">Generate Note</button>
-          <div id="noteTimer" class="timer">
-            <span id="noteTimerValue">Note Generation Timer: 0 sec</span>
-            <span id="noteTimerStatus" class="timer-status"></span>
+          <!-- Note timer + Copy button on the same row -->
+          <div style="display:flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px;">
+            <div id="noteTimer" class="timer" style="margin-bottom: 0;">
+              <span id="noteTimerValue">Note Generation Timer: 0 sec</span>
+              <span id="noteTimerStatus" class="timer-status"></span>
+            </div>
+            <button
+              id="copyNoteButton"
+              type="button"
+              aria-label="Copy generated note"
+              style="
+                padding: 4px 10px;
+                font-size: 12px;
+                border-radius: 6px;
+                background-color: #5a9;
+                margin: 0;
+              "
+            >
+              Copy
+            </button>
           </div>
         <div id="noteTimerStatusBelow" class="timer-status-below"></div>
           <textarea id="generatedNote" placeholder="Generated note will appear here..."></textarea>
@@ -1361,6 +1378,35 @@
           closeBillingLinksOverlay();
         }
       });
+
+      // Copy generated note to clipboard
+      const copyBtn = document.getElementById("copyNoteButton");
+      const noteEl = document.getElementById("generatedNote");
+      if (copyBtn && noteEl) {
+        const originalLabel = copyBtn.textContent;
+        copyBtn.addEventListener("click", async () => {
+          const text = (noteEl.value || "").trim();
+          if (!text) return;
+          try {
+            await navigator.clipboard.writeText(text);
+            copyBtn.textContent = "Copied";
+            setTimeout(() => { copyBtn.textContent = originalLabel; }, 1200);
+          } catch (err) {
+            // Fallback for older browsers / blocked clipboard permissions
+            try {
+              noteEl.focus();
+              noteEl.select();
+              document.execCommand("copy");
+              copyBtn.textContent = "Copied";
+              setTimeout(() => { copyBtn.textContent = originalLabel; }, 1200);
+            } catch (_) {
+              console.warn("Copy failed", err);
+            } finally {
+              try { window.getSelection()?.removeAllRanges?.(); } catch {}
+            }
+          }
+        });
+      }
     });
   </script>
 

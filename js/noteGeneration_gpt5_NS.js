@@ -217,6 +217,56 @@ const resp = await fetch("https://api.openai.com/v1/responses", {
         "total=", usage.total_tokens,
         "reasoning=", usage.output_tokens_details?.reasoning_tokens ?? 0
       );
+
+      // Step 3: push token usage to UI (cost comes later)
+      try {
+        const providerKey = (sessionStorage.getItem("note_provider") || "openai").trim();
+        const modelId = "gpt-5.2";
+        if (window.__app?.setNoteUsageAndCost) {
+          const payload = window.__app.normalizeNoteUsage
+            ? window.__app.normalizeNoteUsage({
+                providerKey,
+                modelId,
+                usage,
+                meta: { reasoningTokens: usage.output_tokens_details?.reasoning_tokens ?? 0 },
+              })
+            : {
+                providerKey,
+                modelId,
+                inputTokens: usage.input_tokens ?? null,
+                outputTokens: usage.output_tokens ?? null,
+                totalTokens: usage.total_tokens ?? null,
+                estimatedUsd: null,
+                meta: { reasoningTokens: usage.output_tokens_details?.reasoning_tokens ?? 0 },
+              };
+          window.__app.setNoteUsageAndCost(payload);
+        }
+      } catch (_) {}
+
+      // Step 3: push token usage to UI (cost comes later)
+      try {
+        const providerKey = (sessionStorage.getItem("note_provider") || "openai").trim();
+        const modelId = "gpt-5.1";
+        if (window.__app?.setNoteUsageAndCost) {
+          const payload = window.__app.normalizeNoteUsage
+            ? window.__app.normalizeNoteUsage({
+                providerKey,
+                modelId,
+                usage,
+                meta: { reasoningTokens: usage.output_tokens_details?.reasoning_tokens ?? 0 },
+              })
+            : {
+                providerKey,
+                modelId,
+                inputTokens: usage.input_tokens ?? null,
+                outputTokens: usage.output_tokens ?? null,
+                totalTokens: usage.total_tokens ?? null,
+                estimatedUsd: null,
+                meta: { reasoningTokens: usage.output_tokens_details?.reasoning_tokens ?? 0 },
+              };
+          window.__app.setNoteUsageAndCost(payload);
+        }
+      } catch (_) {}
     }
     const fullText = extractResponseText(json);
     generatedNoteField.value = fullText || "";

@@ -309,6 +309,16 @@
       color: #2e7d32;
     }
     .timer-status-below:empty { display: none; }
+
+    /* Note token/cost readout (separate element so #noteTimer innerText can't wipe it) */
+    .note-usage-cost {
+      margin-top: 4px;
+      font-size: 12px;
+      opacity: 0.6;
+      color: #333;
+      white-space: nowrap;
+    }
+    .note-usage-cost:empty { display: none; }
     /* Cost Overview Hyperlink */
     #openaiUsageLink {
       font-size: 16px;
@@ -808,6 +818,8 @@
             </button>
           </div>
         <div id="noteTimerStatusBelow" class="timer-status-below"></div>
+        <!-- Separate (non-timer) UI line for tokens/cost so it never gets overwritten by #noteTimer.innerText -->
+        <div id="noteUsageCost" class="note-usage-cost"></div>
           <textarea id="generatedNote" placeholder="Generated note will appear here..."></textarea>
         </div>
         <div class="column">
@@ -1239,6 +1251,197 @@
         noteModeSel.addEventListener("change", async () => {
           await syncNoteProvider();
         });
+      }
+    })();
+  </script>
+
+  <!-- Note usage + cost UI (safe: does NOT touch timer/status DOM) -->
+  <script>
+    (function () {
+      window.__app = window.__app || {};
+
+      const costEl = () => document.getElementById("noteUsageCost");
+      const nfInt = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
+      // ---- Step 4: Pricing tables + cost calculation (start with OpenAI Standard pricing) ----
+      // Prices are USD per 1M tokens (Standard, non-cached input).
+      // Source: OpenAI pricing docs (update here if rates change).
+      const OPENAI_USD_PER_MTOK = {
+        "gpt-5.1": { input: 1.25, output: 10.0 },
+        "gpt-5.2": { input: 1.75, output: 14.0 },
+        "chatgpt-4o-latest": { input: 5.0, output: 15.0 },
+        // common alias variants (defensive; your code should prefer lowercase IDs)
+        "GPT-5.1": { input: 1.25, output: 10.0 },
+        "GPT-5.2": { input: 1.75, output: 14.0 },
+      };
+
+      function estimateUsdFromRates({ rates, inputTokens, outputTokens }) {
+        const inTok = Number(inputTokens);
+        const outTok = Number(outputTokens);
+        if (!Number.isFinite(inTok) || !Number.isFinite(outTok)) return null;
+        const inputUsd = (inTok / 1_000_000) * rates.input;
+        const outputUsd = (outTok / 1_000_000) * rates.output;
+        return inputUsd + outputUsd;
+      }
+
+      function estimateUsd(payload) {
+        if (!payload || typeof payload !== "object") return null;
+        if (payload.estimatedUsd != null) return payload.estimatedUsd;
+        if (payload.inputTokens == null || payload.outputTokens == null) return null;
+
+        // For now: OpenAI only, based on modelId
+        const modelId = payload.modelId;
+        const rates = modelId ? OPENAI_USD_PER_MTOK[modelId] : null;
+        if (!rates) return null;
+
+        return estimateUsdFromRates({
+          rates,
+          inputTokens: payload.inputTokens,
+          outputTokens: payload.outputTokens,
+        });
+      }
+
+
+      function toFiniteInt(v) {
+        if (typeof v === "number" && Number.isFinite(v)) return Math.trunc(v);
+        if (typeof v === "string" && v.trim() !== "") {
+          const n = Number(v);
+          if (Number.isFinite(n)) return Math.trunc(n);
+        }
+        return null;
+      }
+      function fmtTokens(n) {
+        return (typeof n === "number" && Number.isFinite(n)) ? nfInt.format(n) : "—";
+      }
+      function fmtUsd(n) {
+        if (!(typeof n === "number" && Number.isFinite(n))) return "—";
+        const abs = Math.abs(n);
+        const digits = abs > 1 ? 2 : abs > 0.1 ? 3 : 6;
+        return `$${n.toFixed(digits)}`;
+      }
+
+      // Step 1: normalize usage from multiple providers into one shape
+      window.__app.normalizeNoteUsage = function ({ providerKey = null, modelId = null, usage = null, meta = null } = {}) {
+        let inputTokens = null;
+        let outputTokens = null;
+        let totalTokens = null;
+        const outMeta = (meta && typeof meta === "object") ? { ...meta } : {};
+
+        if (usage && typeof usage === "object") {
+          // OpenAI Responses API
+          if ("input_tokens" in usage || "output_tokens" in usage) {
+            inputTokens = toFiniteInt(usage.input_tokens);
+            outputTokens = toFiniteInt(usage.output_tokens);
+            totalTokens = toFiniteInt(usage.total_tokens);
+            const rTok = toFiniteInt(usage.output_tokens_details && usage.output_tokens_details.reasoning_tokens);
+            if (rTok != null) outMeta.reasoningTokens = rTok;
+          }
+          // Mistral (OpenAI-compatible)
+          if (inputTokens == null && ("prompt_tokens" in usage || "completion_tokens" in usage)) {
+            inputTokens = toFiniteInt(usage.prompt_tokens);
+            outputTokens = toFiniteInt(usage.completion_tokens);
+            totalTokens = toFiniteInt(usage.total_tokens);
+          }
+          // Vertex / custom backend style
+          if (inputTokens == null && ("promptTokens" in usage || "outputTokens" in usage)) {
+            inputTokens = toFiniteInt(usage.promptTokens);
+            outputTokens = toFiniteInt(usage.outputTokens);
+            totalTokens = toFiniteInt(usage.totalTokens);
+            if (usage.raw && typeof usage.raw === "object") outMeta.vertex = { ...usage.raw };
+          }
+          // Bedrock proxy style
+          if (inputTokens == null && ("inputTokens" in usage || "outputTokens" in usage)) {
+            inputTokens = toFiniteInt(usage.inputTokens);
+            outputTokens = toFiniteInt(usage.outputTokens);
+          }
+        }
+
+        if (totalTokens == null && inputTokens != null && outputTokens != null) totalTokens = inputTokens + outputTokens;
+
+        return {
+          providerKey: providerKey ? String(providerKey) : (sessionStorage.getItem("note_provider") || null),
+          modelId: modelId ? String(modelId) : null,
+          inputTokens,
+          outputTokens,
+          totalTokens,
+          estimatedUsd: null, // pricing comes later
+          meta: outMeta,
+        };
+      };
+
+      // Step 2: render into a SEPARATE element (not inside #noteTimer)
+      window.__app.clearNoteUsageAndCost = function () {
+        const el = costEl();
+        if (el) el.textContent = "";
+      };
+
+      window.__app.setNoteUsageAndCost = function (payloadOrArgs) {
+        let payload = payloadOrArgs;
+
+        // allow passing {providerKey, modelId, usage, meta}
+        if (payload && typeof payload === "object" && ("usage" in payload) && !("inputTokens" in payload)) {
+          payload = window.__app.normalizeNoteUsage(payload);
+        }
+
+        const el = costEl();
+        if (!el || !payload || typeof payload !== "object") return;
+        // Auto-fill estimatedUsd if we can (OpenAI models for now)
+        try {
+          const usd = estimateUsd(payload);
+          if (usd != null) payload.estimatedUsd = usd;
+          // Optional debug: sessionStorage.setItem("debug_note_cost","1")
+          if (sessionStorage.getItem("debug_note_cost") === "1") {
+            console.log("[note cost estimate]", {
+              providerKey: payload.providerKey,
+              modelId: payload.modelId,
+              inputTokens: payload.inputTokens,
+              outputTokens: payload.outputTokens,
+              estimatedUsd: payload.estimatedUsd,
+            });
+          }
+        } catch (_) {}
+
+
+        const parts = [
+          `Input tokens: ${fmtTokens(payload.inputTokens)}`,
+          `Output tokens: ${fmtTokens(payload.outputTokens)}`,
+          `Est cost: ${payload.estimatedUsd == null ? "—" : fmtUsd(payload.estimatedUsd)}`
+        ];
+        el.textContent = parts.join("  ·  ");
+      };
+
+      // Clear stale token/cost text as soon as a new generation starts or provider changes.
+      // Use capture=true so this runs before other click handlers.
+      function wireAutoClear() {
+        const clear = () => {
+          try { window.__app.clearNoteUsageAndCost(); } catch (_) {}
+        };
+
+        const genBtn = document.getElementById("generateNoteButton");
+        if (genBtn) {
+         // Clear on pointerdown for immediate UX feedback, and on click as a fallback.
+          genBtn.addEventListener("pointerdown", clear, true);
+          genBtn.addEventListener("click", clear, true);
+        }
+
+        // Optional: clear when switching note provider/model
+        const noteProviderSel = document.getElementById("noteProvider");
+        if (noteProviderSel) noteProviderSel.addEventListener("change", clear, true);
+
+        const bedrockModelSel = document.getElementById("bedrockModel");
+        if (bedrockModelSel) bedrockModelSel.addEventListener("change", clear, true);
+      }
+
+      // Ensure elements exist before wiring (script might be in <head> depending on your file)
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", wireAutoClear, { once: true });
+      } else {
+        wireAutoClear();
+      }
+
+      // Clear on each new note generation (capture=true so we clear before other handlers)
+      const genBtn = document.getElementById("generateNoteButton");
+      if (genBtn) {
+        genBtn.addEventListener("click", () => window.__app.clearNoteUsageAndCost(), true);
       }
     })();
   </script>
@@ -2054,7 +2257,6 @@
   </script>
 </body>
 </html>
-
 
 
 

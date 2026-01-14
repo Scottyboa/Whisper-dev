@@ -659,7 +659,22 @@
         </div>
 
         <div id="recordTimer" class="timer">Recording Timer: 0 sec</div>
-        <div id="transcribeTimer" class="timer">Completion Timer: 0 sec</div>
+        <!-- Completion timer + Clear button on same row -->
+        <div style="display:flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px;">
+          <div id="transcribeTimer" class="timer" style="margin-bottom: 0;">Completion Timer: 0 sec</div>
+          <button
+            id="clearTranscriptionButton"
+            type="button"
+            style="
+              padding: 4px 10px;
+              font-size: 12px;
+              border-radius: 6px;
+              background-color: #5a9;
+            "
+          >
+            Clear
+          </button>
+        </div>
         <textarea
           id="transcription"
           placeholder="Transcription result will appear here."
@@ -1472,25 +1487,6 @@
   document.addEventListener('DOMContentLoaded', () => {
     // Optional: keep pageview lean (no provider fields)
     logEvent({ action: 'pageview' });
-    function formatClinicalToolAction(href, label) {
-      // Prefer the visible label; normalize it to be short + consistent.
-      const normalizedLabel = (label || "")
-        .replace(/\s*\/\s*/g, "/")  // "BMI / KMI" -> "BMI/KMI"
-        .replace(/\s+/g, " ")      // collapse whitespace
-        .trim();
-
-      // Fallback: derive something readable from the filename if label is missing
-      const fallbackFromHref = (href || "")
-        .split("/")
-        .pop()
-        ?.replace(/\.html$/i, "")
-        .replace(/_/g, " ")
-        .trim();
-
-      const tool = normalizedLabel || fallbackFromHref || "Unknown";
-      return `Clin. Tool/${tool}`;
-    }
-
 
     document.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest ? e.target.closest('button') : null;
@@ -1502,16 +1498,15 @@
         // Note event: only include note provider context
         logEvent({ action: 'noteGeneration', ...getNoteProviderSnapshot() });
       } else if (id === 'medicalCalcOpenBtn') {
-        /// Clinical tool open event: keep action short + readable in the sheet
+        // Clinical tool open event: encode selection into the existing "action" column
         const sel = document.getElementById('medicalCalcSelect');
         const href = sel?.value || '';
         const label =
           (sel?.selectedOptions?.[0]?.textContent || '').trim();
         if (href) {
-          // Examples:
-          //   Clin. Tool/BMI/KMI
-          //   Clin. Tool/NORRISK 2
-          logEvent({ action: formatClinicalToolAction(href, label) });
+          // Example action:
+          // openClinicalTool|./growth_charts_no_upload.html|Vektskurver WHO barn 0-19 år
+          logEvent({ action: `openClinicalTool|${href}|${label}` });
         }
       }
     }, true);
@@ -1524,6 +1519,19 @@
         supEl.value = '';
         if (typeof autoResize === 'function') {
           try { autoResize(supEl); } catch {}
+        }
+      }
+    });
+  }
+  // Clear button logic for transcription field
+  const clearTranscriptionButton = document.getElementById('clearTranscriptionButton');
+  if (clearTranscriptionButton) {
+    clearTranscriptionButton.addEventListener('click', () => {
+      const trEl = document.getElementById('transcription');
+      if (trEl) {
+        trEl.value = '';
+        if (typeof autoResize === 'function') {
+          try { autoResize(trEl); } catch {}
         }
       }
     });
@@ -2000,8 +2008,6 @@
   </script>
 </body>
 </html>
-
-
 
 
 

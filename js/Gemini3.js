@@ -1,44 +1,74 @@
-// Utility function to hash a string (used for storing prompts keyed by API key)
-function hashString(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return hash.toString();
+// GeminiVertex.js
+// Note generation via a user-configured Vertex AI backend (Cloud Run) using Gemini 2.5 Pro (EU).
+//
+// IMPORTANT:
+// - There is NO hardcoded backend URL here.
+// - The module ONLY uses values from sessionStorage:
+//     vertex_backend_url    → Cloud Run URL (e.g. https://...run.app)
+//     vertex_backend_secret → X-Proxy-Secret for that backend
+//     vertex_project_id     → optional, informational only
+//
+// Backend contract (your Cloud Run index.js):
+//   POST JSON:
+//     {
+//       transcription: string,
+//       customPrompt: string,
+//       provider: "gemini",
+//       modelVariant: "g25"
+//     }
+// -----------------------------------------------------------
+// Vertex "note" generator (Cloud Run backend)
+// -----------------------------------------------------------
+
+// Vertex AI pricing for Gemini 2.5 Pro (USD per 1M tokens)
+// Source: Vertex AI Generative AI pricing page.
+const GEMINI_25_PRO_VERTEX_PRICING_USD_PER_M = {
+  thresholdInputTokens: 200_000,
+  short: { input: 1.25, output: 10.0 }, // <= 200K input tokens
+  long: { input: 2.5, output: 15.0 },   // > 200K input tokens
+};
+
+function estimateGemini25ProVertexCostUSD({ modelId, usage }) {
+  if (!usage) return null;
+  if (!modelId || typeof modelId !== "string") return null;
+  if (!modelId.startsWith("gemini-2.5-pro")) return null;
+
+  const promptTokens = typeof usage.promptTokens === "number" ? usage.promptTokens : null;
+  const outputTokens = typeof usage.outputTokens === "number" ? usage.outputTokens : null;
+  if (promptTokens == null || outputTokens == null) return null;
+
+  // Extra breakdown is available on Vertex as usage.raw (usageMetadata)
+  const raw = usage.raw || {};
+  const toolUsePromptTokens =
+    typeof raw.toolUsePromptTokenCount === "number" ? raw.toolUsePromptTokenCount : 0;
+  const thoughtsTokens =
+    typeof raw.thoughtsTokenCount === "number" ? raw.thoughtsTokenCount : 0;
+
+  // Billing aligns with "Text output (response and reasoning)" for output.
+  const billableInputTokens = promptTokens + toolUsePromptTokens;
+  const billableOutputTokens = outputTokens + thoughtsTokens;
+
+  const tier =
+    promptTokens > GEMINI_25_PRO_VERTEX_PRICING_USD_PER_M.thresholdInputTokens ? "long" : "short";
+  const rates = GEMINI_25_PRO_VERTEX_PRICING_USD_PER_M[tier];
+
+  const inputUsd = (billableInputTokens / 1_000_000) * rates.input;
+  const outputUsd = (billableOutputTokens / 1_000_000) * rates.output;
+  const totalUsd = inputUsd + outputUsd;
+
+  return {
+    tier,
+    ratesUsdPerMTokens: { input: rates.input, output: rates.output },
+    billableInputTokens,
+    billableOutputTokens,
+    thoughtsTokens,
+    toolUsePromptTokens,
+    inputUsd,
+    outputUsd,
+    totalUsd,
+  };
 }
 
-// Helper functions for base64 conversions (kept in case they’re used elsewhere)
-function arrayBufferToBase64(buffer) {
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return window.btoa(binary);
-}
-
-function base64ToArrayBuffer(base64) {
-  const binary = window.atob(base64);
-  const len = binary.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
-// Since encryption is no longer needed, the decryption functions are removed.
-// We now assume that the plain API key is stored in sessionStorage under "user_api_key".
-
-// Auto-resizes a textarea based on its content
-function autoResize(textarea) {
-  textarea.style.height = "auto";
-  textarea.style.height = textarea.scrollHeight + "px";
-}
-
-// Formats milliseconds into a human-readable string
 function formatTime(ms) {
   const totalSec = Math.floor(ms / 1000);
   if (totalSec < 60) {
@@ -50,7 +80,6 @@ function formatTime(ms) {
   }
 }
 
-// Handles the note generation process using the Gemini API with streaming
 async function generateNote() {
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
@@ -66,12 +95,9 @@ async function generateNote() {
   const customPromptTextarea = document.getElementById("customPrompt");
   const promptText = customPromptTextarea ? customPromptTextarea.value : "";
 
-  // Supplementary info (prepended before transcription)
+  // Supplementary info (prepended before transcription, same style as Gemini3)
   const supplementaryElem = document.getElementById("supplementaryInfo");
   const supplementaryRaw = supplementaryElem ? supplementaryElem.value.trim() : "";
-
-  // EXACT required format:
-  // Tilleggsopplysninger(brukes som kontekst):"[content]"
   const supplementaryWrapped = supplementaryRaw
     ? `Tilleggsopplysninger(brukes som kontekst):"${supplementaryRaw}"`
     : "";
@@ -79,7 +105,7 @@ async function generateNote() {
   const generatedNoteField = document.getElementById("generatedNote");
   if (!generatedNoteField) return;
 
-  // Reset generated note field and start timer
+  // Reset note field and start timer
   generatedNoteField.value = "";
   const noteTimerElement = document.getElementById("noteTimer");
   const noteStartTime = Date.now();
@@ -93,308 +119,121 @@ async function generateNote() {
     }
   }, 1000);
 
-  // Use the Gemini key for note generation
-  const apiKey = sessionStorage.getItem("gemini_api_key");
-  if (!apiKey) {
-    alert("No Gemini API key available for note generation.");
+  // --- Read Vertex config from sessionStorage (NO DEFAULTS) ---
+  const backendUrl = (sessionStorage.getItem("vertex_backend_url") || "").trim();
+  const backendSecret = (sessionStorage.getItem("vertex_backend_secret") || "").trim();
+
+  if (!backendUrl) {
     clearInterval(noteTimerInterval);
+    if (noteTimerElement) noteTimerElement.innerText = "";
+    alert(
+      "No Vertex backend URL configured.\n\n" +
+      "Please paste your Cloud Run URL on the start page before using Google Vertex."
+    );
     return;
   }
 
-  // Fixed formatting instruction
-  const baseInstruction = `
-Do not use bold text. Do not use asterisks (*) or Markdown formatting anywhere in the output.
-All headings should be plain text with a colon.
-`.trim();
+  if (!backendSecret) {
+    clearInterval(noteTimerInterval);
+    if (noteTimerElement) noteTimerElement.innerText = "";
+    alert(
+      "No Vertex backend secret configured.\n\n" +
+      "Please paste your backend secret (X-Proxy-Secret) on the start page before using Google Vertex."
+    );
+    return;
+  }
 
-  const finalPromptText =
+  // For now we always target Gemini 2.5 Pro in the backend:
+  //   modelVariant: "g25"
+  // If you later add more options, read sessionStorage.vertex_model or #vertexModel here.
+  const combinedPrompt =
     (promptText || "") +
-    "\n\n" +
-    baseInstruction +
-    "\n\n" +
-    (supplementaryWrapped ? supplementaryWrapped + "\n\n" : "") +
-    "TRANSCRIPTION:\n" +
-    transcriptionText;
-
-  // Determine Gemini reasoning level from dropdown (default: "low")
-  const geminiReasoningSelect = document.getElementById("geminiReasoning");
-  const geminiThinkingLevel = geminiReasoningSelect
-    ? geminiReasoningSelect.value
-    : "low";
-
-  // Helper to build the URL for different API versions
-  const makeUrl = (apiVersion) =>
-    `https://generativelanguage.googleapis.com/${apiVersion}/models/gemini-3-pro-preview:streamGenerateContent?alt=sse&key=${encodeURIComponent(
-      apiKey
-    )}`;
+    (supplementaryWrapped ? "\n\n" + supplementaryWrapped : "");
 
   try {
-    // First try v1beta
-    let resp = await fetch(makeUrl("v1beta"), {
+    const resp = await fetch(backendUrl, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "X-Proxy-Secret": backendSecret,
       },
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: finalPromptText
-              }
-            ]
-          }
-        ],
-        generationConfig: {
-          thinkingConfig: {
-            thinkingLevel: geminiThinkingLevel
-          }
-        }
-      })
+        transcription: transcriptionText,
+        customPrompt: combinedPrompt,
+        provider: "gemini",
+        modelVariant: "g25"
+      }),
     });
 
-    // If v1beta streaming isn’t available, fall back to v1alpha
-    if (resp.status === 404) {
-      console.warn("v1beta streamGenerateContent returned 404, trying v1alpha");
-      resp = await fetch(makeUrl("v1alpha"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: finalPromptText
-                }
-              ]
-            }
-          ],
-          generationConfig: {
-            thinkingConfig: {
-              thinkingLevel: geminiThinkingLevel
-            }
-          }
-        })
-      });
-    }
-
-    if (!resp.ok || !resp.body) {
+    if (!resp.ok) {
       const text = await resp.text().catch(() => "");
-      throw new Error("Gemini stream HTTP " + resp.status + ": " + text);
+      throw new Error(
+        "Vertex backend HTTP " + resp.status + (text ? ": " + text : "")
+      );
     }
 
-    await streamGeminiSSE(resp.body, {
-      onDelta: (textChunk) => {
-        generatedNoteField.value += textChunk;
-      },
-      onDone: (usage) => {
-        clearInterval(noteTimerInterval);
-        if (noteTimerElement) {
-          noteTimerElement.innerText = "Text generation completed!";
-        }
+    const data = await resp.json().catch(() => ({}));
+    const noteText = data.note || "";
+    const usage = data.usage || null;
+    const modelId = data.modelId || null;
 
-        // ---- Token usage logging (input/output/reasoning/total) ----
-        if (!usage) {
-          console.log("[Gemini] Token usage: (not provided in stream)");
-          return;
-        }
+    // Log token usage (and optional cost) in the browser console
+    if (usage && (usage.promptTokens != null || usage.outputTokens != null || usage.totalTokens != null)) {
+      console.log(
+        "[Vertex usage]",
+        "input:", usage.promptTokens ?? "?",
+        "output:", usage.outputTokens ?? "?",
+        "total:", usage.totalTokens ?? "?"
+      );
 
-        const {
-          promptTokenCount,
-          candidatesTokenCount,
-          thoughtsTokenCount,
-          toolUsePromptTokenCount,
-          cachedContentTokenCount,
-          totalTokenCount
-        } = usage;
-
-        const inputTokens = Number(promptTokenCount ?? 0);
-        const outputTokens = Number(candidatesTokenCount ?? 0);
-        const reasoningTokens =
-          typeof thoughtsTokenCount === "number" ? Number(thoughtsTokenCount) : 0;
-        const toolTokens =
-          typeof toolUsePromptTokenCount === "number"
-            ? Number(toolUsePromptTokenCount)
-            : 0;
-
-        const outputIncludingReasoning =
-          typeof thoughtsTokenCount === "number"
-            ? outputTokens + reasoningTokens
-            : null;
-
-        const computedTotal = inputTokens + toolTokens + outputTokens + reasoningTokens;
-
-        console.log("[Gemini] usageMetadata:", usage);
+      // USD estimate (browser-side) for Gemini 2.5 Pro on Vertex AI
+      const cost = estimateGemini25ProVertexCostUSD({ modelId, usage });
+      if (cost) {
         console.log(
-          `[Gemini] input(promptTokenCount)=${promptTokenCount ?? "?"}` +
-            (typeof cachedContentTokenCount === "number"
-              ? ` (cached=${cachedContentTokenCount})`
-              : "") +
-            ` | output(candidatesTokenCount)=${candidatesTokenCount ?? "?"}` +
-            ` | reasoning(thoughtsTokenCount)=${
-              typeof thoughtsTokenCount === "number" ? thoughtsTokenCount : "?"
-            }` +
-            (typeof toolUsePromptTokenCount === "number"
-              ? ` | toolUsePromptTokenCount=${toolUsePromptTokenCount}`
-              : "") +
-            ` | output+reasoning=${
-              outputIncludingReasoning !== null ? outputIncludingReasoning : "?"
-            }` +
-            ` | totalTokenCount=${totalTokenCount ?? "?"}` +
-            (typeof totalTokenCount === "number"
-              ? ` (computed=${computedTotal})`
-              : "")
+          "[Vertex cost]",
+          `model=${modelId}`,
+          `tier=${cost.tier}`,
+          `inputBillable=${cost.billableInputTokens}`,
+          `outputBillable=${cost.billableOutputTokens}`,
+          `($${cost.totalUsd.toFixed(6)} total)`
         );
-        // ---- USD cost estimation (Gemini API pricing) ----
-        // Prices are per 1,000,000 tokens. Output pricing includes thinking tokens. :contentReference[oaicite:2]{index=2}
-        const MODEL_ID = "gemini-3-pro-preview";
-        const PRICING_USD_PER_1M = {
-          "gemini-3-pro-preview": {
-            // Tiering for this model is based on prompt size (<=200k vs >200k tokens). :contentReference[oaicite:3]{index=3}
-            standard: { input: 2.0, output: 12.0 }, // prompts <= 200k tokens
-            long: { input: 4.0, output: 18.0 }      // prompts > 200k tokens
-          }
-        };
-
-        const tier = inputTokens > 200_000 ? "long" : "standard";
-        const modelPricing = PRICING_USD_PER_1M[MODEL_ID] && PRICING_USD_PER_1M[MODEL_ID][tier];
-        if (!modelPricing) {
-          console.warn("[Gemini] Pricing table missing for model/tier:", MODEL_ID, tier);
-          return;
-        }
-
-        // Treat tool-use prompt tokens as additional input tokens when present.
-        // Note: cachedContentTokenCount may have separate caching charges; not included here. :contentReference[oaicite:4]{index=4}
-        const billableInputTokens = inputTokens + toolTokens;
-        const billableOutputTokens = outputTokens + reasoningTokens; // reasoning billed at output rate :contentReference[oaicite:5]{index=5}
-
-        const inputCostUsd = (billableInputTokens / 1_000_000) * modelPricing.input;
-        const outputCostUsd = (billableOutputTokens / 1_000_000) * modelPricing.output;
-        const totalCostUsd = inputCostUsd + outputCostUsd;
-
-        console.log(
-          `[Gemini] pricing model=${MODEL_ID} tier=${tier} ` +
-          `rates: input=$${modelPricing.input}/1M, output=$${modelPricing.output}/1M`
-        );
-        console.log(
-          `[Gemini] cost estimate (USD): ` +
-          `input=${inputCostUsd.toFixed(6)} ` +
-          `output(incl reasoning)=${outputCostUsd.toFixed(6)} ` +
-          `total=${totalCostUsd.toFixed(6)} ` +
-          `(billableInputTokens=${billableInputTokens}, billableOutputTokens=${billableOutputTokens})`
-        );
-        // -----------------------------------------------------------
-      },
-      onError: (err) => {
-        console.error("Gemini streaming error:", err);
-        clearInterval(noteTimerInterval);
-        if (generatedNoteField) {
-          generatedNoteField.value = "Error during note generation: " + String(err);
-        }
-        if (noteTimerElement) {
-          noteTimerElement.innerText = "";
-        }
+        // Optional deeper breakdown (uncomment if you want it)
+        // console.log("[Vertex cost breakdown]", cost);
       }
-    });
-  } catch (error) {
-    console.error("Gemini streaming error:", error);
+    } else {
+      console.log("[Vertex usage] (missing in backend response)", data);
+    }
+
+
     clearInterval(noteTimerInterval);
-    if (generatedNoteField) {
-      generatedNoteField.value = "Error generating note: " + error;
-    }
-  }
-}
-
-async function streamGeminiSSE(body, callbacks) {
-  const { onDelta, onDone, onError } = callbacks;
-  const reader = body.getReader();
-  const decoder = new TextDecoder("utf-8");
-
-  let buffer = "";
-  let lastUsage = null;
-
-  try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-
-      // Split into lines; keep incomplete line in buffer
-      const lines = buffer.split(/\r?\n/);
-      buffer = lines.pop() || "";
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith(":")) {
-          // comment / keep-alive
-          continue;
-        }
-
-        if (trimmed === "data: [DONE]") {
-          if (typeof onDone === "function") onDone(lastUsage);
-          return;
-        }
-
-        if (!trimmed.startsWith("data:")) continue;
-
-        const jsonStr = trimmed.slice(5).trim();
-        if (!jsonStr) continue;
-
-        let payload;
-        try {
-          payload = JSON.parse(jsonStr);
-        } catch (e) {
-          console.warn("Failed to parse SSE JSON chunk:", e, jsonStr);
-          continue;
-        }
-
-        // Capture token usage if/when it appears (often near the end of the stream)
-        if (payload && payload.usageMetadata) {
-          lastUsage = payload.usageMetadata;
-        }
-
-        try {
-          const candidates = payload.candidates || [];
-          if (!candidates.length) continue;
-
-          const parts =
-            (candidates[0].content && candidates[0].content.parts) || [];
-          const textChunk = parts
-            .map((p) => (typeof p.text === "string" ? p.text : ""))
-            .join("");
-
-          if (textChunk && typeof onDelta === "function") {
-            onDelta(textChunk);
-          }
-        } catch (e) {
-          console.warn("Error extracting text from SSE payload:", e, payload);
-        }
-      }
+    if (noteTimerElement) {
+      noteTimerElement.innerText =
+        "Text generation completed!";
     }
 
-    // Stream ended without explicit [DONE]
-    if (typeof onDone === "function") onDone(lastUsage);
+    generatedNoteField.value = noteText;
   } catch (err) {
-    if (typeof onError === "function") onError(err);
+    console.error("Vertex Gemini note error:", err);
+    clearInterval(noteTimerInterval);
+    if (noteTimerElement) {
+      noteTimerElement.innerText = "";
+    }
+    generatedNoteField.value =
+      "Error generating note via Vertex backend: " + String(err);
   }
 }
 
-// Initializes note generation functionality, including prompt slot handling and event listeners.
 function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");
   if (!generateNoteButton) return;
 
-  // Disable note generation if consent isn’t accepted
+  // Same consent gate as other note modules
   if (document.cookie.indexOf("user_consent=accepted") === -1) {
     generateNoteButton.disabled = true;
     generateNoteButton.title =
       "Note generation is disabled until you accept cookies/ads.";
   }
 
-  // Attach click handler only
   generateNoteButton.addEventListener("click", generateNote);
 }
 

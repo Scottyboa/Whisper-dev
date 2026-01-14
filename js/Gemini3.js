@@ -247,46 +247,31 @@ All headings should be plain text with a colon.
               ? ` (computed=${computedTotal})`
               : "")
         );
-        // ---- USD cost estimation (Gemini API pricing) ----
-        // Prices are per 1,000,000 tokens. Output pricing includes thinking tokens. :contentReference[oaicite:2]{index=2}
-        const MODEL_ID = "gemini-3-pro-preview";
-        const PRICING_USD_PER_1M = {
-          "gemini-3-pro-preview": {
-            // Tiering for this model is based on prompt size (<=200k vs >200k tokens). :contentReference[oaicite:3]{index=3}
-            standard: { input: 2.0, output: 12.0 }, // prompts <= 200k tokens
-            long: { input: 4.0, output: 18.0 }      // prompts > 200k tokens
+        // Forward token usage to transcribe.html for USD estimation + UI rendering
+        // (keep Gemini3.js “tokens only”; pricing lives in transcribe.html)
+        try {
+          if (window.__app && typeof window.__app.setNoteUsageAndCost === "function") {
+            const totalForUi =
+              (typeof totalTokenCount === "number" ? Number(totalTokenCount) : computedTotal);
+
+            window.__app.setNoteUsageAndCost({
+              providerKey: "gemini3",
+              modelId: "gemini-3-pro-preview",
+              inputTokens,
+              outputTokens,
+              totalTokens: totalForUi,
+              meta: {
+                gemini: {
+                  // used by transcribe.html to compute billable totals
+                  toolUsePromptTokenCount: toolTokens,
+                  thoughtsTokenCount: reasoningTokens,
+                  cachedContentTokenCount:
+                    (typeof cachedContentTokenCount === "number" ? Number(cachedContentTokenCount) : null),
+                },
+              },
+            });
           }
-        };
-
-        const tier = inputTokens > 200_000 ? "long" : "standard";
-        const modelPricing = PRICING_USD_PER_1M[MODEL_ID] && PRICING_USD_PER_1M[MODEL_ID][tier];
-        if (!modelPricing) {
-          console.warn("[Gemini] Pricing table missing for model/tier:", MODEL_ID, tier);
-          return;
-        }
-
-        // Treat tool-use prompt tokens as additional input tokens when present.
-        // Note: cachedContentTokenCount may have separate caching charges; not included here. :contentReference[oaicite:4]{index=4}
-        const billableInputTokens = inputTokens + toolTokens;
-        const billableOutputTokens = outputTokens + reasoningTokens; // reasoning billed at output rate :contentReference[oaicite:5]{index=5}
-
-        const inputCostUsd = (billableInputTokens / 1_000_000) * modelPricing.input;
-        const outputCostUsd = (billableOutputTokens / 1_000_000) * modelPricing.output;
-        const totalCostUsd = inputCostUsd + outputCostUsd;
-
-        console.log(
-          `[Gemini] pricing model=${MODEL_ID} tier=${tier} ` +
-          `rates: input=$${modelPricing.input}/1M, output=$${modelPricing.output}/1M`
-        );
-        console.log(
-          `[Gemini] cost estimate (USD): ` +
-          `input=${inputCostUsd.toFixed(6)} ` +
-          `output(incl reasoning)=${outputCostUsd.toFixed(6)} ` +
-          `total=${totalCostUsd.toFixed(6)} ` +
-          `(billableInputTokens=${billableInputTokens}, billableOutputTokens=${billableOutputTokens})`
-        );
-        // -----------------------------------------------------------
-      },
+        } catch (_) {} },
       onError: (err) => {
         console.error("Gemini streaming error:", err);
         clearInterval(noteTimerInterval);

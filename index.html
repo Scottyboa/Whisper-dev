@@ -403,6 +403,7 @@
       padding: 20px;
       overflow-y: auto;
       z-index: 3000;
+      text-align: left; /* override body { text-align: center; } */
     }
     #bedrockGuideView.active {
       display: block;
@@ -447,6 +448,7 @@
       font-size: 14px;
       line-height: 1.4;
       margin: 0;
+      text-align: left; /* ensure wrapped lines start at left edge */
      }
 
     /* Inline "Guide" buttons should look like links (and must NOT navigate / change hash) */
@@ -478,6 +480,7 @@
       padding: 20px;
       overflow-y: auto;
       z-index: 3002;
+      text-align: left; /* override body { text-align: center; } */
     }
     #vertexGuideView.active {
       display: block;
@@ -505,6 +508,7 @@
       font-size: 14px;
       line-height: 1.4;
       margin: 0;
+      text-align: left; /* ensure wrapped lines start at left edge */
     }
 
 </style>

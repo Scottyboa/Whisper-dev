@@ -152,6 +152,14 @@ if (usage) {
   const outputTokens = usage.outputTokens;
   console.log(`Input tokens: ${inputTokens}`);
   console.log(`Output tokens: ${outputTokens}`);
+  // Report tokens to UI (USD is calculated centrally in transcribe.html using selected Bedrock model)
+  try {
+    window.__app?.setNoteUsageAndCost?.({
+      providerKey: "aws-bedrock",
+      modelId: (sessionStorage.getItem("bedrock_model") || null),
+      usage: { inputTokens, outputTokens }
+    });
+  } catch (_) {}
 
   // Prefer the model key reported by the backend (if it returns it), otherwise use the request selection.
   const effectiveModelKey =

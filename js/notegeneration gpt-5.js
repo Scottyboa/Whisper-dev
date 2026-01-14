@@ -156,7 +156,18 @@ All headings should be plain text with a colon.`.trim();
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;
       },
-      onDone: () => {},
+      onDone: (finalEvent) => {
+        const usage = finalEvent?.response?.usage;
+        if (usage) {
+          console.log(
+            "[OpenAI token usage]",
+            "input=", usage.input_tokens,
+            "output=", usage.output_tokens,
+            "total=", usage.total_tokens,
+            "reasoning=", usage.output_tokens_details?.reasoning_tokens ?? 0
+          );
+        }
+      },
       onError: (err) => {
         console.error("Streaming error:", err);
         alert("Error during note generation");

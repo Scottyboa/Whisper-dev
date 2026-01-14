@@ -136,7 +136,18 @@ All headings should be plain text with a colon.`.trim();
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;
       },
-      onDone: () => {},
+      onDone: (finalEvent) => {
+        // Best-effort: Mistral streaming often omits usage, but log it if it appears.
+        const usage = finalEvent?.usage;
+        if (usage) {
+          console.log(
+            "[Mistral token usage]",
+            "input=", usage.prompt_tokens,
+            "output=", usage.completion_tokens,
+            "total=", usage.total_tokens
+          );
+        }
+      },
       onError: (err) => {
         console.error("Streaming error:", err);
         alert("Error during note generation");
@@ -171,6 +182,7 @@ async function streamMistralChat(resp, {
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let finalUsage = null;
 
   try {
     while (true) {
@@ -188,9 +200,10 @@ async function streamMistralChat(resp, {
         for (const line of lines) {
           if (!line.startsWith("data:")) continue;
           const dataStr = line.slice(5).trim();
-          if (dataStr === "[DONE]") { onDone(); return; }
+            if (dataStr === "[DONE]") { onDone({ usage: finalUsage }); return; }
           try {
             const payload = JSON.parse(dataStr);
+            if (payload?.usage) finalUsage = payload.usage;
             const choice = payload?.choices?.[0];
             const deltaText =
               choice?.delta?.content ??
@@ -203,7 +216,7 @@ async function streamMistralChat(resp, {
         }
       }
     }
-    onDone();
+    onDone({ usage: finalUsage });
   } catch (e) {
     onError(e);
   }

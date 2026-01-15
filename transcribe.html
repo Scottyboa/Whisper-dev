@@ -1280,6 +1280,11 @@
         "sonnet-4-5": { input: 3.0, output: 15.0 },
         "opus-4-5":   { input: 5.0, output: 25.0 },
       };
+      // Mistral API (USD per 1M tokens)
+      // Source: Mistral pricing announcement (Sept 17, 2024) — Mistral Large: $2/M input, $6/M output.
+      const MISTRAL_USD_PER_MTOK = {
+        "mistral-large-latest": { input: 2.0, output: 6.0 },
+      };
       // Gemini API (AI Studio): Gemini 3 Pro Preview (USD per 1M tokens)
      // Tiering is based on prompt size (<=200K vs >200K input tokens).
       const GEMINI_3_PRO_API_USD_PER_MTOK = {
@@ -1322,6 +1327,19 @@
         if (pk.startsWith("gpt") || pk === "openai" || pk === "gpt4") {
           const modelId = payload.modelId;
           const rates = modelId ? OPENAI_USD_PER_MTOK[modelId] : null;
+          if (!rates) return null;
+          return estimateUsdFromRates({
+            rates,
+            inputTokens: payload.inputTokens,
+            outputTokens: payload.outputTokens,
+          });
+        }
+        // Mistral (direct API): based on modelId (default matches MistralTXT.js hardcode)
+        if (pk === "mistral" || pk.includes("mistral")) {
+          const modelId = (payload.modelId || "mistral-large-latest").toString().trim();
+          const rates =
+            MISTRAL_USD_PER_MTOK[modelId] ||
+            (modelId.startsWith("mistral-large") ? MISTRAL_USD_PER_MTOK["mistral-large-latest"] : null);
           if (!rates) return null;
           return estimateUsdFromRates({
             rates,
@@ -2357,7 +2375,6 @@
   </script>
 </body>
 </html>
-
 
 
 

@@ -1283,7 +1283,7 @@
       // Mistral API (USD per 1M tokens)
       // Source: Mistral pricing announcement (Sept 17, 2024) — Mistral Large: $2/M input, $6/M output.
       const MISTRAL_USD_PER_MTOK = {
-        "mistral-large-latest": { input: 2.0, output: 6.0 },
+        "mistral-large-latest": { input: 0.5, output: 1.5 },
       };
       // Gemini API (AI Studio): Gemini 3 Pro Preview (USD per 1M tokens)
      // Tiering is based on prompt size (<=200K vs >200K input tokens).
@@ -1517,11 +1517,65 @@
             });
           }
         } catch (_) {}
+        // --- Display: show billable tokens consistently across providers ---
+        // Default: billable == raw (most providers)
+        let billableInputTokens = payload.inputTokens;
+        let billableOutputTokens = payload.outputTokens;
+        const notes = [];
 
+        try {
+          const pk = (payload.providerKey || "").toString().trim().toLowerCase();
+
+          // OpenAI Responses API: reasoning_tokens is a breakdown of output (do NOT add it again)
+          // normalizeNoteUsage stores it as meta.reasoningTokens when available.
+          const rTok =
+            payload.meta && typeof payload.meta.reasoningTokens === "number"
+              ? payload.meta.reasoningTokens
+              : null;
+          if (rTok && Number.isFinite(rTok) && rTok > 0) {
+            notes.push(`${fmtTokens(rTok)} reasoning`);
+          }
+
+          // Gemini API (AI Studio): tool-use prompt counts toward input; thoughts count toward billed output
+          if (pk === "gemini3" || (pk.includes("gemini3") && !pk.includes("vertex"))) {
+            const g = payload.meta && payload.meta.gemini ? payload.meta.gemini : null;
+            const toolUsePrompt =
+              g && typeof g.toolUsePromptTokenCount === "number" ? g.toolUsePromptTokenCount : 0;
+            const thoughts =
+              g && typeof g.thoughtsTokenCount === "number" ? g.thoughtsTokenCount : 0;
+            if (Number.isFinite(toolUsePrompt) && toolUsePrompt > 0) {
+              billableInputTokens = Number(billableInputTokens ?? 0) + toolUsePrompt;
+              notes.push(`${fmtTokens(toolUsePrompt)} tool-use prompt`);
+            }
+            if (Number.isFinite(thoughts) && thoughts > 0) {
+              billableOutputTokens = Number(billableOutputTokens ?? 0) + thoughts;
+              notes.push(`${fmtTokens(thoughts)} thinking`);
+            }
+          }
+
+          // Vertex Gemini: same billing rule as you’re using in estimateUsd()
+          if (pk.includes("vertex") || pk.includes("gemini3-vertex")) {
+            const v = payload.meta && payload.meta.vertex ? payload.meta.vertex : null;
+            const toolUsePrompt =
+              v && typeof v.toolUsePromptTokenCount === "number" ? v.toolUsePromptTokenCount : 0;
+            const thoughts =
+              v && typeof v.thoughtsTokenCount === "number" ? v.thoughtsTokenCount : 0;
+            if (Number.isFinite(toolUsePrompt) && toolUsePrompt > 0) {
+              billableInputTokens = Number(billableInputTokens ?? 0) + toolUsePrompt;
+              notes.push(`${fmtTokens(toolUsePrompt)} tool-use prompt`);
+            }
+            if (Number.isFinite(thoughts) && thoughts > 0) {
+              billableOutputTokens = Number(billableOutputTokens ?? 0) + thoughts;
+              notes.push(`${fmtTokens(thoughts)} thinking`);
+            }
+          }
+        } catch (_) {}
+
+        const noteSuffix = notes.length ? ` (${notes.join(", ")})` : "";
 
         const parts = [
-          `Input tokens: ${fmtTokens(payload.inputTokens)}`,
-          `Output tokens: ${fmtTokens(payload.outputTokens)}`,
+          `Billable input: ${fmtTokens(billableInputTokens)}`,
+          `Billable output: ${fmtTokens(billableOutputTokens)}${noteSuffix}`,
           `Est cost: ${payload.estimatedUsd == null ? "—" : fmtUsd(payload.estimatedUsd)}`
         ];
         el.textContent = parts.join("  ·  ");

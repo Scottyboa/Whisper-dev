@@ -146,6 +146,19 @@ All headings should be plain text with a colon.`.trim();
             "output=", usage.completion_tokens,
             "total=", usage.total_tokens
           );
+
+          // Send usage to Transcribe UI (token+cost line)
+          try {
+            if (window.__app && typeof window.__app.setNoteUsageAndCost === "function") {
+              window.__app.setNoteUsageAndCost({
+                providerKey: "mistral",
+                modelId: "mistral-large-latest",
+                usage
+              });
+            }
+          } catch (e) {
+            console.warn("[Mistral] setNoteUsageAndCost failed:", e);
+          }
         }
       },
       onError: (err) => {

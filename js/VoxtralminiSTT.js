@@ -217,7 +217,7 @@ async function sendChunkChat({ apiKey, model, audioBase64 }, { signal } = {}, re
               {
                 type: "text",
                 text:
-                  "Transcribe the audio verbatim in Norwegian (Bokmål). " +
+                  "Transcribe the audio verbatim." +
                   "Do NOT translate. Output ONLY the transcript text.",
               },
             ],
@@ -585,7 +585,8 @@ function updateTranscriptionOutput() {
   if (transcriptionElem) {
     transcriptionElem.value = combinedTranscript.trim();
   }
-  if (manualStop && Object.keys(transcriptChunks).length >= expectedChunks) {
+  // Guard against the "expectedChunks is still 0" race during Stop()
+  if (manualStop && expectedChunks > 0 && Object.keys(transcriptChunks).length >= expectedChunks) {
     clearInterval(completionTimerInterval);
     if (!transcriptionError) {
       updateStatusMessage("Transcription finished!", "green");
@@ -854,13 +855,14 @@ stopButton.addEventListener("click", async () => {
 
     // Flush any pending VAD segments before stopping
     flushPendingVADChunks();
-  // Now block further VAD callbacks / UI writes
-    manualStop = true;
-    // drain the queue so the final chunk is actually sent
-    await processTranscriptionQueue();
-
-   // ─── NOW compute how many chunks we’re actually waiting on ───
+    // Compute how many chunks we expect *before* draining,
+    // so updateTranscriptionOutput() doesn't treat expectedChunks=0 as "done".
     expectedChunks = chunkNumber - 1;
+
+    // Now block further VAD callbacks / UI writes
+    manualStop = true;
+
+    // Start completion timer immediately (it measures the time spent finishing transcription)
     if (expectedChunks > 0 && !completionTimerInterval) {
       completionStartTime = Date.now();
       completionTimerInterval = setInterval(() => {
@@ -870,6 +872,9 @@ stopButton.addEventListener("click", async () => {
         }
       }, 1000);
     }
+
+    // Drain the queue so the final chunk is actually sent
+    await processTranscriptionQueue();
 
     clearTimeout(chunkTimeoutId);
 

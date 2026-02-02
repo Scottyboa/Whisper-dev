@@ -375,8 +375,7 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 
 <strong>Tale-til-tekst-modeller i appen:</strong><br>
 - OpenAI: gpt-4o-transcribe<br>
-- Soniox<br>
-- Soniox (speaker labels)<br>
+- Soniox v4<br>
 - Lemonfox Speech-to-Text (Whisper v3-basert)<br>
 - Voxtral Mini<br>
 - Deepgram Nova-3<br><br>
@@ -389,7 +388,7 @@ For å bruke tale-til-tekst og notatgenereringsmodellene i denne appen, må du a
 - Gemini 2.5 pro(via Google Vertex)<br>
 - Lemonfox text generation (Llama 3-based models)<br>
 - Mistral Large<br>
-- Gemini 3<br><br>
+- Gemini 3 (via Google AI studio)<br><br>
 
 <strong>Anbefalte modeller i forhold til GDPR:</strong><br>
 - Av de tilgjengelige modellene i denne webappen, så er det Soniox for tale-til-tekst, samt Mistral Large 3(Via Mistral), Google Vertex(Gemini 2.5 pro) og AWS Bedrock(Claude) for tekst/notat-generering som vil være GDPR godkjente.<br>

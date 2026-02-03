@@ -252,37 +252,69 @@ Both DPIA and TIA should be completed, documented, and approved before using the
 
 Below is a rough overview of how services typically operate today. This may change. You must always check current documentation and agreements from each provider.<br><br>
 
-<strong>Lemonfox (speech-to-text and text generation)</strong><br>
-EU-based and markets itself as fully GDPR-compliant.<br>
-Speech-to-text (Whisper v3) and Llama 3-based text models are processed in the EU, and they state that audio/text is deleted shortly after processing (no training reuse).<br>
-This makes Lemonfox relatively GDPR-friendly for both speech-to-text and text generation, provided you still perform DPIA/TIA and have proper agreements.<br><br>
 
 <strong>Soniox (with EU endpoint)</strong><br>
 Soniox offers data residency in both the US and EU.<br>
 When a project is configured for the EU region, audio and transcripts are processed within that region; some system data (account/billing data) may still be handled globally.<br>
 To use the EU endpoint clinically, you typically must contact Soniox and request EU-project access/API key and documentation. Access may take 1–2 days after contact.<br>
 With the EU endpoint enabled, Soniox is a strong GDPR-aligned option for speech-to-text, though DPIA/TIA and DPAs remain required.<br><br>
+<ul>
+  <li><strong>EU region:</strong> Yes</li>
+  <li><strong>Zero data retention:</strong> Yes – in this app, the audio is deleted immediately after the transcription is received back from Soniox.</li>
+  <li><strong>Training:</strong> Not used</li>
+</ul><br><br>
+
+<strong>AWS Bedrock (Claude via EU backend)</strong><br>
+In this app, AWS Bedrock is used only through your own backend URL and secret, entered under “AWS Bedrock” on the front page.<br>
+If you follow the setup guide, your Bedrock deployment can be configured to an EU region with zero data retention and no training reuse. Requests and responses are processed within the EU, and request data is not retained longer than necessary to deliver the response, according to AWS documentation and your chosen configuration.<br>
+For a practical walk-through of how to create the setup, choose region and deploy the backend used by this app, click the guide link next to the “AWS Bedrock” fields on the front page.<br><br>
+<ul>
+  <li><strong>EU region:</strong> Yes</li>
+  <li><strong>Zero data retention:</strong> Yes</li>
+  <li><strong>Training:</strong> Not used for training</li>
+</ul><br><br>
 
 <strong>Mistral (Voxtral for speech-to-text, Mistral Large for text)</strong><br>
 EU-based. API data hosting in the EU by default unless explicitly using US endpoints.<br>
 Mistral offers Zero Data Retention (ZDR) on request, meaning data is not retained beyond what is necessary to deliver the response. This may simplify GDPR justification but must be documented in DPIA/TIA.<br>
 EU endpoint + ZDR (when granted and configured) makes Mistral one of the most GDPR-friendly options in this app.<br><br>
+<ul>
+  <li><strong>EU region:</strong> Yes</li>
+  <li><strong>Zero data retention:</strong> No – default retention is typically ~30 days, but you can request Zero Data Retention by contacting Mistral support (Mistral Help Center).</li>
+  <li><strong>Training:</strong> Opt-out available – by default data may be used for training, but you can disable this in your Mistral account privacy settings.</li>
+</ul><br><br>
 
 <strong>Google Vertex AI (Gemini 2.5 Pro via EU backend)</strong><br>
 In this app, Google Vertex AI is used only through your own backend URL and secret, entered under “Google Vertex” on the front page.<br>
 When your Vertex project is configured to use an EU region (for example europe-west1) and zero data retention/no training reuse, prompts and notes are processed within the EU, and request data is not kept longer than necessary to deliver the response, according to Google’s documentation.<br>
 This setup can therefore be used as a fully EU-resident, zero-retention alternative for note generation, provided that you also have a valid DPA with Google and have completed DPIA/TIA that explicitly cover this use.<br>
 For a practical walk-through of how to create the project, set the region, and deploy the backend used by this app, you can click the guide button in the “Google Vertex” header on the front page; this opens a dedicated ChatGPT guide where you can ask follow-up questions.<br><br>
+<ul>
+  <li><strong>EU region:</strong> Yes</li>
+  <li><strong>Zero data retention:</strong> Yes</li>
+  <li><strong>Training:</strong> Not used for training</li>
+</ul><br><br>
+
 
 <strong>Gemini 3 (Google AI Studio)</strong><br>
 Gemini 3 used via Google AI Studio / Gemini API with a plain API key is normally processed on Google’s global infrastructure, which may involve transfers outside the EEA.<br>
 Google may retain request data for a limited period for abuse detection, reliability and improvement, depending on your settings and agreement, and the endpoint is not by default explicitly EU-locked.<br>
 Use of Gemini 3 via Google AI Studio will therefore often be a legal “gray zone” for identifiable patient data unless you have explicit contractual guarantees for EU data residency and retention, documented in your DPIA/TIA.<br><br>
+<ul>
+  <li><strong>EU region:</strong> No – global processing</li>
+  <li><strong>Zero data retention:</strong> No – default is data retention (commonly cited around ~55 days) unless otherwise agreed/configured.</li>
+  <li><strong>Training:</strong> Varies – depends on settings/agreements (treat as non-GDPR for identifiable patient data without explicit guarantees).</li>
+</ul><br><br>
 
 <strong>OpenAI</strong><br>
 OpenAI states that API data is not used for training by default, but may be stored temporarily (typically up to ~30 days) for abuse detection and debugging.<br>
 OpenAI has introduced data residency in Europe for certain API customers and products, but this requires specific agreements/configurations.<br>
 With typical usage in this app, OpenAI calls often go to global (US) endpoints, meaning transfers outside the EEA.<br><br>
+<ul>
+  <li><strong>EU region:</strong> No (by default)</li>
+  <li><strong>Zero data retention:</strong> No – default is temporary retention (typically up to ~30 days)</li>
+  <li><strong>Training:</strong> Not used (API default)</li>
+</ul><br><br>
 
 Using OpenAI with patient data is often a legal gray zone unless you have:<br>
 - a clear DPA,<br>
@@ -294,6 +326,16 @@ Historically used global endpoints, but now offers dedicated and EU-specific end
 Using only the default/global endpoint typically means audio is processed outside the EEA.<br>
 Deepgram also offers EU-hosted services and various compliance setups, but you must configure the correct endpoint (e.g., api.eu.deepgram.com) and have agreements covering data residency and retention.<br>
 As commonly used today, Deepgram—like OpenAI—may involve data transfers outside the EU unless explicitly configured otherwise.<br><br>
+<ul>
+  <li><strong>EU region:</strong> No – default usage can be global (EU endpoint requires explicit selection/configuration)</li>
+  <li><strong>Zero data retention:</strong> Depends – can be arranged by contacting Deepgram support</li>
+  <li><strong>Training:</strong> Not used (by default)</li>
+</ul><br><br>
+
+<strong>Lemonfox (speech-to-text and text generation)</strong><br>
+EU-based and markets itself as fully GDPR-compliant.<br>
+Speech-to-text (Whisper v3) and Llama 3-based text models are processed in the EU, and they state that audio/text is deleted shortly after processing (no training reuse).<br>
+This makes Lemonfox relatively GDPR-friendly for both speech-to-text and text generation, provided you still perform DPIA/TIA and have proper agreements.<br><br>
 
 <strong>Summary of model options in this app:</strong><br><br>
 

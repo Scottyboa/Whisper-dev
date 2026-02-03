@@ -9,7 +9,7 @@ export const indexTranslations = {
   promptProfileHint: "Brukes til å lagre dine egendefinerte prompts på denne enheten uavhengig av API-nøkkelen din.",
   keysIoHint: "Eksporter nøklene til en fil og oppbevar den sikkert. Neste gang kan du importere filen for å fylle inn feltene på nytt, noe som sparer tid og gjør at du slipper å skrive dem inn. Nøklene slettes automatisk når du lukker webappen/nettleser-fanen, eller manuelt med Clear keys.",
   gdprColumnTitle: "GDPR-kompatibel:",
-  gdprColumnFootnote: "(EU data-residens/databehandling + ingen datalagring – forutsatt korrekt oppsett)",
+  gdprColumnFootnote: "(EU data-residens/databehandling + ingen datalagring + data brukes ikke for modelltrening – forutsatt korrekt oppsett)",
   nonGdprColumnTitle: "Ikke GDPR-kompatibel:",
   nonGdprColumnFootnote: "(Typisk global databehandling + kan ha midlertidig datalagring)",
   enterButton: "Gå til transkripsjonsverktøyet",

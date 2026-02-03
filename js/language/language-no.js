@@ -255,30 +255,55 @@ Nedenfor er en grov oversikt slik tjenestene typisk fungerer i dag. Dette kan en
 Soniox tilbyr dataresidens i både USA og EU.<br>
 Når et prosjekt er konfigurert med EU-region, behandles lyd og transkripsjoner innenfor denne regionen; systemdata som kontodata og fakturadata kan likevel håndteres globalt.<br>
 For å ta i bruk EU-endepunktet i klinisk setting må du typisk kontakte Soniox (for eksempel via e-post til <strong>sales@soniox.com</strong>) og be om tilgang til EU-prosjekt/API-nøkkel og dokumentasjon på dataresidens. Tilgang på EU-endepunkt kan ta 1–2 dager å oppnå etter kontakt.<br>
-Med EU-endepunktet aktivert er Soniox et godt alternativ for GDPR-tilpasset tale-til-tekst, men du må fortsatt gjøre DPIA/TIA og inngå nødvendig DPA.<br><br>
+Med EU-endepunktet aktivert er Soniox et godt alternativ for GDPR-tilpasset tale-til-tekst, men du må fortsatt gjøre DPIA/TIA og inngå nødvendig DPA.<br>
+<ul>
+  <li><strong>EU-region:</strong> Ja</li>
+  <li><strong>Null data retention:</strong> Ja – i denne appen slettes lydopptaket umiddelbart etter at transkripsjonen er mottatt fra Soniox.</li>
+  <li><strong>Trening:</strong> Ikke brukt</li>
+</ul><br><br>
 
 <strong>AWS Bedrock(Claude Sonnet 4.5 + Claude Haiku 4.5 + Claude Opus 4.5 via EU-backend)</strong><br>
 I denne appen brukes AWS Bedrock kun via din egen backend-URL og hemmelige nøkkel, som du legger inn under «AWS Bedrock» på forsiden.<br>
 Hvis man følger setup-guiden forsiden, så vil AWS Bedrock-prosjektet ditt konfigureres til en EU-region (europe-west4) og med zero data retention / ingen gjenbruk av data til trening. Forespørsler og svar behandles derfor innenfor EU, og forespørselsdata vil ikke lagres lenger enn nødvendig for å levere svaret, jf. AWS sin dokumentasjon.<br>
 Dette oppsettet kan dermed brukes som et EU-resident, null-retensjonsalternativ for notatgenerering.<br>
-For en praktisk gjennomgang av hvordan du oppretter prosjektet, velger region og deployer backend-en som brukes av denne appen, kan du klikke på guide-knappen i «AWS Bedrock»-overskriften på forsiden.<br><br>
+For en praktisk gjennomgang av hvordan du oppretter prosjektet, velger region og deployer backend-en som brukes av denne appen, kan du klikke på guide-knappen i «AWS Bedrock»-overskriften på forsiden.<br>
+<ul>
+  <li><strong>EU-region:</strong> Ja</li>
+  <li><strong>Null data retention:</strong> Ja</li>
+  <li><strong>Trening:</strong> Ikke brukt for trening</li>
+</ul><br><br>
 
 <strong>Google Vertex AI (Gemini 2.5 Pro via EU-backend)</strong><br>
 I denne appen brukes Google Vertex AI kun via din egen backend-URL og hemmelige nøkkel, som du legger inn under «Google Vertex» på forsiden.<br>
 Hvis man følger setup-guiden til Google Vertex, så vil vertex-prosjektet ditt konfigureres til en EU-region (europe-west1) og med zero data retention / ingen gjenbruk av data til trening. Forespørsler og svar behandles derfor innenfor EU, og forespørselsdata vil ikke lagres lenger enn nødvendig for å levere svaret, jf. Googles dokumentasjon.<br>
 Dette oppsettet kan dermed brukes som et EU-resident, null-retensjonsalternativ for notatgenerering.<br>
-For en praktisk gjennomgang av hvordan du oppretter prosjektet, velger region og deployer backend-en som brukes av denne appen, kan du klikke på guide-knappen i «Google Vertex»-overskriften på forsiden.<br><br>
+For en praktisk gjennomgang av hvordan du oppretter prosjektet, velger region og deployer backend-en som brukes av denne appen, kan du klikke på guide-knappen i «Google Vertex»-overskriften på forsiden.<br>
+<ul>
+  <li><strong>EU-region:</strong> Ja</li>
+  <li><strong>Null data retention:</strong> Ja</li>
+  <li><strong>Trening:</strong> Ikke brukt for trening</li>
+</ul><br><br>
 
 <strong>Mistral (Voxtral for tale-til-tekst, Mistral Large 3 for tekst-generering)</strong><br>
 Mistral er et EU-basert selskap i Frankrike, og standardoppsettet deres er at API-data behandles/hostes i EU som utgangspunkt (med egne US-endepunkter dersom man eksplisitt velger det).<br>
 For høyere GDPR-samsvar kan du be Mistral om <strong>Zero Data Retention (ZDR)</strong> via support: <a href="https://mistral.ai/contact" target="_blank" rel="noopener noreferrer">mistral.ai/contact</a>. Når dette er innvilget, lagres ikke API-data utover det som er strengt nødvendig for å levere svaret.<br>
 Du bør også <strong>reservere deg mot modelltrening</strong> i personverninnstillingene i Mistral-kontoen din: <a href="https://admin.mistral.ai/plateforme/privacy" target="_blank" rel="noopener noreferrer">admin.mistral.ai/plateforme/privacy</a>.<br>
-Kombinasjonen <strong>EU-behandling + innvilget ZDR + opt-out av modelltrening</strong> gjør Mistral (Voxtral + Mistral Large 3) til et av de mest «GDPR-vennlige» alternativene i denne appen.<br><br>
+Kombinasjonen <strong>EU-behandling + innvilget ZDR + opt-out av modelltrening</strong> gjør Mistral (Voxtral + Mistral Large 3) til et av de mest «GDPR-vennlige» alternativene i denne appen.<br>
+<ul>
+  <li><strong>EU-region:</strong> Ja</li>
+  <li><strong>Null data retention:</strong> Nei – standard er 30 dager, men du kan få aktivert Zero Data Retention ved å kontakte Mistral support (Mistral Help Center).</li>
+  <li><strong>Trening:</strong> Opt-out tilgjengelig – standard er at data kan brukes til modelltrening, men du kan skru dette av i Mistral-kontoen din (personverninnstillinger).</li>
+</ul><br><br>
 
 <strong>Gemini 3 (Google AI Studio)</strong><br>
 Gemini 3 brukt via Google AI Studio / Gemini API med ren API-nøkkel behandles normalt på Googles globale infrastruktur, noe som typisk innebærer at data kan overføres utenfor EU/EØS.<br>
 Google kan lagre forespørselsdata midlertidig for misbruksdeteksjon, stabilitet og forbedring, avhengig av innstillinger og avtale, og endepunktet er som hovedregel ikke eksplisitt låst til EU-region.<br>
-Bruk av Gemini 3 via Google AI Studio vil derfor ofte være et juridisk «gråområde» for identifiserbare pasientdata, med mindre du har eksplisitte kontraktsmessige garantier om EU-dataresidens og lagringstid, dokumentert i DPIA/TIA. Denne appen tilbyr i stedet en egen Google Vertex-integrasjon for EU-region (se over).<br><br>
+Bruk av Gemini 3 via Google AI Studio vil derfor ofte være et juridisk «gråområde» for identifiserbare pasientdata, med mindre du har eksplisitte kontraktsmessige garantier om EU-dataresidens og lagringstid, dokumentert i DPIA/TIA. Denne appen tilbyr i stedet en egen Google Vertex-integrasjon for EU-region (se over).<br>
+<ul>
+  <li><strong>EU-region:</strong> Nei – global databehandling</li>
+  <li><strong>Null data retention:</strong> Nei – standard er datalagring (oppgitt rundt 55 dager) med mindre annet er avtalt/konfigurert.</li>
+  <li><strong>Trening:</strong> Varierer – avhenger av innstillinger/avtale (vurder som ikke-GDPR-kompatibelt uten eksplisitte garantier).</li>
+</ul><br><br>
 
 <strong>OpenAI</strong><br>
 OpenAI oppgir at API-data ikke brukes til modelltrening som standard, men kan lagres midlertidig (typisk opptil 30 dager) for misbruksdeteksjon og feilsøking.<br>
@@ -288,13 +313,23 @@ Slik denne webappen normalt er satt opp, vil kall til OpenAI ofte gå til global
 Bruk av OpenAI med pasientdata befinner seg dermed ofte i et juridisk «gråområde» med mindre du har:<br>
 - en tydelig DPA,<br>
 - dokumentert DPIA/TIA som eksplisitt dekker overføringen, og<br>
-- eventuelle særordninger om EU-dataresidens/ZDR dersom dette er tilgjengelig og faktisk aktivert. Dette kan dog være utfordrende å få godkjenning for.<br><br>
+- eventuelle særordninger om EU-dataresidens/ZDR dersom dette er tilgjengelig og faktisk aktivert. Dette kan dog være utfordrende å få godkjenning for.<br>
+<ul>
+  <li><strong>EU-region:</strong> Nei – standardoppsett er globale endepunkter</li>
+  <li><strong>Null data retention:</strong> Nei – standard er midlertidig lagring (typisk opptil 30 dager)</li>
+  <li><strong>Trening:</strong> Ikke brukt (standard for API)</li>
+</ul><br><br>
 
 <strong>Deepgram (Nova-3)</strong><br>
 Deepgram har historisk brukt globale endepunkter, men tilbyr nå dedikerte og EU-spesifikke endepunkter.<br>
 Hvis du kun bruker standard/globalt endepunkt, vil lyddata typisk prosesseres utenfor EU/EØS.<br>
 Deepgram har også EU-hostede tjenester og beskriver ulike compliance-oppsett (inkludert for helse), men det krever at du bevisst konfigurerer riktig endepunkt (f.eks. api.eu.deepgram.com) og har avtaler som dekker dataresidens og eventuelle lagringstider.<br>
-Slik appen ofte brukes i dag, kan Deepgram derfor – på samme måte som OpenAI – innebære at data sendes ut av EU hvis du ikke eksplisitt konfigurerer EU-endepunkt og har juridiske vurderinger på plass.<br><br>
+Slik appen ofte brukes i dag, kan Deepgram derfor – på samme måte som OpenAI – innebære at data sendes ut av EU hvis du ikke eksplisitt konfigurerer EU-endepunkt og har juridiske vurderinger på plass.<br>
+<ul>
+  <li><strong>EU-region:</strong> Nei – standardoppsett kan være globalt (EU-endepunkt krever bevisst valg)</li>
+  <li><strong>Null data retention:</strong> Avhenger – kan avtales ved å kontakte Deepgram support</li>
+  <li><strong>Trening:</strong> Ikke brukt (standard)</li>
+</ul><br><br>
 
 <strong>Lemonfox (tale-til-tekst og tekstgenerering)</strong><br>
 Lemonfox er EU-basert og markedsfører seg som fullt GDPR-kompatibel.<br>

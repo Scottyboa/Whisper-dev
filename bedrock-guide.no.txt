@@ -19,7 +19,7 @@ Hvis du bruker regionen EU Stockholm (eu-north-1), behandles forespørslene i de
 AWS oppgir at Amazon Bedrock ikke lagrer eller logger “prompts” og svar, ikke bruker dem til
 å trene AWS-modeller, og ikke deler dem med tredjeparter.
 
-Å bruke AI-modellene via dette oppsettet garanterer null datalagring og holder all databehandling og dataresidens innenfor EU, noe som gjør bruken av modellene GDPR kompatibelt.
+Å bruke AI-modellene via dette oppsettet garanterer null datalagring og holder all databehandling og dataresidens innenfor EU, noe som gjør bruken av modellene i høy grad GDPR kompatibelt.
 
 
 ------------------------------------------------------------

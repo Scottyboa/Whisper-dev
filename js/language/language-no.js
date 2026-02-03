@@ -9,9 +9,9 @@ export const indexTranslations = {
   promptProfileHint: "Brukes til å lagre dine egendefinerte prompts på denne enheten uavhengig av API-nøkkelen din.",
   keysIoHint: "Eksporter nøklene til en fil og oppbevar den sikkert. Neste gang kan du importere filen for å fylle inn feltene på nytt, noe som sparer tid og gjør at du slipper å skrive dem inn. Nøklene slettes automatisk når du lukker webappen/nettleser-fanen, eller manuelt med Clear keys.",
   gdprColumnTitle: "GDPR-kompatibel:",
-  gdprColumnFootnote: "(EU data-residens/databehandling + ingen datalagring)",
+  gdprColumnFootnote: "(EU data-residens/databehandling + ingen datalagring – forutsatt korrekt oppsett)",
   nonGdprColumnTitle: "Ikke GDPR-kompatibel:",
-  nonGdprColumnFootnote: "(Varierende grad av datalagring + databehandling/residens i USA)",
+  nonGdprColumnFootnote: "(Typisk global databehandling + kan ha midlertidig datalagring)",
   enterButton: "Gå til transkripsjonsverktøyet",
   guideButton: "API-guide – Slik bruker du den",
   securityButton: "Sikkerhet",
@@ -259,7 +259,7 @@ Med EU-endepunktet aktivert er Soniox et godt alternativ for GDPR-tilpasset tale
 
 <strong>AWS Bedrock(Claude Sonnet 4.5 + Claude Haiku 4.5 + Claude Opus 4.5 via EU-backend)</strong><br>
 I denne appen brukes AWS Bedrock kun via din egen backend-URL og hemmelige nøkkel, som du legger inn under «AWS Bedrock» på forsiden.<br>
-Hvis man følger setup-guiden forsiden, så vil AWS Bedrock-prosjektet ditt konfigureres til en EU-region (europe-west4) og med zero data retention / ingen gjenbruk av data til trening. Forespørsler og svar behandles derfor innenfor EU, og forespørselsdata vil ikke lagres lenger enn nødvendig for å levere svaret, jf. Googles dokumentasjon.<br>
+Hvis man følger setup-guiden forsiden, så vil AWS Bedrock-prosjektet ditt konfigureres til en EU-region (europe-west4) og med zero data retention / ingen gjenbruk av data til trening. Forespørsler og svar behandles derfor innenfor EU, og forespørselsdata vil ikke lagres lenger enn nødvendig for å levere svaret, jf. AWS sin dokumentasjon.<br>
 Dette oppsettet kan dermed brukes som et EU-resident, null-retensjonsalternativ for notatgenerering.<br>
 For en praktisk gjennomgang av hvordan du oppretter prosjektet, velger region og deployer backend-en som brukes av denne appen, kan du klikke på guide-knappen i «AWS Bedrock»-overskriften på forsiden.<br><br>
 

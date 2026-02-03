@@ -446,6 +446,20 @@ https://soniox.com<br><br>
 – På hovedsiden kan du velge mellom EU- og US-endepunkt i nedtrekksmenyen når du bruker Soniox<br>
 - Bruk av Soniox i denne webappen vil ha zero data retention. Dette sammen med API nøkkel med EU endepunkt, gjør Soniox optimal i forhold til GDPR-krav. Samtidig er Soniox også den klart beste og billigste av alle tale-til-tekst modellene som finnes per i dag, noe som gjør den til et klart førstevalg ved bruk av tale-til-tekst i denne appen.<br><br>
 
+<strong>AWS Bedrock (Claude modeller - Zero data retention + EU-endepunkt)</strong><br>
+– For notatgenerering.<br>
+– Dette er et noe mer avansert oppsett enn de fleste andre alternativene i appen, men kan konfigureres slik at det gir et fullt GDPR-tilpasset oppsett.<br>
+– For komplett steg-for-steg-oppsett: klikk på <a href="#" data-open-guide="bedrock"><strong>«Guide»</strong></a>-lenken ved siden av <strong>AWS Bedrock</strong>-overskriften på forsiden.<br>
+– Når oppsettet er ferdig, vil du få en <strong>backend URL</strong> og en <strong>secret key</strong>, som du må lime inn i <strong>AWS Bedrock</strong>-feltene på forsiden av webappen.<br><br>
+
+<strong>Google Vertex (Gemini 2.5 Pro – Zero data retention + EU-endepunkt)</strong><br>
+– For notatgenerering.<br>
+– Dette er et mer avansert oppsett for deg som vil bruke Gemini via Google Cloud / Vertex AI med regionalt EU-endepunkt (f.eks. europe-west1 eller europe-west4).<br>
+– Kort fortalt: Du oppretter et eget Google Cloud-prosjekt, aktiverer Vertex AI, kobler det til en faktureringskonto og deployer en liten backend-funksjon (Cloud Run) som gir deg en HTTPS-adresse (https://…run.app).<br>
+– I denne webappen limer du inn denne adressen i feltet «Vertex backend URL (https://…run.app)» og den hemmelige nøkkelen (BACKEND_SECRET) i feltet «Vertex backend secret» på forsiden.<br>
+– All bruk av Gemini 2.5 Pro går da via ditt eget prosjekt; både fakturering og databehandling styres av deg, og du kan velge EU-region for bedre GDPR-tilpasning.<br>
+– Oppsettet kan oppleves litt teknisk, så for en detaljert steg-for-steg-veiledning kan du klikke på <a href="#" data-open-guide="vertex"><strong>«Guide»</strong></a>-lenken ved siden av «Google Vertex»-overskriften over disse feltene på forsiden.<br><br>
+
 <strong>Mistral</strong><br>
 - Anbefalt for notatgenerering.<br>
 – Lag en bruker på Mistral AI og logg inn på konsollen:<br>
@@ -462,19 +476,6 @@ https://console.mistral.ai<br><br>
 – For å <strong>opt-out av modelltrening</strong>: gå til personverninnstillingene i Mistral-kontoen: <a href="https://admin.mistral.ai/plateforme/privacy" target="_blank" rel="noopener noreferrer">admin.mistral.ai/plateforme/privacy</a><br>
 – Når du har <strong>EU-behandling (default) + innvilget ZDR + opt-out av modelltrening</strong>, vil bruk av Mistral sin API/modell ha en høy grad av GDPR-tilpasning (må likevel dokumenteres i DPIA/TIA der dette kreves).<br><br>
 
-<strong>AWS Bedrock (Claude modeller - Zero data retention + EU-endepunkt)</strong><br>
-– For notatgenerering.<br>
-– Dette er et noe mer avansert oppsett enn de fleste andre alternativene i appen, men kan konfigureres slik at det gir et fullt GDPR-tilpasset oppsett.<br>
-– For komplett steg-for-steg-oppsett: klikk på <a href="#" data-open-guide="bedrock"><strong>«Guide»</strong></a>-lenken ved siden av <strong>AWS Bedrock</strong>-overskriften på forsiden.<br>
-– Når oppsettet er ferdig, vil du få en <strong>backend URL</strong> og en <strong>secret key</strong>, som du må lime inn i <strong>AWS Bedrock</strong>-feltene på forsiden av webappen.<br><br>
-
-<strong>Google Vertex (Gemini 2.5 Pro – Zero data retention + EU-endepunkt)</strong><br>
-– For notatgenerering.<br>
-– Dette er et mer avansert oppsett for deg som vil bruke Gemini via Google Cloud / Vertex AI med regionalt EU-endepunkt (f.eks. europe-west1 eller europe-west4).<br>
-– Kort fortalt: Du oppretter et eget Google Cloud-prosjekt, aktiverer Vertex AI, kobler det til en faktureringskonto og deployer en liten backend-funksjon (Cloud Run) som gir deg en HTTPS-adresse (https://…run.app).<br>
-– I denne webappen limer du inn denne adressen i feltet «Vertex backend URL (https://…run.app)» og den hemmelige nøkkelen (BACKEND_SECRET) i feltet «Vertex backend secret» på forsiden.<br>
-– All bruk av Gemini 2.5 Pro går da via ditt eget prosjekt; både fakturering og databehandling styres av deg, og du kan velge EU-region for bedre GDPR-tilpasning.<br>
-– Oppsettet kan oppleves litt teknisk, så for en detaljert steg-for-steg-veiledning kan du klikke på <a href="#" data-open-guide="vertex"><strong>«Guide»</strong></a>-lenken ved siden av «Google Vertex»-overskriften over disse feltene på forsiden.<br><br>
 
 <strong>OpenAI</strong><br>
 - For tale-til-tekst og notatgenerering.<br>

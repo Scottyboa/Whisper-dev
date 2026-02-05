@@ -227,10 +227,10 @@ IMPORTANT:
 HOW TO UPDATE THE STACK (CLOUDFORMATION)
 ------------------------------------------------------------
 
-1) In AWS Console, make sure your Region is:
-   ✅ Europe (Stockholm) — eu-north-1
+1) Log in to AWS Console(root user), make sure your Region is:
+   ✅ Europe (Stockholm) — eu-north-1 (upper right corner)
 
-2) Open: CloudFormation
+2) Open: CloudFormation (can be found when typed from the search bar)
 3) Click: Stacks
 4) Select your stack (example name: bedrock-note-proxy)
 

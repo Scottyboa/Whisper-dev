@@ -251,17 +251,17 @@ HOW TO UPDATE THE STACK (CLOUDFORMATION)
 
 8) Parameters:
    • Leave values as-is (recommended), especially ProxySecret
-   Then click: Next → Next
-
-9) Acknowledgements:
-   You will see 3 acknowledgement checkboxes (IAM + SAM/macro).
-   ✅ Tick all three.
-
-10) Click:
-    ✅ Update stack
+   Then click: Next 
+   
+9) Acknowledgements(Configure Stack Options):
+    Scroll to bottom of page. You will see 3 acknowledgement checkboxes (IAM + SAM/macro).
+    ✅ Tick all three.
+   Then click: Next
+10)  On the next page, scroll all the way down.
+    ✅ Then click: Submit
 
 11) Wait until the stack Status becomes:
     ✅ UPDATE_COMPLETE
 
-Done — your proxy stack is now updated.
+Done — your proxy stack is now updated, and you can use the AWS Bedrock models with the latest updates.
 

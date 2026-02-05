@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/dist/bundle.min.js"></script>
 <!-- Removed hard-coded recording.js include; provider will choose module -->
   <meta charset="UTF-8" />
@@ -1909,6 +1909,29 @@
   document.addEventListener('DOMContentLoaded', () => {
     // Optional: keep pageview lean (no provider fields)
     logEvent({ action: 'pageview' });
+    // Capture the "fresh page load" textarea heights so Clear can restore them.
+    const captureDefaultHeight = (el) => {
+      if (!el) return;
+      const cs = window.getComputedStyle(el);
+      // Prefer CSS min-height (your baseline), fall back to rendered height.
+      const baseline =
+        (cs.minHeight && cs.minHeight !== '0px') ? cs.minHeight :
+        `${el.getBoundingClientRect().height}px`;
+      el.dataset.defaultHeight = baseline;
+    };
+
+    const resetTextareaToDefault = (el) => {
+      if (!el) return;
+      el.value = '';
+      el.scrollTop = 0;
+      const baseline = el.dataset.defaultHeight;
+      if (baseline) el.style.height = baseline;
+      else el.style.height = '';
+    };
+
+    captureDefaultHeight(document.getElementById('transcription'));
+    captureDefaultHeight(document.getElementById('supplementaryInfo'));
+
 
     document.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest ? e.target.closest('button') : null;
@@ -1938,10 +1961,7 @@
     clearSupplementaryButton.addEventListener('click', () => {
       const supEl = document.getElementById('supplementaryInfo');
       if (supEl) {
-        supEl.value = '';
-        if (typeof autoResize === 'function') {
-          try { autoResize(supEl); } catch {}
-        }
+        resetTextareaToDefault(supEl);
       }
     });
   }
@@ -1951,10 +1971,7 @@
     clearTranscriptionButton.addEventListener('click', () => {
       const trEl = document.getElementById('transcription');
       if (trEl) {
-        trEl.value = '';
-        if (typeof autoResize === 'function') {
-          try { autoResize(trEl); } catch {}
-        }
+        resetTextareaToDefault(trEl);
       }
     });
   }

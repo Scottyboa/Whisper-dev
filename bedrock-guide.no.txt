@@ -245,8 +245,7 @@ SLIK OPPDATERER DU STACKEN (CLOUDFORMATION)
 
 6) Under “Prepare template”, velg:
    ✅ Replace existing template
-   Klikk deretter: Next
-
+   
 7) Velg kilde for template:
    ✅ Amazon S3 URL
    Lim inn denne Template URL-en:
@@ -257,16 +256,17 @@ SLIK OPPDATERER DU STACKEN (CLOUDFORMATION)
 
 8) Parametere:
    • La verdiene stå som de er (anbefalt), spesielt ProxySecret
-   Klikk deretter: Next → Next
+   Klikk deretter: Next 
 
-9) Bekreftelser:
-   Du vil se 3 avkrysningsbokser for bekreftelse (IAM + SAM/macro).
+9) Bekreftelser(Configure Stack Options):
+   Scroll helt ned på siden. Du vil se 3 avkrysningsbokser for bekreftelse (IAM + SAM/macro).
    ✅ Huk av alle tre.
+Klikk deretter: Next 
 
-10) Klikk:
-    ✅ Update stack
+10) På neste side, scroll helt ned.
+    ✅ Klikk deretter: Submit 
 
 11) Vent til stack-status blir:
     ✅ UPDATE_COMPLETE
 
-Ferdig — proxy-stacken din er nå oppdatert.
+Ferdig — proxy-stacken din er nå oppdatert, og du kan bruke AWS Bedrock modellene med siste oppdateringer.

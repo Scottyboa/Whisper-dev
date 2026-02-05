@@ -233,8 +233,8 @@ VIKTIG:
 SLIK OPPDATERER DU STACKEN (CLOUDFORMATION)
 ------------------------------------------------------------
 
-1) I AWS-konsollen, sørg for at Region er:
-   ✅ Europe (Stockholm) — eu-north-1
+1) Logg inn I AWS-konsollen(root user), sørg for at Region er:
+   ✅ Europe (Stockholm) — eu-north-1 (øverst til høyre)
 
 2) Åpne: CloudFormation(kan søkes opp i søkefeltet øverst på AWS nettsiden)
 3) Klikk: Stacks

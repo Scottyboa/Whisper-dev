@@ -1061,6 +1061,7 @@ function initRecording() {
     alert("Please enter your Soniox API key first.");
     return;
   }
+    startButton.disabled = true;
 
     // NEW: Start is a hard reset: abort/clear any pending transcription work.
     beginFreshTranscriptionSession();
@@ -1082,14 +1083,14 @@ function initRecording() {
       }
       await sileroVAD.start();
       updateStatusMessage("Listening for speech…", "green");
-      logInfo("Silero VAD started");
-      startButton.disabled = true;
+      logInfo("Silero VAD started");      
       stopButton.disabled = false;
       pauseResumeButton.disabled = false;
       pauseResumeButton.innerText = "Pause Recording";
     } catch (error) {
       updateStatusMessage("VAD initialization error: " + error, "red");
       logError("Silero VAD error", error);
+      startButton.disabled = false;
     }
   }, { signal: uiSignal });
 

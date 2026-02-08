@@ -1003,6 +1003,10 @@ function initRecording() {
   const stopButton        = document.getElementById("stopButton");
   const pauseResumeButton = document.getElementById("pauseResumeButton");
   if (!startButton || !stopButton || !pauseResumeButton) return;
+  // Make init idempotent: if initRecording() is called again, kill old listeners.
+  window.__sonioxUIAbort_soniox?.abort("re-init");
+  window.__sonioxUIAbort_soniox = new AbortController();
+  const uiSignal = window.__sonioxUIAbort_soniox.signal;
 
   // --- PULL readLoop INTO SHARED SCOPE ---
   async function readLoop() {
@@ -1087,7 +1091,7 @@ function initRecording() {
       updateStatusMessage("VAD initialization error: " + error, "red");
       logError("Silero VAD error", error);
     }
-  });
+  }, { signal: uiSignal });
 
 pauseResumeButton.addEventListener("click", async () => {
   if (recordingPaused) {
@@ -1137,7 +1141,7 @@ pauseResumeButton.addEventListener("click", async () => {
     updateStatusMessage("Recording paused", "orange");
     logInfo("Recording paused; buffered speech flushed");
   }
-});
+}, { signal: uiSignal });
 
 stopButton.addEventListener("click", async () => {
     // --- FORCE-FLUSH the in-flight VAD segment via the public API ---
@@ -1252,7 +1256,7 @@ stopButton.addEventListener("click", async () => {
       }
     }
   }
-});
+}, { signal: uiSignal });
 
 }
 

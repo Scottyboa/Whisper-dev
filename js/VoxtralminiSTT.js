@@ -238,7 +238,7 @@ async function sendChunkChat({ apiKey, model, audioBase64 }, { signal } = {}, re
   }
 }
 async function sendChunkTranscription(
-  { apiKey, model, wavBlob, filename = "audio.wav" },
+  { apiKey, model, wavBlob, filename = "audio.wav", language = null },
   { signal } = {},
   retries = 5,
   backoff = 2000
@@ -248,7 +248,7 @@ async function sendChunkTranscription(
     const form = new FormData();
     form.append("model", model);
     form.append("file", wavBlob, filename);
-
+    if (language) form.append("language", language);
     return await fetch("https://api.mistral.ai/v1/audio/transcriptions", {
       method: "POST",
       signal,
@@ -412,18 +412,12 @@ async function transcribeChunkDirectly(wavBlob, chunkNum, { signal, sessionId } 
   if (!apiKey) throw new Error("API key not available for transcription");
 
 
-  // Allow override from global for quick experiments:
-  const mode =
-    (typeof window !== "undefined" && window.__STT_ENDPOINT_MODE__) ||
-    STT_ENDPOINT_MODE;
-
-  // Model choice:
   const model = "voxtral-mini-2602";
-
+ const language = null;
   try {
     let response;
     response = await sendChunkTranscription(
-      { apiKey, model, wavBlob, filename: `chunk-${chunkNum}.wav` },
+      { apiKey, model, wavBlob, filename: `chunk-${chunkNum}.wav`, language },
       { signal }
     );
 
@@ -439,19 +433,15 @@ async function transcribeChunkDirectly(wavBlob, chunkNum, { signal, sessionId } 
       throw new Error(`Mistral STT error: ${msg || `${response.status} ${response.statusText}`}`);
     }
     const result = await response.json();
-    // Response shapes:
-    // - transcriptions: { text: "...", ... } :contentReference[oaicite:4]{index=4}
-    // - chat: { choices: [{ message: { content: "..." } }] }
-    return mode === "transcriptions"
-      ? (result?.text || "")
-      : (result?.choices?.[0]?.message?.content || "");
+    // /v1/audio/transcriptions => { text: "..." }
+    return (result?.text || "");
   } catch (error) {
     // If user started a new session, treat this as a silent cancel.
     if (signal?.aborted || (sessionId && sessionId !== groupId)) {
       return "";
     }
     logError(`Error transcribing chunk ${chunkNum}:`, error);
-    updateStatusMessage("Error transcribing with Mistral Voxtral Small. Please try again.", "red");
+    updateStatusMessage("Error transcribing with Mistral Voxtral Mini Transcribe 2. Please try again.", "red");
     transcriptionError = true;
     return `[Error transcribing chunk ${chunkNum}]`;
   }

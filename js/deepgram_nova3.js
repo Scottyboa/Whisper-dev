@@ -770,6 +770,7 @@ function initRecording() {
     alert("Please enter your Deepgram API key first.");
     return;
   }
+    startButton.disabled = true;
 
     // NEW: Start is a hard reset: abort/clear any pending transcription work.
     beginFreshTranscriptionSession();
@@ -787,13 +788,14 @@ function initRecording() {
       await sileroVAD.start();
       updateStatusMessage("Listening for speech…", "green");
       logInfo("Silero VAD started");
-      startButton.disabled = true;
+      
       stopButton.disabled = false;
       pauseResumeButton.disabled = false;
       pauseResumeButton.innerText = "Pause Recording";
     } catch (error) {
       updateStatusMessage("VAD initialization error: " + error, "red");
       logError("Silero VAD error", error);
+      startButton.disabled = false;
     }
   });
 

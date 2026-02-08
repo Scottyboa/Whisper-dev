@@ -4,6 +4,7 @@
 // and implementing a client‑side transcription queue that sends each processed chunk directly to OpenAI's Whisper API.
 let transcriptionError = false;
 let STT_ENDPOINT_MODE = "transcriptions";
+
 function hashString(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -217,8 +218,8 @@ async function sendChunkChat({ apiKey, model, audioBase64 }, { signal } = {}, re
               {
                 type: "text",
                 text:
-                  "Transcribe the audio verbatim." +
-                  "Do NOT translate. Output ONLY the transcript text.",
+                  "Transcribe the audio verbatim in norwegian." +
+                  "Output ONLY the transcript text.",
               },
             ],
           },
@@ -417,21 +418,14 @@ async function transcribeChunkDirectly(wavBlob, chunkNum, { signal, sessionId } 
     STT_ENDPOINT_MODE;
 
   // Model choice:
-  // - chat audio: Voxtral Small works well for this (/v1/chat/completions)
-  // - transcriptions: optimized endpoint currently supports voxtral-mini-latest :contentReference[oaicite:3]{index=3}
-  const model = mode === "transcriptions" ? "voxtral-mini-latest" : "voxtral-small-latest";
+  const model = "voxtral-mini-2602";
 
   try {
     let response;
-    if (mode === "transcriptions") {
-      response = await sendChunkTranscription(
-        { apiKey, model, wavBlob, filename: `chunk-${chunkNum}.wav` },
-        { signal }
-      );
-    } else {
-      const audioBase64 = await blobToBase64(wavBlob);
-      response = await sendChunkChat({ apiKey, model, audioBase64 }, { signal });
-    }
+    response = await sendChunkTranscription(
+      { apiKey, model, wavBlob, filename: `chunk-${chunkNum}.wav` },
+      { signal }
+    );
 
     if (!response.ok) {
       // Try JSON first, otherwise text

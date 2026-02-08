@@ -650,6 +650,7 @@ function initRecording() {
     alert("Please enter your Lemonfox API key first.");
     return;
   }
+    startButton.disabled = true;
     resetRecordingState();
     const transcriptionElem = document.getElementById("transcription");
     if (transcriptionElem) transcriptionElem.value = "";
@@ -663,13 +664,14 @@ function initRecording() {
       await sileroVAD.start();
       updateStatusMessage("Listening for speech…", "green");
       logInfo("Silero VAD started");
-      startButton.disabled = true;
+      
       stopButton.disabled = false;
       pauseResumeButton.disabled = false;
       pauseResumeButton.innerText = "Pause Recording";
     } catch (error) {
       updateStatusMessage("VAD initialization error: " + error, "red");
       logError("Silero VAD error", error);
+      startButton.disabled = false;
     }
   });
 

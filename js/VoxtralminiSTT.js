@@ -3,7 +3,7 @@
 // processing audio chunks using OfflineAudioContext,
 // and implementing a client‑side transcription queue that sends each processed chunk directly to OpenAI's Whisper API.
 let transcriptionError = false;
-
+let STT_ENDPOINT_MODE = "transcriptions";
 function hashString(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -236,7 +236,37 @@ async function sendChunkChat({ apiKey, model, audioBase64 }, { signal } = {}, re
     throw err;
   }
 }
+async function sendChunkTranscription(
+  { apiKey, model, wavBlob, filename = "audio.wav" },
+  { signal } = {},
+  retries = 5,
+  backoff = 2000
+) {
+  try {
+    // /v1/audio/transcriptions expects a file upload (or file_url/file_id). :contentReference[oaicite:2]{index=2}
+    const form = new FormData();
+    form.append("model", model);
+    form.append("file", wavBlob, filename);
 
+    return await fetch("https://api.mistral.ai/v1/audio/transcriptions", {
+      method: "POST",
+      signal,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        // NOTE: do NOT set Content-Type; the browser will set the multipart boundary.
+      },
+      body: form,
+    });
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    if (retries > 0) {
+      console.warn(`Chunk failed, retrying in ${backoff}ms… (${retries} left)`);
+      await new Promise(res => setTimeout(res, backoff));
+      return sendChunkTranscription({ apiKey, model, wavBlob, filename }, { signal }, retries - 1, backoff * 1.5);
+    }
+    throw err;
+  }
+}
 // --- Device Token Management ---
 function getDeviceToken() {
   let token = localStorage.getItem("device_token");
@@ -381,12 +411,28 @@ async function transcribeChunkDirectly(wavBlob, chunkNum, { signal, sessionId } 
   if (!apiKey) throw new Error("API key not available for transcription");
 
 
-  // Voxtral Small: use chat completions with audio input
-  const model = "voxtral-small-latest";
-  const audioBase64 = await blobToBase64(wavBlob);
+  // Allow override from global for quick experiments:
+  const mode =
+    (typeof window !== "undefined" && window.__STT_ENDPOINT_MODE__) ||
+    STT_ENDPOINT_MODE;
+
+  // Model choice:
+  // - chat audio: Voxtral Small works well for this (/v1/chat/completions)
+  // - transcriptions: optimized endpoint currently supports voxtral-mini-latest :contentReference[oaicite:3]{index=3}
+  const model = mode === "transcriptions" ? "voxtral-mini-latest" : "voxtral-small-latest";
 
   try {
-    const response = await sendChunkChat({ apiKey, model, audioBase64 }, { signal });
+    let response;
+    if (mode === "transcriptions") {
+      response = await sendChunkTranscription(
+        { apiKey, model, wavBlob, filename: `chunk-${chunkNum}.wav` },
+        { signal }
+      );
+    } else {
+      const audioBase64 = await blobToBase64(wavBlob);
+      response = await sendChunkChat({ apiKey, model, audioBase64 }, { signal });
+    }
+
     if (!response.ok) {
       // Try JSON first, otherwise text
       let msg = "";
@@ -399,8 +445,12 @@ async function transcribeChunkDirectly(wavBlob, chunkNum, { signal, sessionId } 
       throw new Error(`Mistral STT error: ${msg || `${response.status} ${response.statusText}`}`);
     }
     const result = await response.json();
-    // Chat completions response shape:
-    return result?.choices?.[0]?.message?.content || "";
+    // Response shapes:
+    // - transcriptions: { text: "...", ... } :contentReference[oaicite:4]{index=4}
+    // - chat: { choices: [{ message: { content: "..." } }] }
+    return mode === "transcriptions"
+      ? (result?.text || "")
+      : (result?.choices?.[0]?.message?.content || "");
   } catch (error) {
     // If user started a new session, treat this as a silent cancel.
     if (signal?.aborted || (sessionId && sessionId !== groupId)) {

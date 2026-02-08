@@ -20,7 +20,41 @@ const DEBUG = true;
  let sileroVAD = null;
  // Buffer for accumulating VAD-detected speech segments
   let pendingVADChunks = [];
-  let pendingVADLock = false;  // mutex for pause/stop flushes
+ let pendingVADLock = false;  // mutex for pause/stop flushes
+let pendingVADLastFlushToken = 0;
+
+function flushPendingVADOnce(reason, extraAudioFloat32 = null) {
+  const token = Date.now();
+  if (token === pendingVADLastFlushToken) return;
+  pendingVADLastFlushToken = token;
+
+  if (pendingVADLock) return;
+  if ((!pendingVADChunks || pendingVADChunks.length === 0) && !(extraAudioFloat32 && extraAudioFloat32.length)) return;
+
+  pendingVADLock = true;
+  try {
+    if (extraAudioFloat32 && extraAudioFloat32.length) {
+      const last = pendingVADChunks[pendingVADChunks.length - 1];
+      const looksSame = last && last.length === extraAudioFloat32.length;
+      if (!looksSame) pendingVADChunks.push(extraAudioFloat32);
+    }
+
+    if (pendingVADChunks.length === 0) return;
+    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
+    const combined     = new Float32Array(totalSamples);
+    let offset         = 0;
+    for (const seg of pendingVADChunks) {
+      combined.set(seg, offset);
+      offset += seg.length;
+    }
+    const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
+    enqueueTranscription(wavBlob, chunkNumber++);
+    pendingVADChunks = [];
+    logInfo(`[VAD] Flushed pending segments (${reason}).`);
+  } finally {
+    pendingVADLock = false;
+  }
+}
  // Minimum total speech duration before sending (in seconds)
  const MIN_CHUNK_DURATION_SECONDS = 7200;
  // Configure callbacks for speech start/end
@@ -1120,26 +1154,7 @@ pauseResumeButton.addEventListener("click", async () => {
       logError("Error resuming Silero VAD:", err);
     }
   } else {
-   // — FLUSH any pending VAD segments before pausing — 
-   // — FLUSH any pending VAD segments before pausing —
-if (pendingVADChunks.length > 0 && !pendingVADLock) {
-  pendingVADLock = true;
-  try {
-    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-    const combined     = new Float32Array(totalSamples);
-    let offset         = 0;
-    for (const seg of pendingVADChunks) {
-      combined.set(seg, offset);
-      offset += seg.length;
-    }
-    const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-    enqueueTranscription(wavBlob, chunkNumber++);
-    pendingVADChunks = [];
-  } finally {
-    pendingVADLock = false;
-  }
-}
-
+   
     // PAUSE: stop VAD and flush any buffered speech
     updateStatusMessage("Pausing recording…", "orange");
     try {
@@ -1154,24 +1169,9 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
  }
     // **new**: cut the mic feed so the browser indicator goes off
     stopMicrophone();
-    // Stop the mic stream so the browser tab indicator turns off
-if (pendingVADChunks.length > 0 && !pendingVADLock) {
-  pendingVADLock = true;
-  try {
-    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-    const combined = new Float32Array(totalSamples);
-    let offset = 0;
-    for (const seg of pendingVADChunks) {
-      combined.set(seg, offset);
-      offset += seg.length;
-    }
-    const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-    enqueueTranscription(wavBlob, chunkNumber++);
-    pendingVADChunks = [];
-  } finally {
-    pendingVADLock = false;
-  }
-}
+    await Promise.resolve();
+    flushPendingVADOnce("pause");
+    
 
     recordingPaused = true;
     
@@ -1183,14 +1183,10 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
 
 
 stopButton.addEventListener("click", async () => {
-    // --- FORCE-FLUSH the in-flight VAD segment via the public API ---
-    // If MicVAD supports endSegment(), use it to emit the last audio
+   let forcedAudio = null;
     if (sileroVAD && typeof sileroVAD.endSegment === "function") {
-      const result = sileroVAD.endSegment();
-      const audio = result?.audio;
-      if (audio && audio.length) {
-        pendingVADChunks.push(audio);
-      }
+    const result = sileroVAD.endSegment();
+    forcedAudio = result?.audio || null;
     }
     // First pause VAD to emit final onSpeechEnd
   if (sileroVAD) {
@@ -1219,44 +1215,8 @@ stopButton.addEventListener("click", async () => {
   // **new**: absolutely kill the media tracks
   stopMicrophone();
 
-    // — FLUSH and SEND any pending VAD segments before stopping —
-if (pendingVADChunks.length > 0 && !pendingVADLock) {
-  pendingVADLock = true;
-  try {
-    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-    const combined     = new Float32Array(totalSamples);
-    let offset         = 0;
-    for (const seg of pendingVADChunks) {
-      combined.set(seg, offset);
-      offset += seg.length;
-    }
-    const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-    enqueueTranscription(wavBlob, chunkNumber++);
-    pendingVADChunks = [];
-  } finally {
-    pendingVADLock = false;
-  }
-}
-
-  
-    // Flush remaining buffered segments even if below threshold
-if (pendingVADChunks.length > 0 && !pendingVADLock) {
-  pendingVADLock = true;
-  try {
-    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-    const combined = new Float32Array(totalSamples);
-    let offset = 0;
-    for (const seg of pendingVADChunks) {
-      combined.set(seg, offset);
-      offset += seg.length;
-    }
-    const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-    enqueueTranscription(wavBlob, chunkNumber++);
-    pendingVADChunks = [];
-  } finally {
-    pendingVADLock = false;
-  }
-}
+  await Promise.resolve();
+  flushPendingVADOnce("stop", forcedAudio);
 
     manualStop = true;
     clearTimeout(chunkTimeoutId);

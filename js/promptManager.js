@@ -2,6 +2,36 @@
 
 export const PromptManager = (() => {
   const PROMPT_PROFILE_STORAGE_KEY = "prompt_profile_id";
+  // Slot labels are stored per profile in localStorage under this key format:
+  //   prompt_slot_names::<profileId>
+  // (This matches transcribe.html's prompt label UI implementation.)
+  function getSlotNamesStorageKey(profileId) {
+    const pid = (profileId || "").trim() || "default";
+    return `prompt_slot_names::${pid}`;
+  }
+
+  function loadSlotNames(profileId) {
+    try {
+      const raw = localStorage.getItem(getSlotNamesStorageKey(profileId));
+      const parsed = raw ? JSON.parse(raw) : {};
+      return (parsed && typeof parsed === "object") ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveSlotNames(profileId, map) {
+    try {
+      localStorage.setItem(getSlotNamesStorageKey(profileId), JSON.stringify(map || {}));
+    } catch {}
+  }
+
+  function clearSlotNames(profileId) {
+    try {
+      localStorage.removeItem(getSlotNamesStorageKey(profileId));
+    } catch {}
+  }
+
   function hashString(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -136,13 +166,18 @@ export const PromptManager = (() => {
       const val = localStorage.getItem(key) || "";
       slots[String(i)] = val;
     }
+    // NEW: include prompt slot labels (if any exist for this profile)
+    const slotNames = loadSlotNames(profileId);
+    const hasAnySlotNames = slotNames && Object.keys(slotNames).length > 0;
+
 
     const payload = {
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       // profileId included as metadata only (Behavior 1 import will ignore it)
       profileId,
-      slots
+      slots,
+      ...(hasAnySlotNames ? { slotNames } : {})
     };
 
     const safe = sanitizeForFilename(profileId);
@@ -191,6 +226,15 @@ export const PromptManager = (() => {
       try {
         localStorage.setItem(getPromptStorageKey(k), String(v));
       } catch {}
+    }
+    // NEW IMPORT RULE:
+    // - If the import file includes slotNames: apply/overwrite labels
+    // - If it does NOT include slotNames: clear any existing labels for this profile
+    const importedSlotNames = parsed && parsed.slotNames;
+    if (importedSlotNames && typeof importedSlotNames === "object") {
+      saveSlotNames(profileId, importedSlotNames);
+    } else {
+      clearSlotNames(profileId);
     }
   }
 

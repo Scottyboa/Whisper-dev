@@ -2465,8 +2465,13 @@
         // Will be implemented in later steps
         if (typeof PromptManager.importPromptsFromFile === "function") {
           await PromptManager.importPromptsFromFile(file);
-          // After import, refresh visible slot
+          // After import, refresh visible slot prompt text
           reloadCurrentPromptSlot();
+
+          // IMPORTANT: Immediately refresh label UI from localStorage.
+          // This ensures old JSON (no slotNames) clears labels *visibly* without page refresh.
+          renderSlotOptionLabels({ mode: "shortSelected" });
+          syncNameInputForCurrentSlot();
         } else {
           console.warn("Import not implemented yet (PromptManager.importPromptsFromFile missing).");
         }
@@ -2812,3 +2817,10 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+

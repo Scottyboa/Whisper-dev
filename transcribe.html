@@ -856,8 +856,15 @@
           </div>
 
           <div style="display:flex; align-items: baseline; gap: 8px; margin-bottom: 6px;">
-            <label for="promptSlot" id="promptSlotLabel" style="margin:0;">Prompt Slot:</label>
-            <select id="promptSlot">
+            <select
+              id="promptSlot"
+              aria-label="Prompt slot"
+              style="
+                width: 30px;
+                min-width: 30px;
+                flex: 0 0 auto;
+              "
+            >
               <option value="1">1</option>
               <option value="2">2</option>
               <option value="3">3</option>
@@ -869,6 +876,25 @@
               <option value="9">9</option>
               <option value="10">10</option>
             </select>
+
+            <!-- Per-slot name (stored locally; shown in dropdown as "N - Name") -->
+            <input
+              id="promptSlotName"
+              type="text"
+              placeholder="Prompt label (optional)"
+              aria-label="Prompt slot name"
+              style="
+                flex: 1;
+                min-width: 160px;
+                padding: 6px 10px;
+                border: 1px solid #ddd;
+                border-radius: 10px;
+                font-size: 14px;
+                font-family: inherit;
+                box-sizing: border-box;
+              "
+            />
+
             <div style="display:flex; align-items:center; gap: 6px; margin-left: auto;">
               <button
                 id="copyPromptButton"
@@ -2060,6 +2086,64 @@
     const customPromptTextarea = document.getElementById("customPrompt");
     const clearPromptButton = document.getElementById("clearPromptButton");
     const copyPromptButton = document.getElementById("copyPromptButton");
+    const promptSlotNameInput = document.getElementById("promptSlotName");
+
+    // Keep the collapsed selector tiny; expand only while interacting/opening.
+    const COLLAPSED_PROMPT_SLOT_WIDTH_PX = 39; // fits up to "10"
+
+    function setPromptSlotCollapsedWidth() {
+      if (!promptSlotSelect) return;
+      promptSlotSelect.style.width = `${COLLAPSED_PROMPT_SLOT_WIDTH_PX}px`;
+      promptSlotSelect.style.minWidth = `${COLLAPSED_PROMPT_SLOT_WIDTH_PX}px`;
+    }
+
+    // While the dropdown is open/expanded, hide the name input to prevent layout "push"
+    // (so Copy/Clear don't jump right). Restore when it collapses.
+    const _promptSlotNameOriginalDisplay =
+      promptSlotNameInput ? (promptSlotNameInput.style.display || "") : "";
+
+    function hidePromptSlotNameInputTemporarily() {
+      if (!promptSlotNameInput) return;
+      promptSlotNameInput.style.display = "none";
+    }
+
+    function showPromptSlotNameInputAgain() {
+      if (!promptSlotNameInput) return;
+      promptSlotNameInput.style.display = _promptSlotNameOriginalDisplay;
+    }
+
+    function measureTextWidthPx(text, font) {
+      const canvas = measureTextWidthPx._canvas || (measureTextWidthPx._canvas = document.createElement("canvas"));
+      const ctx = canvas.getContext("2d");
+      ctx.font = font;
+      return ctx.measureText(text).width;
+    }
+
+    function setPromptSlotExpandedWidthToLongestLabel() {
+      if (!promptSlotSelect) return;
+
+      // Use computed font to match how the <select> actually renders.
+      const cs = window.getComputedStyle(promptSlotSelect);
+      const font = cs.font || `${cs.fontSize} ${cs.fontFamily}`;
+
+      // Find the longest visible label among options.
+      let maxTextWidth = 0;
+      for (const opt of Array.from(promptSlotSelect.options)) {
+        const label = (opt.textContent || "").trim();
+        if (!label) continue;
+        const w = measureTextWidthPx(label, font);
+        if (w > maxTextWidth) maxTextWidth = w;
+      }
+
+      // Add room for padding + arrow affordance (varies by OS/browser).
+      // This is intentionally generous to avoid truncation.
+      const EXTRA_UI_PX = 48;
+      const expanded = Math.ceil(maxTextWidth + EXTRA_UI_PX);
+      const px = Math.max(expanded, COLLAPSED_PROMPT_SLOT_WIDTH_PX);
+
+      promptSlotSelect.style.width = `${px}px`;
+      promptSlotSelect.style.minWidth = `${px}px`;
+    }
 
 
     // New: prompt profile UI elements
@@ -2074,6 +2158,65 @@
       if (!promptSlotSelect || !customPromptTextarea) return;
       // PromptManager.loadPrompt updates #customPrompt itself in your current codebase.
       PromptManager.loadPrompt(promptSlotSelect.value);
+    }
+
+    // -------- Prompt Slot Names (local, per profile) --------
+    function getPromptProfileIdSafe() {
+      const pid = (typeof PromptManager.getPromptProfileId === "function")
+        ? (PromptManager.getPromptProfileId() || "").trim()
+        : ((localStorage.getItem("prompt_profile_id") || "").trim());
+      return pid || "default";
+    }
+
+    function getSlotNamesStorageKey() {
+      return `prompt_slot_names::${getPromptProfileIdSafe()}`;
+    }
+
+    function loadSlotNames() {
+      try {
+        const raw = localStorage.getItem(getSlotNamesStorageKey());
+        const parsed = raw ? JSON.parse(raw) : {};
+        return (parsed && typeof parsed === "object") ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveSlotNames(map) {
+      try { localStorage.setItem(getSlotNamesStorageKey(), JSON.stringify(map || {})); } catch {}
+    }
+
+    function buildFullLabel(slot, name) {
+      const n = (name || "").trim();
+      return n ? `${slot} - ${n}` : `${slot}`;
+    }
+
+    // Native <select> can’t show one label when closed and a different label when open,
+    // so we do a lightweight trick:
+    // - When opening (focus/pointerdown): show full labels ("N - Name")
+    // - When closing (blur) or after change: restore selected option to short label ("N")
+    function renderSlotOptionLabels({ mode } = { mode: "full" }) {
+      if (!promptSlotSelect) return;
+      const names = loadSlotNames();
+      const selected = String(promptSlotSelect.value || "");
+      Array.from(promptSlotSelect.options).forEach((opt) => {
+        const slot = String(opt.value || "");
+        const full = buildFullLabel(slot, names[slot]);
+        opt.dataset.fullLabel = full;
+        opt.dataset.shortLabel = slot;
+        if (mode === "shortSelected") {
+          opt.textContent = (slot === selected) ? slot : full;
+        } else {
+          opt.textContent = full;
+        }
+      });
+    }
+
+    function syncNameInputForCurrentSlot() {
+      if (!promptSlotSelect || !promptSlotNameInput) return;
+      const names = loadSlotNames();
+      const slot = String(promptSlotSelect.value || "");
+      promptSlotNameInput.value = (names[slot] || "");
     }
 
 
@@ -2106,11 +2249,17 @@
       renderPromptProfileLabel();
       // Important: switching profiles changes the namespace; reload the visible slot.
       reloadCurrentPromptSlot();
+      // Profile affects slot-name namespace too
+      renderSlotOptionLabels({ mode: "shortSelected" });
+      syncNameInputForCurrentSlot();
       return entered;
     }
 
     // Initial render
     renderPromptProfileLabel();
+    renderSlotOptionLabels({ mode: "shortSelected" });
+    syncNameInputForCurrentSlot();
+    setPromptSlotCollapsedWidth();
 
     if (promptSlotSelect && customPromptTextarea) {
       let isLoadingPrompt = false;
@@ -2119,6 +2268,11 @@
         isLoadingPrompt = true;
         PromptManager.loadPrompt(promptSlotSelect.value);
         isLoadingPrompt = false;
+        syncNameInputForCurrentSlot();
+        // After changing slots, keep the collapsed view showing just the number.
+        renderSlotOptionLabels({ mode: "shortSelected" });
+        setPromptSlotCollapsedWidth();
+        showPromptSlotNameInputAgain();
       }
 
       // Initial load
@@ -2134,8 +2288,106 @@
 
       // Load new prompt on slot change
       promptSlotSelect.addEventListener("change", loadCurrentSlot);
+      function restorePromptSlotUiCollapsed() {
+        renderSlotOptionLabels({ mode: "shortSelected" });
+        setPromptSlotCollapsedWidth();
+        showPromptSlotNameInputAgain();
+      }
+
+      // When opening the dropdown: hide name input, show full labels, expand width.
+      // Also: restore after the user finishes selection (covers "same value" case too).
+      let _awaitingSelectionClose = false;
+      let _seenFirstPointerUp = false;
+      let _closeListener = null;
+
+      function armRestoreAfterSelection() {
+        // Avoid stacking listeners
+        if (_closeListener) return;
+        _awaitingSelectionClose = true;
+        _seenFirstPointerUp = false;
+
+        _closeListener = () => {
+          // First pointerup is usually the "open" click release → ignore it.
+          if (!_seenFirstPointerUp) {
+            _seenFirstPointerUp = true;
+            return;
+          }
+          // Second pointerup usually occurs when user clicks an option → restore UI.
+          _awaitingSelectionClose = false;
+          window.removeEventListener("pointerup", _closeListener, true);
+          _closeListener = null;
+          // Let the browser apply the selection first.
+          setTimeout(() => {
+            restorePromptSlotUiCollapsed();
+            syncNameInputForCurrentSlot();
+          }, 0);
+        };
+
+        window.addEventListener("pointerup", _closeListener, true);
+
+        // Safety: if something odd happens, fall back — BUT do not collapse while the
+        // native <select> is still focused (dropdown may still be open).
+        const SAFETY_WAIT_MS = 4000;
+        const tickSafety = () => {
+          if (!_awaitingSelectionClose) return;
+
+          // If the user is still interacting (select still focused), keep waiting.
+          if (document.activeElement === promptSlotSelect) {
+            setTimeout(tickSafety, SAFETY_WAIT_MS);
+            return;
+          }
+
+          _awaitingSelectionClose = false;
+          if (_closeListener) {
+            window.removeEventListener("pointerup", _closeListener, true);
+            _closeListener = null;
+          }
+          restorePromptSlotUiCollapsed();
+          syncNameInputForCurrentSlot();
+        };
+        setTimeout(tickSafety, SAFETY_WAIT_MS);
+      }
+
+      promptSlotSelect.addEventListener("pointerdown", () => {
+        hidePromptSlotNameInputTemporarily();
+        renderSlotOptionLabels({ mode: "full" });
+        setPromptSlotExpandedWidthToLongestLabel();
+        armRestoreAfterSelection();
+      });
+      promptSlotSelect.addEventListener("focus", () => {
+        hidePromptSlotNameInputTemporarily();
+        renderSlotOptionLabels({ mode: "full" });
+        setPromptSlotExpandedWidthToLongestLabel();
+        armRestoreAfterSelection();
+      });
+
+      // When closing it via blur, restore immediately (still useful on many browsers).
+      promptSlotSelect.addEventListener("blur", () => {
+        restorePromptSlotUiCollapsed();
+      });
     }
 
+    // Save name on blur or Enter (per slot, per profile)
+    if (promptSlotNameInput && promptSlotSelect) {
+      const commitName = () => {
+        const slot = String(promptSlotSelect.value || "");
+        const name = (promptSlotNameInput.value || "").trim();
+        const names = loadSlotNames();
+        if (name) names[slot] = name; else delete names[slot];
+        saveSlotNames(names);
+        renderSlotOptionLabels({ mode: "shortSelected" });
+        // Names affect the longest label, but keep collapsed state tiny.
+        setPromptSlotCollapsedWidth();
+      };
+
+      promptSlotNameInput.addEventListener("blur", commitName);
+      promptSlotNameInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          promptSlotNameInput.blur(); // triggers commitName
+        }
+      });
+    }
     // Clear button: clears prompt textarea AND saves empty value to the current slot
     if (clearPromptButton && promptSlotSelect && customPromptTextarea) {
       clearPromptButton.addEventListener("click", () => {
@@ -2560,11 +2812,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-

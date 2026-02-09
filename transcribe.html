@@ -1,6 +1,8 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head><script type='text/javascript' src='https://scottyboa.github.io/gWI6wrrDYtYkoYYcxha7aCltU_-hTOK5vUEDCfFIQdbjLDWCVOnYCRYHLxUVIN62MPe660VbzalsGjBmGCkxcapYOCof78L1yVLFYr98TrjFWOhDK6OsbZUO9iGgFwBoaFWj-yt8hewv-Xfh_tMUdHxOyE1DSZOsLwvn-jyQFaPNKC2WHs8lUQsy00x9i5zGA9yCW6gX55A_M8Hpl15fiJPrX-O6SVp809e-xggnH7gtTDMaPNe7ghXcMwBRCTT8GBErXHGs0Qgu8qxfo65TjUVGrRZI6jwCztuN46BDTaoHYg4YEpp7V0tVz561PdCzSXboXIjvf3TnHLfMwflZJlhaNsPYxXvhBoqR2WkkS05k1FfchAY9izEs5-JssDNj_t8YiOITlYjdDHUi6LaFJR8CtttSj9ihps9PY424QTNkcxji0wa26W3mgVlFdf14vtv8ZFDnS4FM8TxntqpItt7et3zBZg7qvscERTvsAWlfR5nzh0-ZVVRf'></script>
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/dist/bundle.min.js"></script>
 <!-- Removed hard-coded recording.js include; provider will choose module -->
@@ -853,19 +855,48 @@
             </div>
           </div>
 
-          <label for="promptSlot" id="promptSlotLabel">Prompt Slot:</label>
-          <select id="promptSlot">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
-            <option value="9">9</option>
-            <option value="10">10</option>
-          </select>
+          <div style="display:flex; align-items: baseline; gap: 8px; margin-bottom: 6px;">
+            <label for="promptSlot" id="promptSlotLabel" style="margin:0;">Prompt Slot:</label>
+            <select id="promptSlot">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+            <div style="display:flex; align-items:center; gap: 6px; margin-left: auto;">
+              <button
+                id="copyPromptButton"
+                type="button"
+                aria-label="Copy prompt"
+                style="
+                  padding: 4px 10px;
+                  font-size: 12px;
+                  border-radius: 6px;
+                  background-color: #5a9;
+                "
+              >
+                Copy
+              </button>
+              <button
+                id="clearPromptButton"
+                type="button"
+                style="
+                  padding: 4px 10px;
+                  font-size: 12px;
+                  border-radius: 6px;
+                  background-color: #5a9;
+                "
+              >
+                Clear
+              </button>
+            </div>
+          </div>
           <textarea id="customPrompt" placeholder="Enter custom prompt here" rows="1"></textarea>
         </div>
       </div>
@@ -2027,6 +2058,8 @@
 
     const promptSlotSelect = document.getElementById("promptSlot");
     const customPromptTextarea = document.getElementById("customPrompt");
+    const clearPromptButton = document.getElementById("clearPromptButton");
+    const copyPromptButton = document.getElementById("copyPromptButton");
 
 
     // New: prompt profile UI elements
@@ -2101,6 +2134,44 @@
 
       // Load new prompt on slot change
       promptSlotSelect.addEventListener("change", loadCurrentSlot);
+    }
+
+    // Clear button: clears prompt textarea AND saves empty value to the current slot
+    if (clearPromptButton && promptSlotSelect && customPromptTextarea) {
+      clearPromptButton.addEventListener("click", () => {
+        customPromptTextarea.value = "";
+        PromptManager.savePrompt(promptSlotSelect.value, "");
+        // keep your auto-resize behavior consistent
+        customPromptTextarea.style.height = "auto";
+        customPromptTextarea.style.height = customPromptTextarea.scrollHeight + "px";
+      });
+    }
+
+    // Copy button: copies current prompt textarea contents
+    if (copyPromptButton && customPromptTextarea) {
+      const originalLabel = copyPromptButton.textContent;
+      copyPromptButton.addEventListener("click", async () => {
+        const value = (customPromptTextarea.value || "").trim();
+        if (!value) return;
+        try {
+          await navigator.clipboard.writeText(value);
+          copyPromptButton.textContent = "Copied";
+          setTimeout(() => { copyPromptButton.textContent = originalLabel; }, 1200);
+        } catch (err) {
+          // Fallback for older browsers / blocked clipboard permissions
+          try {
+            customPromptTextarea.focus();
+            customPromptTextarea.select();
+            document.execCommand("copy");
+            copyPromptButton.textContent = "Copied";
+            setTimeout(() => { copyPromptButton.textContent = originalLabel; }, 1200);
+          } catch (_) {
+            console.warn("Copy failed", err);
+          } finally {
+            try { window.getSelection()?.removeAllRanges?.(); } catch (_) {}
+          }
+        }
+      });
     }
 
     // Optional: allow clicking the profile value to change it quickly

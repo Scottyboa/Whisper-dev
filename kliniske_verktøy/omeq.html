@@ -404,7 +404,6 @@
           <div class="label">mg OMEQ</div>
         </div>
 
-        
       </div>
     </main>
   </div>
@@ -425,11 +424,15 @@
     window.addEventListener("resize", setGridHeight);
 
     // Back button (adjust if you use a different home path)
-    document.getElementById("backToHomeButton").addEventListener("click", () => {
-      const loc = window.location;
-      const newPath = loc.pathname.replace(/\/[^\/]*$/, "/index.html");
-      window.location.href = loc.origin + newPath + loc.search + loc.hash;
-    });
+    // NOTE: Guard in case the button isn't present on this page.
+    const backBtn = document.getElementById("backToHomeButton");
+    if (backBtn) {
+      backBtn.addEventListener("click", () => {
+        const loc = window.location;
+        const newPath = loc.pathname.replace(/\/[^\/]*$/, "/index.html");
+        window.location.href = loc.origin + newPath + loc.search + loc.hash;
+      });
+    }
 
     // ===== OMEQ logic copied from provided script (same rounding + sum behavior) =====
     var totalElements = parseInt(document.getElementById('totalResults').value, 10);
@@ -469,17 +472,20 @@
 
     function multiplyBy() {
       for (var i = 0; i < totalElements; i++) {
-        num1 = document.getElementById(`${i + 1}a`).value.replace(/,/g, '.');
-        num2 = document.getElementById(`${i + 1}b`).value.replace(/,/g, '.');
-        let result = ((num1 * num2) % 1 < 0.1) ? (num1 * num2).toFixed(0) : (num1 * num2).toFixed(1);
+        const num1 = document.getElementById(`${i + 1}a`).value.replace(/,/g, '.');
+        const num2 = document.getElementById(`${i + 1}b`).value.replace(/,/g, '.');
+        const prod = (num1 * num2);
+        let result = ((prod % 1) < 0.1) ? prod.toFixed(0) : prod.toFixed(1);
         document.getElementById(`result${i + 1}`).innerHTML = !isNaN(result) ? result.replace(/\./g, ',') : '##';
       }
     }
 
     function sum() {
-      my_input = [];
+      const my_input = [];
       for (var i = 0; i < totalElements; i++) {
-        my_input.push(parseFloat(document.getElementById(`result${i + 1}`).innerHTML.replace(/,/g, '.')));
+        const cell = document.getElementById(`result${i + 1}`).innerHTML.replace(/,/g, '.');
+        const n = parseFloat(cell);
+        my_input.push(Number.isFinite(n) ? n : 0);
       }
       document.getElementById('result').innerHTML =
         my_input.reduce((a, b) => a + b, 0).toString().replace(/\./g, ',');

@@ -151,7 +151,36 @@ export const PromptManager = (() => {
     URL.revokeObjectURL(url);
   }
 
-  function exportPromptsToFile() {
+  async function saveTextFileWithPicker(filename, text, mime = "application/json") {
+    // Prefer a "Save As…" dialog (lets user choose folder + name + overwrite),
+    // but fall back to the legacy auto-download approach if unsupported.
+    // Note: showSaveFilePicker generally requires a secure context (https/localhost).
+    if (typeof window.showSaveFilePicker === "function") {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [
+            {
+              description: "JSON",
+              accept: { "application/json": [".json"] }
+            }
+          ]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(new Blob([text], { type: mime }));
+        await writable.close();
+        return;
+      } catch (err) {
+        // User cancelled the dialog -> do nothing.
+        if (err && (err.name === "AbortError" || err.code === 20)) return;
+        console.warn("Save picker failed; falling back to auto-download:", err);
+        // Continue to fallback below.
+      }
+    }
+    downloadTextFile(filename, text, mime);
+  }
+
+  async function exportPromptsToFile() {
     // Behavior: export prompts for CURRENT profile namespace only.
     // UI should ensure a profile is set (Behavior 1 design).
     const profileId = getPromptProfileId();
@@ -182,7 +211,11 @@ export const PromptManager = (() => {
 
     const safe = sanitizeForFilename(profileId);
     const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    downloadTextFile(`prompts-${safe}-${date}.json`, JSON.stringify(payload, null, 2));
+    await saveTextFileWithPicker(
+      `prompts-${safe}-${date}.json`,
+      JSON.stringify(payload, null, 2),
+      "application/json"
+    );
   }
   async function importPromptsFromFile(file) {
     // Behavior 1: import into CURRENT profile namespace (ignores file.profileId).

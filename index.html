@@ -1023,44 +1023,6 @@
       keysIoStatus.textContent = message || "";
       keysIoStatus.style.color = isError ? "#b00020" : "#2e7d32";
     }
-    async function saveTextFileWithPicker(filename, text, mime = "application/json") {
-      // Prefer a "Save As…" dialog (choose folder + name + overwrite),
-      // but fall back to the legacy auto-download approach if unsupported.
-      // Note: showSaveFilePicker generally requires a secure context (https/localhost).
-      if (typeof window.showSaveFilePicker === "function") {
-        try {
-          const handle = await window.showSaveFilePicker({
-            suggestedName: filename,
-            types: [
-              {
-                description: "JSON",
-                accept: { "application/json": [".json"] }
-              }
-            ]
-          });
-          const writable = await handle.createWritable();
-          await writable.write(new Blob([text], { type: mime }));
-          await writable.close();
-          return true; // saved via picker
-        } catch (err) {
-          // User cancelled the dialog -> do nothing.
-          if (err && (err.name === "AbortError" || err.code === 20)) return false;
-          console.warn("Save picker failed; falling back to auto-download:", err);
-          // Continue to fallback below.
-        }
-      }
-      // Fallback: auto-download to default Downloads directory.
-      const blob = new Blob([text], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      return true;
-    }
 
     function buildKeyBundle() {
       const data = {};
@@ -1117,11 +1079,12 @@
 
 
     if (exportKeysBtn) {
-      exportKeysBtn.addEventListener("click", async function () {
+      exportKeysBtn.addEventListener("click", function () {
         try {
           const bundle = buildKeyBundle();
           const pretty = JSON.stringify(bundle, null, 2);
-          
+          const blob = new Blob([pretty], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
 
           const now = new Date();
           const y = now.getFullYear();
@@ -1129,8 +1092,13 @@
           const d = String(now.getDate()).padStart(2, "0");
           const filename = `whisper-keys-${y}${m}${d}.json`;
 
-          const didSave = await saveTextFileWithPicker(filename, pretty, "application/json");
-          if (!didSave) return; // user cancelled
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
 
           setKeysIoStatus("Exported keys file. Store it somewhere safe.", false);
         } catch (e) {
@@ -1517,4 +1485,3 @@
   
 </body>
 </html>
-

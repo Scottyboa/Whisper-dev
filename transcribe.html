@@ -2529,6 +2529,7 @@
       const startBtn = document.getElementById("startButton");
       const stopBtn = document.getElementById("stopButton");
       const pauseBtn = document.getElementById("pauseResumeButton");
+      const transcriptionEl = document.getElementById("transcription");
 
       if (!timerEl || !startBtn || !stopBtn || !pauseBtn) return;
 
@@ -2659,6 +2660,11 @@
         render();
         startTicking();
       }
+      function resetTranscriptionWindowSize() {
+        if (!transcriptionEl) return;
+        // User-resize sets an inline height on the textarea; clearing it restores CSS default/min-height.
+        transcriptionEl.style.removeProperty("height");
+      }
 
       // Initial render should match existing HTML text
       render();
@@ -2667,6 +2673,7 @@
       document.addEventListener("click", (e) => {
         const id = e.target && e.target.id;
         if (id === "startButton") {
+          resetTranscriptionWindowSize();
           armStart();
         } else if (id === "stopButton") {
           // If Start never actually succeeded, cancel the pending start cleanly

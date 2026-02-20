@@ -1079,34 +1079,56 @@
 
 
     if (exportKeysBtn) {
-      exportKeysBtn.addEventListener("click", function () {
-        try {
-          const bundle = buildKeyBundle();
-          const pretty = JSON.stringify(bundle, null, 2);
-          const blob = new Blob([pretty], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
+  exportKeysBtn.addEventListener("click", async function () {
+    try {
+      const bundle = buildKeyBundle();
+      const pretty = JSON.stringify(bundle, null, 2);
 
-          const now = new Date();
-          const y = now.getFullYear();
-          const m = String(now.getMonth() + 1).padStart(2, "0");
-          const d = String(now.getDate()).padStart(2, "0");
-          const filename = `whisper-keys-${y}${m}${d}.json`;
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      const filename = `whisper-keys-${y}${m}${d}.json`;
 
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
+      // Prefer a user-chosen save location (Chromium-based browsers).
+      // Fallback keeps the current download behavior for other browsers.
+      const canPickSaveLocation = typeof window.showSaveFilePicker === "function";
+      if (canPickSaveLocation) {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [
+            {
+              description: "JSON",
+              accept: { "application/json": [".json"] },
+            },
+          ],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(pretty);
+        await writable.close();
+      } else {
+        const blob = new Blob([pretty], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
 
-          setKeysIoStatus("Exported keys file. Store it somewhere safe.", false);
-        } catch (e) {
-          console.error(e);
-          setKeysIoStatus("Export failed: " + (e && e.message ? e.message : "Unknown error"), true);
-        }
-      });
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      setKeysIoStatus("Exported keys file. Store it somewhere safe.", false);
+    } catch (e) {
+      console.error(e);
+      setKeysIoStatus(
+        "Export failed: " + (e && e.message ? e.message : "Unknown error"),
+        true
+      );
     }
+  });
+}
     if (clearKeysBtn) {
       clearKeysBtn.addEventListener("click", clearAllKeyFields);
     }

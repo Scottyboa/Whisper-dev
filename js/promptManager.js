@@ -2,6 +2,7 @@
 
 export const PromptManager = (() => {
   const PROMPT_PROFILE_STORAGE_KEY = "prompt_profile_id";
+  const PROMPT_SLOT_COUNT = 20;
   // Slot labels are stored per profile in localStorage under this key format:
   //   prompt_slot_names::<profileId>
   // (This matches transcribe.html's prompt label UI implementation.)
@@ -76,7 +77,8 @@ export const PromptManager = (() => {
 
     const oldNs = getLegacyNamespaceHash();
 
-    // Copy slot 1–10: only fill empty new slots; never overwrite.
+    // Copy slot 1–10: legacy storage only ever had 10 slots.
+    // Keep this at 10 so we don't accidentally pull unrelated keys.
     for (let i = 1; i <= 10; i++) {
       const slot = String(i);
       const oldKey = `customPrompt_${oldNs}_${slot}`;
@@ -190,7 +192,7 @@ export const PromptManager = (() => {
     }
 
     const slots = {};
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= PROMPT_SLOT_COUNT; i++) {
       const key = getPromptStorageKey(String(i));
       const val = localStorage.getItem(key) || "";
       slots[String(i)] = val;
@@ -252,8 +254,9 @@ export const PromptManager = (() => {
     const ok = window.confirm("Replace existing prompts in this profile?");
     if (!ok) return;
 
-    // Write slots 1–10 into current namespace.
-    for (let i = 1; i <= 10; i++) {
+    // Write slots 1–PROMPT_SLOT_COUNT into current namespace.
+    // Back-compat: if the import JSON only contains 1–10, the missing 11–20 import as "".
+    for (let i = 1; i <= PROMPT_SLOT_COUNT; i++) {
       const k = String(i);
       const v = (k in slotsObj) ? (slotsObj[k] ?? "") : "";
       try {
@@ -265,9 +268,8 @@ export const PromptManager = (() => {
     // - If it does NOT include slotNames: clear any existing labels for this profile
     const importedSlotNames = parsed && parsed.slotNames;
     if (importedSlotNames && typeof importedSlotNames === "object") {
+      // Only overwrite labels if the file explicitly contains them.
       saveSlotNames(profileId, importedSlotNames);
-    } else {
-      clearSlotNames(profileId);
     }
   }
 

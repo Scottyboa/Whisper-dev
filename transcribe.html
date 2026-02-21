@@ -402,6 +402,100 @@
       transition: none;
       transform: none;
     }
+
+    /* Auto-clear toggle + tooltip (Supplementary row) */
+    .supp-row-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .auto-clear-label {
+      font-size: 12px;
+      color: #333;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .auto-clear-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    /* Minimal “switch” styling for a checkbox */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 34px;
+      height: 18px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: 0.2s;
+      border-radius: 999px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      top: 2px;
+      background-color: white;
+      transition: 0.2s;
+      border-radius: 50%;
+    }
+    .switch input:checked + .slider {
+      background-color: #5a9; /* match your button green */
+    }
+    .switch input:checked + .slider:before {
+      transform: translateX(16px);
+    }
+
+    /* Hover tooltip (question mark) */
+    .help-tip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid #5a9;
+      color: #5a9;
+      font-size: 12px;
+      line-height: 1;
+      cursor: help;
+      user-select: none;
+      margin-left: 2px;
+    }
+    .help-tip .help-tip-content {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: 22px;
+      z-index: 3000;
+      width: 260px;
+      max-width: 70vw;
+      background: #fff;
+      color: #333;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 10px 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .help-tip:hover .help-tip-content,
+    .help-tip:focus-within .help-tip-content {
+      display: block;
+    }
     /* Bottom Half: Two Columns */
     .bottom-half {
       display: flex;
@@ -713,7 +807,28 @@
         ></textarea>
 
         <!-- Clear button row ABOVE supplementary field -->
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 5px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+          <!-- Left side: Auto clear toggle + tooltip -->
+          <div class="supp-row-left">
+            <div class="auto-clear-toggle" aria-label="Auto clear supplementary information">
+              <label class="switch" title="Auto clear">
+                <input id="autoClearSupplementaryToggle" type="checkbox" />
+                <span class="slider"></span>
+              </label>
+              <span class="auto-clear-label">Auto clear</span>
+            </div>
+            <span class="help-tip" tabindex="0" aria-label="Auto clear help">
+              ?
+              <span class="help-tip-content" role="tooltip">
+                <strong>Toggled on:</strong><br/>
+                The Supplementary information field is cleared and reset to its default size when you start a new recording.<br/><br/>
+                <strong>Toggled off:</strong><br/>
+                Starting a new recording does not change the Supplementary information field.
+              </span>
+            </span>
+          </div>
+
+          <!-- Right side: existing Clear button -->
           <button
             id="clearSupplementaryButton"
             type="button"
@@ -2050,6 +2165,27 @@
       }
     });
   }
+
+  // Auto-clear toggle (default OFF; persist in localStorage)
+  const AUTO_CLEAR_KEY = 'auto_clear_supplementary';
+  const autoClearToggle = document.getElementById('autoClearSupplementaryToggle');
+  if (autoClearToggle) {
+    const stored = localStorage.getItem(AUTO_CLEAR_KEY);
+    autoClearToggle.checked = stored === '1';
+    autoClearToggle.addEventListener('change', () => {
+      localStorage.setItem(AUTO_CLEAR_KEY, autoClearToggle.checked ? '1' : '0');
+    });
+  }
+
+  // When enabled: starting a new recording clears + resets Supplementary info (same as Clear button)
+  document.addEventListener('click', (e) => {
+    const id = e.target && e.target.id;
+    if (id !== 'startButton') return;
+    if (!autoClearToggle || autoClearToggle.checked !== true) return;
+    const supEl = document.getElementById('supplementaryInfo');
+    if (supEl) resetTextareaToDefault(supEl);
+  }, true);
+
 
   // Copy button logic for transcription field (matches Generated Note copy behavior)
   const copyTranscriptionButton = document.getElementById('copyTranscriptionButton');

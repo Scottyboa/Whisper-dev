@@ -624,6 +624,7 @@ function updateTranscriptionOutput() {
     clearInterval(completionTimerInterval);
     if (!transcriptionError) {
       updateStatusMessage("Transcription finished!", "green");
+      window.__app?.emitTranscriptionFinished?.({ provider: "voxtral", reason: "queueDrained" });
       logInfo("Transcription complete.");
     } else {
       logInfo("Transcription complete with errors; keeping error message visible.");
@@ -924,6 +925,11 @@ stopButton.addEventListener("click", async () => {
     if (compTimerElem) compTimerElem.innerText = "Completion Timer: 0 sec";
 
     updateTranscriptionOutput();
+
+
+    // ✅ No audio captured → declare completion (otherwise UI stays on "Finishing...")
+    updateStatusMessage("Transcription finished!", "green");
+    window.__app?.emitTranscriptionFinished?.({ provider: "voxtral", reason: "noAudio" });
 
     // Re-enable/disable buttons for a fresh start
     const startButton = document.getElementById("startButton");

@@ -851,6 +851,26 @@
    <button id="startButton">Start</button>
     <button id="stopButton" disabled>Stop</button>
   <button id="pauseResumeButton" disabled>Pause Recording</button>
+        <!-- Auto-generate toggle (default OFF). When ON, note generation can be triggered on transcription finish. -->
+        <div class="auto-clear-toggle" id="autoGenerateToggleContainer" aria-label="Auto-generate note on transcription finish">
+          <label class="switch" title="Auto-generate">
+            <input id="autoGenerateToggle" type="checkbox" />
+            <span class="slider"></span>
+          </label>
+          <span class="auto-clear-label" id="autoGenerateToggleLabel">Auto-generate</span>
+        </div>
+
+        <!-- Tooltip "?" (same pattern as the autoclear tooltip) -->
+        <span id="autoGenerateTooltipContainer" class="help-tip" tabindex="0" aria-label="Auto-generate help">
+          ?
+          <span id="autoGenerateTooltipText" class="help-tip-content" role="tooltip">
+            <strong>When ON:</strong><br/>
+            Automatically generates a note when transcription finishes.<br/><br/>
+            <strong>When OFF:</strong><br/>
+            You generate notes manually using the Generate Note button.
+          </span>
+        </span>
+
         </div>
         <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
       </div>

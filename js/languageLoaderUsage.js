@@ -218,7 +218,10 @@ function updateTranscribeUI(trans) {
   document.getElementById("noteTimer").textContent = trans.noteTimer;
   document.getElementById("generatedNote").placeholder = trans.generatedNotePlaceholder;
   document.getElementById("customPromptTitle").textContent = trans.customPromptTitle;
-  document.getElementById("promptSlotLabel").textContent = trans.promptSlotLabel;
+  const promptSlotLabelEl = document.getElementById("promptSlotLabel");
+  if (promptSlotLabelEl) {
+    promptSlotLabelEl.textContent = trans.promptSlotLabel;
+  }
   document.getElementById("customPrompt").placeholder = trans.customPromptPlaceholder;
   // Removed this line because the "adUnit" element no longer exists:
   // document.getElementById("adUnit").textContent = trans.adUnitText;

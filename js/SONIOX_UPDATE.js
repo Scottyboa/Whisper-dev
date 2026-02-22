@@ -900,6 +900,7 @@ function updateTranscriptionOutput() {
     freezeCompletionTimer();
     if (!transcriptionError) {
       updateStatusMessage("Transcription finished!", "green");
+      window.__app?.emitTranscriptionFinished?.({ provider: "soniox", reason: "queueDrained" });
       logInfo("Transcription complete.");
     } else {
       logInfo("Transcription complete with errors; keeping error message visible.");

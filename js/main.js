@@ -80,8 +80,113 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
 
+  // --- Auto-generate toggle (session-scoped) ---
+  // Persist per-tab session: OFF by default.
+  const AUTO_GENERATE_KEY = "auto_generate_enabled";
+
+  window.__app.getAutoGenerateEnabled = function getAutoGenerateEnabled() {
+    return sessionStorage.getItem(AUTO_GENERATE_KEY) === "1";
+  };
+
+  window.__app.setAutoGenerateEnabled = function setAutoGenerateEnabled(enabled) {
+    sessionStorage.setItem(AUTO_GENERATE_KEY, enabled ? "1" : "0");
+    // Keep UI in sync if checkbox exists
+    const el = document.getElementById("autoGenerateToggle");
+    if (el && el.type === "checkbox") el.checked = !!enabled;
+  };
+
+  window.__app.initAutoGenerateToggle = function initAutoGenerateToggle() {
+    const el = document.getElementById("autoGenerateToggle");
+    if (!el || el.type !== "checkbox") return;
+
+    // Avoid double binding (provider switching can re-init scripts)
+    if (el.dataset.bound === "1") return;
+    el.dataset.bound = "1";
+
+    // Default OFF for new sessions
+    if (sessionStorage.getItem(AUTO_GENERATE_KEY) == null) {
+      sessionStorage.setItem(AUTO_GENERATE_KEY, "0");
+    }
+
+    // Initialize UI from storage
+    el.checked = window.__app.getAutoGenerateEnabled();
+
+    // Persist changes
+    el.addEventListener("change", () => {
+      sessionStorage.setItem(AUTO_GENERATE_KEY, el.checked ? "1" : "0");
+    });
+  };
+
+
+  // Canonical "transcription finished" signal.
+  // STT providers may set status text; we convert that into an event for auto-generate and other hooks.
+  // Emits: window event "transcription:finished" with minimal metadata.
+  window.__app.emitTranscriptionFinished = function emitTranscriptionFinished(opts) {
+    try {
+      window.dispatchEvent(new CustomEvent("transcription:finished", { detail: opts || {} }));
+    } catch (err) {
+      // Older browsers may not support CustomEvent constructor without polyfill.
+      try {
+        const ev = document.createEvent("CustomEvent");
+        ev.initCustomEvent("transcription:finished", false, false, opts || {});
+        window.dispatchEvent(ev);
+      } catch {}
+    }
+  };
+
+  
+
+  // --- Auto-generate listener (Step 5/6) ---
+  window.__app.tryAutoGenerateNote = function tryAutoGenerateNote(eventDetail) {
+    // Toggle must be ON
+    if (!window.__app.getAutoGenerateEnabled?.()) return;
+
+    const genBtn = document.getElementById("generateNoteButton");
+    if (!genBtn || genBtn.disabled) return; // respect consent / provider readiness
+
+    // Avoid generating on an empty transcript
+    const transcript = (document.getElementById("transcription")?.value || "").trim();
+    if (!transcript) return;
+
+    // If app considers itself busy, don't chain generation (avoids races)
+    if (typeof window.__app.isTranscribeBusy === "function" && window.__app.isTranscribeBusy()) {
+      return;
+    }
+
+    // De-dupe: prevent double generation for repeated "finished" events
+    const now = Date.now();
+    const fp = `${eventDetail?.provider || "unknown"}:${eventDetail?.transcriptLength || transcript.length}`;
+    const last = window.__app.__lastAutoGenerate || null;
+    if (last && last.fp === fp && (now - last.at) < 2000) return;
+    window.__app.__lastAutoGenerate = { fp, at: now };
+
+    // Trigger the same path as manual generation
+    genBtn.click();
+  };
+
+  window.__app.initAutoGenerateOnFinishListener = function initAutoGenerateOnFinishListener() {
+    // Attach only once even if main.js runs init logic multiple times.
+    if (window.__app.__autoGenerateListenerBound) return;
+    window.__app.__autoGenerateListenerBound = true;
+
+    window.addEventListener("transcription:finished", (e) => {
+      try {
+        window.__app.tryAutoGenerateNote?.(e && e.detail ? e.detail : null);
+      } catch (err) {
+        console.warn("Auto-generate failed", err);
+      }
+    });
+  };
+
+
+
   // Restore any persisted state (e.g., after a fallback reload).
   restoreState();
+
+  // Initialize session-scoped UI toggles.
+  window.__app.initAutoGenerateToggle?.();
+  window.__app.initAutoGenerateOnFinishListener?.();
+  
 
   // Initialize the recording functionality dynamically by provider.
   (async function initRecordingByProvider() {

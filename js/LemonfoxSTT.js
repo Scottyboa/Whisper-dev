@@ -489,6 +489,7 @@ function updateTranscriptionOutput() {
     clearInterval(completionTimerInterval);
     if (!transcriptionError) {
       updateStatusMessage("Transcription finished!", "green");
+      window.__app?.emitTranscriptionFinished?.({ provider: "lemonfox", reason: "expectedChunks" });
       logInfo("Transcription complete.");
     } else {
       logInfo("Transcription complete with errors; keeping error message visible.");

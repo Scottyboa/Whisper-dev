@@ -492,6 +492,11 @@
       font-size: 12px;
       line-height: 1.35;
     }
+
+    .help-tip.help-tip-left .help-tip-content {
+      left: auto;
+      right: 0;
+    }
     .help-tip:hover .help-tip-content,
     .help-tip:focus-within .help-tip-content {
       display: block;
@@ -828,7 +833,7 @@
             </span>
           </div>
 
-          <!-- Right side: existing Clear button -->
+          <!-- Right side: Clear button -->
           <button
             id="clearSupplementaryButton"
             type="button"
@@ -847,6 +852,29 @@
         <textarea
           id="supplementaryInfo"
           placeholder="Supplementary information (optional)"></textarea>
+        <div class="supp-actions" style="display:flex; justify-content:flex-end; align-items:center; gap: 6px; margin-top: 6px;">
+          <span class="help-tip help-tip-left" style="margin-left:0; margin-right:2px;" tabindex="0" aria-label="Insert date help">
+            ?
+            <span class="help-tip-content" role="tooltip">
+              Adds today’s date to the top of Supplementary information. <br/>
+              <strong>Dagens dato er DD.MM.YYYY</strong><br/>
+              
+            </span>
+          </span>
+          <button
+            id="insertSupplementaryDateButton"
+            type="button"
+            style="
+              padding: 4px 10px;
+              font-size: 12px;
+              border-radius: 6px;
+              background-color: #5a9;
+            "
+          >
+            Date
+          </button>
+        </div>
+
         <div>
    <button id="startButton">Start</button>
     <button id="stopButton" disabled>Stop</button>
@@ -2185,6 +2213,43 @@
       }
     });
   }
+
+  // Insert/update today's date at the TOP of supplementary field
+  const insertSupplementaryDateButton = document.getElementById('insertSupplementaryDateButton');
+  if (insertSupplementaryDateButton) {
+    insertSupplementaryDateButton.addEventListener('click', () => {
+      const supEl = document.getElementById('supplementaryInfo');
+      if (!supEl) return;
+
+      // Format: DD.MM.YYYY (Norwegian-friendly). Uses the browser's local timezone.
+      const today = new Date();
+      const dateStr = new Intl.DateTimeFormat('nb-NO', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }).format(today);
+      const line = `Dagens dato er ${dateStr}`;
+
+      const current = supEl.value || '';
+      const normalized = current.replace(/\r\n/g, '\n');
+      const lines = normalized.split('\n');
+
+      if (lines[0]?.startsWith('Dagens dato er ')) {
+        // Update existing date line (keeps the rest intact)
+        lines[0] = line;
+        supEl.value = lines.join('\n');
+      } else {
+        // Prepend date line
+        supEl.value = normalized.trim().length ? `${line}\n${normalized}` : `${line}\n`;
+      }
+
+      supEl.focus();
+      // Put cursor at end of first line (handy if they want to continue typing)
+      const pos = line.length;
+      try { supEl.setSelectionRange(pos, pos); } catch (_) {}
+    });
+  }
+
 
   // Auto-clear toggle (default OFF; persist in localStorage)
   const AUTO_CLEAR_KEY = 'auto_clear_supplementary';

@@ -34,7 +34,7 @@
 
   #controls {
     display: grid;
-    grid-template-columns: auto auto auto auto 1fr;
+    grid-template-columns: auto auto auto auto auto auto 1fr;
     gap: 10px 16px;
     align-items: center;
     padding: 12px 14px;
@@ -139,17 +139,27 @@
     <div class="group">
       <label for="countSlider">Particles</label>
       <input id="countSlider" type="range" min="20" max="1500" step="1" value="400">
-      <span class="value" id="countValue">30</span>
+      <span class="value" id="countValue">400</span>
     </div>
 
     <div class="group">
       <label for="speedSlider">Initial speed</label>
       <input id="speedSlider" type="range" min="80" max="1000" step="1" value="400">
-      <span class="value" id="speedValue">170</span>
+      <span class="value" id="speedValue">400</span>
+    </div>
+
+    <div class="group">
+      <label for="massSlider">Particle mass</label>
+      <input id="massSlider" type="range" min="1" max="10" step="1" value="4">
+      <span class="value" id="massValue">4</span>
     </div>
 
     <div class="group">
       <label><input id="vectorsCheck" type="checkbox"> Show velocity vectors</label>
+    </div>
+
+    <div class="group">
+      <label><input id="ppCollisionsCheck" type="checkbox" checked> Particle collisions</label>
     </div>
 
     <div id="stats">
@@ -180,10 +190,13 @@
   const resetBtn = document.getElementById("resetBtn");
   const countSlider = document.getElementById("countSlider");
   const speedSlider = document.getElementById("speedSlider");
+  const massSlider = document.getElementById("massSlider");
   const vectorsCheck = document.getElementById("vectorsCheck");
+  const ppCollisionsCheck = document.getElementById("ppCollisionsCheck");
 
   const countValue = document.getElementById("countValue");
   const speedValue = document.getElementById("speedValue");
+  const massValue = document.getElementById("massValue");
 
   const speedStat = document.getElementById("speedStat");
   const posStat = document.getElementById("posStat");
@@ -230,7 +243,6 @@
 
   // Smaller dots than before
   const PARTICLE_RADIUS = 1.2;
-  const PARTICLE_MASS = 4.0;
 
   function resizeCanvas() {
     const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
@@ -245,6 +257,7 @@
   function updateDisplayedValues() {
     countValue.textContent = countSlider.value;
     speedValue.textContent = speedSlider.value;
+    massValue.textContent = massSlider.value;
   }
 
   function resetSimulation() {
@@ -256,6 +269,9 @@
     const h = 120;
     const particleCount = +countSlider.value;
     const baseSpeed = +speedSlider.value;
+
+    // Particle mass from slider (1..10)
+    const particleMass = +massSlider.value;
 
     const containerMass = 140;
     const apertureHalf = h * 0.27;
@@ -344,8 +360,8 @@
     for (let i = 0; i < locals.length; i++) {
       const rx = locals[i].x - cmx;
       const ry = locals[i].y - cmy;
-      L += PARTICLE_MASS * cross2(rx, ry, velocities[i].x, velocities[i].y);
-      I += PARTICLE_MASS * (rx * rx + ry * ry);
+      L += particleMass * cross2(rx, ry, velocities[i].x, velocities[i].y);
+      I += particleMass * (rx * rx + ry * ry);
     }
     const omegaCorr = I > 1e-9 ? L / I : 0;
 
@@ -378,7 +394,7 @@
         vx: velocities[i].x,
         vy: velocities[i].y,
         radius: PARTICLE_RADIUS,
-        mass: PARTICLE_MASS,
+        mass: particleMass,
         escaped: false
       });
     }
@@ -597,14 +613,17 @@
       p.y += p.vy * dt;
     }
 
-    // Resolve particle-particle collisions.
-    // Multiple passes improve stability when several particles bunch together.
-    for (let pass = 0; pass < 2; pass++) {
-      for (let i = 0; i < sim.particles.length; i++) {
-        const a = sim.particles[i];
-        for (let j = i + 1; j < sim.particles.length; j++) {
-          const b = sim.particles[j];
-          resolveParticleParticleCollision(a, b);
+    // Resolve particle-particle collisions (optional).
+    // NOTE: This is the expensive O(n^2) part. Uncheck "Particle collisions" for gas-like behavior + speed.
+    if (ppCollisionsCheck.checked) {
+      // Multiple passes improve stability when several particles bunch together.
+      for (let pass = 0; pass < 2; pass++) {
+        for (let i = 0; i < sim.particles.length; i++) {
+          const a = sim.particles[i];
+          for (let j = i + 1; j < sim.particles.length; j++) {
+            const b = sim.particles[j];
+            resolveParticleParticleCollision(a, b);
+          }
         }
       }
     }
@@ -809,6 +828,7 @@
 
   countSlider.addEventListener("input", updateDisplayedValues);
   speedSlider.addEventListener("input", updateDisplayedValues);
+  massSlider.addEventListener("input", updateDisplayedValues);
 
   openBtn.addEventListener("click", () => {
     sim.nozzleOpen = true;
@@ -840,9 +860,4 @@
 })();
 </script>
 </body>
-
 </html>
-
-
-
-

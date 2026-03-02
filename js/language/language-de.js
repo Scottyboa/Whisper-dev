@@ -190,6 +190,7 @@ export const transcribeTranslations = {
   openaiWalletLinkText: "Kontostand",
   btnFunctions: "Funktionen",
   btnGuide: "Anleitung",
+  btnNews: "Status & Aktualisierungen",
   backToHome: "Zurück zur Startseite",
   recordingAreaTitle: "Aufnahmebereich",
   recordTimer: "Aufnahmetimer: 0 sek",

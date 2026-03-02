@@ -2,6 +2,8 @@
 Denne nye info-knappen viser løpende statusmeldinger og endringer i webappen (som nye funksjoner, feilrettinger og viktige beskjeder).
 
 AWS time limit oppdatering:
-Det har frem til nå vært slik at hvis et notat generert via AWS modellene bruker mer en 45 sec, så vil man få feilmelding. Dette problemet er nå løst ved at tidsgrensen er økt til 2,5 min, som vil være mer en nok for å generere et notat.
+Frem til nå har notater generert med AWS modellene hatt en tidsgrense på 45 sec, som gjør at hvis det tar mer en 45 sec å generere notatet så vil det resultere i en feilmelding. Dette problemet er nå løst ved at tidsgrensen er økt til 2,5 min, som vil være mer en nok for å generere et notat.
 
-For å utføre denne oppdateringen så må du som bruker gjøre følgende: Gå til forsiden, klikk “AWS guide”-knappen ved siden av feltene for AWS Bedrock key, scroll helt nederst på siden, og følg instrusjonene ved "SLIK OPPDATERER DU STACKEN (CLOUDFORMATION)". Når dette er gjort, vil problemet være løst.
+For å utføre denne oppdateringen så må du som bruker oppdatere AWS funksjonen som du allerede har laget hvis du har brukt AWS modellene så langt.
+
+For å oppdatere din funksjon; Gå til forsiden, klikk “AWS guide”-knappen ved siden av feltene for AWS Bedrock key, scroll helt nederst på siden, og følg instrusjonene ved "SLIK OPPDATERER DU STACKEN (CLOUDFORMATION)". Når dette er gjort, vil problemet være løst.

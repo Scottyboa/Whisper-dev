@@ -191,6 +191,7 @@ export const transcribeTranslations = {
   openaiWalletLinkText: "Saldo Portafoglio",
   btnFunctions: "Funzioni",
   btnGuide: "Guida",
+  btnNews: "Stato e aggiornamenti",
   backToHome: "Torna alla pagina iniziale",
   recordingAreaTitle: "Area di Registrazione",
   recordTimer: "Timer di Registrazione: 0 sec",

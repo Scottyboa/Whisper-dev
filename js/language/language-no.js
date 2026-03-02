@@ -710,6 +710,7 @@ export const transcribeTranslations = {
   openaiWalletLinkText: "Kreditt",
   btnFunctions: "Funksjoner",
   btnGuide: "Guide",
+  btnNews: "Status/Oppdateringer",
   backToHome: "Tilbake til forsiden",
   recordingAreaTitle: "Opptaksområde",
   recordTimer: "Opptakstimer: 0 sek",

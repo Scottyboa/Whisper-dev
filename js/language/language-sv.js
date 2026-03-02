@@ -494,6 +494,7 @@ export const transcribeTranslations = {
   openaiWalletLinkText: "Kredit",
   btnFunctions: "Funktioner",
   btnGuide: "Guide",
+  btnNews: "Status & uppdateringar",
   backToHome: "Tillbaka till startsidan",
   recordingAreaTitle: "Inspelningsområde",
   recordTimer: "Inspelningstid: 0 sek",

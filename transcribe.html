@@ -218,6 +218,17 @@
       font-size: 18px;
       padding: 10px 20px;
     }
+    /* Center group: Guide area + News + Clinical tools (equal spacing) */
+    .top-bar-center {
+      display: flex;
+      align-items: center;
+      gap: 55px;         /* equal space: Guide <-> News and News <-> Clinical tools */
+      flex-wrap: wrap;   /* allow wrap on smaller screens */
+      justify-content: center;
+    }
+    .top-bar-center button {
+      margin: 0;         /* avoid global button margins breaking “equal spacing” */
+    }
     /* Language Container in Top Bar (right side) */
     #lang-container-transcribe {
       display: flex;
@@ -601,6 +612,47 @@
       z-index: 2001;
     }
 
+
+    /* News Overlay Styles (same UX as Guide) */
+    #newsView {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      background: white;
+      border: 2px solid #ccc;
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 2002;
+      text-align: left;
+    }
+    #newsView.active {
+      display: block;
+    }
+    #newsClose {
+      position: sticky;
+      top: 10px;
+      float: right;
+      background: none;
+      border: none;
+      color: red;
+      font-size: 26px;
+      line-height: 1;
+      cursor: pointer;
+      margin: 0;
+      padding: 0 6px;
+      z-index: 2003;
+    }
+    #newsText {
+      white-space: pre-wrap; /* preserve txt formatting but wrap nicely */
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.4;
+      margin: 0;
+    }
+
     /* Costs & Billing Links Overlay Styles */
     #billingLinksView {
       display: none;
@@ -680,36 +732,35 @@
     const newPath = loc.pathname.replace(/\/[^\/]*$/, '/index.html'); // keep /Whisper-dev/
     window.location.href = loc.origin + newPath + loc.search + loc.hash;
   });
-</script>
+</script>  <!-- Center cluster: Read first + Guide | News | Clinical tools -->
+  <div class="top-bar-center">
+    <!-- Group for "Read first! ➔" and Guide button -->
+    <div class="mid-controls" style="display: flex; align-items: center;">
+      <span id="read-first-text" style="font-size: 28px; color: black; margin-right: 10px;">Read first! ➔</span>
+      <button id="btnGuide" type="button">Guide</button>
+    </div>
 
+    <!-- NEWS button (equal spacing between Guide area and Clinical tools) -->
+    <button id="btnNews" type="button">News</button>
 
-
-
-
-  <!-- Group for "Read first! ➔" and Guide button -->
-  <div class="mid-controls" style="display: flex; align-items: center;">
-  <span id="read-first-text" style="font-size: 28px; color: black; margin-right: 10px;">Read first! ➔</span>
-    <button id="btnGuide">Guide</button>
+    <!-- Medical calculator picker (opens selected HTML in a new tab) -->
+    <div id="medical-calc-container">
+      <label id="medicalCalcLabel" for="medicalCalcSelect">Kliniske verktøy:</label>
+      <select id="medicalCalcSelect" aria-label="Medical calculator">
+        <option value="" selected>Select…</option>
+        <option value="./kliniske_verktøy/BMI_kalkulator.html">BMI / KMI</option>
+        <option value="./kliniske_verktøy/growth_charts_no_upload.html">Vektskurver WHO barn 0-19 år</option>
+        <option value="./kliniske_verktøy/omeq.html">OMEQ (morfinekvivalenter)</option>
+        <option value="./kliniske_verktøy/terminkalkulator.html">Terminkalkulator</option>
+        <option value="./kliniske_verktøy/SUKK.html">SUKK test - Svangerskapskvalme</option>
+        <option value="./kliniske_verktøy/norrisk2.html">NORRISK 2</option>
+        <option value="./kliniske_verktøy/chadvasc.html">CHA₂DS₂-VASc</option>
+        <option value="./kliniske_verktøy/Fri_testosteron_index.html">Fri androgen-indeks / fritt testosteron</option>
+      </select>
+      <button id="medicalCalcOpenBtn" type="button" disabled>Open</button>
+    </div>
   </div>
-  <!-- Medical calculator picker (opens selected HTML in a new tab) -->
-  <div id="medical-calc-container">
-    <label id="medicalCalcLabel" for="medicalCalcSelect">Kliniske verktøy:</label>
-    <select id="medicalCalcSelect" aria-label="Medical calculator">
-      <option value="" selected>Select…</option>
-      <option value="./kliniske_verktøy/BMI_kalkulator.html">BMI / KMI</option>
-      <option value="./kliniske_verktøy/growth_charts_no_upload.html">Vektskurver WHO barn 0-19 år</option>
-      <option value="./kliniske_verktøy/omeq.html">OMEQ (morfinekvivalenter)</option>
-      <option value="./kliniske_verktøy/terminkalkulator.html">Terminkalkulator</option>
-      <option value="./kliniske_verktøy/SUKK.html">SUKK test - Svangerskapskvalme</option>
-      <option value="./kliniske_verktøy/norrisk2.html">NORRISK 2</option>
-      <option value="./kliniske_verktøy/chadvasc.html">CHA₂DS₂-VASc</option>
-      <option value="./kliniske_verktøy/Fri_testosteron_index.html">Fri androgen-indeks / fritt testosteron</option>
-    </select>
-    <button id="medicalCalcOpenBtn" type="button" disabled>Open</button>
-  </div>
-
-
-  <!-- Language container remains on the far right -->
+<!-- Language container remains on the far right -->
   <div id="lang-container-transcribe">
     <img src="language-icon.png" alt="Language Icon" id="lang-icon-transcribe" />
     <select id="lang-select-transcribe">
@@ -1877,7 +1928,15 @@
     <p id="guideText"></p>
   </div>
 
-  <!-- Costs & Billing Links Overlay (opens from the two header links) -->
+  
+  <!-- News Overlay (loads Nyheter_*.txt based on language) -->
+  <div id="newsView" aria-hidden="true">
+    <button id="newsClose" type="button" aria-label="Close">×</button>
+    <h3 id="newsHeading">News</h3>
+    <pre id="newsText">Loading…</pre>
+  </div>
+
+<!-- Costs & Billing Links Overlay (opens from the two header links) -->
   <div id="billingLinksView" aria-hidden="true">
     <div class="header-row">
       <h3 id="billingLinksHeading">Costs & Billing Links</h3>
@@ -1895,18 +1954,110 @@
       const guideView = document.getElementById("guideView");
       const guideClose = document.getElementById("guideClose");
 
-      if (guideClose) {
+            const btnNews = document.getElementById("btnNews");
+      const newsView = document.getElementById("newsView");
+      const newsClose = document.getElementById("newsClose");
+      const newsHeading = document.getElementById("newsHeading");
+      const newsText = document.getElementById("newsText");
+      let newsLoadedLang = null;
+
+      function getCurrentLang() {
+        // Prefer the live dropdown value (updates immediately),
+        // fallback to persisted localStorage.
+        const sel = document.getElementById("lang-select-transcribe");
+        return (sel && sel.value) || localStorage.getItem("siteLanguage") || "en";
+      }
+
+      async function loadNewsForCurrentLanguage(force = false) {
+        if (!newsText) return;
+        const lang = getCurrentLang();
+        if (!force && newsLoadedLang === lang) return;
+
+        // Match button wording requirement
+        if (newsHeading) {
+          newsHeading.textContent = (lang === "no") ? "Status/Oppdateringer" : "Status & Updates";
+        }
+        newsText.textContent = "Loading…";
+
+        // Norwegian only when lang === "no". All other languages default to English.
+        const candidates = (lang === "no")
+          ? ["./Nyheter_NO.txt", "./Nyheter_EN.txt"]
+          : ["./Nyheter_EN.txt"];
+
+        try {
+          let loaded = false;
+          for (const url of candidates) {
+            const res = await fetch(url, { cache: "no-store" });
+            if (!res.ok) continue;
+            newsText.textContent = await res.text();
+            loaded = true;
+            break;
+          }
+          if (!loaded) throw new Error("No news file could be loaded.");
+          newsLoadedLang = lang;
+        } catch (err) {
+          console.error("Failed to load news text:", err);
+          newsText.textContent =
+            "Could not load the news text.\n\n" +
+            "If you are the site owner: make sure Nyheter_EN.txt exists next to transcribe.html (and optionally Nyheter_NO.txt).";
+          newsLoadedLang = null;
+        }
+      }
+
+      function openNews() {
+        if (!newsView) return;
+        newsView.classList.add("active");
+        newsView.setAttribute("aria-hidden", "false");
+        loadNewsForCurrentLanguage(true);
+      }
+      function closeNews() {
+        if (!newsView) return;
+        newsView.classList.remove("active");
+        newsView.setAttribute("aria-hidden", "true");
+      }
+
+if (guideClose) {
         guideClose.addEventListener("click", function () {
           guideView.classList.remove("active");
         });
       }
       if (btnGuide && guideView) {
         btnGuide.addEventListener("click", function () {
+                    // Don’t stack overlays
+          closeNews();
           guideView.classList.toggle("active");
         });
       }
 
-      // Medical calculator picker (open selected HTML in new tab)
+      
+      if (newsClose) {
+        newsClose.addEventListener("click", closeNews);
+      }
+      if (btnNews && newsView) {
+        btnNews.addEventListener("click", function () {
+          // Don’t stack overlays
+          guideView?.classList.remove("active");
+          if (newsView.classList.contains("active")) closeNews();
+          else openNews();
+        });
+      }
+
+      // If language changes while News is open, refresh immediately
+      const langSelectTranscribe = document.getElementById("lang-select-transcribe");
+      langSelectTranscribe?.addEventListener("change", () => {
+        // Force refresh even if our previous load used the old localStorage value
+        newsLoadedLang = null;
+        if (newsView?.classList.contains("active")) {
+          loadNewsForCurrentLanguage(true);
+        }
+      });
+
+      // ESC closes News (same as other overlays)
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && newsView?.classList.contains("active")) closeNews();
+      });
+
+// Medical calculator picker (open selected HTML in new tab)
       const calcSelect = document.getElementById("medicalCalcSelect");
       const calcOpenBtn = document.getElementById("medicalCalcOpenBtn");
       function syncCalcOpenState() {

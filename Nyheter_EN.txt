@@ -1,8 +1,9 @@
 2 March 2026
-
-This new info button shows ongoing status messages and updates for the web app (such as new features, bug fixes, and important notifications).
+This new Info button shows ongoing status messages and changes in the web app (such as new features, bug fixes, and important announcements).
 
 AWS time limit update:
-Until now, if a note generated via the AWS models took more than 45 seconds, an error could occur. This has now been fixed by increasing the time limit to 2.5 minutes, which should be more than enough to generate a note.
+Up until now, notes generated with the AWS models have had a time limit of 45 sec, which means that if it takes more than 45 sec to generate the note, it will result in an error message. This issue has now been resolved by increasing the time limit to 2.5 min, which will be more than enough to generate a note.
 
-To apply this update, you need to do the following: Go to the front page, click the “AWS guide” button next to the AWS Bedrock key input fields, scroll all the way to the bottom of the page, and follow the instructions under “HOW TO UPDATE THE STACK (CLOUDFORMATION)”. Once this is done, the issue will be resolved.
+To carry out this update, you as a user must update the AWS function that you have already created if you have used the AWS models so far.
+
+To update your function; Go to the home page, click the “AWS guide” button next to the fields for the AWS Bedrock key, scroll all the way to the bottom of the page, and follow the instructions under "HOW TO UPDATE THE STACK (CLOUDFORMATION)". Once this is done, the problem will be resolved.

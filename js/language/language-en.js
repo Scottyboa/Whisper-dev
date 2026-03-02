@@ -693,6 +693,7 @@ export const transcribeTranslations = {
   openaiWalletLinkText: "Wallet Balance",
   btnFunctions: "Functions",
   btnGuide: "Guide",
+  btnNews: "Status & Updates",
   backToHome: "Back to frontpage",
   recordingAreaTitle: "Recording Area",
   recordTimer: "Recording Timer: 0 sec",

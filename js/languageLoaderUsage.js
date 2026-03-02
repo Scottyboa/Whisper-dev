@@ -184,6 +184,12 @@ function updateTranscribeUI(trans) {
   const walletEl = document.getElementById("openaiWalletLink");
   if (walletEl) walletEl.textContent = trans.openaiWalletLinkText;
   document.getElementById("btnGuide").textContent = trans.btnGuide;
+  const newsBtn = document.getElementById("btnNews");
+  if (newsBtn) {
+    // Norwegian requested label is handled in language-no.js.
+    // All other languages default to English wording if not provided.
+    newsBtn.textContent = trans.btnNews ?? "Status & Updates";
+  }
   document.getElementById("backToHomeButton").textContent = trans.backToHome;
   document.getElementById("recordingAreaTitle").textContent = trans.recordingAreaTitle;
   const readFirstElem = document.getElementById("read-first-text");

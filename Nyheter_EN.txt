@@ -1,3 +1,20 @@
+3 March 2026
+Claude Sonnet 4.6 and Claude Opus 4.6 have now been added to the AWS Bedrock model dropdown.
+
+These 4.6 models are the latest generation and generally deliver stronger reasoning, better instruction-following, and higher-quality summaries/notes compared to their 4.5 counterparts—especially on longer or more complex transcripts.
+
+Pricing: Claude Sonnet 4.6 costs the same as Claude Sonnet 4.5, and Claude Opus 4.6 costs the same as Claude Opus 4.5.
+
+Important (AWS users): Update your stack
+
+To use Sonnet 4.6 / Opus 4.6, you must update your existing AWS proxy stack (CloudFormation). The update enables the required Bedrock configuration for these models.
+
+How to update your function:
+Go to the home page, click the “AWS guide” button next to the AWS Bedrock key fields, scroll all the way to the bottom, and follow the instructions under “HOW TO UPDATE THE STACK (CLOUDFORMATION)”. Once completed, you can select and use Sonnet 4.6 / Opus 4.6 in the app.
+
+
+
+
 2 March 2026
 This new Info button shows ongoing status messages and changes in the web app (such as new features, bug fixes, and important announcements).
 

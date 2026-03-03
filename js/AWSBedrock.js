@@ -4,7 +4,7 @@
 // sessionStorage keys used:
 //   bedrock_backend_url
 //   bedrock_backend_secret
-//   bedrock_model  (haiku-4-5 | sonnet-4 | sonnet-4-5 | opus-4-5)
+//   bedrock_model  (haiku-4-5 | sonnet-4 | sonnet-4-5 | sonnet-4-6 | opus-4-5 | opus-4-6)
 
 // Only allow known model keys to be sent to the backend.
 // (Prevents weird/stale values from sessionStorage from causing confusing backend errors.)
@@ -12,7 +12,9 @@ const ALLOWED_BEDROCK_MODEL_KEYS = new Set([
   "haiku-4-5",
   "sonnet-4",
   "sonnet-4-5",
+  "sonnet-4-6",
   "opus-4-5",
+  "opus-4-6",
 ]);
 
 // On-Demand text pricing (USD) per 1M tokens.
@@ -20,7 +22,9 @@ const ALLOWED_BEDROCK_MODEL_KEYS = new Set([
 const BEDROCK_USD_PER_MTOK = {
   "haiku-4-5": { input: 1.0, output: 5.0 },
   "sonnet-4-5": { input: 3.0, output: 15.0 },
+  "sonnet-4-6": { input: 3.0, output: 15.0 },
   "opus-4-5": { input: 5.0, output: 25.0 },
+  "opus-4-6": { input: 5.0, output: 25.0 },
 };
 
 function formatUsd(amount) {

@@ -1,3 +1,15 @@
+## March 4, 2026
+
+### Temporary capacity issues with Claude Opus 4.6 (AWS Bedrock)
+
+There are currently periods where **Claude Opus 4.6** on AWS Bedrock may be temporarily overloaded. This can sometimes cause note generation to fail and return an error from AWS.
+
+If this happens, we recommend **temporarily using Claude Opus 4.5**, which is stable and produces very similar results.
+
+This issue is related to capacity on AWS Bedrock and is **not caused by the app itself**. Once the load on Opus 4.6 normalizes, the model should work as expected again.
+
+---
+
 ## 3 March 2026
 
 Claude Sonnet 4.6 and Claude Opus 4.6 have now been added to the AWS Bedrock model dropdown.

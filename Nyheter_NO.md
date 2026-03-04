@@ -2,9 +2,9 @@
 
 ### Midlertidig kapasitetsproblem med Claude Opus 4.6 (AWS Bedrock)
 
-Det er for øyeblikket rapportert perioder hvor **Claude Opus 4.6** via AWS Bedrock kan være overbelastet. Dette kan føre til at generering av notater noen ganger feiler og gir en feilmelding fra AWS.
+Det er for øyeblikket rapportert perioder hvor **Claude Sonnet/Opus 4.6** via AWS Bedrock kan være overbelastet. Dette kan føre til at generering av notater noen ganger feiler og gir en feilmelding fra AWS.
 
-Hvis dette skjer, anbefales det å **midlertidig bruke Claude Opus 4.5**, som fungerer stabilt og gir svært tilsvarende resultater.
+Hvis dette skjer, anbefales det å **midlertidig bruke Claude Sonnet/Opus 4.5**, som fungerer stabilt og gir svært tilsvarende resultater.
 
 Dette skyldes kapasitet hos AWS/Bedrock og ikke et problem i appen. Når belastningen på Opus 4.6 normaliserer seg vil modellen fungere som normalt igjen.
 

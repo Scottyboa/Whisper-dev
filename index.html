@@ -1346,6 +1346,67 @@
         return localStorage.getItem("siteLanguage") || "en";
       }
 
+
+      // Deep-link support for the AWS Bedrock guide modal.
+      // If the page is opened with #bedrock-update-stack, automatically open the modal
+      // and scroll to the "Update stack" section inside the guide text.
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderBedrockGuideText(rawText) {
+        if (!bedrockGuideTextEl) return;
+
+        const wantsUpdateStack = (location.hash === "#bedrock-update-stack");
+
+        // Default: keep it as plain text.
+        if (!wantsUpdateStack) {
+          bedrockGuideTextEl.textContent = rawText;
+          return;
+        }
+
+        // Try to locate the relevant section header inside the guide.
+        const patterns = [
+          /how\s+to\s+update\s+the\s+stack/i,
+          /update\s+the\s+stack/i,
+          /update\s+stack/i,
+          /cloudformation/i,
+        ];
+
+        let html = escapeHtml(rawText);
+        let marked = false;
+
+        for (const re of patterns) {
+          const m = rawText.match(re);
+          if (!m) continue;
+
+          const needle = escapeHtml(m[0]);
+          if (html.includes(needle)) {
+            html = html.replace(needle, `<mark id="bedrock-update-stack">${needle}</mark>`);
+            marked = true;
+            break;
+          }
+        }
+
+        bedrockGuideTextEl.innerHTML = html;
+
+        // Scroll within the modal after the DOM updates.
+        requestAnimationFrame(() => {
+          const anchor = document.getElementById("bedrock-update-stack");
+          if (anchor) {
+            anchor.scrollIntoView({ block: "start" });
+          } else if (bedrockGuideView) {
+            // Fallback: scroll to the bottom if we couldn't find the section header.
+            bedrockGuideView.scrollTop = bedrockGuideView.scrollHeight;
+          }
+        });
+      }
+
       async function loadBedrockGuideForCurrentLanguage() {
         if (!bedrockGuideTextEl) return;
 
@@ -1364,7 +1425,8 @@
           for (const url of candidates) {
             const res = await fetch(url, { cache: "no-store" });
             if (!res.ok) continue;
-            bedrockGuideTextEl.textContent = await res.text();
+            const txt = await res.text();
+            renderBedrockGuideText(txt);
             loaded = true;
             break;
           }
@@ -1409,6 +1471,12 @@
           closeBedrockGuide();
         }
       });
+
+      // Deep-link: open the Bedrock guide modal automatically when requested
+      if (location.hash === "#bedrock-update-stack") {
+        openBedrockGuide();
+      }
+
 
       // Google Vertex "Guide" modal (opened from the link next to Google Vertex)
       const vertexGuideLink = document.getElementById("vertex-guide-link");

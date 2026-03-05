@@ -1369,13 +1369,10 @@
           bedrockGuideTextEl.textContent = rawText;
           return;
         }
-
+      
         // Try to locate the relevant section header inside the guide.
         const patterns = [
-          /how\s+to\s+update\s+the\s+stack/i,
-          /update\s+the\s+stack/i,
-          /update\s+stack/i,
-          /cloudformation/i,
+          /\(cloudformation\)/i,
         ];
 
         let html = escapeHtml(rawText);
@@ -1579,3 +1576,4 @@
   
 </body>
 </html>
+

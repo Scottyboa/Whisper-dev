@@ -23,7 +23,9 @@ Disse 4.6-modellene er nyeste generasjon og gir generelt bedre resonnering, bedr
 For å bruke Sonnet 4.6 / Opus 4.6 må du oppdatere den eksisterende AWS proxy-stacken din (CloudFormation). Oppdateringen aktiverer nødvendig Bedrock-oppsett for disse modellene.
 
 **Slik oppdaterer du funksjonen:**  
-Gå til forsiden, klikk på «AWS guide»-knappen ved siden av AWS Bedrock-feltene, scroll helt til bunnen, og følg instruksjonene under «HOW TO UPDATE THE STACK (CLOUDFORMATION)». Når oppdateringen er fullført kan du velge og bruke Sonnet 4.6 / Opus 4.6 i appen.
+Gå til forsiden, klikk på «AWS guide»-knappen ved siden av AWS Bedrock-feltene, scroll helt til bunnen, og følg instruksjonene under «SLIK OPPDATERER DU STACKEN (CLOUDFORMATION)». Når oppdateringen er fullført kan du velge og bruke Sonnet 4.6 / Opus 4.6 i appen.
+
+<a href="https://tn-beta.netlify.app/index.html#bedrock-update-stack" target="_blank" rel="noopener">SLIK OPPDATERER DU STACKEN (CLOUDFORMATION)</a>
 
 ---
 

@@ -25,8 +25,6 @@ To use Sonnet 4.6 / Opus 4.6, you must update your existing AWS proxy stack (Clo
 **How to update your function:**  
 Go to the home page, click the “AWS guide” button next to the AWS Bedrock key fields, scroll all the way to the bottom, and follow the instructions under “HOW TO UPDATE THE STACK (CLOUDFORMATION)”. Once completed, you can select and use Sonnet 4.6 / Opus 4.6 in the app.
 
-<a href="/index.html#bedrock-update-stack" target="_blank" rel="noopener">HOW TO UPDATE THE STACK (CLOUDFORMATION)</a>
-
 ---
 
 ## 2 March 2026

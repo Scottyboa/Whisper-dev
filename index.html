@@ -1549,18 +1549,26 @@
       });
 
 
-      // If the user changes language while the modal is open, refresh the guide text
+      // If the user changes language while a guide modal is open, refresh the modal content
+      // immediately (so they don't need to close/reopen).
       const langSelectEl = document.getElementById("lang-select");
-      langSelectEl?.addEventListener("change", () => {
-        bedrockGuideLoadedLang = null;
-        vertexGuideLoadedLang = null;
-        if (bedrockGuideView?.classList.contains("active")) {
-          loadBedrockGuideForCurrentLanguage();
-        }
-        if (vertexGuideView?.classList.contains("active")) {
-          loadVertexGuideForCurrentLanguage();
-        }
-      });
+      const refreshOpenGuidesForLanguage = () => {
+        // Defer to the next frame so any other language-change handler can update storage/DOM first.
+        requestAnimationFrame(() => {
+          bedrockGuideLoadedLang = null;
+          vertexGuideLoadedLang = null;
+
+          if (bedrockGuideView?.classList.contains("active")) {
+            loadBedrockGuideForCurrentLanguage();
+          }
+          if (vertexGuideView?.classList.contains("active")) {
+            loadVertexGuideForCurrentLanguage();
+          }
+        });
+      };
+      langSelectEl?.addEventListener("change", refreshOpenGuidesForLanguage);
+      // Some browsers/UI patterns can fire `input` earlier than `change` for selects.
+      langSelectEl?.addEventListener("input", refreshOpenGuidesForLanguage);
       document.addEventListener("keydown", function(e) {
         // Check if the pressed key is "Enter"
         if (e.key === "Enter") {

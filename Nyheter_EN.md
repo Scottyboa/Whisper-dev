@@ -27,6 +27,10 @@ Go to the home page, click the “AWS guide” button next to the AWS Bedrock ke
 
 <a href="https://tn-beta.netlify.app/index.html#bedrock-update-stack" target="_blank" rel="noopener">HOW TO UPDATE THE STACK (CLOUDFORMATION)</a>
 
+<a href="/index.html#bedrock-update-stack" target="_blank" rel="noopener noreferrer">
+  HOW TO UPDATE THE STACK (CLOUDFORMATION)
+</a>
+
 ---
 
 ## 2 March 2026

@@ -1266,7 +1266,7 @@
           const contentId = header.getAttribute('data-content-id');
           const hiddenContent = document.getElementById(contentId);
           if (hiddenContent) {
-            contentContainer.innerHTML = hiddenContent.innerHTML;
+            contentContainer.replaceChildren(hiddenContent.cloneNode(true));
           }
         }
       });

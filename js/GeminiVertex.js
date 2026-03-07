@@ -265,12 +265,7 @@ function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");
   if (!generateNoteButton) return;
 
-  // Same consent gate as other note modules
-  if (document.cookie.indexOf("user_consent=accepted") === -1) {
-    generateNoteButton.disabled = true;
-    generateNoteButton.title =
-      "Note generation is disabled until you accept cookies/ads.";
-  }
+  
 
   generateNoteButton.addEventListener("click", generateNote);
 }

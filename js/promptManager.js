@@ -270,7 +270,86 @@ export const PromptManager = (() => {
     if (importedSlotNames && typeof importedSlotNames === "object") {
       // Only overwrite labels if the file explicitly contains them.
       saveSlotNames(profileId, importedSlotNames);
+    } else {
+      clearSlotNames(profileId);
     }
+  }
+
+
+  function normalizeSlotNumber(slot) {
+    const n = Number.parseInt(String(slot), 10);
+    if (!Number.isFinite(n) || n < 1 || n > PROMPT_SLOT_COUNT) return null;
+    return n;
+  }
+
+  function getSlotPromptValue(slot) {
+    try {
+      return localStorage.getItem(getPromptStorageKey(String(slot))) || "";
+    } catch {
+      return "";
+    }
+  }
+
+  function setSlotPromptValue(slot, value) {
+    try {
+      localStorage.setItem(getPromptStorageKey(String(slot)), String(value ?? ""));
+    } catch {}
+  }
+
+  function reorderPromptSlots(fromSlot, toSlot) {
+    const from = normalizeSlotNumber(fromSlot);
+    const to = normalizeSlotNumber(toSlot);
+    const profileId = getPromptProfileId();
+
+    if (!from || !to) {
+      console.warn("Cannot reorder prompt slots: invalid slot.", { fromSlot, toSlot });
+      return null;
+    }
+    if (!profileId) {
+      console.warn("Cannot reorder prompt slots: prompt profile id not set.");
+      return null;
+    }
+    if (from === to) return to;
+
+    const movedPrompt = getSlotPromptValue(from);
+    const slotNames = loadSlotNames(profileId);
+    const movedName = Object.prototype.hasOwnProperty.call(slotNames, String(from))
+      ? slotNames[String(from)]
+      : "";
+
+    if (from < to) {
+      for (let i = from; i < to; i++) {
+        setSlotPromptValue(i, getSlotPromptValue(i + 1));
+        const nextKey = String(i + 1);
+        const currKey = String(i);
+        if (Object.prototype.hasOwnProperty.call(slotNames, nextKey)) {
+          slotNames[currKey] = slotNames[nextKey];
+        } else {
+          delete slotNames[currKey];
+        }
+      }
+    } else {
+      for (let i = from; i > to; i--) {
+        setSlotPromptValue(i, getSlotPromptValue(i - 1));
+        const prevKey = String(i - 1);
+        const currKey = String(i);
+        if (Object.prototype.hasOwnProperty.call(slotNames, prevKey)) {
+          slotNames[currKey] = slotNames[prevKey];
+        } else {
+          delete slotNames[currKey];
+        }
+      }
+    }
+
+    setSlotPromptValue(to, movedPrompt);
+    if (movedName && String(movedName).trim()) {
+      slotNames[String(to)] = String(movedName);
+    } else {
+      delete slotNames[String(to)];
+    }
+
+    saveSlotNames(profileId, slotNames);
+    return to;
   }
 
   function loadPrompt(slot) {
@@ -294,6 +373,7 @@ export const PromptManager = (() => {
     savePrompt,
     getPromptProfileId,
     setPromptProfileId,
+    reorderPromptSlots,
     exportPromptsToFile,
     importPromptsFromFile
   };

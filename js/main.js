@@ -231,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     choice === 'mistral'       ? './MistralTXT.js'              :
     choice === 'gpt52'         ? './noteGeneration_gpt52.js'    :
     choice === 'gpt52-ns'      ? './noteGeneration_gpt52_NS.js' :
+    choice === 'gpt54'         ? './noteGeneration_gpt54.js'    :
     choice === 'gpt5-ns'       ? './noteGeneration_gpt5_NS.js'  :
     choice === 'gemini3'       ? './Gemini3.js'                 :   // Gemini via public API
     choice === 'gemini3-vertex'? './GeminiVertex.js'            :   // Gemini via Vertex AI
@@ -274,6 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
       choice === 'mistral'       ? './MistralTXT.js'              :
       choice === 'gpt52'         ? './noteGeneration_gpt52.js'    :
       choice === 'gpt52-ns'      ? './noteGeneration_gpt52_NS.js' :
+      choice === 'gpt54'         ? './noteGeneration_gpt54.js'    :
       choice === 'gpt5-ns'       ? './noteGeneration_gpt5_NS.js'  :
       choice === 'gemini3'       ? './Gemini3.js'                 :   // Gemini via public API
       choice === 'gemini3-vertex'? './GeminiVertex.js'            :   // Gemini via Vertex AI

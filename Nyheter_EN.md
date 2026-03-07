@@ -1,4 +1,4 @@
-## March 4, 2026
+## March 7, 2026
 
 GPT-5.4 has now been added to the OpenAI model dropdown for note generation.
 

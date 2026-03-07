@@ -1,5 +1,28 @@
 ## March 4, 2026
 
+GPT-5.4 has now been added to the OpenAI model dropdown for note generation.
+
+### Pricing:
+GPT-5.4 currently costs **$2.50 per 1 million input tokens** and **$15.00 per 1 million output tokens**.
+
+### Important regarding privacy / GDPR:
+Please note that use of **GPT-5.4** and the other **OpenAI models** in the current standard setup is **not GDPR compliant for sensitive/patient data**, because data is **not processed in the EU by default**, and OpenAI states that API data may be **stored for up to 30 days before deletion**.
+
+For note generation workflows that require a **GDPR-compliant setup**, **AWS Bedrock** is recommended instead.
+
+### Prompt module update:
+The prompt module has now been updated so that prompt slots can be **reordered by drag and drop**.
+
+To reorder the slots:
+- Open the prompt slot menu
+- Click and hold the drag handle next to a slot
+- Drag the slot up or down to the desired position
+- Release the mouse to save the new order
+
+---
+
+## March 4, 2026
+
 ### Temporary capacity issues with Claude Opus 4.6 (AWS Bedrock)
 
 There are currently periods where **Claude Sonnet/Opus 4.6** on AWS Bedrock may be temporarily overloaded. This can sometimes cause note generation to fail and return an error from AWS.

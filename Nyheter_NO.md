@@ -1,6 +1,6 @@
 ## 7. mars 2026
 
-GPT-5.4 er nå lagt til i OpenAI-modellmenyen for notatgenerering.
+**GPT-5.4** er nå lagt til i OpenAI-modellmenyen for notatgenerering.
 
 ### Prising:
 GPT-5.4 koster for øyeblikket **$2.50 per 1 million input-tokens** og **$15.00 per 1 million output-tokens**.

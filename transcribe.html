@@ -852,6 +852,40 @@
       outline: none;
       background: rgba(85, 170, 153, 0.08);
     }
+
+    /* Full-row selection surface: match hover/click area to active-row highlight */
+    .prompt-slot-item {
+      align-items: stretch;
+    }
+    .prompt-slot-item-button {
+      width: 100%;
+      height: 100%;
+      align-self: stretch;
+      justify-self: stretch;
+      border-radius: 7px;
+    }
+    .prompt-slot-item:hover .prompt-slot-item-button,
+    .prompt-slot-item:focus-within .prompt-slot-item-button,
+    .prompt-slot-item-button:hover,
+    .prompt-slot-item-button:focus-visible {
+      outline: none;
+      background: rgba(85, 170, 153, 0.08);
+    }
+    .prompt-slot-item.is-active {
+      background: transparent;
+    }
+    .prompt-slot-item.is-active .prompt-slot-item-button {
+      background: rgba(85, 170, 153, 0.09);
+    }
+    .prompt-slot-item.is-drag-over {
+      background: transparent;
+      outline: none;
+    }
+    .prompt-slot-item.is-drag-over .prompt-slot-item-button {
+      background: rgba(85, 170, 153, 0.16);
+      outline: 1px dashed rgba(85, 170, 153, 0.55);
+      outline-offset: -1px;
+    }
     .prompt-slot-item-title {
       display: flex;
       align-items: center;

@@ -1,3 +1,26 @@
+## 7. mars 2026
+
+GPT-5.4 er nå lagt til i OpenAI-modellmenyen for notatgenerering.
+
+### Prising:
+GPT-5.4 koster for øyeblikket **$2.50 per 1 million input-tokens** og **$15.00 per 1 million output-tokens**.
+
+### Viktig om personvern / GDPR:
+Vær oppmerksom på at bruk av **GPT-5.4** og de andre **OpenAI-modellene** i dagens standardoppsett **ikke er GDPR-kompatibelt for sensitive/pasientrelaterte data**, fordi data **ikke behandles i EU som standard**, og OpenAI opplyser at API-data kan **lagres i opptil 30 dager før sletting**.
+
+For arbeidsflyter for notatgenerering som krever et **GDPR-kompatibelt oppsett**, anbefales **AWS Bedrock** i stedet.
+
+### Oppdatering av promptmodulen:
+Promptmodulen er nå oppdatert slik at prompt-slottene kan **omorganiseres med dra-og-slipp**.
+
+Slik omorganiserer du slottene:
+- Åpne prompt-slotmenyen
+- Klikk og hold på drag-håndtaket ved siden av en slot
+- Dra slotten opp eller ned til ønsket posisjon
+- Slipp museknappen for å lagre den nye rekkefølgen
+
+---
+
 ## 4. mars 2026
 
 ### Midlertidig kapasitetsproblem med Claude Opus 4.6 (AWS Bedrock)

@@ -1,6 +1,6 @@
-## March 7, 2026
+## 7 March, 2026
 
-GPT-5.4 has now been added to the OpenAI model dropdown for note generation.
+**GPT-5.4** has now been added to the OpenAI model dropdown for note generation.
 
 ### Pricing:
 GPT-5.4 currently costs **$2.50 per 1 million input tokens** and **$15.00 per 1 million output tokens**.
@@ -21,7 +21,7 @@ To reorder the slots:
 
 ---
 
-## March 4, 2026
+## 4 March, 2026
 
 ### Temporary capacity issues with Claude Opus 4.6 (AWS Bedrock)
 

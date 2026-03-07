@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -706,6 +707,7 @@
       background: #f7f7f7;
       z-index: 1;
     }
+  
 
     /* Prompt slot custom dropdown / popover */
     .prompt-slot-row {
@@ -794,31 +796,32 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      padding: 8px 12px 7px;
+      gap: 10px;
+      padding: 5px 10px 4px;
       border-bottom: 1px solid #eef3f1;
-      font-size: 12px;
+      font-size: 11px;
       color: #60706a;
       background: #fcfdfd;
+      line-height: 1.1;
     }
     .prompt-slot-popover-hint {
       white-space: nowrap;
     }
     .prompt-slot-list {
       overflow: visible;
-      padding: 4px;
+      padding: 1px;
     }
     .prompt-slot-item {
       display: grid;
       grid-template-columns: 1fr auto;
       align-items: center;
-      gap: 8px;
+      gap: 4px;
       padding: 0;
       margin: 0;
-      border-radius: 10px;
+      border-radius: 7px;
     }
     .prompt-slot-item + .prompt-slot-item {
-      margin-top: 2px;
+      margin-top: 0;
     }
     .prompt-slot-item.is-active {
       background: rgba(85, 170, 153, 0.09);
@@ -832,15 +835,17 @@
       min-width: 0;
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 7px 10px;
+      gap: 5px;
+      padding: 2px 6px;
       border: 0;
       background: transparent;
       cursor: pointer;
       text-align: left;
       font: inherit;
       color: inherit;
-      border-radius: 10px;
+      border-radius: 7px;
+      min-height: 24px;
+      line-height: 1.05;
     }
     .prompt-slot-item-button:hover,
     .prompt-slot-item-button:focus-visible {
@@ -850,35 +855,38 @@
     .prompt-slot-item-title {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 5px;
       min-width: 0;
       width: 100%;
+      line-height: 1.05;
     }
     .prompt-slot-badge {
       flex: 0 0 auto;
-      min-width: 24px;
+      min-width: 18px;
       color: #5f6b67;
-      font-size: 12px;
+      font-size: 10px;
       text-align: left;
+      line-height: 1;
     }
     .prompt-slot-item-name {
       min-width: 0;
-      font-size: 13px;
+      font-size: 11px;
       color: #1f2a27;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      line-height: 1.05;
     }
     .prompt-slot-drag-handle {
       flex: 0 0 auto;
-      margin-right: 4px;
+      margin-right: 1px;
       border: 0;
       background: transparent;
       color: #71807b;
       cursor: grab;
-      padding: 6px 7px;
-      border-radius: 8px;
-      font-size: 15px;
+      padding: 1px 4px;
+      border-radius: 5px;
+      font-size: 11px;
       line-height: 1;
     }
     .prompt-slot-drag-handle:hover,
@@ -903,6 +911,58 @@
       .prompt-slot-popover {
         width: 100%;
       }
+    }
+  
+    /* Strong compact override for prompt slot menu */
+    .prompt-slot-popover.compact-slots .prompt-slot-popover-header,
+    #promptSlotPopover .prompt-slot-popover-header {
+      padding: 5px 10px 4px !important;
+      font-size: 11px !important;
+      line-height: 1.1 !important;
+    }
+    .prompt-slot-popover.compact-slots .prompt-slot-list,
+    #promptSlotPopover .prompt-slot-list {
+      padding: 1px !important;
+    }
+    .prompt-slot-popover.compact-slots .prompt-slot-item,
+    #promptSlotPopover .prompt-slot-item {
+      gap: 4px !important;
+      border-radius: 7px !important;
+    }
+    .prompt-slot-popover.compact-slots .prompt-slot-item + .prompt-slot-item,
+    #promptSlotPopover .prompt-slot-item + .prompt-slot-item {
+      margin-top: 0 !important;
+    }
+    .prompt-slot-popover.compact-slots .prompt-slot-item-button,
+    #promptSlotPopover .prompt-slot-item-button {
+      gap: 5px !important;
+      padding: 2px 6px !important;
+      min-height: 24px !important;
+      border-radius: 7px !important;
+      line-height: 1.05 !important;
+    }
+    .prompt-slot-popover.compact-slots .prompt-slot-item-title,
+    #promptSlotPopover .prompt-slot-item-title {
+      gap: 5px !important;
+      line-height: 1.05 !important;
+    }
+    .prompt-slot-popover.compact-slots .prompt-slot-badge,
+    #promptSlotPopover .prompt-slot-badge {
+      min-width: 18px !important;
+      font-size: 10px !important;
+      line-height: 1 !important;
+    }
+    .prompt-slot-popover.compact-slots .prompt-slot-item-name,
+    #promptSlotPopover .prompt-slot-item-name {
+      font-size: 11px !important;
+      line-height: 1.05 !important;
+    }
+    .prompt-slot-popover.compact-slots .prompt-slot-drag-handle,
+    #promptSlotPopover .prompt-slot-drag-handle {
+      padding: 1px 4px !important;
+      font-size: 11px !important;
+      margin-right: 1px !important;
+      border-radius: 5px !important;
     }
 
   </style>
@@ -1180,6 +1240,7 @@
               <select id="openaiModel">
                 <option value="gpt5" selected>GPT-5.1</option>
                 <option value="gpt52">GPT-5.2</option>
+                <option value="gpt54">GPT-5.4</option>
                 <option value="gpt4">GPT-4-latest</option>
               </select>
             </div>
@@ -1615,9 +1676,10 @@
 
       // Canonical provider key used for module switching (main.js still switches on note_provider).
       // Examples:
-      //   - OpenAI: gpt5 / gpt5-ns / gpt52 / gpt52-ns / gpt4
+      //   - OpenAI: gpt5 / gpt5-ns / gpt52 / gpt52-ns / gpt54 (+ note_mode) / gpt4
       //   - Others: lemonfox / mistral / gemini3 / gemini3-vertex / aws-bedrock
       const storedProviderKey = sessionStorage.getItem("note_provider");
+      const storedNoteMode = sessionStorage.getItem("note_mode");
 
       let initialProvider = DEFAULT_PROVIDER;
       let initialOpenAiModel = DEFAULT_OPENAI_MODEL;
@@ -1627,13 +1689,18 @@
         const isNs = storedProviderKey.endsWith("-ns");
         const baseKey = isNs ? storedProviderKey.replace(/-ns$/, "") : storedProviderKey;
 
-        if (baseKey === "gpt5" || baseKey === "gpt52" || baseKey === "gpt4") {
+        if (baseKey === "gpt5" || baseKey === "gpt52" || baseKey === "gpt54" || baseKey === "gpt4") {
           initialProvider = "openai";
           initialOpenAiModel = baseKey;
 
-          // Mode only applies to GPT-5.x
+          // Legacy GPT-5.1 / GPT-5.2 mode is encoded in the provider key.
           if ((baseKey === "gpt5" || baseKey === "gpt52") && isNs) {
             initialMode = "non-streaming";
+          }
+
+          // GPT-5.4 uses one combined module, so mode persists separately.
+          if (baseKey === "gpt54" && (storedNoteMode === "streaming" || storedNoteMode === "non-streaming")) {
+            initialMode = storedNoteMode;
           }
         } else {
           initialProvider = baseKey;
@@ -1653,8 +1720,9 @@
 
       function getEffectiveNoteProvider(provider, model, mode) {
         if (provider !== "openai") return provider;
-        const isGpt5x = model === "gpt5" || model === "gpt52";
-        if (!isGpt5x) return model;
+        const isLegacyDualFileGpt5x = model === "gpt5" || model === "gpt52";
+        if (model === "gpt54") return "gpt54";
+        if (!isLegacyDualFileGpt5x) return model;
         return mode === "non-streaming" ? `${model}-ns` : model;
       }
 
@@ -1701,7 +1769,8 @@
         const isOpenAi = provider === "openai";
         const isGpt51 = isOpenAi && model === "gpt5";
         const isGpt52 = isOpenAi && model === "gpt52";
-        const isGpt5x = isGpt51 || isGpt52;
+        const isGpt54 = isOpenAi && model === "gpt54";
+        const isGpt5x = isGpt51 || isGpt52 || isGpt54;
 
         const isGemini3 = provider === "gemini3"; // public Gemini 3 API only
         const isVertex = provider === "gemini3-vertex"; // Google Vertex backend
@@ -1802,15 +1871,17 @@
       const costEl = () => document.getElementById("noteUsageCost");
       const nfInt = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
       // ---- Step 4: Pricing tables + cost calculation (start with OpenAI Standard pricing) ----
-      // Prices are USD per 1M tokens (Standard, non-cached input).
+      // Prices are USD per 1M tokens (Standard pricing; cached-input discounts not applied here).
       // Source: OpenAI pricing docs (update here if rates change).
       const OPENAI_USD_PER_MTOK = {
         "gpt-5.1": { input: 1.25, output: 10.0 },
         "gpt-5.2": { input: 1.75, output: 14.0 },
+        "gpt-5.4": { input: 2.5, output: 15.0 },
         "chatgpt-4o-latest": { input: 5.0, output: 15.0 },
         // common alias variants (defensive; your code should prefer lowercase IDs)
         "GPT-5.1": { input: 1.25, output: 10.0 },
         "GPT-5.2": { input: 1.75, output: 14.0 },
+        "GPT-5.4": { input: 2.5, output: 15.0 },
       };
       // AWS Bedrock (Claude) — USD per 1M tokens
       // NOTE: 4.6 rates are set equal to 4.5 here for now; update if/when AWS pricing differs.
@@ -2759,6 +2830,7 @@ if (guideClose) {
       const next = String(slot || "");
       if (!next || promptSlotSelect.value === next) return;
       promptSlotSelect.value = next;
+      persistCurrentSelectedSlot();
       promptSlotSelect.dispatchEvent(new Event("change", { bubbles: true }));
     }
 
@@ -2778,31 +2850,30 @@ if (guideClose) {
       return `prompt_slot_names::${getPromptProfileIdSafe()}`;
     }
 
-    function getSelectedPromptSlotStorageKey() {
+    function getSelectedSlotStorageKey() {
       return `prompt_selected_slot::${getPromptProfileIdSafe()}`;
     }
 
-    function saveSelectedPromptSlot(slot) {
+    function loadPersistedSelectedSlot() {
       try {
-        localStorage.setItem(getSelectedPromptSlotStorageKey(), String(slot || ""));
-      } catch {}
-    }
-
-    function getStoredSelectedPromptSlot() {
-      try {
-        return String(localStorage.getItem(getSelectedPromptSlotStorageKey()) || "").trim();
+        return (localStorage.getItem(getSelectedSlotStorageKey()) || "").trim();
       } catch {
         return "";
       }
     }
 
-    function restoreSelectedPromptSlot() {
+    function persistCurrentSelectedSlot() {
+      const slot = getCurrentSlot();
+      try { localStorage.setItem(getSelectedSlotStorageKey(), slot); } catch {}
+    }
+
+    function restorePersistedSelectedSlot() {
       if (!promptSlotSelect) return;
-      const stored = getStoredSelectedPromptSlot();
-      if (!stored) return;
-      const available = getAvailableSlots();
-      if (!available.includes(stored)) return;
-      promptSlotSelect.value = stored;
+      const persisted = loadPersistedSelectedSlot();
+      if (!persisted) return;
+      const allowed = new Set(getAvailableSlots());
+      if (!allowed.has(String(persisted))) return;
+      promptSlotSelect.value = String(persisted);
     }
 
     function loadSlotNames() {
@@ -2952,6 +3023,7 @@ if (guideClose) {
             promptSlotSelect.value = from;
           }
 
+          persistCurrentSelectedSlot();
           reloadCurrentPromptSlot();
           syncNameInputForCurrentSlot();
           renderPromptSlotTrigger();
@@ -3059,14 +3131,16 @@ if (guideClose) {
         try { localStorage.setItem("prompt_profile_id", entered); } catch {}
       }
       renderPromptProfileLabel();
-      restoreSelectedPromptSlot();
+      restorePersistedSelectedSlot();
       reloadCurrentPromptSlot();
+      persistCurrentSelectedSlot();
       renderPromptSlotTrigger();
       renderPromptSlotPopover();
       syncNameInputForCurrentSlot();
       return entered;
     }
 
+    restorePersistedSelectedSlot();
     renderPromptProfileLabel();
     renderPromptSlotTrigger();
     renderPromptSlotPopover();
@@ -3108,7 +3182,7 @@ if (guideClose) {
       let isLoadingPrompt = false;
 
       function loadCurrentSlot() {
-        saveSelectedPromptSlot(promptSlotSelect.value);
+        persistCurrentSelectedSlot();
         isLoadingPrompt = true;
         PromptManager.loadPrompt(promptSlotSelect.value);
         isLoadingPrompt = false;
@@ -3117,7 +3191,6 @@ if (guideClose) {
         renderPromptSlotPopover();
       }
 
-      restoreSelectedPromptSlot();
       loadCurrentSlot();
 
       customPromptTextarea.addEventListener("input", () => {
@@ -3573,6 +3646,7 @@ if (guideClose) {
   </script>
 </body>
 </html>
+
 
 
 

@@ -706,6 +706,205 @@
       background: #f7f7f7;
       z-index: 1;
     }
+
+    /* Prompt slot custom dropdown / popover */
+    .prompt-slot-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      position: relative;
+    }
+    .prompt-slot-picker {
+      position: relative;
+      flex: 0 0 auto;
+      width: fit-content;
+      min-width: 0;
+    }
+    .prompt-slot-native-select {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      width: 1px;
+      height: 1px;
+    }
+    .prompt-slot-trigger {
+      width: auto;
+      min-width: 56px;
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 10px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      background: #fff;
+      color: #222;
+      cursor: pointer;
+      box-sizing: border-box;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .prompt-slot-trigger:hover,
+    .prompt-slot-trigger:focus-visible {
+      border-color: #b8c8c3;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(85, 170, 153, 0.12);
+    }
+    .prompt-slot-trigger-main {
+      min-width: 0;
+      display: block;
+      line-height: 1;
+      text-align: left;
+    }
+    .prompt-slot-trigger-slot {
+      font-size: 14px;
+      color: #3f4a46;
+    }
+    .prompt-slot-trigger-name {
+      display: none;
+    }
+    .prompt-slot-trigger-caret {
+      font-size: 13px;
+      color: #5f6b67;
+      flex: 0 0 auto;
+    }
+    .prompt-slot-picker.is-open .prompt-slot-trigger {
+      border-color: #9fbab2;
+      box-shadow: 0 0 0 3px rgba(85, 170, 153, 0.14);
+    }
+    .prompt-slot-popover {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      width: min(340px, calc(100vw - 48px));
+      overflow: visible;
+      background: #fff;
+      border: 1px solid #d7e1dd;
+      border-radius: 14px;
+      box-shadow: 0 14px 28px rgba(0,0,0,0.14);
+      z-index: 1200;
+    }
+    .prompt-slot-popover.opens-up {
+      top: auto;
+      bottom: calc(100% + 6px);
+    }
+    .prompt-slot-popover-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px 7px;
+      border-bottom: 1px solid #eef3f1;
+      font-size: 12px;
+      color: #60706a;
+      background: #fcfdfd;
+    }
+    .prompt-slot-popover-hint {
+      white-space: nowrap;
+    }
+    .prompt-slot-list {
+      overflow: visible;
+      padding: 4px;
+    }
+    .prompt-slot-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 0;
+      margin: 0;
+      border-radius: 10px;
+    }
+    .prompt-slot-item + .prompt-slot-item {
+      margin-top: 2px;
+    }
+    .prompt-slot-item.is-active {
+      background: rgba(85, 170, 153, 0.09);
+    }
+    .prompt-slot-item.is-drag-over {
+      background: rgba(85, 170, 153, 0.16);
+      outline: 1px dashed rgba(85, 170, 153, 0.55);
+      outline-offset: -1px;
+    }
+    .prompt-slot-item-button {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      color: inherit;
+      border-radius: 10px;
+    }
+    .prompt-slot-item-button:hover,
+    .prompt-slot-item-button:focus-visible {
+      outline: none;
+      background: rgba(85, 170, 153, 0.08);
+    }
+    .prompt-slot-item-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      width: 100%;
+    }
+    .prompt-slot-badge {
+      flex: 0 0 auto;
+      min-width: 24px;
+      color: #5f6b67;
+      font-size: 12px;
+      text-align: left;
+    }
+    .prompt-slot-item-name {
+      min-width: 0;
+      font-size: 13px;
+      color: #1f2a27;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .prompt-slot-drag-handle {
+      flex: 0 0 auto;
+      margin-right: 4px;
+      border: 0;
+      background: transparent;
+      color: #71807b;
+      cursor: grab;
+      padding: 6px 7px;
+      border-radius: 8px;
+      font-size: 15px;
+      line-height: 1;
+    }
+    .prompt-slot-drag-handle:hover,
+    .prompt-slot-drag-handle:focus-visible {
+      outline: none;
+      background: #f3f7f5;
+      color: #49655d;
+    }
+    .prompt-slot-drag-handle:active {
+      cursor: grabbing;
+    }
+    .prompt-slot-item.is-dragging {
+      opacity: 0.55;
+    }
+    @media (max-width: 720px) {
+      .prompt-slot-row {
+        flex-wrap: wrap;
+      }
+      .prompt-slot-picker {
+        min-width: 100%;
+      }
+      .prompt-slot-popover {
+        width: 100%;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1081,40 +1280,71 @@
             </div>
           </div>
 
-          <div style="display:flex; align-items: baseline; gap: 8px; margin-bottom: 6px;">
-            <select
-              id="promptSlot"
-              aria-label="Prompt slot"
-              style="
-                width: 30px;
-                min-width: 30px;
-                flex: 0 0 auto;
-              "
-            >
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-              <option value="9">9</option>
-              <option value="10">10</option>
-              <option value="11">11</option>
-              <option value="12">12</option>
-              <option value="13">13</option>
-              <option value="14">14</option>
-              <option value="15">15</option>
-              <option value="16">16</option>
-              <option value="17">17</option>
-              <option value="18">18</option>
-              <option value="19">19</option>
-              <option value="20">20</option>
-              
-            </select>
+          <div class="prompt-slot-row">
+            <div class="prompt-slot-picker" id="promptSlotPicker">
+              <select
+                id="promptSlot"
+                aria-label="Prompt slot"
+                class="prompt-slot-native-select"
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+                <option value="13">13</option>
+                <option value="14">14</option>
+                <option value="15">15</option>
+                <option value="16">16</option>
+                <option value="17">17</option>
+                <option value="18">18</option>
+                <option value="19">19</option>
+                <option value="20">20</option>
+              </select>
 
-            <!-- Per-slot name (stored locally; shown in dropdown as "N - Name") -->
+              <button
+                id="promptSlotTrigger"
+                type="button"
+                class="prompt-slot-trigger"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-controls="promptSlotPopover"
+              >
+                <span class="prompt-slot-trigger-main">
+                  <span id="promptSlotTriggerSlot" class="prompt-slot-trigger-slot">1.</span>
+                  <span id="promptSlotTriggerName" class="prompt-slot-trigger-name"></span>
+                </span>
+                <span class="prompt-slot-trigger-caret" aria-hidden="true">▾</span>
+              </button>
+
+              <div
+                id="promptSlotPopover"
+                class="prompt-slot-popover"
+                role="dialog"
+                aria-label="Prompt slots"
+                hidden
+              >
+                <div class="prompt-slot-popover-header">
+                  <span>Prompt slots</span>
+                  <span class="prompt-slot-popover-hint">Drag handle to reorder</span>
+                </div>
+                <div
+                  id="promptSlotList"
+                  class="prompt-slot-list"
+                  role="listbox"
+                  aria-label="Prompt slots"
+                ></div>
+              </div>
+            </div>
+
+            <!-- Per-slot name (stored locally; shown in slot picker) -->
             <input
               id="promptSlotName"
               type="text"
@@ -2499,83 +2729,44 @@ if (guideClose) {
     import { PromptManager } from "./js/promptManager.js";
 
     const promptSlotSelect = document.getElementById("promptSlot");
+    const promptSlotPicker = document.getElementById("promptSlotPicker");
+    const promptSlotTrigger = document.getElementById("promptSlotTrigger");
+    const promptSlotTriggerSlot = document.getElementById("promptSlotTriggerSlot");
+    const promptSlotTriggerName = document.getElementById("promptSlotTriggerName");
+    const promptSlotPopover = document.getElementById("promptSlotPopover");
+    const promptSlotList = document.getElementById("promptSlotList");
     const customPromptTextarea = document.getElementById("customPrompt");
     const clearPromptButton = document.getElementById("clearPromptButton");
     const copyPromptButton = document.getElementById("copyPromptButton");
     const promptSlotNameInput = document.getElementById("promptSlotName");
 
-    const COLLAPSED_PROMPT_SLOT_WIDTH_PX = 39; // fits up to "20"
-
-    function setPromptSlotCollapsedWidth() {
-      if (!promptSlotSelect) return;
-      promptSlotSelect.style.width = `${COLLAPSED_PROMPT_SLOT_WIDTH_PX}px`;
-      promptSlotSelect.style.minWidth = `${COLLAPSED_PROMPT_SLOT_WIDTH_PX}px`;
-    }
-
-    // While the dropdown is open/expanded, hide the name input to prevent layout "push"
-    // (so Copy/Clear don't jump right). Restore when it collapses.
-    const _promptSlotNameOriginalDisplay =
-      promptSlotNameInput ? (promptSlotNameInput.style.display || "") : "";
-
-    function hidePromptSlotNameInputTemporarily() {
-      if (!promptSlotNameInput) return;
-      promptSlotNameInput.style.display = "none";
-    }
-
-    function showPromptSlotNameInputAgain() {
-      if (!promptSlotNameInput) return;
-      promptSlotNameInput.style.display = _promptSlotNameOriginalDisplay;
-    }
-
-    function measureTextWidthPx(text, font) {
-      const canvas = measureTextWidthPx._canvas || (measureTextWidthPx._canvas = document.createElement("canvas"));
-      const ctx = canvas.getContext("2d");
-      ctx.font = font;
-      return ctx.measureText(text).width;
-    }
-
-    function setPromptSlotExpandedWidthToLongestLabel() {
-      if (!promptSlotSelect) return;
-
-      // Use computed font to match how the <select> actually renders.
-      const cs = window.getComputedStyle(promptSlotSelect);
-      const font = cs.font || `${cs.fontSize} ${cs.fontFamily}`;
-
-      // Find the longest visible label among options.
-      let maxTextWidth = 0;
-      for (const opt of Array.from(promptSlotSelect.options)) {
-        const label = (opt.textContent || "").trim();
-        if (!label) continue;
-        const w = measureTextWidthPx(label, font);
-        if (w > maxTextWidth) maxTextWidth = w;
-      }
-
-      // Add room for padding + arrow affordance (varies by OS/browser).
-      // This is intentionally generous to avoid truncation.
-      const EXTRA_UI_PX = 48;
-      const expanded = Math.ceil(maxTextWidth + EXTRA_UI_PX);
-      const px = Math.max(expanded, COLLAPSED_PROMPT_SLOT_WIDTH_PX);
-
-      promptSlotSelect.style.width = `${px}px`;
-      promptSlotSelect.style.minWidth = `${px}px`;
-    }
-
-
-    // New: prompt profile UI elements
     const promptProfileValue = document.getElementById("promptProfileValue");
     const promptExportBtn = document.getElementById("promptExportBtn");
     const promptImportBtn = document.getElementById("promptImportBtn");
     const promptImportFile = document.getElementById("promptImportFile");
 
-    // We'll re-use the same loader that the slot UI uses (defined below).
-    // We create a safe wrapper here so we can call it after profile changes.
+    function getAvailableSlots() {
+      if (!promptSlotSelect) return [];
+      return Array.from(promptSlotSelect.options).map((opt) => String(opt.value || "")).filter(Boolean);
+    }
+
+    function getCurrentSlot() {
+      return String(promptSlotSelect?.value || getAvailableSlots()[0] || "1");
+    }
+
+    function setCurrentSlotValue(slot) {
+      if (!promptSlotSelect) return;
+      const next = String(slot || "");
+      if (!next || promptSlotSelect.value === next) return;
+      promptSlotSelect.value = next;
+      promptSlotSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
     function reloadCurrentPromptSlot() {
       if (!promptSlotSelect || !customPromptTextarea) return;
-      // PromptManager.loadPrompt updates #customPrompt itself in your current codebase.
       PromptManager.loadPrompt(promptSlotSelect.value);
     }
 
-    // -------- Prompt Slot Names (local, per profile) --------
     function getPromptProfileIdSafe() {
       const pid = (typeof PromptManager.getPromptProfileId === "function")
         ? (PromptManager.getPromptProfileId() || "").trim()
@@ -2585,6 +2776,33 @@ if (guideClose) {
 
     function getSlotNamesStorageKey() {
       return `prompt_slot_names::${getPromptProfileIdSafe()}`;
+    }
+
+    function getSelectedPromptSlotStorageKey() {
+      return `prompt_selected_slot::${getPromptProfileIdSafe()}`;
+    }
+
+    function saveSelectedPromptSlot(slot) {
+      try {
+        localStorage.setItem(getSelectedPromptSlotStorageKey(), String(slot || ""));
+      } catch {}
+    }
+
+    function getStoredSelectedPromptSlot() {
+      try {
+        return String(localStorage.getItem(getSelectedPromptSlotStorageKey()) || "").trim();
+      } catch {
+        return "";
+      }
+    }
+
+    function restoreSelectedPromptSlot() {
+      if (!promptSlotSelect) return;
+      const stored = getStoredSelectedPromptSlot();
+      if (!stored) return;
+      const available = getAvailableSlots();
+      if (!available.includes(stored)) return;
+      promptSlotSelect.value = stored;
     }
 
     function loadSlotNames() {
@@ -2601,30 +2819,206 @@ if (guideClose) {
       try { localStorage.setItem(getSlotNamesStorageKey(), JSON.stringify(map || {})); } catch {}
     }
 
-    function buildFullLabel(slot, name) {
-      const n = (name || "").trim();
-      return n ? `${slot} - ${n}` : `${slot}`;
+    function getSlotDisplayName(slot, names = loadSlotNames()) {
+      const name = (names[String(slot)] || "").trim();
+      return name || "";
     }
 
-    // Native <select> can’t show one label when closed and a different label when open,
-    // so we do a lightweight trick:
-    // - When opening (focus/pointerdown): show full labels ("N - Name")
-    // - When closing (blur) or after change: restore selected option to short label ("N")
-    function renderSlotOptionLabels({ mode } = { mode: "full" }) {
-      if (!promptSlotSelect) return;
-      const names = loadSlotNames();
-      const selected = String(promptSlotSelect.value || "");
-      Array.from(promptSlotSelect.options).forEach((opt) => {
-        const slot = String(opt.value || "");
-        const full = buildFullLabel(slot, names[slot]);
-        opt.dataset.fullLabel = full;
-        opt.dataset.shortLabel = slot;
-        if (mode === "shortSelected") {
-          opt.textContent = (slot === selected) ? slot : full;
-        } else {
-          opt.textContent = full;
+    function renderPromptSlotTrigger() {
+      if (!promptSlotTrigger || !promptSlotTriggerSlot || !promptSlotTriggerName) return;
+      const slot = getCurrentSlot();
+      promptSlotTriggerSlot.textContent = `${slot}.`;
+      promptSlotTriggerName.textContent = "";
+      promptSlotTrigger.title = `Slot ${slot}`;
+    }
+
+    function clearDragOverState() {
+      if (!promptSlotList) return;
+      promptSlotList.querySelectorAll(".prompt-slot-item.is-drag-over").forEach((el) => {
+        el.classList.remove("is-drag-over");
+      });
+      promptSlotList.querySelectorAll(".prompt-slot-item.is-dragging").forEach((el) => {
+        el.classList.remove("is-dragging");
+      });
+    }
+
+    let dragIntentSlot = "";
+    let dragSourceSlot = "";
+
+    function buildPromptSlotItem(slot, names, activeSlot) {
+      const isActive = String(slot) === String(activeSlot);
+      const row = document.createElement("div");
+      row.className = `prompt-slot-item${isActive ? " is-active" : ""}`;
+      row.dataset.slot = String(slot);
+      row.setAttribute("role", "option");
+      row.setAttribute("aria-selected", isActive ? "true" : "false");
+      row.draggable = true;
+
+      const selectButton = document.createElement("button");
+      selectButton.type = "button";
+      selectButton.className = "prompt-slot-item-button";
+      selectButton.dataset.slot = String(slot);
+      selectButton.setAttribute("aria-label", `Select slot ${slot}`);
+
+      const title = document.createElement("span");
+      title.className = "prompt-slot-item-title";
+
+      const badge = document.createElement("span");
+      badge.className = "prompt-slot-badge";
+      badge.textContent = `${slot}.`;
+
+      const name = document.createElement("span");
+      name.className = "prompt-slot-item-name";
+      name.textContent = getSlotDisplayName(slot, names);
+
+      title.appendChild(badge);
+      title.appendChild(name);
+
+      selectButton.appendChild(title);
+
+      const dragHandle = document.createElement("button");
+      dragHandle.type = "button";
+      dragHandle.className = "prompt-slot-drag-handle";
+      dragHandle.dataset.slot = String(slot);
+      dragHandle.dataset.slotDragHandle = "true";
+      dragHandle.setAttribute("aria-label", `Drag slot ${slot} to reorder`);
+      dragHandle.title = "Drag to reorder";
+      dragHandle.textContent = "⋮⋮";
+
+      dragHandle.addEventListener("pointerdown", () => {
+        dragIntentSlot = String(slot);
+      });
+      dragHandle.addEventListener("keydown", (e) => {
+        if (e.key === " " || e.key === "Enter") {
+          dragIntentSlot = String(slot);
         }
       });
+
+      row.appendChild(selectButton);
+      row.appendChild(dragHandle);
+
+      selectButton.addEventListener("click", () => {
+        setCurrentSlotValue(slot);
+        closePromptSlotPopover();
+        promptSlotTrigger?.focus();
+      });
+
+      row.addEventListener("dragstart", (e) => {
+        if (dragIntentSlot !== String(slot)) {
+          e.preventDefault();
+          return;
+        }
+        dragSourceSlot = String(slot);
+        row.classList.add("is-dragging");
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", String(slot));
+        }
+      });
+
+      row.addEventListener("dragover", (e) => {
+        if (!dragSourceSlot || dragSourceSlot === String(slot)) return;
+        e.preventDefault();
+        row.classList.add("is-drag-over");
+      });
+
+      row.addEventListener("dragleave", () => {
+        row.classList.remove("is-drag-over");
+      });
+
+      row.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        row.classList.remove("is-drag-over");
+        const from = dragSourceSlot;
+        const to = String(slot);
+        dragSourceSlot = "";
+        dragIntentSlot = "";
+        clearDragOverState();
+
+        if (!from || !to || from === to) return;
+
+        if (typeof PromptManager.reorderPromptSlots !== "function") {
+          console.warn("PromptManager.reorderPromptSlots is not available yet.");
+          return;
+        }
+
+        try {
+          await PromptManager.reorderPromptSlots(from, to);
+
+          const current = getCurrentSlot();
+          if (current === from) {
+            promptSlotSelect.value = to;
+          } else if (current === to) {
+            promptSlotSelect.value = from;
+          }
+
+          reloadCurrentPromptSlot();
+          syncNameInputForCurrentSlot();
+          renderPromptSlotTrigger();
+          renderPromptSlotPopover();
+        } catch (err) {
+          console.warn("Prompt slot reorder failed:", err);
+        }
+      });
+
+      row.addEventListener("dragend", () => {
+        dragSourceSlot = "";
+        dragIntentSlot = "";
+        clearDragOverState();
+      });
+
+      return row;
+    }
+
+    function renderPromptSlotPopover() {
+      if (!promptSlotList) return;
+      const names = loadSlotNames();
+      const activeSlot = getCurrentSlot();
+      promptSlotList.innerHTML = "";
+      getAvailableSlots().forEach((slot) => {
+        promptSlotList.appendChild(buildPromptSlotItem(slot, names, activeSlot));
+      });
+    }
+
+    function updatePromptSlotPopoverPlacement() {
+      if (!promptSlotPopover || !promptSlotTrigger || promptSlotPopover.hidden) return;
+
+      promptSlotPopover.classList.remove("opens-up");
+
+      const triggerRect = promptSlotTrigger.getBoundingClientRect();
+      const popoverRect = promptSlotPopover.getBoundingClientRect();
+      const margin = 12;
+      const spaceBelow = window.innerHeight - triggerRect.bottom - margin;
+      const spaceAbove = triggerRect.top - margin;
+      const needsUpward = spaceBelow < popoverRect.height && spaceAbove > spaceBelow;
+
+      promptSlotPopover.classList.toggle("opens-up", needsUpward);
+    }
+
+    function openPromptSlotPopover() {
+      if (!promptSlotPopover || !promptSlotPicker || !promptSlotTrigger) return;
+      renderPromptSlotPopover();
+      renderPromptSlotTrigger();
+      promptSlotPopover.hidden = false;
+      promptSlotPicker.classList.add("is-open");
+      promptSlotTrigger.setAttribute("aria-expanded", "true");
+      updatePromptSlotPopoverPlacement();
+    }
+
+    function closePromptSlotPopover() {
+      if (!promptSlotPopover || !promptSlotPicker || !promptSlotTrigger) return;
+      promptSlotPopover.hidden = true;
+      promptSlotPicker.classList.remove("is-open");
+      promptSlotTrigger.setAttribute("aria-expanded", "false");
+      clearDragOverState();
+      dragIntentSlot = "";
+      dragSourceSlot = "";
+    }
+
+    function togglePromptSlotPopover() {
+      if (!promptSlotPopover) return;
+      if (promptSlotPopover.hidden) openPromptSlotPopover();
+      else closePromptSlotPopover();
     }
 
     function syncNameInputForCurrentSlot() {
@@ -2633,7 +3027,6 @@ if (guideClose) {
       const slot = String(promptSlotSelect.value || "");
       promptSlotNameInput.value = (names[slot] || "");
     }
-
 
     function renderPromptProfileLabel() {
       if (!promptProfileValue) return;
@@ -2649,9 +3042,13 @@ if (guideClose) {
         : ((localStorage.getItem("prompt_profile_id") || "").trim());
       if (existing && !allowChange) return existing;
 
-      const currentHint = existing ? `Current: ${existing}\n\n` : "";
+      const currentHint = existing ? `Current: ${existing}
+
+` : "";
       const entered = (window.prompt(
-        `${currentHint}Set a Prompt profile ID (e.g. "David", "David1"):\n\n(Stored on this device)`,
+        `${currentHint}Set a Prompt profile ID (e.g. "David", "David1"):
+
+(Stored on this device)`,
         existing || ""
       ) || "").trim();
       if (!entered) return "";
@@ -2662,38 +3059,67 @@ if (guideClose) {
         try { localStorage.setItem("prompt_profile_id", entered); } catch {}
       }
       renderPromptProfileLabel();
-      // Important: switching profiles changes the namespace; reload the visible slot.
+      restoreSelectedPromptSlot();
       reloadCurrentPromptSlot();
-      // Profile affects slot-name namespace too
-      renderSlotOptionLabels({ mode: "shortSelected" });
+      renderPromptSlotTrigger();
+      renderPromptSlotPopover();
       syncNameInputForCurrentSlot();
       return entered;
     }
 
-    // Initial render
     renderPromptProfileLabel();
-    renderSlotOptionLabels({ mode: "shortSelected" });
+    renderPromptSlotTrigger();
+    renderPromptSlotPopover();
     syncNameInputForCurrentSlot();
-    setPromptSlotCollapsedWidth();
+    closePromptSlotPopover();
+
+    if (promptSlotTrigger) {
+      promptSlotTrigger.addEventListener("click", () => {
+        togglePromptSlotPopover();
+      });
+    }
+
+    document.addEventListener("pointerdown", (e) => {
+      if (!promptSlotPicker || !promptSlotPopover || promptSlotPopover.hidden) return;
+      if (promptSlotPicker.contains(e.target)) return;
+      closePromptSlotPopover();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && promptSlotPopover && !promptSlotPopover.hidden) {
+        closePromptSlotPopover();
+        promptSlotTrigger?.focus();
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      if (promptSlotPopover && !promptSlotPopover.hidden) {
+        updatePromptSlotPopoverPlacement();
+      }
+    });
+
+    window.addEventListener("scroll", () => {
+      if (promptSlotPopover && !promptSlotPopover.hidden) {
+        updatePromptSlotPopoverPlacement();
+      }
+    }, true);
 
     if (promptSlotSelect && customPromptTextarea) {
       let isLoadingPrompt = false;
 
       function loadCurrentSlot() {
+        saveSelectedPromptSlot(promptSlotSelect.value);
         isLoadingPrompt = true;
         PromptManager.loadPrompt(promptSlotSelect.value);
         isLoadingPrompt = false;
         syncNameInputForCurrentSlot();
-        // After changing slots, keep the collapsed view showing just the number.
-        renderSlotOptionLabels({ mode: "shortSelected" });
-        setPromptSlotCollapsedWidth();
-        showPromptSlotNameInputAgain();
+        renderPromptSlotTrigger();
+        renderPromptSlotPopover();
       }
 
-      // Initial load
+      restoreSelectedPromptSlot();
       loadCurrentSlot();
 
-      // Save on user input
       customPromptTextarea.addEventListener("input", () => {
         if (isLoadingPrompt) return;
         PromptManager.savePrompt(promptSlotSelect.value, customPromptTextarea.value);
@@ -2701,88 +3127,9 @@ if (guideClose) {
         customPromptTextarea.style.height = customPromptTextarea.scrollHeight + "px";
       });
 
-      // Load new prompt on slot change
       promptSlotSelect.addEventListener("change", loadCurrentSlot);
-      function restorePromptSlotUiCollapsed() {
-        renderSlotOptionLabels({ mode: "shortSelected" });
-        setPromptSlotCollapsedWidth();
-        showPromptSlotNameInputAgain();
-      }
-
-      // When opening the dropdown: hide name input, show full labels, expand width.
-      // Also: restore after the user finishes selection (covers "same value" case too).
-      let _awaitingSelectionClose = false;
-      let _seenFirstPointerUp = false;
-      let _closeListener = null;
-
-      function armRestoreAfterSelection() {
-        // Avoid stacking listeners
-        if (_closeListener) return;
-        _awaitingSelectionClose = true;
-        _seenFirstPointerUp = false;
-
-        _closeListener = () => {
-          // First pointerup is usually the "open" click release → ignore it.
-          if (!_seenFirstPointerUp) {
-            _seenFirstPointerUp = true;
-            return;
-          }
-          // Second pointerup usually occurs when user clicks an option → restore UI.
-          _awaitingSelectionClose = false;
-          window.removeEventListener("pointerup", _closeListener, true);
-          _closeListener = null;
-          // Let the browser apply the selection first.
-          setTimeout(() => {
-            restorePromptSlotUiCollapsed();
-            syncNameInputForCurrentSlot();
-          }, 0);
-        };
-
-        window.addEventListener("pointerup", _closeListener, true);
-
-        // Safety: if something odd happens, fall back — BUT do not collapse while the
-        // native <select> is still focused (dropdown may still be open).
-        const SAFETY_WAIT_MS = 4000;
-        const tickSafety = () => {
-          if (!_awaitingSelectionClose) return;
-
-          // If the user is still interacting (select still focused), keep waiting.
-          if (document.activeElement === promptSlotSelect) {
-            setTimeout(tickSafety, SAFETY_WAIT_MS);
-            return;
-          }
-
-          _awaitingSelectionClose = false;
-          if (_closeListener) {
-            window.removeEventListener("pointerup", _closeListener, true);
-            _closeListener = null;
-          }
-          restorePromptSlotUiCollapsed();
-          syncNameInputForCurrentSlot();
-        };
-        setTimeout(tickSafety, SAFETY_WAIT_MS);
-      }
-
-      promptSlotSelect.addEventListener("pointerdown", () => {
-        hidePromptSlotNameInputTemporarily();
-        renderSlotOptionLabels({ mode: "full" });
-        setPromptSlotExpandedWidthToLongestLabel();
-        armRestoreAfterSelection();
-      });
-      promptSlotSelect.addEventListener("focus", () => {
-        hidePromptSlotNameInputTemporarily();
-        renderSlotOptionLabels({ mode: "full" });
-        setPromptSlotExpandedWidthToLongestLabel();
-        armRestoreAfterSelection();
-      });
-
-      // When closing it via blur, restore immediately (still useful on many browsers).
-      promptSlotSelect.addEventListener("blur", () => {
-        restorePromptSlotUiCollapsed();
-      });
     }
 
-    // Save name on blur or Enter (per slot, per profile)
     if (promptSlotNameInput && promptSlotSelect) {
       const commitName = () => {
         const slot = String(promptSlotSelect.value || "");
@@ -2790,31 +3137,28 @@ if (guideClose) {
         const names = loadSlotNames();
         if (name) names[slot] = name; else delete names[slot];
         saveSlotNames(names);
-        renderSlotOptionLabels({ mode: "shortSelected" });
-        // Names affect the longest label, but keep collapsed state tiny.
-        setPromptSlotCollapsedWidth();
+        renderPromptSlotTrigger();
+        renderPromptSlotPopover();
       };
 
       promptSlotNameInput.addEventListener("blur", commitName);
       promptSlotNameInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
-          promptSlotNameInput.blur(); // triggers commitName
+          promptSlotNameInput.blur();
         }
       });
     }
-    // Clear button: clears prompt textarea AND saves empty value to the current slot
+
     if (clearPromptButton && promptSlotSelect && customPromptTextarea) {
       clearPromptButton.addEventListener("click", () => {
         customPromptTextarea.value = "";
         PromptManager.savePrompt(promptSlotSelect.value, "");
-        // keep your auto-resize behavior consistent
         customPromptTextarea.style.height = "auto";
         customPromptTextarea.style.height = customPromptTextarea.scrollHeight + "px";
       });
     }
 
-    // Copy button: copies current prompt textarea contents
     if (copyPromptButton && customPromptTextarea) {
       const originalLabel = copyPromptButton.textContent;
       copyPromptButton.addEventListener("click", async () => {
@@ -2825,7 +3169,6 @@ if (guideClose) {
           copyPromptButton.textContent = "Copied";
           setTimeout(() => { copyPromptButton.textContent = originalLabel; }, 1200);
         } catch (err) {
-          // Fallback for older browsers / blocked clipboard permissions
           try {
             customPromptTextarea.focus();
             customPromptTextarea.select();
@@ -2841,7 +3184,6 @@ if (guideClose) {
       });
     }
 
-    // Optional: allow clicking the profile value to change it quickly
     if (promptProfileValue) {
       promptProfileValue.style.cursor = "pointer";
       promptProfileValue.title = "Click to set/change prompt profile";
@@ -2850,17 +3192,13 @@ if (guideClose) {
       });
     }
 
-
-    // Wire Import/Export buttons (safe now; real logic added in later steps)
     if (promptExportBtn) {
       promptExportBtn.addEventListener("click", () => {
         const pid = ensurePromptProfileId();
         if (!pid) return;
-        // Will be implemented in later steps
         if (typeof PromptManager.exportPromptsToFile === "function") {
           PromptManager.exportPromptsToFile();
         } else {
-          // No-op for now; keeps UX clear during incremental implementation
           console.warn("Export not implemented yet (PromptManager.exportPromptsToFile missing).");
         }
       });
@@ -2877,15 +3215,11 @@ if (guideClose) {
       promptImportFile.addEventListener("change", async () => {
         const file = promptImportFile.files && promptImportFile.files[0];
         if (!file) return;
-        // Will be implemented in later steps
         if (typeof PromptManager.importPromptsFromFile === "function") {
           await PromptManager.importPromptsFromFile(file);
-          // After import, refresh visible slot prompt text
           reloadCurrentPromptSlot();
-
-          // IMPORTANT: Immediately refresh label UI from localStorage.
-          // This ensures old JSON (no slotNames) clears labels *visibly* without page refresh.
-          renderSlotOptionLabels({ mode: "shortSelected" });
+          renderPromptSlotTrigger();
+          renderPromptSlotPopover();
           syncNameInputForCurrentSlot();
         } else {
           console.warn("Import not implemented yet (PromptManager.importPromptsFromFile missing).");

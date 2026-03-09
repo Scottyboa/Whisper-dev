@@ -809,7 +809,7 @@ Dette er eksempler som fungerer godt, men du står fritt til å tilpasse dem sli
   redactorToggleShow: "Vis redactor",
   redactorToggleHide: "Skjul redactor",
   redactorTitle: "Redactor",
-  redactorHelp: "Legg til ett begrep per linje. Både generelle og spesifikke begreper brukes når du klikker Redact. Generelle begreper beholdes så lenge denne fanen er åpen, men tømmes når fanen lukkes.",
+  redactorHelp: "Legg til ett begrep per linje. Både generelle og spesifikke begreper brukes når du klikker Redact, som da vil fjerne disse begrepene fra diktat- og supplerende informasjon- innholded. Generelle begreper beholdes så lenge denne fanen er åpen, men tømmes når fanen lukkes.",
   redactorOcrSectionTitle: "Skjermbilde → OCR",
   redactorOcrMiniHelp: "Bruk Windows + Shift + S, og klikk deretter Paste image. Du kan også trykke Ctrl + V mens bildefeltet er fokusert, eller laste opp en bildefil.",
   redactorPasteImageButton: "Paste image",

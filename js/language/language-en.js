@@ -775,6 +775,47 @@ The letter must have a professional and formal tone. You may improve the wording
 
 These are examples that work well, but feel free to adapt them to your documentation style, specialty, and type of consultation. You can also create entirely custom prompts for any purpose you wish.
 `,
+
+  // Redactor
+  showRedactor: "Show redactor",
+  hideRedactor: "Hide redactor",
+  redactorTitle: "Redactor",
+  redactorHelp: "Add one term per line. Both General and Specific terms are used when you click Redact. General terms stay available while this tab is open, but are cleared when the tab is closed.",
+  redactorGeneralTermsLabel: "General terms",
+  redactorGeneralTermsPlaceholder: "General terms, 1 per line",
+  redactorSpecificTermsLabel: "Specific terms",
+  redactorSpecificTermsPlaceholder: "Specific terms, 1 per line",
+  redactorButton: "Redact",
+  redactorBirthdateHelperLabel: "Birthdate helper",
+  redactorBirthdateHelperPlaceholder: "e.g. 01011990",
+  redactorAddDatesButton: "Add dates",
+  redactorClearGeneralButton: "Clear general",
+  redactorClearSpecificButton: "Clear specific",
+  redactorImportGeneralButton: "Import General.txt",
+  redactorExportGeneralButton: "Export General.txt",
+  redactorOcrTitle: "OCR helper (paste/upload image)",
+  redactorOcrHelp: "Use Windows + Shift + S, then click Paste image. You can also press Ctrl + V while the image area is focused, or upload an image file.",
+  redactorPasteImageButton: "Paste image",
+  redactorUploadImageButton: "Upload image",
+  redactorClearImageButton: "Clear image",
+  redactorFetchOcrSpecificButton: "Fetch OCR → Specific",
+  redactorFetchOcrRawButton: "Fetch OCR → Raw text",
+  redactorImageAlt: "Pasted screenshot preview",
+  redactorImagePlaceholder: "No image loaded yet. Paste a screenshot here or upload an image.",
+  redactorRawTextLabel: "OCR raw text",
+  redactorRawTextPlaceholder: "Raw OCR text will appear here…",
+  redactorCopyRawButton: "Copy raw",
+  redactorClearRawButton: "Clear raw",
+
+  // Redactor runtime messages
+  redactorStatusGeneralCleared: "General terms cleared.",
+  redactorStatusSpecificCleared: "Specific terms and birthdate cleared.",
+  redactorStatusAddTermsFirst: "Add at least one General or Specific term to redact.",
+  redactorStatusRawCopied: "Raw text copied to clipboard.",
+  redactorStatusNoImage: "No image to OCR. Paste or upload one first.",
+  redactorStatusOcrRunning: "OCR running…",
+  redactorStatusOcrLoading: "OCR is loading language data…",
+  redactorStatusOcrStarting: "OCR is starting…",
 };
 
 export default { indexTranslations, transcribeTranslations };

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1483,21 +1482,21 @@
             aria-hidden="true"
           >
             <div class="redactor-header">
-              <div class="redactor-title">Redactor</div>
+              <div class="redactor-title" id="redactorTitle">Redactor</div>
             </div>
-            <div class="redactor-help">
+            <div class="redactor-help" id="redactorHelp">
               Add one term per line. General and specific terms are both used when you click Redact. General terms stay while this tab remains open, but clear when the tab is closed.
             </div>
 
             <div class="redactor-section">
-              <div class="redactor-section-title">Screenshot → OCR</div>
-              <div class="redactor-mini-help">
+              <div class="redactor-section-title" id="redactorOcrSectionTitle">Screenshot → OCR</div>
+              <div class="redactor-mini-help" id="redactorOcrMiniHelp">
                 Use Windows + Shift + S, then click <strong>Paste image</strong>. You can also press <strong>Ctrl + V</strong> while the image frame is focused, or upload an image file.
               </div>
               <div class="redactor-image-toolbar">
                 <button id="pasteRedactorImageButton" type="button" class="redactor-button">Paste image</button>
-                <label class="redactor-file-button" for="redactorImageUpload">
-                  Upload image
+                <label class="redactor-file-button" for="redactorImageUpload" id="redactorImageUploadLabel">
+                  <span id="redactorImageUploadLabelText">Upload image</span>
                   <input id="redactorImageUpload" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,image/gif" />
                 </label>
                 <button id="clearRedactorImageButton" type="button" class="redactor-button">Clear image</button>
@@ -1515,11 +1514,11 @@
             <div class="redactor-section">
               <div class="redactor-fields-grid">
                 <div class="redactor-field-group">
-                  <label for="redactorGeneralTerms">General terms</label>
+                  <label for="redactorGeneralTerms" id="redactorGeneralTermsLabel">General terms</label>
                   <textarea
                     id="redactorGeneralTerms"
                     class="compact"
-                    placeholder="General terms (one per line)&#10;f.eks. sykehus&#10;Navn"
+                    placeholder="General terms (one per line)&#10;e.g. hospital&#10;Name"
                   ></textarea>
                   <div class="redactor-inline-actions">
                     <button id="uploadGeneralTermsButton" type="button" class="redactor-button">Import General.txt</button>
@@ -1530,7 +1529,7 @@
                 </div>
 
                 <div class="redactor-field-group">
-                  <label for="redactorTerms">Specific terms</label>
+                  <label for="redactorTerms" id="redactorSpecificTermsLabel">Specific terms</label>
                   <textarea
                     id="redactorTerms"
                     class="large"
@@ -1544,7 +1543,7 @@
               </div>
 
               <div class="redactor-field-group" style="margin-top: 12px;">
-                <label for="redactorOcrRawOutput">OCR raw text</label>
+                <label for="redactorOcrRawOutput" id="redactorOcrRawOutputLabel">OCR raw text</label>
                 <textarea
                   id="redactorOcrRawOutput"
                   class="compact"
@@ -1557,14 +1556,14 @@
               </div>
 
               <div style="margin-top: 12px;">
-                <div class="redactor-birthdate-label">Birthdate helper</div>
+                <div class="redactor-birthdate-label" id="redactorBirthdateLabel">Birthdate helper</div>
                 <div class="redactor-birthdate-row">
                   <input
                     id="redactorBirthdateInput"
                     type="text"
                     inputmode="numeric"
                     maxlength="10"
-                    placeholder="DDMMYY, f.eks. 180289"
+                    placeholder="DDMMYY, e.g. 180289"
                   />
                   <button id="addBirthdateFormatsButton" type="button" class="redactor-button">Add dates</button>
                 </div>
@@ -3071,6 +3070,274 @@ if (guideClose) {
     const copyRedactorRawOutputButton = document.getElementById('copyRedactorRawOutputButton');
     const clearRedactorRawOutputButton = document.getElementById('clearRedactorRawOutputButton');
 
+    const REDACTOR_STRINGS = {
+      en: {
+        showRedactor: 'Show redactor',
+        hideRedactor: 'Hide redactor',
+        title: 'Redactor',
+        help: 'Add one term per line. General and specific terms are both used when you click Redact. General terms stay while this tab remains open, but clear when the tab is closed.',
+        ocrSectionTitle: 'Screenshot → OCR',
+        ocrMiniHelpHtml: 'Use Windows + Shift + S, then click <strong>Paste image</strong>. You can also press <strong>Ctrl + V</strong> while the image frame is focused, or upload an image file.',
+        pasteImage: 'Paste image',
+        uploadImage: 'Upload image',
+        clearImage: 'Clear image',
+        fetchOcrSpecific: 'Fetch OCR → Specific',
+        fetchOcrRaw: 'Fetch OCR → Raw text',
+        fetching: 'Fetching…',
+        imageFrameAriaLabel: 'OCR image preview. Paste an image here with Ctrl plus V.',
+        imagePreviewAlt: 'OCR screenshot preview',
+        imagePlaceholder: 'No image loaded yet. Paste a screenshot here or upload an image.',
+        generalTermsLabel: 'General terms',
+        generalTermsPlaceholder: 'General terms (one per line)\ne.g. hospital\nName',
+        importGeneral: 'Import General.txt',
+        exportGeneral: 'Export General.txt',
+        clearGeneral: 'Clear general',
+        specificTermsLabel: 'Specific terms',
+        specificTermsPlaceholder: 'Specific terms (one per line)\nOla Nordmann\n12345678',
+        clearSpecific: 'Clear specific',
+        redact: 'Redact',
+        rawOutputLabel: 'OCR raw text',
+        rawOutputPlaceholder: 'Raw OCR text appears here without formatting or cleanup. Useful when you just want to copy the transcription.',
+        copyRaw: 'Copy raw',
+        clearRaw: 'Clear raw',
+        birthdateLabel: 'Birthdate helper',
+        birthdatePlaceholder: 'DDMMYY, e.g. 180289',
+        addDates: 'Add dates',
+        messages: {
+          specificTermsNormalized: 'Specific terms cleaned and normalized.',
+          imagePastedReady: 'Image pasted and ready for OCR.',
+          noImageForOcr: 'No image to OCR. Paste or upload one first.',
+          tesseractLoadFailed: 'Tesseract.js failed to load in this browser tab.',
+          ocrRunning: ({ progress }) => `OCR running… ${progress}%`,
+          ocrLoadingLanguageData: 'OCR is loading language data…',
+          ocrStarting: 'OCR is starting…',
+          noTextDetected: 'No text was detected in the image.',
+          rawOcrComplete: ({ usedLanguage }) => `Raw OCR complete (${usedLanguage}) → text placed in Raw text.`,
+          ocrError: ({ errorMessage }) => `OCR error: ${errorMessage}`,
+          noSpecificTermsProduced: 'OCR finished, but no usable Specific terms were produced.',
+          noNewUniqueTerms: ({ usedLanguage }) => `OCR finished (${usedLanguage}), but no new unique terms were added.`,
+          ocrCompleteAddedSpecific: ({ usedLanguage, addedCount }) => `OCR complete (${usedLanguage}) → added ${addedCount} term${addedCount === 1 ? '' : 's'} to Specific.`,
+          ocrCompleteAddedSpecificBirthdate: ({ usedLanguage, addedCount, detectedBirthdate }) => `OCR complete (${usedLanguage}) → added ${addedCount} term${addedCount === 1 ? '' : 's'} to Specific. Birthdate field auto-filled with ${detectedBirthdate}.`,
+          redactedTerms: ({ termCount }) => `Redacted ${termCount} term${termCount === 1 ? '' : 's'} in Transcript and Supplementary information.`,
+          noMatchingText: 'No matching text was found in Transcript or Supplementary information.',
+          clipboardReadImageFailed: ({ errorMessage }) => errorMessage || 'Could not read an image from the clipboard.',
+          generalTermsCleared: 'General terms cleared.',
+          specificTermsCleared: 'Specific terms and birthdate cleared.',
+          loadedGeneralFile: ({ fileName }) => `Loaded ${fileName} into General terms.`,
+          couldNotReadFile: ({ fileName, errorMessage }) => `Could not read ${fileName}: ${errorMessage}`,
+          savedGeneralSelectedLocation: 'Saved General.txt to the selected location.',
+          savedGeneralDownloadFlow: 'Saved General.txt with the browser download flow.',
+          saveCanceled: 'Save canceled.',
+          couldNotExportGeneral: ({ errorMessage }) => `Could not export General.txt: ${errorMessage}`,
+          addAtLeastOneTerm: 'Add at least one General or Specific term to redact.',
+          invalidBirthdate: 'Enter a valid 6-digit birthdate in DDMMYY format, for example 180289.',
+          birthdateAlreadyPresent: 'Those birthdate formats are already in Specific terms.',
+          addedBirthdateFormats: ({ addedCount }) => `Added ${addedCount} birthdate format${addedCount === 1 ? '' : 's'} to Specific.`,
+          clipboardNoImage: 'No image was found in the clipboard. Use Windows + Shift + S first, then try again.',
+          loadedImage: ({ fileName }) => `Loaded image: ${fileName}`,
+          imageCleared: 'Image cleared.',
+          rawTextEmpty: 'Raw text is empty.',
+          rawTextCopied: 'Raw text copied to clipboard.',
+          rawTextCopyFailed: 'Could not copy raw text in this browser tab.',
+          rawTextCleared: 'Raw text cleared.',
+          pasteFromClipboardHint: 'Paste from clipboard with Ctrl + V, or use the Paste image button.',
+        },
+      },
+      no: {
+        showRedactor: 'Vis redactor',
+        hideRedactor: 'Skjul redactor',
+        title: 'Redactor',
+        help: 'Legg til ett begrep per linje. Både generelle og spesifikke begreper brukes når du klikker Sladd. Generelle begreper beholdes så lenge denne fanen er åpen, men tømmes når fanen lukkes.',
+        ocrSectionTitle: 'Skjermbilde → OCR',
+        ocrMiniHelpHtml: 'Bruk Windows + Shift + S, og klikk deretter <strong>Lim inn bilde</strong>. Du kan også trykke <strong>Ctrl + V</strong> mens bildefeltet er fokusert, eller laste opp en bildefil.',
+        pasteImage: 'Lim inn bilde',
+        uploadImage: 'Last opp bilde',
+        clearImage: 'Tøm bilde',
+        fetchOcrSpecific: 'Hent OCR → Spesifikke',
+        fetchOcrRaw: 'Hent OCR → Råtekst',
+        fetching: 'Henter…',
+        imageFrameAriaLabel: 'Forhåndsvisning av OCR-bilde. Lim inn et bilde her med Ctrl pluss V.',
+        imagePreviewAlt: 'Forhåndsvisning av OCR-skjermbilde',
+        imagePlaceholder: 'Intet bilde lastet inn ennå. Lim inn et skjermbilde her eller last opp et bilde.',
+        generalTermsLabel: 'Generelle begreper',
+        generalTermsPlaceholder: 'Generelle begreper (ett per linje)\nf.eks. sykehus\nNavn',
+        importGeneral: 'Importer General.txt',
+        exportGeneral: 'Eksporter General.txt',
+        clearGeneral: 'Tøm generelle',
+        specificTermsLabel: 'Spesifikke begreper',
+        specificTermsPlaceholder: 'Spesifikke begreper (ett per linje)\nOla Nordmann\n12345678',
+        clearSpecific: 'Tøm spesifikke',
+        redact: 'Sladd',
+        rawOutputLabel: 'OCR-råtekst',
+        rawOutputPlaceholder: 'Rå OCR-tekst vises her uten formatering eller opprydding. Nyttig når du bare vil kopiere transkripsjonen.',
+        copyRaw: 'Kopier råtekst',
+        clearRaw: 'Tøm råtekst',
+        birthdateLabel: 'Fødselsdatohjelper',
+        birthdatePlaceholder: 'DDMMYY, f.eks. 180289',
+        addDates: 'Legg til datoer',
+        messages: {
+          specificTermsNormalized: 'Spesifikke begreper ble renset og normalisert.',
+          imagePastedReady: 'Bildet er limt inn og klart for OCR.',
+          noImageForOcr: 'Ingen bilde å kjøre OCR på. Lim inn eller last opp et bilde først.',
+          tesseractLoadFailed: 'Tesseract.js kunne ikke lastes i denne nettleserfanen.',
+          ocrRunning: ({ progress }) => `OCR kjører… ${progress}%`,
+          ocrLoadingLanguageData: 'OCR laster språkdata…',
+          ocrStarting: 'OCR starter…',
+          noTextDetected: 'Ingen tekst ble oppdaget i bildet.',
+          rawOcrComplete: ({ usedLanguage }) => `Rå-OCR fullført (${usedLanguage}) → tekst lagt inn i råtekst.`,
+          ocrError: ({ errorMessage }) => `OCR-feil: ${errorMessage}`,
+          noSpecificTermsProduced: 'OCR ble fullført, men ga ingen brukbare spesifikke begreper.',
+          noNewUniqueTerms: ({ usedLanguage }) => `OCR ble fullført (${usedLanguage}), men ingen nye unike begreper ble lagt til.`,
+          ocrCompleteAddedSpecific: ({ usedLanguage, addedCount }) => `OCR fullført (${usedLanguage}) → la til ${addedCount} begrep${addedCount === 1 ? '' : 'er'} i Spesifikke begreper.`,
+          ocrCompleteAddedSpecificBirthdate: ({ usedLanguage, addedCount, detectedBirthdate }) => `OCR fullført (${usedLanguage}) → la til ${addedCount} begrep${addedCount === 1 ? '' : 'er'} i Spesifikke begreper. Fødselsdatofeltet ble fylt ut automatisk med ${detectedBirthdate}.`,
+          redactedTerms: ({ termCount }) => `Sladdet ${termCount} begrep${termCount === 1 ? '' : 'er'} i Transkripsjon og Tilleggsinformasjon.`,
+          noMatchingText: 'Fant ingen treff i Transkripsjon eller Tilleggsinformasjon.',
+          clipboardReadImageFailed: ({ errorMessage }) => errorMessage || 'Kunne ikke lese et bilde fra utklippstavlen.',
+          generalTermsCleared: 'Generelle begreper tømt.',
+          specificTermsCleared: 'Spesifikke begreper og fødselsdato tømt.',
+          loadedGeneralFile: ({ fileName }) => `${fileName} ble lastet inn i Generelle begreper.`,
+          couldNotReadFile: ({ fileName, errorMessage }) => `Kunne ikke lese ${fileName}: ${errorMessage}`,
+          savedGeneralSelectedLocation: 'General.txt ble lagret på valgt plassering.',
+          savedGeneralDownloadFlow: 'General.txt ble lagret via nettleserens nedlastingsflyt.',
+          saveCanceled: 'Lagring avbrutt.',
+          couldNotExportGeneral: ({ errorMessage }) => `Kunne ikke eksportere General.txt: ${errorMessage}`,
+          addAtLeastOneTerm: 'Legg til minst ett generelt eller spesifikt begrep som skal sladdes.',
+          invalidBirthdate: 'Skriv inn en gyldig 6-sifret fødselsdato i DDMMYY-format, for eksempel 180289.',
+          birthdateAlreadyPresent: 'Disse fødselsdatoformatene finnes allerede i Spesifikke begreper.',
+          addedBirthdateFormats: ({ addedCount }) => `La til ${addedCount} fødselsdatoformat${addedCount === 1 ? '' : 'er'} i Spesifikke begreper.`,
+          clipboardNoImage: 'Fant ikke noe bilde i utklippstavlen. Bruk Windows + Shift + S først, og prøv igjen.',
+          loadedImage: ({ fileName }) => `Bilde lastet inn: ${fileName}`,
+          imageCleared: 'Bildet ble tømt.',
+          rawTextEmpty: 'Råtekstfeltet er tomt.',
+          rawTextCopied: 'Råtekst kopiert til utklippstavlen.',
+          rawTextCopyFailed: 'Kunne ikke kopiere råtekst i denne nettleserfanen.',
+          rawTextCleared: 'Råtekst tømt.',
+          pasteFromClipboardHint: 'Lim inn fra utklippstavlen med Ctrl + V, eller bruk knappen Lim inn bilde.',
+        },
+      },
+    };
+
+    const getRedactorLanguage = () => {
+      const langSelect = document.getElementById('lang-select-transcribe');
+      const lang = (langSelect && langSelect.value) || localStorage.getItem('siteLanguage') || 'en';
+      return lang === 'no' ? 'no' : 'en';
+    };
+
+    const getRedactorStrings = () => REDACTOR_STRINGS[getRedactorLanguage()] || REDACTOR_STRINGS.en;
+
+    const getRedactorMessage = (key, params = {}) => {
+      const message = getRedactorStrings().messages?.[key];
+      if (typeof message === 'function') return message(params);
+      return message || '';
+    };
+
+    const applyRedactorTranslations = () => {
+      const strings = getRedactorStrings();
+      const isOpen = Boolean(!redactorPane?.hidden);
+
+      if (toggleRedactorButton) {
+        toggleRedactorButton.textContent = isOpen ? strings.hideRedactor : strings.showRedactor;
+      }
+      if (document.getElementById('redactorTitle')) {
+        document.getElementById('redactorTitle').textContent = strings.title;
+      }
+      if (document.getElementById('redactorHelp')) {
+        document.getElementById('redactorHelp').textContent = strings.help;
+      }
+      if (document.getElementById('redactorOcrSectionTitle')) {
+        document.getElementById('redactorOcrSectionTitle').textContent = strings.ocrSectionTitle;
+      }
+      if (document.getElementById('redactorOcrMiniHelp')) {
+        document.getElementById('redactorOcrMiniHelp').innerHTML = strings.ocrMiniHelpHtml;
+      }
+      if (pasteRedactorImageButton) {
+        pasteRedactorImageButton.textContent = strings.pasteImage;
+      }
+      if (document.getElementById('redactorImageUploadLabelText')) {
+        document.getElementById('redactorImageUploadLabelText').textContent = strings.uploadImage;
+      }
+      if (clearRedactorImageButton) {
+        clearRedactorImageButton.textContent = strings.clearImage;
+      }
+      if (fetchRedactorImageTextButton && !fetchRedactorImageTextButton.disabled) {
+        fetchRedactorImageTextButton.textContent = strings.fetchOcrSpecific;
+      }
+      if (fetchRedactorRawTextButton && !fetchRedactorRawTextButton.disabled) {
+        fetchRedactorRawTextButton.textContent = strings.fetchOcrRaw;
+      }
+      if (redactorImageFrame) {
+        redactorImageFrame.setAttribute('aria-label', strings.imageFrameAriaLabel);
+      }
+      if (redactorImagePreview) {
+        redactorImagePreview.alt = strings.imagePreviewAlt;
+      }
+      if (redactorImagePlaceholder) {
+        redactorImagePlaceholder.textContent = strings.imagePlaceholder;
+      }
+      if (document.getElementById('redactorGeneralTermsLabel')) {
+        document.getElementById('redactorGeneralTermsLabel').textContent = strings.generalTermsLabel;
+      }
+      if (generalTermsEl) {
+        generalTermsEl.placeholder = strings.generalTermsPlaceholder;
+      }
+      if (uploadGeneralTermsButton) {
+        uploadGeneralTermsButton.textContent = strings.importGeneral;
+      }
+      if (exportGeneralTermsButton) {
+        exportGeneralTermsButton.textContent = strings.exportGeneral;
+      }
+      if (clearGeneralTermsButton) {
+        clearGeneralTermsButton.textContent = strings.clearGeneral;
+      }
+      if (document.getElementById('redactorSpecificTermsLabel')) {
+        document.getElementById('redactorSpecificTermsLabel').textContent = strings.specificTermsLabel;
+      }
+      if (redactorTermsEl) {
+        redactorTermsEl.placeholder = strings.specificTermsPlaceholder;
+      }
+      if (clearRedactorButton) {
+        clearRedactorButton.textContent = strings.clearSpecific;
+      }
+      if (applyRedactionButton) {
+        applyRedactionButton.textContent = strings.redact;
+      }
+      if (document.getElementById('redactorOcrRawOutputLabel')) {
+        document.getElementById('redactorOcrRawOutputLabel').textContent = strings.rawOutputLabel;
+      }
+      if (ocrRawOutputEl) {
+        ocrRawOutputEl.placeholder = strings.rawOutputPlaceholder;
+      }
+      if (copyRedactorRawOutputButton) {
+        copyRedactorRawOutputButton.textContent = strings.copyRaw;
+      }
+      if (clearRedactorRawOutputButton) {
+        clearRedactorRawOutputButton.textContent = strings.clearRaw;
+      }
+      if (document.getElementById('redactorBirthdateLabel')) {
+        document.getElementById('redactorBirthdateLabel').textContent = strings.birthdateLabel;
+      }
+      if (birthdateInputEl) {
+        birthdateInputEl.placeholder = strings.birthdatePlaceholder;
+      }
+      if (addBirthdateFormatsButton) {
+        addBirthdateFormatsButton.textContent = strings.addDates;
+      }
+
+      if (typeof refreshRedactorStatusText === 'function') {
+        refreshRedactorStatusText();
+      }
+    };
+
+    const redactorLangSelect = document.getElementById('lang-select-transcribe');
+    if (redactorLangSelect) {
+      redactorLangSelect.addEventListener('change', () => {
+        requestAnimationFrame(() => {
+          applyRedactorTranslations();
+        });
+      });
+    }
+
+
     captureDefaultHeight(transcriptionEl);
     captureDefaultHeight(supplementaryInfoEl);
     captureDefaultHeight(generalTermsEl);
@@ -3105,10 +3372,42 @@ if (guideClose) {
       } catch (_) {}
     };
 
-    const setRedactorStatus = (message, isError = false) => {
+    const setRedactorStatus = (message, isError = false, { statusKey = '', statusParams = null } = {}) => {
       if (!redactorStatus) return;
       redactorStatus.textContent = message || '';
       redactorStatus.classList.toggle('is-error', Boolean(isError));
+
+      if (statusKey) {
+        redactorStatus.dataset.statusKey = statusKey;
+        redactorStatus.dataset.statusParams = JSON.stringify(statusParams || {});
+      } else {
+        delete redactorStatus.dataset.statusKey;
+        delete redactorStatus.dataset.statusParams;
+      }
+    };
+
+    const setRedactorStatusByKey = (statusKey, statusParams = {}, isError = false) => {
+      setRedactorStatus(getRedactorMessage(statusKey, statusParams), isError, { statusKey, statusParams });
+    };
+
+    const refreshRedactorStatusText = () => {
+      if (!redactorStatus?.dataset?.statusKey) return;
+
+      let statusParams = {};
+      try {
+        statusParams = JSON.parse(redactorStatus.dataset.statusParams || '{}');
+      } catch (_) {
+        statusParams = {};
+      }
+
+      setRedactorStatus(
+        getRedactorMessage(redactorStatus.dataset.statusKey, statusParams),
+        redactorStatus.classList.contains('is-error'),
+        {
+          statusKey: redactorStatus.dataset.statusKey,
+          statusParams,
+        }
+      );
     };
 
     const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -3402,7 +3701,7 @@ if (guideClose) {
         if (cleaned !== (redactorTermsEl.value || '')) {
           redactorTermsEl.value = cleaned;
           persistRedactorTextState();
-          setRedactorStatus('Specific terms cleaned and normalized.');
+          setRedactorStatusByKey('specificTermsNormalized');
         }
       });
 
@@ -3502,7 +3801,7 @@ if (guideClose) {
       supplementaryRedactorLayout.classList.toggle('redactor-open', Boolean(isOpen));
       redactorPane.hidden = !isOpen;
       redactorPane.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
-      toggleRedactorButton.textContent = isOpen ? 'Hide redactor' : 'Show redactor';
+      toggleRedactorButton.textContent = isOpen ? getRedactorStrings().hideRedactor : getRedactorStrings().showRedactor;
       toggleRedactorButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 
       if (persist) {
@@ -3519,6 +3818,8 @@ if (guideClose) {
       } catch (_) {}
       setRedactorOpen(shouldOpen, { persist: false });
     })();
+
+    applyRedactorTranslations();
 
     const exportTextFile = async (filename, content) => {
       const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -3668,7 +3969,7 @@ if (guideClose) {
 
       event.preventDefault();
       setOcrImage(file);
-      setRedactorStatus('Image pasted and ready for OCR.');
+      setRedactorStatusByKey('imagePastedReady');
       return true;
     };
 
@@ -3697,48 +3998,48 @@ if (guideClose) {
 
     const runRawOcrOnCurrentImage = async () => {
       if (!currentOcrImageBlob) {
-        setRedactorStatus('No image to OCR. Paste or upload one first.', true);
+        setRedactorStatusByKey('noImageForOcr', {}, true);
         return;
       }
 
       if (!window.Tesseract) {
-        setRedactorStatus('Tesseract.js failed to load in this browser tab.', true);
+        setRedactorStatusByKey('tesseractLoadFailed', {}, true);
         return;
       }
 
       const logger = (message) => {
         if (!message || !message.status) return;
         if (message.status === 'recognizing text' && typeof message.progress === 'number') {
-          setRedactorStatus(`OCR running… ${Math.round(message.progress * 100)}%`);
+          setRedactorStatusByKey('ocrRunning', { progress: Math.round(message.progress * 100) });
           return;
         }
         if (message.status === 'loading language traineddata') {
-          setRedactorStatus('OCR is loading language data…');
+          setRedactorStatusByKey('ocrLoadingLanguageData');
           return;
         }
         if (message.status === 'initializing tesseract') {
-          setRedactorStatus('OCR is starting…');
+          setRedactorStatusByKey('ocrStarting');
         }
       };
 
-      const originalLabel = fetchRedactorRawTextButton?.textContent || 'Fetch OCR → Raw text';
+      const originalLabel = fetchRedactorRawTextButton?.textContent || getRedactorStrings().fetchOcrRaw;
       if (fetchRedactorRawTextButton) {
         fetchRedactorRawTextButton.disabled = true;
-        fetchRedactorRawTextButton.textContent = 'Fetching…';
+        fetchRedactorRawTextButton.textContent = getRedactorStrings().fetching;
       }
 
       try {
         const { recognizedText, usedLanguage } = await runTesseractOnCurrentImage({ logger });
 
         if (!recognizedText) {
-          setRedactorStatus('No text was detected in the image.', true);
+          setRedactorStatusByKey('noTextDetected', {}, true);
           return;
         }
 
         setRawOcrOutput(recognizedText);
-        setRedactorStatus(`Raw OCR complete (${usedLanguage}) → text placed in Raw text.`);
+        setRedactorStatusByKey('rawOcrComplete', { usedLanguage });
       } catch (error) {
-        setRedactorStatus(`OCR error: ${error?.message || error}`, true);
+        setRedactorStatusByKey('ocrError', { errorMessage: error?.message || error }, true);
       } finally {
         if (fetchRedactorRawTextButton) {
           fetchRedactorRawTextButton.disabled = false;
@@ -3749,41 +4050,41 @@ if (guideClose) {
 
     const runOcrOnCurrentImage = async () => {
       if (!currentOcrImageBlob) {
-        setRedactorStatus('No image to OCR. Paste or upload one first.', true);
+        setRedactorStatusByKey('noImageForOcr', {}, true);
         return;
       }
 
       if (!window.Tesseract) {
-        setRedactorStatus('Tesseract.js failed to load in this browser tab.', true);
+        setRedactorStatusByKey('tesseractLoadFailed', {}, true);
         return;
       }
 
       const logger = (message) => {
         if (!message || !message.status) return;
         if (message.status === 'recognizing text' && typeof message.progress === 'number') {
-          setRedactorStatus(`OCR running… ${Math.round(message.progress * 100)}%`);
+          setRedactorStatusByKey('ocrRunning', { progress: Math.round(message.progress * 100) });
           return;
         }
         if (message.status === 'loading language traineddata') {
-          setRedactorStatus('OCR is loading language data…');
+          setRedactorStatusByKey('ocrLoadingLanguageData');
           return;
         }
         if (message.status === 'initializing tesseract') {
-          setRedactorStatus('OCR is starting…');
+          setRedactorStatusByKey('ocrStarting');
         }
       };
 
-      const originalLabel = fetchRedactorImageTextButton?.textContent || 'Fetch OCR → Specific';
+      const originalLabel = fetchRedactorImageTextButton?.textContent || getRedactorStrings().fetchOcrSpecific;
       if (fetchRedactorImageTextButton) {
         fetchRedactorImageTextButton.disabled = true;
-        fetchRedactorImageTextButton.textContent = 'Fetching…';
+        fetchRedactorImageTextButton.textContent = getRedactorStrings().fetching;
       }
 
       try {
         const { recognizedText, usedLanguage } = await runTesseractOnCurrentImage({ logger });
 
         if (!recognizedText) {
-          setRedactorStatus('No text was detected in the image.', true);
+          setRedactorStatusByKey('noTextDetected', {}, true);
           return;
         }
 
@@ -3796,7 +4097,7 @@ if (guideClose) {
         });
 
         if (!finalText.trim()) {
-          setRedactorStatus('OCR finished, but no usable Specific terms were produced.', true);
+          setRedactorStatusByKey('noSpecificTermsProduced', {}, true);
           return;
         }
 
@@ -3823,17 +4124,16 @@ if (guideClose) {
 
         const addedCount = Math.max(0, afterCount - beforeCount);
         if (!addedCount) {
-          setRedactorStatus(`OCR finished (${usedLanguage}), but no new unique terms were added.`);
+          setRedactorStatusByKey('noNewUniqueTerms', { usedLanguage });
           return;
         }
 
-        setRedactorStatus(
-          detectedBirthdate
-            ? `OCR complete (${usedLanguage}) → added ${addedCount} term${addedCount === 1 ? '' : 's'} to Specific. Birthdate field auto-filled with ${detectedBirthdate}.`
-            : `OCR complete (${usedLanguage}) → added ${addedCount} term${addedCount === 1 ? '' : 's'} to Specific.`
+        setRedactorStatusByKey(
+          detectedBirthdate ? 'ocrCompleteAddedSpecificBirthdate' : 'ocrCompleteAddedSpecific',
+          detectedBirthdate ? { usedLanguage, addedCount, detectedBirthdate } : { usedLanguage, addedCount }
         );
       } catch (error) {
-        setRedactorStatus(`OCR error: ${error?.message || error}`, true);
+        setRedactorStatusByKey('ocrError', { errorMessage: error?.message || error }, true);
       } finally {
         if (fetchRedactorImageTextButton) {
           fetchRedactorImageTextButton.disabled = false;
@@ -3892,7 +4192,7 @@ if (guideClose) {
           resetTextareaToDefault(generalTermsEl);
           persistRedactorTextState();
         }
-        setRedactorStatus('General terms cleared.');
+        setRedactorStatusByKey('generalTermsCleared');
       });
     }
 
@@ -3905,7 +4205,7 @@ if (guideClose) {
           birthdateInputEl.value = '';
         }
         persistRedactorTextState();
-        setRedactorStatus('Specific terms and birthdate cleared.');
+        setRedactorStatusByKey('specificTermsCleared');
       });
     }
 
@@ -3926,9 +4226,9 @@ if (guideClose) {
             generalTermsEl.value = normalizeNewlines(text).trim();
             persistRedactorTextState();
           }
-          setRedactorStatus(`Loaded ${file.name} into General terms.`);
+          setRedactorStatusByKey('loadedGeneralFile', { fileName: file.name });
         } catch (error) {
-          setRedactorStatus(`Could not read ${file.name}: ${error?.message || error}`, true);
+          setRedactorStatusByKey('couldNotReadFile', { fileName: file.name, errorMessage: error?.message || error }, true);
         } finally {
           generalTermsFileInput.value = '';
         }
@@ -3942,16 +4242,16 @@ if (guideClose) {
         try {
           const result = await exportTextFile('General.txt', content);
           if (result?.method === 'picker') {
-            setRedactorStatus('Saved General.txt to the selected location.');
+            setRedactorStatusByKey('savedGeneralSelectedLocation');
           } else {
-            setRedactorStatus('Saved General.txt with the browser download flow.');
+            setRedactorStatusByKey('savedGeneralDownloadFlow');
           }
         } catch (error) {
           if (error && error.name === 'AbortError') {
-            setRedactorStatus('Save canceled.');
+            setRedactorStatusByKey('saveCanceled');
             return;
           }
-          setRedactorStatus(`Could not export General.txt: ${error?.message || error}`, true);
+          setRedactorStatusByKey('couldNotExportGeneral', { errorMessage: error?.message || error }, true);
         }
       });
     }
@@ -3960,7 +4260,7 @@ if (guideClose) {
       applyRedactionButton.addEventListener('click', () => {
         const terms = getRedactorTerms();
         if (!terms.length) {
-          setRedactorStatus('Add at least one General or Specific term to redact.', true);
+          setRedactorStatusByKey('addAtLeastOneTerm', {}, true);
           (redactorTermsEl || generalTermsEl)?.focus();
           return;
         }
@@ -3979,10 +4279,9 @@ if (guideClose) {
           replacedAny = replacedAny || result.replacedAny;
         }
 
-        setRedactorStatus(
-          replacedAny
-            ? `Redacted ${terms.length} term${terms.length === 1 ? '' : 's'} in Transcript and Supplementary information.`
-            : 'No matching text was found in Transcript or Supplementary information.'
+        setRedactorStatusByKey(
+          replacedAny ? 'redactedTerms' : 'noMatchingText',
+          replacedAny ? { termCount: terms.length } : {}
         );
       });
     }
@@ -3991,18 +4290,18 @@ if (guideClose) {
       addBirthdateFormatsButton.addEventListener('click', () => {
         const variants = expandBirthdateFormats(birthdateInputEl?.value || '');
         if (!variants.length) {
-          setRedactorStatus('Enter a valid 6-digit birthdate in DDMMYY format, for example 180289.', true);
+          setRedactorStatusByKey('invalidBirthdate', {}, true);
           birthdateInputEl?.focus();
           return;
         }
 
         const addedCount = appendUniqueLines(redactorTermsEl, variants.join('\n'));
         if (!addedCount) {
-          setRedactorStatus('Those birthdate formats are already in Specific terms.');
+          setRedactorStatusByKey('birthdateAlreadyPresent');
           return;
         }
 
-        setRedactorStatus(`Added ${addedCount} birthdate format${addedCount === 1 ? '' : 's'} to Specific.`);
+        setRedactorStatusByKey('addedBirthdateFormats', { addedCount });
       });
     }
 
@@ -4011,13 +4310,13 @@ if (guideClose) {
         try {
           const blob = await readClipboardImage();
           if (!blob) {
-            setRedactorStatus('No image was found in the clipboard. Use Windows + Shift + S first, then try again.', true);
+            setRedactorStatusByKey('clipboardNoImage', {}, true);
             return;
           }
           setOcrImage(blob);
-          setRedactorStatus('Image pasted and ready for OCR.');
+          setRedactorStatusByKey('imagePastedReady');
         } catch (error) {
-          setRedactorStatus(error?.message || 'Could not read an image from the clipboard.', true);
+          setRedactorStatusByKey('clipboardReadImageFailed', { errorMessage: error?.message || 'Could not read an image from the clipboard.' }, true);
         }
       });
     }
@@ -4027,7 +4326,7 @@ if (guideClose) {
         const file = redactorImageUpload.files && redactorImageUpload.files[0];
         if (!file) return;
         setOcrImage(file);
-        setRedactorStatus(`Loaded image: ${file.name}`);
+        setRedactorStatusByKey('loadedImage', { fileName: file.name });
         redactorImageUpload.value = '';
       });
     }
@@ -4035,7 +4334,7 @@ if (guideClose) {
     if (clearRedactorImageButton) {
       clearRedactorImageButton.addEventListener('click', () => {
         setOcrImage(null);
-        setRedactorStatus('Image cleared.');
+        setRedactorStatusByKey('imageCleared');
       });
     }
 
@@ -4051,14 +4350,14 @@ if (guideClose) {
       copyRedactorRawOutputButton.addEventListener('click', async () => {
         const rawText = ocrRawOutputEl?.value || '';
         if (!rawText.trim()) {
-          setRedactorStatus('Raw text is empty.', true);
+          setRedactorStatusByKey('rawTextEmpty', {}, true);
           return;
         }
         try {
           await navigator.clipboard.writeText(rawText);
-          setRedactorStatus('Raw text copied to clipboard.');
+          setRedactorStatusByKey('rawTextCopied');
         } catch (error) {
-          setRedactorStatus('Could not copy raw text in this browser tab.', true);
+          setRedactorStatusByKey('rawTextCopyFailed', {}, true);
         }
       });
     }
@@ -4068,7 +4367,7 @@ if (guideClose) {
         if (!ocrRawOutputEl) return;
         resetTextareaToDefault(ocrRawOutputEl);
         persistRedactorTextState();
-        setRedactorStatus('Raw text cleared.');
+        setRedactorStatusByKey('rawTextCleared');
       });
     }
 
@@ -4089,7 +4388,7 @@ if (guideClose) {
       });
       redactorImageFrame.addEventListener('keydown', async (event) => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
-          setRedactorStatus('Paste from clipboard with Ctrl + V, or use the Paste image button.');
+          setRedactorStatusByKey('pasteFromClipboardHint');
         }
       });
     }
@@ -5043,16 +5342,3 @@ if (guideClose) {
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-

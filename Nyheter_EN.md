@@ -1,3 +1,33 @@
+## 9 March, 2026
+
+### New redaction tools added to the Transcribe page
+
+A new **Redactor** module has now been added to the Transcribe page. This tool makes it easier to remove or mask sensitive information before further use of the transcript or extracted text.
+
+The Redactor supports both **general terms** and **specific terms**:
+- **General terms** can be reused while the tab remains open
+- **Specific terms** can be added for one-off redaction tasks
+- A built-in **birthdate helper** is also included to make it easier to add date-related sensitive information
+
+When you click **Redact**, the tool will scan the transcript and apply redaction based on the terms you have entered.
+
+### OCR support in the Redactor
+
+The Redactor module also includes a built-in **OCR** function for extracting text from screenshots or image files.
+
+You can use it in three ways:
+- Paste a screenshot into the image field
+- Press **Ctrl + V** while the image area is focused
+- Upload an image file manually
+
+The OCR tool can then be used to:
+- Extract text as **raw OCR text**
+- Send OCR text directly into the **specific terms** field for quick redaction setup
+
+This makes it easier to redact sensitive information not only from transcripts, but also from screenshots, scanned text, and other image-based content.
+
+---
+
 ## 7 March, 2026
 
 **GPT-5.4** has now been added to the OpenAI model dropdown for note generation.

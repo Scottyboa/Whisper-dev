@@ -1,3 +1,25 @@
+## 9. mars 2026
+
+### Ny Redactor-modul lagt til
+
+En ny **Redactor**-modul er nå lagt til appen.
+
+Dette verktøyet gjør det mulig å raskt sladde eller skjule sensitiv informasjon i diktat og supplerende informasjons-feltene ved behov, før videre bruk. Modulen støtter både **generelle begreper** og **spesifikke begreper**, som brukes når du klikker **Redact**. Det er også lagt til en innebygd **fødselsdatohjelper** for å gjøre det enklere å legge til datorelatert sensitiv informasjon.
+
+### OCR-funksjon er nå inkludert i Redactor
+
+Redactor-modulen inneholder også en innebygd **OCR**-funksjon.
+
+Dette betyr at du kan lime inn et skjermbilde, trykke **Ctrl + V** mens bildefeltet er i fokus, eller laste opp en bildefil, og deretter hente ut tekst direkte fra bildet.
+
+OCR-resultatet kan enten:
+- settes inn som **råtekst**, eller
+- sendes direkte til feltet for **spesifikke begreper** for raskere oppsett av sladding
+
+Dette gjør det enklere å sladde sensitivt innhold både fra transkripsjoner og fra skjermbilder eller annet bildebasert materiale.
+
+---
+
 ## 7. mars 2026
 
 **GPT-5.4** er nå lagt til i OpenAI-modellmenyen for notatgenerering.

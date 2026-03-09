@@ -352,7 +352,8 @@
     #transcription,
     #generatedNote,
     #customPrompt,
-    #supplementaryInfo {
+    #supplementaryInfo,
+    #redactorTerms {
       width: 100%;
       padding: 12px;
       border: 1px solid #ddd;
@@ -377,6 +378,14 @@
   resize: vertical;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+#redactorTerms {
+  min-height: 90px;
+  resize: vertical;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-bottom: 8px;
 }
 
 #generatedNote {
@@ -514,6 +523,221 @@
     .help-tip:focus-within .help-tip-content {
       display: block;
     }
+
+
+    .supp-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 5px;
+      flex-wrap: wrap;
+    }
+    .supp-toolbar-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .supplementary-redactor-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    .supplementary-redactor-layout.redactor-open {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .supplementary-pane,
+    .redactor-pane {
+      min-width: 0;
+    }
+    .redactor-pane {
+      display: none;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+    }
+    .supplementary-redactor-layout.redactor-open .redactor-pane {
+      display: block;
+    }
+    .redactor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .redactor-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+    }
+    .redactor-help {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+    .redactor-section + .redactor-section {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #eee;
+    }
+    .redactor-section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+    .redactor-mini-help {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.35;
+      margin-bottom: 8px;
+    }
+    .redactor-image-toolbar,
+    .redactor-inline-actions,
+    .redactor-actions,
+    .redactor-birthdate-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .redactor-button,
+    .redactor-file-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+      background-color: #5a9;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      line-height: 1.2;
+    }
+    .redactor-button[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .redactor-file-button input[type="file"] {
+      display: none;
+    }
+    .redactor-image-frame {
+      margin-top: 8px;
+      min-height: 120px;
+      max-height: 140px;
+      border: 1px dashed #c7d8d2;
+      border-radius: 10px;
+      background: #f8fbfa;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+    }
+    .redactor-image-frame:focus-within,
+    .redactor-image-frame.is-focus {
+      outline: 2px solid rgba(85, 170, 153, 0.28);
+      outline-offset: 1px;
+    }
+    .redactor-image-preview {
+      max-width: 100%;
+      max-height: 120px;
+      object-fit: contain;
+      display: block;
+    }
+    .redactor-image-placeholder {
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+      line-height: 1.35;
+      max-width: 280px;
+    }
+    .redactor-options-grid,
+    .redactor-fields-grid {
+      display: grid;
+      gap: 10px 12px;
+    }
+    .redactor-options-grid {
+      margin-top: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .redactor-fields-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .redactor-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      color: #444;
+      line-height: 1.3;
+    }
+    .redactor-option input {
+      margin-top: 1px;
+      flex: 0 0 auto;
+    }
+    .redactor-field-group {
+      min-width: 0;
+    }
+    .redactor-field-group label,
+    .redactor-birthdate-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+    .redactor-field-group textarea {
+      width: 100%;
+      min-height: 150px;
+      resize: vertical;
+    }
+    .redactor-field-group textarea.compact {
+      min-height: 88px;
+    }
+    .redactor-field-group textarea.large {
+      min-height: 220px;
+    }
+    .redactor-inline-actions {
+      margin-top: 8px;
+      justify-content: flex-start;
+    }
+    .redactor-birthdate-row input {
+      flex: 1 1 170px;
+      min-width: 0;
+    }
+    .redactor-status {
+      min-height: 18px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: #49655d;
+    }
+    .redactor-status.is-error {
+      color: #b00020;
+    }
+    @media (max-width: 1100px) {
+      .redactor-options-grid,
+      .redactor-fields-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    @media (max-width: 900px) {
+      .supplementary-redactor-layout.redactor-open {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .redactor-pane {
+        width: 100%;
+      }
+    }
+
     /* Bottom Half: Two Columns */
     .bottom-half {
       display: flex;
@@ -920,7 +1144,7 @@
       cursor: grab;
       padding: 1px 4px;
       border-radius: 5px;
-      font-size: 16px;
+      font-size: 11px;
       line-height: 1;
     }
     .prompt-slot-drag-handle:hover,
@@ -950,13 +1174,13 @@
     /* Strong compact override for prompt slot menu */
     .prompt-slot-popover.compact-slots .prompt-slot-popover-header,
     #promptSlotPopover .prompt-slot-popover-header {
-      padding: 2px 8px 2px !important;
+      padding: 5px 10px 4px !important;
       font-size: 16px !important;
       line-height: 1.0 !important;
     }
     .prompt-slot-popover.compact-slots .prompt-slot-list,
     #promptSlotPopover .prompt-slot-list {
-      padding: 0 !important;
+      padding: 1px !important;
     }
     .prompt-slot-popover.compact-slots .prompt-slot-item,
     #promptSlotPopover .prompt-slot-item {
@@ -970,8 +1194,8 @@
     .prompt-slot-popover.compact-slots .prompt-slot-item-button,
     #promptSlotPopover .prompt-slot-item-button {
       gap: 5px !important;
-      padding: 0 6px !important;
-      min-height: 18px !important;
+      padding: 2px 6px !important;
+      min-height: 24px !important;
       border-radius: 7px !important;
       line-height: 1.05 !important;
     }
@@ -993,8 +1217,8 @@
     }
     .prompt-slot-popover.compact-slots .prompt-slot-drag-handle,
     #promptSlotPopover .prompt-slot-drag-handle {
-      padding: 0 4px !important;
-      font-size: 16px !important;
+      padding: 1px 4px !important;
+      font-size: 15px !important;
       margin-right: 1px !important;
       border-radius: 5px !important;
     }
@@ -1008,6 +1232,7 @@
 }
 
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
   <div class="grid-container">
@@ -1167,10 +1392,8 @@
           id="transcription"
           placeholder="Transcription result will appear here."
           style="margin-bottom: 6px;"  
-        ></textarea>
-
-        <!-- Clear button row ABOVE supplementary field -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        ></textarea>        <!-- Supplementary / Redactor toolbar -->
+        <div class="supp-toolbar">
           <!-- Left side: Auto clear toggle + tooltip -->
           <div class="supp-row-left">
             <div class="auto-clear-toggle" aria-label="Auto clear supplementary information">
@@ -1191,46 +1414,165 @@
             </span>
           </div>
 
-          <!-- Right side: Clear button -->
-          <button
-            id="clearSupplementaryButton"
-            type="button"
-            style="
-              padding: 4px 10px;
-              font-size: 12px;
-              border-radius: 6px;
-              background-color: #5a9;
-            "
-          >
-            Clear
-          </button>
+          <!-- Right side: Redactor toggle + supplementary clear -->
+          <div class="supp-toolbar-right">
+            <button
+              id="toggleRedactorButton"
+              type="button"
+              aria-expanded="false"
+              aria-controls="redactorPane"
+              style="
+                padding: 4px 10px;
+                font-size: 12px;
+                border-radius: 6px;
+                background-color: #5a9;
+              "
+            >
+              Show redactor
+            </button>
+            <button
+              id="clearSupplementaryButton"
+              type="button"
+              style="
+                padding: 4px 10px;
+                font-size: 12px;
+                border-radius: 6px;
+                background-color: #5a9;
+              "
+            >
+              Clear
+            </button>
+          </div>
         </div>
 
-        <!-- Supplementary field (NO label above) -->
-        <textarea
-          id="supplementaryInfo"
-          placeholder="Supplementary information (optional)"></textarea>
-        <div class="supp-actions" style="display:flex; justify-content:flex-end; align-items:center; gap: 6px; margin-top: 6px;">
-          <span class="help-tip help-tip-left" style="margin-left:0; margin-right:2px;" tabindex="0" aria-label="Insert date help">
-            ?
-            <span class="help-tip-content" role="tooltip">
-              Adds today’s date to the top of Supplementary information: <br/>
-              <strong>"Dagens dato er DD.MM.YYYY"</strong><br/>
-              
-            </span>
-          </span>
-          <button
-            id="insertSupplementaryDateButton"
-            type="button"
-            style="
-              padding: 4px 10px;
-              font-size: 12px;
-              border-radius: 6px;
-              background-color: #5a9;
-            "
+        <div id="supplementaryRedactorLayout" class="supplementary-redactor-layout">
+          <div class="supplementary-pane">
+            <!-- Supplementary field (NO label above) -->
+            <textarea
+              id="supplementaryInfo"
+              placeholder="Supplementary information (optional)"></textarea>
+            <div class="supp-actions" style="display:flex; justify-content:flex-end; align-items:center; gap: 6px; margin-top: 6px;">
+              <span class="help-tip help-tip-left" style="margin-left:0; margin-right:2px;" tabindex="0" aria-label="Insert date help">
+                ?
+                <span class="help-tip-content" role="tooltip">
+                  Adds today’s date to the top of Supplementary information: <br/>
+                  <strong>"Dagens dato er DD.MM.YYYY"</strong><br/>
+
+                </span>
+              </span>
+              <button
+                id="insertSupplementaryDateButton"
+                type="button"
+                style="
+                  padding: 4px 10px;
+                  font-size: 12px;
+                  border-radius: 6px;
+                  background-color: #5a9;
+                "
+              >
+                Date
+              </button>
+            </div>
+          </div>
+
+          
+          <aside
+            id="redactorPane"
+            class="redactor-pane"
+            hidden
+            aria-hidden="true"
           >
-            Date
-          </button>
+            <div class="redactor-header">
+              <div class="redactor-title">Redactor</div>
+            </div>
+            <div class="redactor-help">
+              Add one term per line. General and specific terms are both used when you click Redact. General terms stay while this tab remains open, but clear when the tab is closed.
+            </div>
+
+            <div class="redactor-section">
+              <div class="redactor-section-title">Screenshot → OCR</div>
+              <div class="redactor-mini-help">
+                Use Windows + Shift + S, then click <strong>Paste image</strong>. You can also press <strong>Ctrl + V</strong> while the image frame is focused, or upload an image file.
+              </div>
+              <div class="redactor-image-toolbar">
+                <button id="pasteRedactorImageButton" type="button" class="redactor-button">Paste image</button>
+                <label class="redactor-file-button" for="redactorImageUpload">
+                  Upload image
+                  <input id="redactorImageUpload" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,image/gif" />
+                </label>
+                <button id="clearRedactorImageButton" type="button" class="redactor-button">Clear image</button>
+                <button id="fetchRedactorImageTextButton" type="button" class="redactor-button">Fetch OCR → Specific</button>
+                <button id="fetchRedactorRawTextButton" type="button" class="redactor-button">Fetch OCR → Raw text</button>
+              </div>
+              <div id="redactorImageFrame" class="redactor-image-frame" tabindex="0" aria-label="OCR image preview. Paste an image here with Ctrl plus V.">
+                <img id="redactorImagePreview" class="redactor-image-preview" alt="OCR screenshot preview" hidden />
+                <div id="redactorImagePlaceholder" class="redactor-image-placeholder">
+                  No image loaded yet. Paste a screenshot here or upload an image.
+                </div>
+              </div>
+            </div>
+
+            <div class="redactor-section">
+              <div class="redactor-fields-grid">
+                <div class="redactor-field-group">
+                  <label for="redactorGeneralTerms">General terms</label>
+                  <textarea
+                    id="redactorGeneralTerms"
+                    class="compact"
+                    placeholder="General terms (one per line)&#10;f.eks. sykehus&#10;fødselsnummer"
+                  ></textarea>
+                  <div class="redactor-inline-actions">
+                    <button id="uploadGeneralTermsButton" type="button" class="redactor-button">Import General.txt</button>
+                    <input id="generalTermsFileInput" type="file" accept=".txt,text/plain" hidden />
+                    <button id="exportGeneralTermsButton" type="button" class="redactor-button">Export General.txt</button>
+                    <button id="clearGeneralTermsButton" type="button" class="redactor-button">Clear general</button>
+                  </div>
+                </div>
+
+                <div class="redactor-field-group">
+                  <label for="redactorTerms">Specific terms</label>
+                  <textarea
+                    id="redactorTerms"
+                    class="large"
+                    placeholder="Specific terms (one per line)&#10;Ola Nordmann&#10;12345678"
+                  ></textarea>
+                  <div class="redactor-inline-actions">
+                    <button id="clearRedactorButton" type="button" class="redactor-button">Clear specific</button>
+                    <button id="applyRedactionButton" type="button" class="redactor-button">Redact</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="redactor-field-group" style="margin-top: 12px;">
+                <label for="redactorOcrRawOutput">OCR raw text</label>
+                <textarea
+                  id="redactorOcrRawOutput"
+                  class="compact"
+                  placeholder="Raw OCR text appears here without formatting or cleanup. Useful when you just want to copy the transcription."
+                ></textarea>
+                <div class="redactor-inline-actions">
+                  <button id="copyRedactorRawOutputButton" type="button" class="redactor-button">Copy raw</button>
+                  <button id="clearRedactorRawOutputButton" type="button" class="redactor-button">Clear raw</button>
+                </div>
+              </div>
+
+              <div style="margin-top: 12px;">
+                <div class="redactor-birthdate-label">Birthdate helper</div>
+                <div class="redactor-birthdate-row">
+                  <input
+                    id="redactorBirthdateInput"
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="10"
+                    placeholder="DDMMYY, f.eks. 180289"
+                  />
+                  <button id="addBirthdateFormatsButton" type="button" class="redactor-button">Add dates</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="redactorStatus" class="redactor-status" aria-live="polite"></div>
+          </aside>
         </div>
 
         <div>
@@ -2700,9 +3042,805 @@ if (guideClose) {
       else el.style.height = '';
     };
 
-    captureDefaultHeight(document.getElementById('transcription'));
-    captureDefaultHeight(document.getElementById('supplementaryInfo'));
+    
+    const transcriptionEl = document.getElementById('transcription');
+    const supplementaryInfoEl = document.getElementById('supplementaryInfo');
+    const generalTermsEl = document.getElementById('redactorGeneralTerms');
+    const redactorTermsEl = document.getElementById('redactorTerms');
+    const ocrRawOutputEl = document.getElementById('redactorOcrRawOutput');
+    const birthdateInputEl = document.getElementById('redactorBirthdateInput');
+    const supplementaryRedactorLayout = document.getElementById('supplementaryRedactorLayout');
+    const redactorPane = document.getElementById('redactorPane');
+    const toggleRedactorButton = document.getElementById('toggleRedactorButton');
+    const applyRedactionButton = document.getElementById('applyRedactionButton');
+    const clearRedactorButton = document.getElementById('clearRedactorButton');
+    const clearGeneralTermsButton = document.getElementById('clearGeneralTermsButton');
+    const uploadGeneralTermsButton = document.getElementById('uploadGeneralTermsButton');
+    const generalTermsFileInput = document.getElementById('generalTermsFileInput');
+    const exportGeneralTermsButton = document.getElementById('exportGeneralTermsButton');
+    const redactorStatus = document.getElementById('redactorStatus');
+    const pasteRedactorImageButton = document.getElementById('pasteRedactorImageButton');
+    const redactorImageUpload = document.getElementById('redactorImageUpload');
+    const clearRedactorImageButton = document.getElementById('clearRedactorImageButton');
+    const fetchRedactorImageTextButton = document.getElementById('fetchRedactorImageTextButton');
+    const fetchRedactorRawTextButton = document.getElementById('fetchRedactorRawTextButton');
+    const redactorImageFrame = document.getElementById('redactorImageFrame');
+    const redactorImagePreview = document.getElementById('redactorImagePreview');
+    const redactorImagePlaceholder = document.getElementById('redactorImagePlaceholder');
+    const addBirthdateFormatsButton = document.getElementById('addBirthdateFormatsButton');
+    const copyRedactorRawOutputButton = document.getElementById('copyRedactorRawOutputButton');
+    const clearRedactorRawOutputButton = document.getElementById('clearRedactorRawOutputButton');
 
+    captureDefaultHeight(transcriptionEl);
+    captureDefaultHeight(supplementaryInfoEl);
+    captureDefaultHeight(generalTermsEl);
+    captureDefaultHeight(redactorTermsEl);
+    captureDefaultHeight(ocrRawOutputEl);
+
+    const REDACTOR_VISIBILITY_KEY = 'redactor_visible';
+    const REDACTOR_SESSION_KEYS = {
+      general: 'redactor_general_terms_session',
+      specific: 'redactor_specific_terms_session',
+      rawOutput: 'redactor_ocr_raw_output_session',
+      birthdate: 'redactor_birthdate_session',
+    };
+
+    let currentOcrImageBlob = null;
+    let currentOcrImageObjectUrl = '';
+
+    const normalizeNewlines = (value) => (value || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+    const readSessionValue = (key, fallback = '') => {
+      try {
+        const value = sessionStorage.getItem(key);
+        return value === null ? fallback : value;
+      } catch (_) {
+        return fallback;
+      }
+    };
+
+    const writeSessionValue = (key, value) => {
+      try {
+        sessionStorage.setItem(key, value);
+      } catch (_) {}
+    };
+
+    const setRedactorStatus = (message, isError = false) => {
+      if (!redactorStatus) return;
+      redactorStatus.textContent = message || '';
+      redactorStatus.classList.toggle('is-error', Boolean(isError));
+    };
+
+    const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const getLines = (value) => normalizeNewlines(value)
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const collapseInternalSpacesInNumericToken = (tok) => /^(?:\d+\s+)+\d+$/.test(tok)
+      ? tok.replace(/\s+/g, '')
+      : tok;
+
+    const collapseInternalSpacesInAlphaToken = (tok) => /^(?:[A-Za-zÆØÅæøå\-]+\s+)+[A-Za-zÆØÅæøå\-]+$/.test(tok)
+      ? tok.replace(/\s+/g, '')
+      : tok;
+
+    const stripEdgePunct = (tok) => tok.replace(/^[()\[\]{}.,;:]+|[()\[\]{}.,;:]+$/g, '');
+
+    const splitFnrToken = (tok) => /^\d{11}$/.test(tok)
+      ? [tok.slice(0, 6), tok.slice(6)]
+      : [tok];
+
+    const isWordOnlyRedactionTerm = (term) => /^[\p{L}]+(?:[ -][\p{L}]+)*$/u.test((term || '').trim());
+
+    const normalizeSpecificKey = (s) => (s || '')
+      .normalize('NFKC')
+      .replace(/\u00A0/g, ' ')
+      .replace(/\u00AD/g, '')
+      .replace(/[\u200B\u200C\u200D\u2060]/g, '')
+      .replace(/[\u2010\u2011\u2012\u2013\u2014\u2212\u2043\uFE58\uFE63\uFF0D]/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLocaleLowerCase();
+
+    const dedupeSpecificLines = (text) => {
+      const seen = new Set();
+      const out = [];
+      for (const raw of normalizeNewlines(text).split('\n')) {
+        const line = raw.trim();
+        if (!line) continue;
+        const key = normalizeSpecificKey(line);
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        out.push(line);
+      }
+      return out.join('\n');
+    };
+
+    const ensurePhoneVariants = (text) => {
+      const lines = normalizeNewlines(text).split('\n');
+      const seen = new Set();
+      const out = [];
+
+      const addLine = (value) => {
+        const line = (value || '').trim();
+        if (!line) return;
+        const key = line.toLocaleLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push(line);
+      };
+
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line) continue;
+        addLine(line);
+
+        const digits = (line.match(/\d/g) || []).join('');
+        if (/^\d{8}$/.test(line)) {
+          addLine(line.replace(/(\d{2})(?=\d)/g, '$1 ').trim());
+          addLine(`+47${line}`);
+          continue;
+        }
+
+        if (/^\+47\d{8}$/.test(line)) {
+          const local = line.slice(3);
+          addLine(local);
+          addLine(local.replace(/(\d{2})(?=\d)/g, '$1 ').trim());
+          continue;
+        }
+
+        if (digits.length === 10 && digits.startsWith('47')) {
+          const local = digits.slice(-8);
+          addLine(local);
+          addLine(local.replace(/(\d{2})(?=\d)/g, '$1 ').trim());
+          addLine(`+47${local}`);
+        }
+      }
+
+      return out.join('\n');
+    };
+
+    const postprocessSpecificTerms = (block) => {
+      const lines = getLines(block);
+      const out = [];
+      let i = 0;
+
+      while (i < lines.length) {
+        const s = lines[i];
+
+        if (/^\d{1,3}\s*(?:år|ar)$/i.test(s)) {
+          i += 1;
+          continue;
+        }
+
+        if (/^(?:år|ar|moss|familie|Vei|Forelder|Telefonnummer|Moss|Bam|foreldre|ektefelle)$/i.test(s)) {
+          if (/^(?:år|ar)$/i.test(s) && out.length && /^\d{1,3}$/.test(out[out.length - 1])) {
+            out.pop();
+          }
+          i += 1;
+          continue;
+        }
+
+        if (/^\d{2}$/.test(s)) {
+          i += 1;
+          continue;
+        }
+
+        let m = s.match(/^(?:tlf|tif|ti|Telefonnummer|telefon|mobil)\s*[.:\-]?\s*(?:\+?\s*47)?\s*([0-9][0-9\s\-]{7,})$/i);
+        if (m) {
+          const digits = (m[1].match(/\d/g) || []).join('');
+          if (digits.length >= 8) {
+            const local = digits.slice(-8);
+            out.push(local);
+            out.push(`+47${local}`);
+            i += 1;
+            continue;
+          }
+        }
+
+        if (/^(?:tlf|tif|ti|telefon|mobil)\.?:?$/i.test(s) && i + 1 < lines.length) {
+          const nxt = lines[i + 1];
+          const digits = (nxt.match(/\d/g) || []).join('');
+          if (digits.startsWith('47') && digits.length >= 10) {
+            const local = digits.slice(-8);
+            out.push(local);
+            out.push(`+47${local}`);
+            i += 2;
+            continue;
+          }
+          if (digits.length === 8) {
+            out.push(digits);
+            out.push(`+47${digits}`);
+            i += 2;
+            continue;
+          }
+        }
+
+        out.push(s);
+        i += 1;
+      }
+
+      return out.join('\n');
+    };
+
+    const cleanSpecificBlock = (text) => {
+      let cleaned = postprocessSpecificTerms(text || '');
+      cleaned = ensurePhoneVariants(cleaned);
+      cleaned = dedupeSpecificLines(cleaned);
+      return cleaned;
+    };
+
+    const extractBirthdateFromFnrText = (text) => {
+      const s = normalizeNewlines(text || '');
+
+      let m = s.match(/(?:^|[^\d])(\d{6})\s*(?:\n|\s)?\s*(\d{5})(?!\d)/);
+      if (m) return m[1];
+
+      m = s.match(/(?:^|[^\d])(\d{11})(?!\d)/);
+      if (m) return m[1].slice(0, 6);
+
+      return '';
+    };
+
+    const ocrPostprocess = (input, {
+      convertAt = false,
+      dropCommasStack = true,
+      splitTokensNewlines = true,
+      splitFnr65 = true,
+      merge323Numbers = true,
+    } = {}) => {
+      let s = normalizeNewlines(input);
+
+      if (convertAt) {
+        s = s.replace(/([A-Za-zÆØÅæøå0-9])@(?=[A-Za-zÆØÅæøå0-9])/g, '$1ø');
+      }
+
+      if (dropCommasStack) {
+        s = s.replace(/,/g, '\n');
+        s = s.replace(/[;|•]+/g, '\n');
+      }
+
+      if (merge323Numbers) {
+        s = s.replace(/\b(\d{3})\s+(\d{2})\s+(\d{3})\b/g, '$1$2$3');
+      }
+
+      s = s.replace(/[ \t]+\n/g, '\n');
+      s = s.replace(/\n[ \t]+/g, '\n');
+
+      if (splitFnr65) {
+        s = s.replace(/(^|[^\d])(\d{6})\s+(\d{5})(?!\d)/g, (_, lead, first, second) => `${lead}${first}\n${second}`);
+      }
+
+      s = s.replace(/\((\d+)\)/g, '\n$1\n');
+
+      const linesOut = [];
+
+      for (const rawLine of s.split('\n')) {
+        let line = rawLine.trim();
+        if (!line) continue;
+
+        if (splitTokensNewlines) {
+          let tokens = line.split(/\s+/)
+            .map((token) => stripEdgePunct(token))
+            .map((token) => collapseInternalSpacesInNumericToken(token))
+            .map((token) => collapseInternalSpacesInAlphaToken(token))
+            .filter(Boolean);
+
+          if (splitFnr65) {
+            tokens = tokens.flatMap((token) => splitFnrToken(token));
+          }
+
+          if (!tokens.length) continue;
+
+          if (tokens.every((token) => /^[A-Za-zÆØÅæøå\-]+$/.test(token) || /^\d+$/.test(token))) {
+            for (const token of tokens) {
+              linesOut.push(token);
+            }
+            continue;
+          }
+
+          line = tokens.join(' ').trim();
+        }
+
+        if (!line) continue;
+        if (splitFnr65 && /^\d{11}$/.test(line)) {
+          const parts = splitFnrToken(line);
+          for (const part of parts) {
+            linesOut.push(part);
+          }
+          continue;
+        }
+        linesOut.push(line);
+      }
+
+      return linesOut
+        .filter((line, index, arr) => arr.indexOf(line) === index)
+        .join('\n')
+        .replace(/\n{2,}/g, '\n')
+        .trim();
+    };
+
+    const persistRedactorTextState = () => {
+      if (generalTermsEl) writeSessionValue(REDACTOR_SESSION_KEYS.general, normalizeNewlines(generalTermsEl.value));
+      if (redactorTermsEl) writeSessionValue(REDACTOR_SESSION_KEYS.specific, normalizeNewlines(redactorTermsEl.value));
+      if (ocrRawOutputEl) writeSessionValue(REDACTOR_SESSION_KEYS.rawOutput, normalizeNewlines(ocrRawOutputEl.value));
+      if (birthdateInputEl) writeSessionValue(REDACTOR_SESSION_KEYS.birthdate, birthdateInputEl.value || '');
+    };
+
+    const clearSessionValue = (key) => {
+      try {
+        sessionStorage.removeItem(key);
+      } catch (_) {}
+    };
+
+    if (generalTermsEl) generalTermsEl.value = readSessionValue(REDACTOR_SESSION_KEYS.general, generalTermsEl.value || '');
+    if (redactorTermsEl) {
+      redactorTermsEl.value = '';
+      clearSessionValue(REDACTOR_SESSION_KEYS.specific);
+    }
+    if (ocrRawOutputEl) {
+      ocrRawOutputEl.value = '';
+      clearSessionValue(REDACTOR_SESSION_KEYS.rawOutput);
+    }
+    if (birthdateInputEl) {
+      birthdateInputEl.value = '';
+      clearSessionValue(REDACTOR_SESSION_KEYS.birthdate);
+    }
+
+    [generalTermsEl, redactorTermsEl, ocrRawOutputEl, birthdateInputEl].forEach((el) => {
+      if (!el) return;
+      el.addEventListener('input', persistRedactorTextState);
+    });
+
+    if (redactorTermsEl) {
+      let cleanSpecificTimer = null;
+
+      redactorTermsEl.addEventListener('blur', () => {
+        const cleaned = cleanSpecificBlock(redactorTermsEl.value || '');
+        if (cleaned !== (redactorTermsEl.value || '')) {
+          redactorTermsEl.value = cleaned;
+          persistRedactorTextState();
+          setRedactorStatus('Specific terms cleaned and normalized.');
+        }
+      });
+
+      redactorTermsEl.addEventListener('paste', () => {
+        clearTimeout(cleanSpecificTimer);
+        cleanSpecificTimer = setTimeout(() => {
+          const cleaned = cleanSpecificBlock(redactorTermsEl.value || '');
+          if (cleaned !== (redactorTermsEl.value || '')) {
+            redactorTermsEl.value = cleaned;
+            persistRedactorTextState();
+          }
+        }, 50);
+      });
+    }
+
+    const appendUniqueLines = (textarea, text) => {
+      if (!textarea) return 0;
+      const currentLines = getLines(textarea.value);
+      const currentSet = new Set(currentLines.map((line) => line.toLocaleLowerCase()));
+      const additions = getLines(text).filter((line) => {
+        const key = line.toLocaleLowerCase();
+        if (currentSet.has(key)) return false;
+        currentSet.add(key);
+        return true;
+      });
+
+      if (!additions.length) return 0;
+
+      textarea.value = currentLines.length
+        ? `${currentLines.join('\n')}\n${additions.join('\n')}`
+        : additions.join('\n');
+
+      persistRedactorTextState();
+      return additions.length;
+    };
+
+    const redactInText = (text, terms) => {
+      let output = text || '';
+      let replacedAny = false;
+
+      for (const term of terms) {
+        const escaped = escapeRegex(term);
+        const pattern = isWordOnlyRedactionTerm(term)
+          ? new RegExp(`(?<![\\p{L}\\p{N}_])${escaped}(?![\\p{L}\\p{N}_])`, 'giu')
+          : new RegExp(escaped, 'gi');
+        const updated = output.replace(pattern, '[REDACTED]');
+        if (updated !== output) {
+          replacedAny = true;
+          output = updated;
+        }
+      }
+
+      return { text: output, replacedAny };
+    };
+
+    const getRedactorTerms = () => {
+      const unique = new Set();
+      return [...getLines(generalTermsEl?.value || ''), ...getLines(redactorTermsEl?.value || '')]
+        .sort((a, b) => b.length - a.length)
+        .filter((term) => {
+          const normalizedTerm = term.toLocaleLowerCase();
+          if (unique.has(normalizedTerm)) return false;
+          unique.add(normalizedTerm);
+          return true;
+        });
+    };
+
+    const revokeCurrentImageUrl = () => {
+      if (!currentOcrImageObjectUrl) return;
+      try {
+        URL.revokeObjectURL(currentOcrImageObjectUrl);
+      } catch (_) {}
+      currentOcrImageObjectUrl = '';
+    };
+
+    const setOcrImage = (blob) => {
+      if (!redactorImagePreview || !redactorImagePlaceholder) return;
+      revokeCurrentImageUrl();
+      currentOcrImageBlob = blob || null;
+
+      if (!blob) {
+        redactorImagePreview.hidden = true;
+        redactorImagePreview.removeAttribute('src');
+        redactorImagePlaceholder.hidden = false;
+        return;
+      }
+
+      currentOcrImageObjectUrl = URL.createObjectURL(blob);
+      redactorImagePreview.src = currentOcrImageObjectUrl;
+      redactorImagePreview.hidden = false;
+      redactorImagePlaceholder.hidden = true;
+    };
+
+    const setRedactorOpen = (isOpen, { persist = true } = {}) => {
+      if (!supplementaryRedactorLayout || !redactorPane || !toggleRedactorButton) return;
+
+      supplementaryRedactorLayout.classList.toggle('redactor-open', Boolean(isOpen));
+      redactorPane.hidden = !isOpen;
+      redactorPane.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+      toggleRedactorButton.textContent = isOpen ? 'Hide redactor' : 'Show redactor';
+      toggleRedactorButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+      if (persist) {
+        try {
+          localStorage.setItem(REDACTOR_VISIBILITY_KEY, isOpen ? '1' : '0');
+        } catch (_) {}
+      }
+    };
+
+    (() => {
+      let shouldOpen = false;
+      try {
+        shouldOpen = localStorage.getItem(REDACTOR_VISIBILITY_KEY) === '1';
+      } catch (_) {}
+      setRedactorOpen(shouldOpen, { persist: false });
+    })();
+
+    const exportTextFile = async (filename, content) => {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+
+      if (window.showSaveFilePicker) {
+        const fileHandle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [
+            {
+              description: 'Text files',
+              accept: { 'text/plain': ['.txt'] },
+            },
+          ],
+        });
+
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return { method: 'picker' };
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+      return { method: 'download' };
+    };
+
+    const readTextFile = async (file) => {
+      if (!file) return '';
+      return file.text();
+    };
+
+    const expandBirthdateFormats = (value) => {
+      const digits = (value || '').replace(/\D/g, '');
+      if (digits.length !== 6 && digits.length !== 8) return [];
+
+      const dd = digits.slice(0, 2);
+      const mm = digits.slice(2, 4);
+      const yyOrYyyy = digits.slice(4);
+
+      const ddNum = Number(dd);
+      const mmNum = Number(mm);
+      if (!ddNum || ddNum > 31 || !mmNum || mmNum > 12) return [];
+
+      let yyyy = '';
+      let yy = '';
+
+      if (digits.length === 6) {
+        yy = yyOrYyyy;
+        const currentTwoDigitYear = new Date().getFullYear() % 100;
+        const fullYear = Number(yy) > currentTwoDigitYear ? 1900 + Number(yy) : 2000 + Number(yy);
+        yyyy = String(fullYear);
+      } else {
+        yyyy = yyOrYyyy;
+        yy = yyyy.slice(-2);
+      }
+
+      const d = String(ddNum);
+      const m = String(mmNum);
+
+      const monthNamesNo = [
+        'januar', 'februar', 'mars', 'april', 'mai', 'juni',
+        'juli', 'august', 'september', 'oktober', 'november', 'desember',
+      ];
+      const weekdayNamesNo = [
+        'søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag',
+      ];
+      const monthName = monthNamesNo[mmNum - 1];
+
+      const variants = [
+        `${dd}${mm}${yy}`,
+        `${dd}${mm}${yyyy}`,
+        `${dd}.${mm}.${yy}`,
+        `${dd}-${mm}-${yy}`,
+        `${dd}/${mm}/${yy}`,
+        `${dd} ${mm} ${yy}`,
+        `${d}.${m}.${yy}`,
+        `${d}-${m}-${yy}`,
+        `${d}/${m}/${yy}`,
+        `${d} ${m} ${yy}`,
+        `${dd}.${mm}.${yyyy}`,
+        `${dd}-${mm}-${yyyy}`,
+        `${dd}/${mm}/${yyyy}`,
+        `${dd} ${mm} ${yyyy}`,
+        `${d}.${m}.${yyyy}`,
+        `${d}-${m}-${yyyy}`,
+        `${d}/${m}/${yyyy}`,
+        `${d} ${m} ${yyyy}`,
+      ];
+
+      if (monthName) {
+        variants.push(
+          `${dd}. ${monthName} ${yyyy}`,
+          `${d}. ${monthName} ${yyyy}`,
+          `${dd} ${monthName} ${yyyy}`,
+          `${d} ${monthName} ${yyyy}`,
+        );
+
+        const dateObj = new Date(Number(yyyy), mmNum - 1, ddNum);
+        if (!Number.isNaN(dateObj.getTime())
+          && dateObj.getFullYear() === Number(yyyy)
+          && dateObj.getMonth() === mmNum - 1
+          && dateObj.getDate() === ddNum) {
+          const weekday = weekdayNamesNo[dateObj.getDay()];
+          if (weekday) {
+            variants.push(
+              `${weekday} ${dd}. ${monthName} ${yyyy}`,
+              `${weekday} ${d}. ${monthName} ${yyyy}`,
+              `${weekday} ${dd} ${monthName} ${yyyy}`,
+              `${weekday} ${d} ${monthName} ${yyyy}`,
+            );
+          }
+        }
+      }
+
+      return [...new Set(variants)];
+    };
+
+    const readClipboardImage = async () => {
+      if (!navigator.clipboard || typeof navigator.clipboard.read !== 'function') {
+        throw new Error('Clipboard image reading is not available in this browser. Use Ctrl + V in the image frame or upload an image instead.');
+      }
+
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const imageType = item.types.find((type) => type.startsWith('image/'));
+        if (imageType) {
+          return item.getType(imageType);
+        }
+      }
+
+      return null;
+    };
+
+    const handleImagePasteEvent = (event) => {
+      const items = Array.from(event.clipboardData?.items || []);
+      const imageItem = items.find((item) => item.type && item.type.startsWith('image/'));
+      if (!imageItem) return false;
+
+      const file = imageItem.getAsFile();
+      if (!file) return false;
+
+      event.preventDefault();
+      setOcrImage(file);
+      setRedactorStatus('Image pasted and ready for OCR.');
+      return true;
+    };
+
+    const runTesseractOnCurrentImage = async ({ logger } = {}) => {
+      let recognizedText = '';
+      let usedLanguage = 'nor+eng';
+
+      try {
+        const result = await window.Tesseract.recognize(currentOcrImageBlob, 'nor+eng', { logger });
+        recognizedText = result?.data?.text || '';
+      } catch (primaryError) {
+        const fallback = await window.Tesseract.recognize(currentOcrImageBlob, 'eng', { logger });
+        recognizedText = fallback?.data?.text || '';
+        usedLanguage = 'eng';
+      }
+
+      recognizedText = normalizeNewlines(recognizedText).trim();
+      return { recognizedText, usedLanguage };
+    };
+
+    const setRawOcrOutput = (text) => {
+      if (!ocrRawOutputEl) return;
+      ocrRawOutputEl.value = normalizeNewlines(text || '').trim();
+      persistRedactorTextState();
+    };
+
+    const runRawOcrOnCurrentImage = async () => {
+      if (!currentOcrImageBlob) {
+        setRedactorStatus('No image to OCR. Paste or upload one first.', true);
+        return;
+      }
+
+      if (!window.Tesseract) {
+        setRedactorStatus('Tesseract.js failed to load in this browser tab.', true);
+        return;
+      }
+
+      const logger = (message) => {
+        if (!message || !message.status) return;
+        if (message.status === 'recognizing text' && typeof message.progress === 'number') {
+          setRedactorStatus(`OCR running… ${Math.round(message.progress * 100)}%`);
+          return;
+        }
+        if (message.status === 'loading language traineddata') {
+          setRedactorStatus('OCR is loading language data…');
+          return;
+        }
+        if (message.status === 'initializing tesseract') {
+          setRedactorStatus('OCR is starting…');
+        }
+      };
+
+      const originalLabel = fetchRedactorRawTextButton?.textContent || 'Fetch OCR → Raw text';
+      if (fetchRedactorRawTextButton) {
+        fetchRedactorRawTextButton.disabled = true;
+        fetchRedactorRawTextButton.textContent = 'Fetching…';
+      }
+
+      try {
+        const { recognizedText, usedLanguage } = await runTesseractOnCurrentImage({ logger });
+
+        if (!recognizedText) {
+          setRedactorStatus('No text was detected in the image.', true);
+          return;
+        }
+
+        setRawOcrOutput(recognizedText);
+        setRedactorStatus(`Raw OCR complete (${usedLanguage}) → text placed in Raw text.`);
+      } catch (error) {
+        setRedactorStatus(`OCR error: ${error?.message || error}`, true);
+      } finally {
+        if (fetchRedactorRawTextButton) {
+          fetchRedactorRawTextButton.disabled = false;
+          fetchRedactorRawTextButton.textContent = originalLabel;
+        }
+      }
+    };
+
+    const runOcrOnCurrentImage = async () => {
+      if (!currentOcrImageBlob) {
+        setRedactorStatus('No image to OCR. Paste or upload one first.', true);
+        return;
+      }
+
+      if (!window.Tesseract) {
+        setRedactorStatus('Tesseract.js failed to load in this browser tab.', true);
+        return;
+      }
+
+      const logger = (message) => {
+        if (!message || !message.status) return;
+        if (message.status === 'recognizing text' && typeof message.progress === 'number') {
+          setRedactorStatus(`OCR running… ${Math.round(message.progress * 100)}%`);
+          return;
+        }
+        if (message.status === 'loading language traineddata') {
+          setRedactorStatus('OCR is loading language data…');
+          return;
+        }
+        if (message.status === 'initializing tesseract') {
+          setRedactorStatus('OCR is starting…');
+        }
+      };
+
+      const originalLabel = fetchRedactorImageTextButton?.textContent || 'Fetch OCR → Specific';
+      if (fetchRedactorImageTextButton) {
+        fetchRedactorImageTextButton.disabled = true;
+        fetchRedactorImageTextButton.textContent = 'Fetching…';
+      }
+
+      try {
+        const { recognizedText, usedLanguage } = await runTesseractOnCurrentImage({ logger });
+
+        if (!recognizedText) {
+          setRedactorStatus('No text was detected in the image.', true);
+          return;
+        }
+
+        const finalText = ocrPostprocess(recognizedText, {
+          convertAt: false,
+          dropCommasStack: true,
+          splitTokensNewlines: true,
+          splitFnr65: true,
+          merge323Numbers: true,
+        });
+
+        if (!finalText.trim()) {
+          setRedactorStatus('OCR finished, but no usable Specific terms were produced.', true);
+          return;
+        }
+
+        const currentSpecific = redactorTermsEl?.value || '';
+        const mergedSpecific = cleanSpecificBlock(
+          currentSpecific
+            ? `${currentSpecific}\n${finalText}`
+            : finalText
+        );
+
+        const beforeCount = getLines(currentSpecific).length;
+        const afterCount = getLines(mergedSpecific).length;
+
+        if (redactorTermsEl) {
+          redactorTermsEl.value = mergedSpecific;
+          persistRedactorTextState();
+        }
+
+        const detectedBirthdate = extractBirthdateFromFnrText(finalText || recognizedText);
+        if (detectedBirthdate && birthdateInputEl) {
+          birthdateInputEl.value = detectedBirthdate;
+          persistRedactorTextState();
+        }
+
+        const addedCount = Math.max(0, afterCount - beforeCount);
+        if (!addedCount) {
+          setRedactorStatus(`OCR finished (${usedLanguage}), but no new unique terms were added.`);
+          return;
+        }
+
+        setRedactorStatus(
+          detectedBirthdate
+            ? `OCR complete (${usedLanguage}) → added ${addedCount} term${addedCount === 1 ? '' : 's'} to Specific. Birthdate field auto-filled with ${detectedBirthdate}.`
+            : `OCR complete (${usedLanguage}) → added ${addedCount} term${addedCount === 1 ? '' : 's'} to Specific.`
+        );
+      } catch (error) {
+        setRedactorStatus(`OCR error: ${error?.message || error}`, true);
+      } finally {
+        if (fetchRedactorImageTextButton) {
+          fetchRedactorImageTextButton.disabled = false;
+          fetchRedactorImageTextButton.textContent = originalLabel;
+        }
+      }
+    };
 
     document.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest ? e.target.closest('button') : null;
@@ -2726,74 +3864,291 @@ if (guideClose) {
         }
       }
     }, true);
-  // Clear button logic for supplementary field
-  const clearSupplementaryButton = document.getElementById('clearSupplementaryButton');
-  if (clearSupplementaryButton) {
-    clearSupplementaryButton.addEventListener('click', () => {
-      const supEl = document.getElementById('supplementaryInfo');
-      if (supEl) {
-        resetTextareaToDefault(supEl);
-      }
-    });
-  }
 
-  // Insert/update today's date at the TOP of supplementary field
-  const insertSupplementaryDateButton = document.getElementById('insertSupplementaryDateButton');
-  if (insertSupplementaryDateButton) {
-    insertSupplementaryDateButton.addEventListener('click', () => {
-      const supEl = document.getElementById('supplementaryInfo');
-      if (!supEl) return;
+    if (toggleRedactorButton) {
+      toggleRedactorButton.addEventListener('click', () => {
+        const isOpen = !supplementaryRedactorLayout?.classList.contains('redactor-open');
+        setRedactorOpen(isOpen);
+        setRedactorStatus('');
+        if (isOpen) {
+          redactorTermsEl?.focus();
+        }
+      });
+    }
 
-      // Format: DD.MM.YYYY (Norwegian-friendly). Uses the browser's local timezone.
-      const today = new Date();
-      const dateStr = new Intl.DateTimeFormat('nb-NO', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      }).format(today);
-      const line = `Dagens dato er ${dateStr}`;
+    // Clear button logic for supplementary field
+    const clearSupplementaryButton = document.getElementById('clearSupplementaryButton');
+    if (clearSupplementaryButton) {
+      clearSupplementaryButton.addEventListener('click', () => {
+        if (supplementaryInfoEl) {
+          resetTextareaToDefault(supplementaryInfoEl);
+        }
+      });
+    }
 
-      const current = supEl.value || '';
-      const normalized = current.replace(/\r\n/g, '\n');
-      const lines = normalized.split('\n');
+    if (clearGeneralTermsButton) {
+      clearGeneralTermsButton.addEventListener('click', () => {
+        if (generalTermsEl) {
+          resetTextareaToDefault(generalTermsEl);
+          persistRedactorTextState();
+        }
+        setRedactorStatus('General terms cleared.');
+      });
+    }
 
-      if (lines[0]?.startsWith('Dagens dato er ')) {
-        // Update existing date line (keeps the rest intact)
-        lines[0] = line;
-        supEl.value = lines.join('\n');
-      } else {
-        // Prepend date line
-        supEl.value = normalized.trim().length ? `${line}\n${normalized}` : `${line}\n`;
-      }
+    if (clearRedactorButton) {
+      clearRedactorButton.addEventListener('click', () => {
+        if (redactorTermsEl) {
+          resetTextareaToDefault(redactorTermsEl);
+        }
+        if (birthdateInputEl) {
+          birthdateInputEl.value = '';
+        }
+        persistRedactorTextState();
+        setRedactorStatus('Specific terms and birthdate cleared.');
+      });
+    }
 
-      supEl.focus();
-      // Put cursor at end of first line (handy if they want to continue typing)
-      const pos = line.length;
-      try { supEl.setSelectionRange(pos, pos); } catch (_) {}
-    });
-  }
+    if (uploadGeneralTermsButton && generalTermsFileInput) {
+      uploadGeneralTermsButton.addEventListener('click', () => {
+        generalTermsFileInput.click();
+      });
+    }
+
+    if (generalTermsFileInput) {
+      generalTermsFileInput.addEventListener('change', async () => {
+        const file = generalTermsFileInput.files && generalTermsFileInput.files[0];
+        if (!file) return;
+
+        try {
+          const text = await readTextFile(file);
+          if (generalTermsEl) {
+            generalTermsEl.value = normalizeNewlines(text).trim();
+            persistRedactorTextState();
+          }
+          setRedactorStatus(`Loaded ${file.name} into General terms.`);
+        } catch (error) {
+          setRedactorStatus(`Could not read ${file.name}: ${error?.message || error}`, true);
+        } finally {
+          generalTermsFileInput.value = '';
+        }
+      });
+    }
+
+    if (exportGeneralTermsButton) {
+      exportGeneralTermsButton.addEventListener('click', async () => {
+        const content = normalizeNewlines(generalTermsEl?.value || '').trim();
+
+        try {
+          const result = await exportTextFile('General.txt', content);
+          if (result?.method === 'picker') {
+            setRedactorStatus('Saved General.txt to the selected location.');
+          } else {
+            setRedactorStatus('Saved General.txt with the browser download flow.');
+          }
+        } catch (error) {
+          if (error && error.name === 'AbortError') {
+            setRedactorStatus('Save canceled.');
+            return;
+          }
+          setRedactorStatus(`Could not export General.txt: ${error?.message || error}`, true);
+        }
+      });
+    }
+
+    if (applyRedactionButton) {
+      applyRedactionButton.addEventListener('click', () => {
+        const terms = getRedactorTerms();
+        if (!terms.length) {
+          setRedactorStatus('Add at least one General or Specific term to redact.', true);
+          (redactorTermsEl || generalTermsEl)?.focus();
+          return;
+        }
+
+        let replacedAny = false;
+
+        if (transcriptionEl) {
+          const result = redactInText(transcriptionEl.value || '', terms);
+          transcriptionEl.value = result.text;
+          replacedAny = replacedAny || result.replacedAny;
+        }
+
+        if (supplementaryInfoEl) {
+          const result = redactInText(supplementaryInfoEl.value || '', terms);
+          supplementaryInfoEl.value = result.text;
+          replacedAny = replacedAny || result.replacedAny;
+        }
+
+        setRedactorStatus(
+          replacedAny
+            ? `Redacted ${terms.length} term${terms.length === 1 ? '' : 's'} in Transcript and Supplementary information.`
+            : 'No matching text was found in Transcript or Supplementary information.'
+        );
+      });
+    }
+
+    if (addBirthdateFormatsButton) {
+      addBirthdateFormatsButton.addEventListener('click', () => {
+        const variants = expandBirthdateFormats(birthdateInputEl?.value || '');
+        if (!variants.length) {
+          setRedactorStatus('Enter a valid 6-digit birthdate in DDMMYY format, for example 180289.', true);
+          birthdateInputEl?.focus();
+          return;
+        }
+
+        const addedCount = appendUniqueLines(redactorTermsEl, variants.join('\n'));
+        if (!addedCount) {
+          setRedactorStatus('Those birthdate formats are already in Specific terms.');
+          return;
+        }
+
+        setRedactorStatus(`Added ${addedCount} birthdate format${addedCount === 1 ? '' : 's'} to Specific.`);
+      });
+    }
+
+    if (pasteRedactorImageButton) {
+      pasteRedactorImageButton.addEventListener('click', async () => {
+        try {
+          const blob = await readClipboardImage();
+          if (!blob) {
+            setRedactorStatus('No image was found in the clipboard. Use Windows + Shift + S first, then try again.', true);
+            return;
+          }
+          setOcrImage(blob);
+          setRedactorStatus('Image pasted and ready for OCR.');
+        } catch (error) {
+          setRedactorStatus(error?.message || 'Could not read an image from the clipboard.', true);
+        }
+      });
+    }
+
+    if (redactorImageUpload) {
+      redactorImageUpload.addEventListener('change', () => {
+        const file = redactorImageUpload.files && redactorImageUpload.files[0];
+        if (!file) return;
+        setOcrImage(file);
+        setRedactorStatus(`Loaded image: ${file.name}`);
+        redactorImageUpload.value = '';
+      });
+    }
+
+    if (clearRedactorImageButton) {
+      clearRedactorImageButton.addEventListener('click', () => {
+        setOcrImage(null);
+        setRedactorStatus('Image cleared.');
+      });
+    }
+
+    if (fetchRedactorImageTextButton) {
+      fetchRedactorImageTextButton.addEventListener('click', runOcrOnCurrentImage);
+    }
+
+    if (fetchRedactorRawTextButton) {
+      fetchRedactorRawTextButton.addEventListener('click', runRawOcrOnCurrentImage);
+    }
+
+    if (copyRedactorRawOutputButton) {
+      copyRedactorRawOutputButton.addEventListener('click', async () => {
+        const rawText = ocrRawOutputEl?.value || '';
+        if (!rawText.trim()) {
+          setRedactorStatus('Raw text is empty.', true);
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(rawText);
+          setRedactorStatus('Raw text copied to clipboard.');
+        } catch (error) {
+          setRedactorStatus('Could not copy raw text in this browser tab.', true);
+        }
+      });
+    }
+
+    if (clearRedactorRawOutputButton) {
+      clearRedactorRawOutputButton.addEventListener('click', () => {
+        if (!ocrRawOutputEl) return;
+        resetTextareaToDefault(ocrRawOutputEl);
+        persistRedactorTextState();
+        setRedactorStatus('Raw text cleared.');
+      });
+    }
+
+    if (redactorImageFrame) {
+      redactorImageFrame.addEventListener('focusin', () => {
+        redactorImageFrame.classList.add('is-focus');
+      });
+      redactorImageFrame.addEventListener('focusout', () => {
+        redactorImageFrame.classList.remove('is-focus');
+      });
+      redactorImageFrame.addEventListener('paste', (event) => {
+        if (handleImagePasteEvent(event)) {
+          redactorImageFrame.focus();
+        }
+      });
+      redactorImageFrame.addEventListener('click', () => {
+        redactorImageFrame.focus();
+      });
+      redactorImageFrame.addEventListener('keydown', async (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') {
+          setRedactorStatus('Paste from clipboard with Ctrl + V, or use the Paste image button.');
+        }
+      });
+    }
+
+    // Insert/update today's date at the TOP of supplementary field
+    const insertSupplementaryDateButton = document.getElementById('insertSupplementaryDateButton');
+    if (insertSupplementaryDateButton) {
+      insertSupplementaryDateButton.addEventListener('click', () => {
+        const supEl = document.getElementById('supplementaryInfo');
+        if (!supEl) return;
+
+        // Format: DD.MM.YYYY (Norwegian-friendly). Uses the browser's local timezone.
+        const today = new Date();
+        const dateStr = new Intl.DateTimeFormat('nb-NO', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        }).format(today);
+        const line = `Dagens dato er ${dateStr}`;
+
+        const current = supEl.value || '';
+        const normalized = current.replace(/\r\n/g, '\n');
+        const lines = normalized.split('\n');
+
+        if (lines[0]?.startsWith('Dagens dato er ')) {
+          // Update existing date line (keeps the rest intact)
+          lines[0] = line;
+          supEl.value = lines.join('\n');
+        } else {
+          // Prepend date line
+          supEl.value = normalized.trim().length ? `${line}\n${normalized}` : `${line}\n`;
+        }
+
+        supEl.focus();
+        // Put cursor at end of first line (handy if they want to continue typing)
+        const pos = line.length;
+        try { supEl.setSelectionRange(pos, pos); } catch (_) {}
+      });
+    }
 
 
-  // Auto-clear toggle (default OFF; persist in localStorage)
-  const AUTO_CLEAR_KEY = 'auto_clear_supplementary';
-  const autoClearToggle = document.getElementById('autoClearSupplementaryToggle');
-  if (autoClearToggle) {
-    const stored = localStorage.getItem(AUTO_CLEAR_KEY);
-    autoClearToggle.checked = stored === '1';
-    autoClearToggle.addEventListener('change', () => {
-      localStorage.setItem(AUTO_CLEAR_KEY, autoClearToggle.checked ? '1' : '0');
-    });
-  }
+    // Auto-clear toggle (default OFF; persist in localStorage)
+    const AUTO_CLEAR_KEY = 'auto_clear_supplementary';
+    const autoClearToggle = document.getElementById('autoClearSupplementaryToggle');
+    if (autoClearToggle) {
+      const stored = localStorage.getItem(AUTO_CLEAR_KEY);
+      autoClearToggle.checked = stored === '1';
+      autoClearToggle.addEventListener('change', () => {
+        localStorage.setItem(AUTO_CLEAR_KEY, autoClearToggle.checked ? '1' : '0');
+      });
+    }
 
-  // When enabled: starting a new recording clears + resets Supplementary info (same as Clear button)
-  document.addEventListener('click', (e) => {
-    const id = e.target && e.target.id;
-    if (id !== 'startButton') return;
-    if (!autoClearToggle || autoClearToggle.checked !== true) return;
-    const supEl = document.getElementById('supplementaryInfo');
-    if (supEl) resetTextareaToDefault(supEl);
-  }, true);
-
+    // When enabled: starting a new recording clears + resets Supplementary info (same as Clear button)
+    document.addEventListener('click', (e) => {
+      const id = e.target && e.target.id;
+      if (id !== 'startButton') return;
+      if (!autoClearToggle || autoClearToggle.checked !== true) return;
+      if (supplementaryInfoEl) resetTextareaToDefault(supplementaryInfoEl);
+    }, true);
 
   // Copy button logic for transcription field (matches Generated Note copy behavior)
   const copyTranscriptionButton = document.getElementById('copyTranscriptionButton');
@@ -3688,6 +5043,7 @@ if (guideClose) {
   </script>
 </body>
 </html>
+
 
 
 

@@ -177,6 +177,159 @@ export async function initTranscribeLanguage() {
   });
 }
 
+
+function setTextIfPresent(id, value) {
+  const el = document.getElementById(id);
+  if (el && typeof value === "string") {
+    el.textContent = value;
+  }
+}
+
+function setHtmlIfPresent(id, value) {
+  const el = document.getElementById(id);
+  if (el && typeof value === "string") {
+    el.innerHTML = value;
+  }
+}
+
+function setPlaceholderIfPresent(id, value) {
+  const el = document.getElementById(id);
+  if (el && typeof value === "string") {
+    el.placeholder = value;
+  }
+}
+
+function setAttrIfPresent(id, attr, value) {
+  const el = document.getElementById(id);
+  if (el && typeof value === "string") {
+    el.setAttribute(attr, value);
+  }
+}
+
+function getRedactorI18n(trans) {
+  const currentLang = localStorage.getItem("siteLanguage") || "en";
+  const isNorwegian = currentLang === "no";
+
+  const fallback = isNorwegian
+    ? {
+        toggleShow: "Vis redactor",
+        toggleHide: "Skjul redactor",
+        title: "Redactor",
+        help: "Legg til ett begrep per linje. Både generelle og spesifikke begreper brukes når du klikker Redact. Generelle begreper beholdes så lenge denne fanen er åpen, men tømmes når fanen lukkes.",
+        ocrSectionTitle: "Skjermbilde → OCR",
+        ocrMiniHelp: "Bruk Windows + Shift + S, og klikk deretter <strong>Lim inn bilde</strong>. Du kan også trykke <strong>Ctrl + V</strong> mens bildefeltet er fokusert, eller laste opp en bildefil.",
+        pasteImageButton: "Lim inn bilde",
+        uploadImageButton: "Last opp bilde",
+        clearImageButton: "Tøm bilde",
+        fetchSpecificButton: "Hent OCR → Spesifikke",
+        fetchRawButton: "Hent OCR → Råtekst",
+        imageFrameAriaLabel: "OCR-bildeforhåndsvisning. Lim inn et bilde her med Ctrl pluss V.",
+        imagePreviewAlt: "Forhåndsvisning av OCR-skjermbilde",
+        imagePlaceholder: "Intet bilde lastet inn ennå. Lim inn et skjermbilde her eller last opp et bilde.",
+        generalTermsLabel: "Generelle begreper",
+        generalTermsPlaceholder: "Generelle begreper (ett per linje)\nf.eks. sykehus\nNavn",
+        importGeneralButton: "Importer General.txt",
+        exportGeneralButton: "Eksporter General.txt",
+        clearGeneralButton: "Tøm generelle begreper",
+        specificTermsLabel: "Spesifikke begreper",
+        specificTermsPlaceholder: "Spesifikke begreper (ett per linje)\nf.eks. Ola Nordmann\n01020312345",
+        clearSpecificButton: "Tøm spesifikke begreper",
+        redactButton: "Sladd",
+        rawOutputLabel: "OCR-råtekst",
+        rawOutputPlaceholder: "OCR-råtekst vises her...",
+        copyRawButton: "Kopier råtekst",
+        clearRawButton: "Tøm råtekst",
+        birthdateLabel: "Fødselsdatohjelper",
+        birthdatePlaceholder: "DDMMÅÅ, f.eks. 180289",
+        addDatesButton: "Legg til datoer",
+        statusDefault: "",
+      }
+    : {
+        toggleShow: "Show redactor",
+        toggleHide: "Hide redactor",
+        title: "Redactor",
+        help: "Add one term per line. General and specific terms are both used when you click Redact. General terms stay while this tab remains open, but clear when the tab is closed.",
+        ocrSectionTitle: "Screenshot → OCR",
+        ocrMiniHelp: "Use Windows + Shift + S, then click <strong>Paste image</strong>. You can also press <strong>Ctrl + V</strong> while the image frame is focused, or upload an image file.",
+        pasteImageButton: "Paste image",
+        uploadImageButton: "Upload image",
+        clearImageButton: "Clear image",
+        fetchSpecificButton: "Fetch OCR → Specific",
+        fetchRawButton: "Fetch OCR → Raw text",
+        imageFrameAriaLabel: "OCR image preview. Paste an image here with Ctrl plus V.",
+        imagePreviewAlt: "OCR screenshot preview",
+        imagePlaceholder: "No image loaded yet. Paste a screenshot here or upload an image.",
+        generalTermsLabel: "General terms",
+        generalTermsPlaceholder: "General terms (one per line)\ne.g. hospital\nName",
+        importGeneralButton: "Import General.txt",
+        exportGeneralButton: "Export General.txt",
+        clearGeneralButton: "Clear general terms",
+        specificTermsLabel: "Specific terms",
+        specificTermsPlaceholder: "Specific terms (one per line)\ne.g. John Doe\n01020312345",
+        clearSpecificButton: "Clear specific terms",
+        redactButton: "Redact",
+        rawOutputLabel: "OCR raw text",
+        rawOutputPlaceholder: "OCR raw text appears here...",
+        copyRawButton: "Copy raw",
+        clearRawButton: "Clear raw",
+        birthdateLabel: "Birthdate helper",
+        birthdatePlaceholder: "DDMMYY, e.g. 180289",
+        addDatesButton: "Add dates",
+        statusDefault: "",
+      };
+
+  return {
+    ...fallback,
+    ...(trans.redactor || {}),
+  };
+}
+
+function updateRedactorUI(trans) {
+  const redactor = getRedactorI18n(trans);
+  const pane = document.getElementById("redactorPane");
+  const toggleButton = document.getElementById("toggleRedactorButton");
+  const isOpen = !!pane && !pane.hidden;
+
+  setTextIfPresent("redactorTitle", redactor.title);
+  setTextIfPresent("redactorHelp", redactor.help);
+  setHtmlIfPresent("redactorOcrMiniHelp", redactor.ocrMiniHelp);
+  setTextIfPresent("redactorOcrSectionTitle", redactor.ocrSectionTitle);
+  setTextIfPresent("pasteRedactorImageButton", redactor.pasteImageButton);
+  setTextIfPresent("redactorImageUploadLabelText", redactor.uploadImageButton);
+  setTextIfPresent("clearRedactorImageButton", redactor.clearImageButton);
+  setTextIfPresent("fetchRedactorImageTextButton", redactor.fetchSpecificButton);
+  setTextIfPresent("fetchRedactorRawTextButton", redactor.fetchRawButton);
+  setAttrIfPresent("redactorImageFrame", "aria-label", redactor.imageFrameAriaLabel);
+  setAttrIfPresent("redactorImagePreview", "alt", redactor.imagePreviewAlt);
+  setTextIfPresent("redactorImagePlaceholder", redactor.imagePlaceholder);
+
+  setTextIfPresent("redactorGeneralTermsLabel", redactor.generalTermsLabel);
+  setPlaceholderIfPresent("redactorGeneralTerms", redactor.generalTermsPlaceholder);
+  setTextIfPresent("uploadGeneralTermsButton", redactor.importGeneralButton);
+  setTextIfPresent("exportGeneralTermsButton", redactor.exportGeneralButton);
+  setTextIfPresent("clearGeneralTermsButton", redactor.clearGeneralButton);
+
+  setTextIfPresent("redactorSpecificTermsLabel", redactor.specificTermsLabel);
+  setPlaceholderIfPresent("redactorTerms", redactor.specificTermsPlaceholder);
+  setTextIfPresent("clearRedactorButton", redactor.clearSpecificButton);
+  setTextIfPresent("redactButton", redactor.redactButton);
+
+  setTextIfPresent("redactorOcrRawOutputLabel", redactor.rawOutputLabel);
+  setPlaceholderIfPresent("redactorOcrRawOutput", redactor.rawOutputPlaceholder);
+  setTextIfPresent("copyRedactorRawOutputButton", redactor.copyRawButton);
+  setTextIfPresent("clearRedactorRawOutputButton", redactor.clearRawButton);
+
+  setTextIfPresent("redactorBirthdateLabel", redactor.birthdateLabel);
+  setPlaceholderIfPresent("redactorBirthdateInput", redactor.birthdatePlaceholder);
+  setTextIfPresent("addBirthdateFormatsButton", redactor.addDatesButton);
+
+  if (toggleButton) {
+    toggleButton.textContent = isOpen ? redactor.toggleHide : redactor.toggleShow;
+  }
+
+  window.__redactorI18n = redactor;
+}
+
 function updateTranscribeUI(trans) {
   document.getElementById("page-title-transcribe").textContent = trans.pageTitle;
   const usageEl = document.getElementById("openaiUsageLink");
@@ -233,6 +386,7 @@ function updateTranscribeUI(trans) {
   // document.getElementById("adUnit").textContent = trans.adUnitText;
   document.getElementById("guideHeading").textContent = trans.guideHeading;
   document.getElementById("guideText").innerHTML = trans.guideText;
+  updateRedactorUI(trans);
   // Guard timers against provider modules overwriting localized labels/units
   // when recording/note-generation starts ticking.
   installTimerI18nGuards(trans);

@@ -1,3 +1,17 @@
+## 11. mars 2026
+
+### Viktig: oppdater nettsiden jevnlig for å få nyeste versjon
+
+Denne appen er **100 % front-end**, noe som betyr at oppdateringer i appen først blir synlige når nettsiden oppdateres.
+
+Hvis du lar appen stå åpen i en nettleserfane over lang tid, for eksempel i dager eller uker, kan du fortsatt se en eldre versjon av appen selv om nye oppdateringer allerede er lagt ut.
+
+For å være sikker på at du bruker nyeste versjon, bør du refreshe/oppdatere siden jevnlig. På Windows kan du bruke **Ctrl + F5** for å gjøre en hard refresh.
+
+Dette er spesielt viktig etter at nye oppdateringer eller endringer er gjort i appen.
+
+---
+
 ## 9. mars 2026
 
 ### Ny Redactor-modul lagt til

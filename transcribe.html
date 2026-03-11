@@ -838,6 +838,31 @@
     }
 
 
+    .news-button-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+
+    .news-latest-badge {
+      display: inline-flex;
+      align-items: center;
+      max-width: 150px;
+      min-height: 24px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #d7dbe3;
+      background: #f7f9fc;
+      color: #445;
+      font-size: 11px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: middle;
+    }
+
     /* News Overlay Styles (same UX as Guide) */
     #newsView {
       display: none;
@@ -1272,7 +1297,17 @@
     </div>
 
     <!-- NEWS button (equal spacing between Guide area and Clinical tools) -->
-    <button id="btnNews" type="button">News</button>
+    <div class="news-button-wrap">
+      <button id="btnNews" type="button">News</button>
+      <span
+        id="newsLatestBadge"
+        class="news-latest-badge"
+        title="Shows the newest status/update entry date"
+        aria-live="polite"
+      >
+        Loading…
+      </span>
+    </div>
 
     <!-- Medical calculator picker (opens selected HTML in a new tab) -->
     <div id="medical-calc-container">
@@ -2650,17 +2685,64 @@
       const guideClose = document.getElementById("guideClose");
 
             const btnNews = document.getElementById("btnNews");
+      const newsLatestBadge = document.getElementById("newsLatestBadge");
       const newsView = document.getElementById("newsView");
       const newsClose = document.getElementById("newsClose");
       const newsHeading = document.getElementById("newsHeading");
       const newsText = document.getElementById("newsText");
       let newsLoadedLang = null;
+      let newsBadgeLoadedLang = null;
 
       function getCurrentLang() {
         // Prefer the live dropdown value (updates immediately),
         // fallback to persisted localStorage.
         const sel = document.getElementById("lang-select-transcribe");
         return (sel && sel.value) || localStorage.getItem("siteLanguage") || "en";
+      }
+
+      function getNewsCandidates(lang) {
+        return (lang === "no")
+          ? ["./Nyheter_NO.md", "./Nyheter_EN.md"]
+          : ["./Nyheter_EN.md"];
+      }
+
+      function extractLatestNewsDate(md) {
+        if (!md) return null;
+        const match = md.match(/^\s*##\s+(.+?)\s*$/m);
+        return match ? match[1].trim() : null;
+      }
+
+      async function loadNewsBadgeForCurrentLanguage(force = false) {
+        if (!newsLatestBadge) return;
+        const lang = getCurrentLang();
+        if (!force && newsBadgeLoadedLang === lang) return;
+
+        newsLatestBadge.textContent = (lang === "no") ? "Siste: …" : "Latest: …";
+        newsLatestBadge.title =
+          (lang === "no")
+            ? "Viser datoen for den nyeste status-/oppdateringsmeldingen"
+            : "Shows the date of the newest status/update entry";
+
+        try {
+          let latestDate = null;
+          for (const url of getNewsCandidates(lang)) {
+            const res = await fetch(url, { cache: "no-store" });
+            if (!res.ok) continue;
+            const md = await res.text();
+            latestDate = extractLatestNewsDate(md);
+            if (latestDate) break;
+          }
+
+          if (!latestDate) throw new Error("Could not extract latest news date.");
+
+          newsLatestBadge.textContent =
+            (lang === "no") ? `Siste: ${latestDate}` : `Latest: ${latestDate}`;
+          newsBadgeLoadedLang = lang;
+        } catch (err) {
+          console.error("Failed to load latest news date:", err);
+          newsLatestBadge.textContent = (lang === "no") ? "Siste: –" : "Latest: –";
+          newsBadgeLoadedLang = null;
+        }
       }
 
       async function loadNewsForCurrentLanguage(force = false) {
@@ -2675,9 +2757,7 @@
         newsText.textContent = "Loading…";
 
         // Norwegian only when lang === "no". All other languages default to English.
-        const candidates = (lang === "no")
-          ? ["./Nyheter_NO.md", "./Nyheter_EN.md"]
-          : ["./Nyheter_EN.md"];
+        const candidates = getNewsCandidates(lang);
 
         try {
           let loaded = false;
@@ -2760,10 +2840,15 @@ if (guideClose) {
       langSelectTranscribe?.addEventListener("change", () => {
         // Force refresh even if our previous load used the old localStorage value
         newsLoadedLang = null;
+        newsBadgeLoadedLang = null;
+        loadNewsBadgeForCurrentLanguage(true);
         if (newsView?.classList.contains("active")) {
           loadNewsForCurrentLanguage(true);
         }
       });
+
+      // Load discreet latest-update badge on page load
+      loadNewsBadgeForCurrentLanguage(true);
 
       // ESC closes News (same as other overlays)
       document.addEventListener("keydown", (e) => {

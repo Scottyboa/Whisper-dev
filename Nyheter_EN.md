@@ -1,3 +1,17 @@
+## 11 March, 2026
+
+### Important: refresh the webpage regularly to get the newest version
+
+This app is **100% front-end**, which means updates to the app will only appear after the webpage is refreshed.
+
+If you keep the app open in a browser tab for a long time, such as for days or weeks, you may continue seeing an older version of the app even if new updates have already been released.
+
+To make sure you are using the newest version, please refresh the page regularly. On Windows, you can use **Ctrl + F5** to do a hard refresh.
+ 
+This is especially important after new updates or changes have been made to the app.
+
+---
+
 ## 9 March, 2026
 
 ### New redaction tools added to the Transcribe page

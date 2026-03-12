@@ -2760,6 +2760,15 @@
 
         langSelectTranscribe?.addEventListener("change", syncPromptToggleLabel);
         syncPromptToggleLabel();
+
+        // Re-sync after the app restores persisted language on startup.
+        requestAnimationFrame(() => {
+          syncPromptToggleLabel();
+          requestAnimationFrame(syncPromptToggleLabel);
+        });
+        setTimeout(syncPromptToggleLabel, 0);
+        setTimeout(syncPromptToggleLabel, 250);
+        window.addEventListener("pageshow", syncPromptToggleLabel);
       }
 
       if (document.readyState === "loading") {

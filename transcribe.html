@@ -503,7 +503,7 @@
       top: 22px;
       z-index: 3000;
       width: 260px;
-      max-width: 70vw;
+      max-width: min(260px, calc(100vw - 24px));
       background: #fff;
       color: #333;
       border: 1px solid #ddd;
@@ -512,6 +512,10 @@
       box-shadow: 0 6px 18px rgba(0,0,0,0.12);
       font-size: 12px;
       line-height: 1.35;
+      white-space: normal;
+      overflow-wrap: break-word;
+      word-break: normal;
+      box-sizing: border-box;
     }
 
     .help-tip.help-tip-left .help-tip-content {
@@ -751,6 +755,36 @@
       gap: 10px;
     }
 
+    /* Shared section headers for bottom columns */
+    .bottom-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 8px 0 6px 0;
+      min-height: 32px;
+    }
+    .bottom-section-header h3 {
+      margin: 0;
+      line-height: 1.2;
+    }
+    .bottom-section-header-spacer {
+      width: 152px; /* roughly matches checkbox control width so both headings sit on the same visual line */
+      flex: 0 0 152px;
+    }
+    .prompt-include-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin: 0;
+      font-size: 13px;
+      color: #445;
+      white-space: nowrap;
+      flex: 0 0 auto;
+      line-height: 1;
+    }
+
     /* Prompt profile row (Custom Prompt column) */
     .prompt-profile-row {
       display: flex;
@@ -758,7 +792,7 @@
       justify-content: space-between;
       gap: 10px;
       flex-wrap: wrap;
-      margin-top: -6px;
+      margin-top: 0;
     }
     .prompt-profile-left {
       font-size: 14px;
@@ -1639,7 +1673,10 @@
       <!-- Note Generation & Custom Prompt -->
       <div class="bottom-half">
       <div class="column">
-          <h3 id="noteGenerationTitle">Note Generation</h3>
+          <div class="bottom-section-header">
+            <h3 id="noteGenerationTitle">Note Generation</h3>
+            <span class="bottom-section-header-spacer" aria-hidden="true"></span>
+          </div>
           <!-- Phase 3: Note Provider selector (module switch only; both use OpenAI key) -->
           <div id="note-provider-container" style="display:flex; align-items:center; gap:8px; margin: 6px 0 6px;">
             <label for="noteProvider" id="noteProviderLabel">Provider:</label>
@@ -1744,7 +1781,20 @@
           <textarea id="generatedNote" placeholder="Generated note will appear here..."></textarea>
         </div>
         <div class="column">
-          <h3 id="customPromptTitle">Custom Prompt</h3>
+          <div class="bottom-section-header custom-prompt-header">
+            <h3 id="customPromptTitle">Custom Prompt</h3>
+
+            <label class="prompt-include-toggle">
+              <input id="includePromptToggle" type="checkbox" checked />
+              <span id="includePromptToggleLabel">Use prompt</span>
+              <span class="help-tip help-tip-left" tabindex="0" aria-label="Prompt toggle help">
+                ?
+                <span id="includePromptToggleTooltip" class="help-tip-content" role="tooltip">
+                  When enabled, your custom prompt is included in note generation. Turn it off to generate notes without using the prompt text.
+                </span>
+              </span>
+            </label>
+          </div>
 
           <!-- New: Prompt profile status + Import/Export -->
           <div class="prompt-profile-row">
@@ -2644,6 +2694,78 @@
       const genBtn = document.getElementById("generateNoteButton");
       if (genBtn) {
         genBtn.addEventListener("click", () => window.__app.clearNoteUsageAndCost(), true);
+      }
+    })();
+  </script>
+
+  <script>
+    (() => {
+      function setupPromptInclusionToggle() {
+        const promptTextarea = document.getElementById("customPrompt");
+        const generateNoteButton = document.getElementById("generateNoteButton");
+        const includePromptToggle = document.getElementById("includePromptToggle");
+        const includePromptToggleLabel = document.getElementById("includePromptToggleLabel");
+        const includePromptToggleTooltip = document.getElementById("includePromptToggleTooltip");
+        const langSelectTranscribe = document.getElementById("lang-select-transcribe");
+
+        if (!promptTextarea || !generateNoteButton || !includePromptToggle) return;
+
+        let originalPromptValue = null;
+        let restoreTimer = null;
+
+        const getCurrentLang = () => {
+          const sel = document.getElementById("lang-select-transcribe");
+          return (sel && sel.value) || localStorage.getItem("siteLanguage") || "en";
+        };
+
+        const syncPromptToggleLabel = () => {
+          const isNorwegian = getCurrentLang() === "no";
+
+          if (includePromptToggleLabel) {
+            includePromptToggleLabel.textContent = isNorwegian ? "Bruk prompt" : "Use prompt";
+          }
+
+          if (includePromptToggleTooltip) {
+            includePromptToggleTooltip.textContent = isNorwegian
+              ? "Når denne er aktivert, blir den egendefinerte prompten brukt i notatgenerering. Slå den av for å generere notater uten prompt/instruksjon."
+              : "When enabled, your custom prompt is included in note generation. Turn it off to generate notes without using the prompt text.";
+          }
+        };
+
+        const restorePromptValue = () => {
+          if (restoreTimer) {
+            clearTimeout(restoreTimer);
+            restoreTimer = null;
+          }
+          if (originalPromptValue !== null) {
+            promptTextarea.value = originalPromptValue;
+            originalPromptValue = null;
+          }
+        };
+
+        generateNoteButton.addEventListener(
+          "click",
+          () => {
+            if (includePromptToggle.checked || originalPromptValue !== null) return;
+
+            originalPromptValue = promptTextarea.value;
+            promptTextarea.value = "";
+
+            restoreTimer = setTimeout(() => {
+              restorePromptValue();
+            }, 0);
+          },
+          true
+        );
+
+        langSelectTranscribe?.addEventListener("change", syncPromptToggleLabel);
+        syncPromptToggleLabel();
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", setupPromptInclusionToggle, { once: true });
+      } else {
+        setupPromptInclusionToggle();
       }
     })();
   </script>

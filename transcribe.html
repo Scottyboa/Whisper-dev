@@ -2702,16 +2702,37 @@
     (() => {
       function setupPromptInclusionToggle() {
         const promptTextarea = document.getElementById("customPrompt");
-        const generateNoteButton = document.getElementById("generateNoteButton");
         const includePromptToggle = document.getElementById("includePromptToggle");
         const includePromptToggleLabel = document.getElementById("includePromptToggleLabel");
         const includePromptToggleTooltip = document.getElementById("includePromptToggleTooltip");
         const langSelectTranscribe = document.getElementById("lang-select-transcribe");
 
-        if (!promptTextarea || !generateNoteButton || !includePromptToggle) return;
+        if (!promptTextarea || !includePromptToggle) return;
 
-        let originalPromptValue = null;
-        let restoreTimer = null;
+        const nativeValueDescriptor = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value");
+        const nativeGetValue = nativeValueDescriptor?.get;
+        const nativeSetValue = nativeValueDescriptor?.set;
+
+        if (nativeGetValue && nativeSetValue && !promptTextarea.__promptMaskInstalled) {
+          Object.defineProperty(promptTextarea, "value", {
+            configurable: true,
+            enumerable: true,
+            get() {
+              const actualValue = nativeGetValue.call(this);
+              return includePromptToggle.checked ? actualValue : "";
+            },
+            set(nextValue) {
+              nativeSetValue.call(this, nextValue ?? "");
+            }
+          });
+
+          promptTextarea.__promptMaskInstalled = true;
+          promptTextarea.__getVisiblePromptValue = () => nativeGetValue.call(promptTextarea);
+          promptTextarea.__setVisiblePromptValue = (nextValue) => nativeSetValue.call(promptTextarea, nextValue ?? "");
+
+          window.__getVisibleCustomPromptValue = () => nativeGetValue.call(promptTextarea);
+          window.__setVisibleCustomPromptValue = (nextValue) => nativeSetValue.call(promptTextarea, nextValue ?? "");
+        }
 
         const getCurrentLang = () => {
           const sel = document.getElementById("lang-select-transcribe");
@@ -2732,43 +2753,8 @@
           }
         };
 
-        const restorePromptValue = () => {
-          if (restoreTimer) {
-            clearTimeout(restoreTimer);
-            restoreTimer = null;
-          }
-          if (originalPromptValue !== null) {
-            promptTextarea.value = originalPromptValue;
-            originalPromptValue = null;
-          }
-        };
-
-        generateNoteButton.addEventListener(
-          "click",
-          () => {
-            if (includePromptToggle.checked || originalPromptValue !== null) return;
-
-            originalPromptValue = promptTextarea.value;
-            promptTextarea.value = "";
-
-            restoreTimer = setTimeout(() => {
-              restorePromptValue();
-            }, 0);
-          },
-          true
-        );
-
         langSelectTranscribe?.addEventListener("change", syncPromptToggleLabel);
         syncPromptToggleLabel();
-
-        // Re-sync after the app restores persisted language on startup.
-        requestAnimationFrame(() => {
-          syncPromptToggleLabel();
-          requestAnimationFrame(syncPromptToggleLabel);
-        });
-        setTimeout(syncPromptToggleLabel, 0);
-        setTimeout(syncPromptToggleLabel, 250);
-        window.addEventListener("pageshow", syncPromptToggleLabel);
       }
 
       if (document.readyState === "loading") {
@@ -5107,7 +5093,7 @@ if (guideClose) {
 
       customPromptTextarea.addEventListener("input", () => {
         if (isLoadingPrompt) return;
-        PromptManager.savePrompt(promptSlotSelect.value, customPromptTextarea.value);
+        PromptManager.savePrompt(promptSlotSelect.value, (window.__getVisibleCustomPromptValue ? window.__getVisibleCustomPromptValue() : customPromptTextarea.value));
         customPromptTextarea.style.height = "auto";
         customPromptTextarea.style.height = customPromptTextarea.scrollHeight + "px";
       });
@@ -5147,7 +5133,7 @@ if (guideClose) {
     if (copyPromptButton && customPromptTextarea) {
       const originalLabel = copyPromptButton.textContent;
       copyPromptButton.addEventListener("click", async () => {
-        const value = (customPromptTextarea.value || "").trim();
+        const value = ((window.__getVisibleCustomPromptValue ? window.__getVisibleCustomPromptValue() : customPromptTextarea.value) || "").trim();
         if (!value) return;
         try {
           await navigator.clipboard.writeText(value);

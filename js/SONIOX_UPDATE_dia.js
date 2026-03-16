@@ -1,4 +1,5 @@
 
+
 // SONIOX_UPDATE_dia.js
 
 let transcriptionError = false;
@@ -134,6 +135,7 @@ let chunkNumber = 1;
 let manualStop = false;
 let transcriptChunks = {};
 let transcriptFrozen = false;
+let abortRequested = false;
 let pollingIntervals = {};  // (removed polling functions, kept for legacy structure)
 
 let chunkStartTime = 0;
@@ -191,6 +193,21 @@ function updateStatusMessage(message, color = "#333") {
     statusElem.innerText = message;
     statusElem.style.color = color;
   }
+}
+
+function setAbortButtonDisabled(disabled) {
+  const abortButton = document.getElementById("abortButton");
+  if (abortButton) abortButton.disabled = disabled;
+}
+
+function setRecordingControlsIdle() {
+  const startButton = document.getElementById("startButton");
+  const stopButton = document.getElementById("stopButton");
+  const pauseResumeButton = document.getElementById("pauseResumeButton");
+  setAbortButtonDisabled(true);
+  if (startButton) startButton.disabled = false;
+  if (stopButton) stopButton.disabled = true;
+  if (pauseResumeButton) pauseResumeButton.disabled = true;
 }
 
 // ───── Completion timer helpers ───────────────────────────────────────────────
@@ -1038,6 +1055,7 @@ function initRecording() {
   const startButton       = document.getElementById("startButton");
   const stopButton        = document.getElementById("stopButton");
   const pauseResumeButton = document.getElementById("pauseResumeButton");
+  const abortButton       = document.getElementById("abortButton");
   if (!startButton || !stopButton || !pauseResumeButton) return;
   // Make init idempotent: if initRecording() is called again, kill old listeners.
   window.__sonioxUIAbort_soniox_dia?.abort("re-init");
@@ -1108,6 +1126,7 @@ function initRecording() {
       logError("Soniox cleanup on start failed", err);
     });
 
+    abortRequested = false;
     resetRecordingState();
     const transcriptionElem = document.getElementById("transcription");
     if (transcriptionElem) {
@@ -1131,10 +1150,12 @@ function initRecording() {
       stopButton.disabled = false;
       pauseResumeButton.disabled = false;
       pauseResumeButton.innerText = "Pause Recording";
+      setAbortButtonDisabled(false);
     } catch (error) {
       updateStatusMessage("VAD initialization error: " + error, "red");
       logError("Silero VAD error", error);
       startButton.disabled = false;
+      setAbortButtonDisabled(true);
     }
   }, { signal: uiSignal });
 
@@ -1153,6 +1174,7 @@ pauseResumeButton.addEventListener("click", async () => {
       recordingPaused = false;
       
       pauseResumeButton.innerText = "Pause Recording";
+      setAbortButtonDisabled(false);
       updateStatusMessage("Listening for speech…", "green");
       logInfo("Silero VAD resumed");
     } catch (err) {
@@ -1182,13 +1204,75 @@ pauseResumeButton.addEventListener("click", async () => {
     recordingPaused = true;
     
     pauseResumeButton.innerText = "Resume Recording";
+    setAbortButtonDisabled(true);
     updateStatusMessage("Recording paused", "orange");
     logInfo("Recording paused; buffered speech flushed");
   }
 }, { signal: uiSignal });
 
 
+if (abortButton) {
+  abortButton.addEventListener("click", async () => {
+    if (abortButton.disabled) return;
+
+    abortRequested = true;
+    transcriptFrozen = true;
+    manualStop = true;
+    recordingPaused = false;
+    recordingActive = false;
+    finalChunkProcessed = false;
+    clearTimeout(chunkTimeoutId);
+
+    try {
+      if (sileroVAD && typeof sileroVAD.pause === "function") {
+        await sileroVAD.pause();
+      }
+    } catch (err) {
+      logDebug("Silero VAD pause on abort failed:", err);
+    }
+
+    try {
+      if (sileroVAD?.stream) {
+        sileroVAD.stream.getTracks().forEach(t => t.stop());
+      }
+    } catch (err) {
+      logDebug("Silero VAD stream stop on abort failed:", err);
+    }
+
+    try {
+      if (sileroVAD && !sileroVAD._destroyed) {
+        sileroVAD._destroyed = true;
+        await sileroVAD.destroy?.();
+      }
+    } catch (err) {
+      logDebug("Silero VAD destroy on abort failed:", err);
+    } finally {
+      sileroVAD = null;
+    }
+
+    stopMicrophone();
+
+    try {
+      transcriptionSessionAbortController.abort("recording aborted");
+    } catch (_) {}
+    transcriptionSessionAbortController = new AbortController();
+
+    transcriptionQueue = [];
+    isProcessingQueue = false;
+    processingQueueSessionId = null;
+    pendingVADChunks = [];
+    pendingVADLock = false;
+    chunkProcessingLock = false;
+    pendingStop = false;
+    freezeCompletionTimer();
+    setRecordingControlsIdle();
+    updateStatusMessage("Recording aborted.", "orange");
+    logInfo("Recording aborted by user; discarded pending transcription work.");
+  }, { signal: uiSignal });
+}
+
 stopButton.addEventListener("click", async () => {
+  setAbortButtonDisabled(true);
    let forcedAudio = null;
     if (sileroVAD && typeof sileroVAD.endSegment === "function") {
     const result = sileroVAD.endSegment();

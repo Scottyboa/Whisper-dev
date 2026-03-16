@@ -1,3 +1,13 @@
+## 16. mars 2026
+
+### Ny abort-knapp lagt til under opptak
+
+Det er nå lagt til en egen **Abort**-knapp under opptak. Denne kan brukes hvis du vil avbryte et pågående opptak uten å sende det til transkripsjon.
+
+Tidligere var eneste måte å avbryte et opptak på å oppdatere/refresh(F5) siden. Hvis du i stedet trykket **Stop**, ble opptaket transkribert så langt det var kommet, noe som også kunne gi token-kostnad for et opptak du egentlig ikke ønsket å transkribere.
+
+---
+
 ## 15. mars 2026
 
 ### Fikset: informasjonsknappene på forsiden fungerer igjen

@@ -97,6 +97,8 @@ let groupId = null;
 let chunkNumber = 1;
 let manualStop = false;
 let transcriptChunks = {};  // {chunkNumber: transcript}
+let transcriptFrozen = false;
+let abortRequested = false;
 let pollingIntervals = {};  // (removed polling functions, kept for legacy structure)
 
 let chunkStartTime = 0;
@@ -138,6 +140,9 @@ function beginFreshTranscriptionSession() {
   // Release chunk stop/flush locks if they were left set by an earlier run.
   chunkProcessingLock = false;
   pendingStop = false;
+  manualStop = false;
+  abortRequested = false;
+  transcriptFrozen = false;
 }
 // --- Utility Functions ---
 function updateStatusMessage(message, color = "#333") {
@@ -146,6 +151,21 @@ function updateStatusMessage(message, color = "#333") {
     statusElem.innerText = message;
     statusElem.style.color = color;
   }
+}
+
+function setAbortButtonDisabled(disabled) {
+  const abortButton = document.getElementById("abortButton");
+  if (abortButton) abortButton.disabled = disabled;
+}
+
+function setRecordingControlsIdle() {
+  const startButton = document.getElementById("startButton");
+  const stopButton = document.getElementById("stopButton");
+  const pauseResumeButton = document.getElementById("pauseResumeButton");
+  setAbortButtonDisabled(true);
+  if (startButton) startButton.disabled = false;
+  if (stopButton) stopButton.disabled = true;
+  if (pauseResumeButton) pauseResumeButton.disabled = true;
 }
 
 function formatTime(ms) {
@@ -533,17 +553,13 @@ async function safeProcessAudioChunk(force = false) {
 }
 
 function finalizeStop() {
-  const startButton = document.getElementById("startButton");
-  const stopButton = document.getElementById("stopButton");
-  const pauseResumeButton = document.getElementById("pauseResumeButton");
-  if (startButton) startButton.disabled = false;
-  if (stopButton) stopButton.disabled = true;
-  if (pauseResumeButton) pauseResumeButton.disabled = true;
+  setRecordingControlsIdle();
   logInfo("Recording stopped by user. Finalizing transcription.");
   // Optionally, you could wait here for the queue to empty before declaring completion.
 }
 
 function updateTranscriptionOutput() {
+  if (transcriptFrozen) return;
   const sortedKeys = Object.keys(transcriptChunks).map(Number).sort((a, b) => a - b);
   let combinedTranscript = "";
   sortedKeys.forEach(key => {
@@ -643,6 +659,8 @@ function resetRecordingState() {
   
 
   transcriptChunks = {};
+  transcriptFrozen = false;
+  abortRequested = false;
   audioFrames = [];
   chunkStartTime = Date.now();
   lastFrameTime = Date.now();
@@ -660,6 +678,7 @@ function initRecording() {
   const startButton       = document.getElementById("startButton");
   const stopButton        = document.getElementById("stopButton");
   const pauseResumeButton = document.getElementById("pauseResumeButton");
+  const abortButton       = document.getElementById("abortButton");
   if (!startButton || !stopButton || !pauseResumeButton) return;
 
   // --- PULL readLoop INTO SHARED SCOPE ---
@@ -729,10 +748,12 @@ function initRecording() {
       stopButton.disabled = false;
       pauseResumeButton.disabled = false;
       pauseResumeButton.innerText = "Pause Recording";
+      setAbortButtonDisabled(false);
     } catch (error) {
       updateStatusMessage("VAD initialization error: " + error, "red");
       logError("Silero VAD error", error);
       startButton.disabled = false;
+      setAbortButtonDisabled(true);
     }
   });
 
@@ -751,6 +772,7 @@ pauseResumeButton.addEventListener("click", async () => {
       recordingPaused = false;
       
       pauseResumeButton.innerText = "Pause Recording";
+      setAbortButtonDisabled(false);
       updateStatusMessage("Listening for speech…", "green");
       logInfo("Silero VAD resumed");
     } catch (err) {
@@ -787,12 +809,79 @@ pauseResumeButton.addEventListener("click", async () => {
     recordingPaused = true;
     
     pauseResumeButton.innerText = "Resume Recording";
+    setAbortButtonDisabled(true);
     updateStatusMessage("Recording paused", "orange");
     logInfo("Recording paused; buffered speech flushed");
   }
 });
 
+
+
+if (abortButton) {
+  abortButton.addEventListener("click", async () => {
+    if (abortButton.disabled) return;
+
+    abortRequested = true;
+    transcriptFrozen = true;
+    manualStop = true;
+    recordingPaused = false;
+    recordingActive = false;
+    finalChunkProcessed = false;
+    clearTimeout(chunkTimeoutId);
+
+    try {
+      if (sileroVAD && typeof sileroVAD.pause === "function") {
+        await sileroVAD.pause();
+      }
+    } catch (err) {
+      logDebug("Silero VAD pause on abort failed:", err);
+    }
+
+    try {
+      if (sileroVAD?.stream) {
+        sileroVAD.stream.getTracks().forEach(t => t.stop());
+      }
+    } catch (err) {
+      logDebug("Silero VAD stream stop on abort failed:", err);
+    }
+
+    try {
+      if (sileroVAD && typeof sileroVAD.destroy === "function") {
+        await sileroVAD.destroy();
+      }
+    } catch (err) {
+      logDebug("Silero VAD destroy on abort failed:", err);
+    } finally {
+      sileroVAD = null;
+    }
+
+    stopMicrophone();
+
+    try {
+      transcriptionSessionAbortController.abort("recording aborted");
+    } catch (_) {}
+    transcriptionSessionAbortController = new AbortController();
+
+    transcriptionQueue = [];
+    isProcessingQueue = false;
+    processingQueueSessionId = null;
+    pendingVADChunks = [];
+    audioFrames = [];
+    chunkProcessingLock = false;
+    pendingStop = false;
+    clearInterval(completionTimerInterval);
+    completionTimerInterval = null;
+
+    setRecordingControlsIdle();
+    updateStatusMessage("Recording aborted.", "orange");
+    logInfo("Recording aborted by user; discarded pending transcription work.");
+  });
+}
+
 stopButton.addEventListener("click", async () => {
+    setAbortButtonDisabled(true);
+    abortRequested = false;
+    transcriptFrozen = false;
     updateStatusMessage("Finishing transcription...", "blue");
     // --- FORCE-FLUSH the in-flight VAD segment via the public API ---
     // If MicVAD supports endSegment(), use it to emit the last audio

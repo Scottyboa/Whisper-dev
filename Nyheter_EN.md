@@ -4,7 +4,7 @@
 
 A new **Abort** button has now been added during recording. This can be used if you want to cancel an ongoing recording without sending it for transcription.
 
-Previously, the only way to cancel a recording was to refresh the page. If you clicked **Stop** instead, the recording would be transcribed up to that point, which could also result in token cost for a recording you did not actually want to transcribe.
+Previously, the only way to cancel a recording was to refresh(F5) the page. If you clicked **Stop** instead, the recording would be transcribed up to that point, which could also result in token cost for a recording you did not actually want to transcribe.
 
 ---
 

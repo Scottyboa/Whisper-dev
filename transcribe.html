@@ -785,6 +785,10 @@
       line-height: 1;
     }
 
+    #abortButton {
+      margin-left: 4px;
+    }
+
     /* Prompt profile row (Custom Prompt column) */
     .prompt-profile-row {
       display: flex;
@@ -1647,6 +1651,7 @@
    <button id="startButton">Start</button>
     <button id="stopButton" disabled>Stop</button>
   <button id="pauseResumeButton" disabled>Pause Recording</button>
+  <button id="abortButton" type="button" disabled title="Discard the current recording without finishing transcription">Abort</button>
         <!-- Auto-generate toggle (default OFF). When ON, note generation can be triggered on transcription finish. -->
         <div class="auto-clear-toggle" id="autoGenerateToggleContainer" aria-label="Auto-generate note on transcription finish">
           <label class="switch" title="Auto-generate">
@@ -4350,6 +4355,8 @@ if (guideClose) {
       if (id === 'stopButton') {
         // Recording event: only include transcription provider context
         logEvent({ action: 'stopRecording', ...getTranscribeProviderSnapshot() })
+      } else if (id === 'abortButton') {
+        logEvent({ action: 'abortRecording', ...getTranscribeProviderSnapshot() })
       } else if (id === 'generateNoteButton') {
         // Note event: only include note provider context
         logEvent({ action: 'noteGeneration', ...getNoteProviderSnapshot() });
@@ -5223,7 +5230,7 @@ if (guideClose) {
     }
 
     // hook into your existing buttons
-    ['startButton','stopButton','generateNoteButton']
+    ['startButton','stopButton','abortButton','generateNoteButton']
       .forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.addEventListener('click', refreshAds);
@@ -5249,6 +5256,7 @@ if (guideClose) {
       const startBtn = document.getElementById("startButton");
       const stopBtn = document.getElementById("stopButton");
       const pauseBtn = document.getElementById("pauseResumeButton");
+      const abortBtn = document.getElementById("abortButton");
       const transcriptionEl = document.getElementById("transcription");
 
       if (!timerEl || !startBtn || !stopBtn || !pauseBtn) return;
@@ -5395,11 +5403,11 @@ if (guideClose) {
         if (id === "startButton") {
           resetTranscriptionWindowSize();
           armStart();
-        } else if (id === "stopButton") {
+        } else if (id === "stopButton" || id === "abortButton") {
           // If Start never actually succeeded, cancel the pending start cleanly
           cancelStart();
           freeze();
-          blockedUntilStart = true; // stop behaves like “end session”
+          blockedUntilStart = true; // stop/abort behaves like “end session”
         } else if (id === "pauseResumeButton") {
           if (running) freeze();
           else resume();

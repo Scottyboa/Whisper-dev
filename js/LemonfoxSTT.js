@@ -100,6 +100,9 @@ let groupId = null;
 let chunkNumber = 1;
 let manualStop = false;
 let transcriptChunks = {};  // {chunkNumber: transcript}
+let transcriptFrozen = false;
+let abortRequested = false;
+let transcriptionSessionAbortController = new AbortController();
 let pollingIntervals = {};  // (removed polling functions, kept for legacy structure)
 
 let chunkStartTime = 0;
@@ -128,6 +131,21 @@ function updateStatusMessage(message, color = "#333") {
     statusElem.innerText = message;
     statusElem.style.color = color;
   }
+}
+
+function setAbortButtonDisabled(disabled) {
+  const abortButton = document.getElementById("abortButton");
+  if (abortButton) abortButton.disabled = disabled;
+}
+
+function setRecordingControlsIdle() {
+  const startButton = document.getElementById("startButton");
+  const stopButton = document.getElementById("stopButton");
+  const pauseResumeButton = document.getElementById("pauseResumeButton");
+  if (startButton) startButton.disabled = false;
+  if (stopButton) stopButton.disabled = true;
+  if (pauseResumeButton) pauseResumeButton.disabled = true;
+  setAbortButtonDisabled(true);
 }
 
 // ────────────────────────────────
@@ -312,10 +330,12 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
   fd.append("file", wavBlob, `chunk_${chunkNum}.wav`);
 
   try {
+    const sessionSignal = transcriptionSessionAbortController.signal;
     const rsp = await fetch("https://eu-api.lemonfox.ai/v1/audio/transcriptions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
       body: fd,
+      signal: sessionSignal,
     });
 
     if (!rsp.ok) {
@@ -337,6 +357,10 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
     logInfo(`Lemonfox chunk ${chunkNum} completed.`);
     return text;
   } catch (error) {
+    if (abortRequested || error?.name === "AbortError") {
+      logInfo(`Lemonfox chunk ${chunkNum} aborted.`);
+      return "";
+    }
     logError(`Error transcribing chunk ${chunkNum} (Lemonfox):`, error);
     updateStatusMessage("Transcription error with Lemonfox API. Check key or credits.", "red");
     transcriptionError = true;
@@ -370,10 +394,19 @@ async function processTranscriptionQueue() {
   isProcessingQueue = true;
 
   while (transcriptionQueue.length > 0) {
+    if (abortRequested) {
+      transcriptionQueue = [];
+      break;
+    }
+
     let { chunkNum, wavBlob } = transcriptionQueue.shift();
     logInfo(`Transcribing chunk ${chunkNum}...`);
 
     const transcript = await transcribeChunkDirectly(wavBlob, chunkNum);
+    if (abortRequested) {
+      wavBlob = null;
+      break;
+    }
     transcriptChunks[chunkNum] = transcript;
     updateTranscriptionOutput();
     // free this chunk’s audio immediately
@@ -465,17 +498,13 @@ async function safeProcessAudioChunk(force = false) {
 }
 
 function finalizeStop() {
-  const startButton = document.getElementById("startButton");
-  const stopButton = document.getElementById("stopButton");
-  const pauseResumeButton = document.getElementById("pauseResumeButton");
-  if (startButton) startButton.disabled = false;
-  if (stopButton) stopButton.disabled = true;
-  if (pauseResumeButton) pauseResumeButton.disabled = true;
+  setRecordingControlsIdle();
   logInfo("Recording stopped by user. Finalizing transcription.");
   // Optionally, you could wait here for the queue to empty before declaring completion.
 }
 
 function updateTranscriptionOutput() {
+  if (transcriptFrozen) return;
   const sortedKeys = Object.keys(transcriptChunks).map(Number).sort((a, b) => a - b);
   let combinedTranscript = "";
   sortedKeys.forEach(key => {
@@ -576,6 +605,12 @@ function resetRecordingState() {
   
 
   transcriptChunks = {};
+  transcriptFrozen = false;
+  abortRequested = false;
+  try {
+    transcriptionSessionAbortController.abort("new recording session");
+  } catch (_) {}
+  transcriptionSessionAbortController = new AbortController();
   audioFrames = [];
   chunkStartTime = Date.now();
   lastFrameTime = Date.now();
@@ -597,7 +632,12 @@ function initRecording() {
   const startButton       = document.getElementById("startButton");
   const stopButton        = document.getElementById("stopButton");
   const pauseResumeButton = document.getElementById("pauseResumeButton");
+  const abortButton       = document.getElementById("abortButton");
   if (!startButton || !stopButton || !pauseResumeButton) return;
+
+  window.__lemonfoxUIAbort?.abort("re-init");
+  window.__lemonfoxUIAbort = new AbortController();
+  const uiSignal = window.__lemonfoxUIAbort.signal;
 
   // --- PULL readLoop INTO SHARED SCOPE ---
   async function readLoop() {
@@ -669,12 +709,14 @@ function initRecording() {
       stopButton.disabled = false;
       pauseResumeButton.disabled = false;
       pauseResumeButton.innerText = "Pause Recording";
+      setAbortButtonDisabled(false);
     } catch (error) {
       updateStatusMessage("VAD initialization error: " + error, "red");
       logError("Silero VAD error", error);
       startButton.disabled = false;
+      setAbortButtonDisabled(true);
     }
-  });
+  }, { signal: uiSignal });
 
 pauseResumeButton.addEventListener("click", async () => {
   if (recordingPaused) {
@@ -757,9 +799,72 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
     updateStatusMessage("Recording paused", "orange");
     logInfo("Recording paused; buffered speech flushed");
   }
-});
+}, { signal: uiSignal });
+
+if (abortButton) {
+abortButton.addEventListener("click", async () => {
+    if (abortButton.disabled) return;
+
+    abortRequested = true;
+    transcriptFrozen = true;
+    manualStop = true;
+    recordingPaused = false;
+    recordingActive = false;
+    finalChunkProcessed = false;
+    clearTimeout(chunkTimeoutId);
+
+    try {
+      if (sileroVAD && typeof sileroVAD.pause === "function") {
+        await sileroVAD.pause();
+      }
+    } catch (err) {
+      logDebug("Silero VAD pause on abort failed:", err);
+    }
+
+    try {
+      if (sileroVAD?.stream) {
+        sileroVAD.stream.getTracks().forEach(t => t.stop());
+      }
+    } catch (err) {
+      logDebug("Silero VAD stream stop on abort failed:", err);
+    }
+
+    try {
+      if (sileroVAD && !sileroVAD._destroyed && typeof sileroVAD.destroy === "function") {
+        sileroVAD._destroyed = true;
+        await sileroVAD.destroy();
+      }
+    } catch (err) {
+      logDebug("Silero VAD destroy on abort failed:", err);
+    } finally {
+      sileroVAD = null;
+    }
+
+    stopMicrophone();
+
+    try {
+      transcriptionSessionAbortController.abort("recording aborted");
+    } catch (_) {}
+    transcriptionSessionAbortController = new AbortController();
+
+    transcriptionQueue = [];
+    isProcessingQueue = false;
+    pendingVADChunks = [];
+    pendingVADLock = false;
+    chunkProcessingLock = false;
+    pendingStop = false;
+    if (completionTimerInterval) {
+      clearInterval(completionTimerInterval);
+      completionTimerInterval = null;
+    }
+    setRecordingControlsIdle();
+    updateStatusMessage("Recording aborted.", "orange");
+    logInfo("Recording aborted by user; discarded pending transcription work.");
+  }, { signal: uiSignal });
+}
 
 stopButton.addEventListener("click", async () => {
+    setAbortButtonDisabled(true);
     updateStatusMessage("Finishing transcription...", "blue");
     // --- FORCE-FLUSH the in-flight VAD segment via the public API ---
     // If MicVAD supports endSegment(), use it to emit the last audio
@@ -863,12 +968,7 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
     updateTranscriptionOutput();
 
     // Re-enable/disable buttons for a fresh start
-    const startButton = document.getElementById("startButton");
-    if (startButton) startButton.disabled = false;
-    const stopButton = document.getElementById("stopButton");
-    if (stopButton) stopButton.disabled = true;
-    const pauseResumeButton = document.getElementById("pauseResumeButton");
-    if (pauseResumeButton) pauseResumeButton.disabled = true;
+    setRecordingControlsIdle();
 
     logInfo("Stop clicked with no pending audio frames; instant completion.");
     return;
@@ -883,11 +983,7 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
     }
 
   
-    const startButton = document.getElementById("startButton");
-    if (startButton) startButton.disabled = false;
-    stopButton.disabled = true;
-    const pauseResumeButton = document.getElementById("pauseResumeButton");
-    if (pauseResumeButton) pauseResumeButton.disabled = true;
+    setRecordingControlsIdle();
     logInfo("Recording paused and stop pressed; transcription complete without extra processing.");
     return;
   }
@@ -900,11 +996,7 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
     const compTimerElem = document.getElementById("transcribeTimer");
     if (compTimerElem) compTimerElem.innerText = "Completion Timer: 0 sec";
     // Reset buttons
-    const startButton = document.getElementById("startButton");
-    if (startButton) startButton.disabled = false;
-    stopButton.disabled = true;
-    const pauseResumeButton = document.getElementById("pauseResumeButton");
-    if (pauseResumeButton) pauseResumeButton.disabled = true;
+    setRecordingControlsIdle();
     logInfo("No audio frames captured; instant transcription complete.");
     return;
   } else {
@@ -921,11 +1013,7 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
         }
         
         updateStatusMessage("Recording reset. Ready to start.", "green");
-        const startButton = document.getElementById("startButton");
-        if (startButton) startButton.disabled = false;
-        stopButton.disabled = true;
-        const pauseResumeButton = document.getElementById("pauseResumeButton");
-        if (pauseResumeButton) pauseResumeButton.disabled = true;
+        setRecordingControlsIdle();
         logInfo("No audio frames processed after safeProcessAudioChunk. Full reset performed.");
         processedAnyAudioFrames = false;
         return;
@@ -936,7 +1024,7 @@ if (pendingVADChunks.length > 0 && !pendingVADLock) {
       }
     }
   }
-});
+}, { signal: uiSignal });
 
 }
 

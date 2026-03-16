@@ -1,3 +1,13 @@
+## 15 March, 2026
+
+### Fixed: information buttons on the front page are working again
+
+It was recently discovered that the information modules/buttons on the front page had accidentally been disabled for the last week or two.
+
+This has now been fixed, and the information buttons can once again be opened and viewed as normal.
+
+---
+
 ## 11 March, 2026
 
 ### Important: refresh the webpage regularly to get the newest version

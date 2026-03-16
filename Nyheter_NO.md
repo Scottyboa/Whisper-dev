@@ -1,3 +1,13 @@
+## 15. mars 2026
+
+### Fikset: informasjonsknappene på forsiden fungerer igjen
+
+Det ble nylig oppdaget at informasjonsmodulene/informasjonsknappene på forsiden ved en feil har vært deaktivert den siste uken eller to.
+
+Dette er nå rettet, og informasjonsknappene kan igjen åpnes og vises som normalt.
+
+---
+
 ## 11. mars 2026
 
 ### Viktig: oppdater nettsiden jevnlig for å få nyeste versjon

@@ -138,6 +138,7 @@ let chunkNumber = 1;
 let manualStop = false;
 let transcriptChunks = {};  // {chunkNumber: transcript}
 let transcriptFrozen = false; // freeze after final write to prevent wipes
+let abortRequested = false;
 
 
 let pollingIntervals = {};  // (removed polling functions, kept for legacy structure)
@@ -172,6 +173,8 @@ function beginFreshTranscriptionSession() {
   try { transcriptionSessionAbortController.abort("new session started"); } catch (_) {}
   transcriptionSessionAbortController = new AbortController();
 
+  abortRequested = false;
+
   // Hard-clear any pending work so Start always begins clean.
   transcriptionQueue = [];
   isProcessingQueue = false;
@@ -198,6 +201,21 @@ function updateStatusMessage(message, color = "#333") {
     statusElem.innerText = message;
     statusElem.style.color = color;
   }
+}
+
+function setAbortButtonDisabled(disabled) {
+  const abortButton = document.getElementById("abortButton");
+  if (abortButton) abortButton.disabled = disabled;
+}
+
+function setRecordingControlsIdle() {
+  const startButton = document.getElementById("startButton");
+  const stopButton = document.getElementById("stopButton");
+  const pauseResumeButton = document.getElementById("pauseResumeButton");
+  setAbortButtonDisabled(true);
+  if (startButton) startButton.disabled = false;
+  if (stopButton) stopButton.disabled = true;
+  if (pauseResumeButton) pauseResumeButton.disabled = true;
 }
 
 // ───── Completion timer helpers (single-signal control) ──────────────────────
@@ -874,12 +892,7 @@ async function safeProcessAudioChunk(force = false) {
 }
 
 function finalizeStop() {
-  const startButton = document.getElementById("startButton");
-  const stopButton = document.getElementById("stopButton");
-  const pauseResumeButton = document.getElementById("pauseResumeButton");
-  if (startButton) startButton.disabled = false;
-  if (stopButton) stopButton.disabled = true;
-  if (pauseResumeButton) pauseResumeButton.disabled = true;
+  setRecordingControlsIdle();
   logInfo("Recording stopped by user. Finalizing transcription.");
   // Optionally, you could wait here for the queue to empty before declaring completion.
 }
@@ -982,6 +995,7 @@ function resetRecordingState() {
 
   transcriptChunks = {};
   transcriptFrozen = false;
+  abortRequested = false;
   audioFrames = [];
   chunkStartTime = Date.now();
   lastFrameTime = Date.now();
@@ -1003,6 +1017,7 @@ function initRecording() {
   const startButton       = document.getElementById("startButton");
   const stopButton        = document.getElementById("stopButton");
   const pauseResumeButton = document.getElementById("pauseResumeButton");
+  const abortButton       = document.getElementById("abortButton");
   if (!startButton || !stopButton || !pauseResumeButton) return;
   // Make init idempotent: if initRecording() is called again, kill old listeners.
   window.__sonioxUIAbort_soniox?.abort("re-init");
@@ -1088,10 +1103,12 @@ function initRecording() {
       stopButton.disabled = false;
       pauseResumeButton.disabled = false;
       pauseResumeButton.innerText = "Pause Recording";
+      setAbortButtonDisabled(false);
     } catch (error) {
       updateStatusMessage("VAD initialization error: " + error, "red");
       logError("Silero VAD error", error);
       startButton.disabled = false;
+      setAbortButtonDisabled(true);
     }
   }, { signal: uiSignal });
 
@@ -1110,6 +1127,7 @@ pauseResumeButton.addEventListener("click", async () => {
       recordingPaused = false;
       
       pauseResumeButton.innerText = "Pause Recording";
+      setAbortButtonDisabled(false);
       updateStatusMessage("Listening for speech…", "green");
       logInfo("Silero VAD resumed");
     } catch (err) {
@@ -1140,12 +1158,75 @@ pauseResumeButton.addEventListener("click", async () => {
     recordingPaused = true;
     
     pauseResumeButton.innerText = "Resume Recording";
+    setAbortButtonDisabled(true);
     updateStatusMessage("Recording paused", "orange");
     logInfo("Recording paused; buffered speech flushed");
   }
 }, { signal: uiSignal });
 
+
+if (abortButton) {
+  abortButton.addEventListener("click", async () => {
+    if (abortButton.disabled) return;
+
+    abortRequested = true;
+    transcriptFrozen = true;
+    manualStop = true;
+    recordingPaused = false;
+    recordingActive = false;
+    finalChunkProcessed = false;
+    clearTimeout(chunkTimeoutId);
+
+    try {
+      if (sileroVAD && typeof sileroVAD.pause === "function") {
+        await sileroVAD.pause();
+      }
+    } catch (err) {
+      logDebug("Silero VAD pause on abort failed:", err);
+    }
+
+    try {
+      if (sileroVAD?.stream) {
+        sileroVAD.stream.getTracks().forEach(t => t.stop());
+      }
+    } catch (err) {
+      logDebug("Silero VAD stream stop on abort failed:", err);
+    }
+
+    try {
+      if (sileroVAD && !sileroVAD._destroyed) {
+        sileroVAD._destroyed = true;
+        await sileroVAD.destroy?.();
+      }
+    } catch (err) {
+      logDebug("Silero VAD destroy on abort failed:", err);
+    } finally {
+      sileroVAD = null;
+    }
+
+    stopMicrophone();
+
+    try {
+      transcriptionSessionAbortController.abort("recording aborted");
+    } catch (_) {}
+    transcriptionSessionAbortController = new AbortController();
+
+    transcriptionQueue = [];
+    isProcessingQueue = false;
+    processingQueueSessionId = null;
+    pendingVADChunks = [];
+    pendingVADLock = false;
+    chunkProcessingLock = false;
+    pendingStop = false;
+    freezeCompletionTimer();
+    setRecordingControlsIdle();
+    updateStatusMessage("Recording aborted.", "orange");
+    logInfo("Recording aborted by user; discarded pending transcription work.");
+  }, { signal: uiSignal });
+}
+
 stopButton.addEventListener("click", async () => {
+    setAbortButtonDisabled(true);
     // --- FORCE-FLUSH the in-flight VAD segment via the public API ---
     // If MicVAD supports endSegment(), use it to emit the last audio
   let forcedAudio = null;
@@ -1194,11 +1275,7 @@ stopButton.addEventListener("click", async () => {
     finalChunkProcessed = true;
     updateTranscriptionOutput();
   
-    const startButton = document.getElementById("startButton");
-    if (startButton) startButton.disabled = false;
-    stopButton.disabled = true;
-    const pauseResumeButton = document.getElementById("pauseResumeButton");
-    if (pauseResumeButton) pauseResumeButton.disabled = true;
+    setRecordingControlsIdle();
     logInfo("Recording paused and stop pressed; transcription complete without extra processing.");
     return;
   }
@@ -1216,11 +1293,7 @@ stopButton.addEventListener("click", async () => {
       updateTranscriptionOutput();
     }
     // Reset buttons
-    const startButton = document.getElementById("startButton");
-    if (startButton) startButton.disabled = false;
-    stopButton.disabled = true;
-    const pauseResumeButton = document.getElementById("pauseResumeButton");
-    if (pauseResumeButton) pauseResumeButton.disabled = true;
+    setRecordingControlsIdle();
     logInfo("No audio frames captured; instant transcription complete.");
     return;
   } else {
@@ -1233,11 +1306,7 @@ stopButton.addEventListener("click", async () => {
         resetRecordingState(); // also resets completion timer display
         
         updateStatusMessage("Recording reset. Ready to start.", "green");
-        const startButton = document.getElementById("startButton");
-        if (startButton) startButton.disabled = false;
-        stopButton.disabled = true;
-        const pauseResumeButton = document.getElementById("pauseResumeButton");
-        if (pauseResumeButton) pauseResumeButton.disabled = true;
+        setRecordingControlsIdle();
         logInfo("No audio frames processed after safeProcessAudioChunk. Full reset performed.");
         processedAnyAudioFrames = false;
         return;

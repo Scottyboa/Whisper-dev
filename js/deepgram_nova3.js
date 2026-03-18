@@ -1,4 +1,3 @@
-
 // deepgram_nova3.js
 // Updated recording module without encryption/HMAC mechanisms,
 // processing audio chunks using OfflineAudioContext,
@@ -17,16 +16,16 @@ function hashString(str) {
 }
 
 const DEBUG = true;
- // — Silero VAD initialization —
- // Holds the loaded VAD instance
- let sileroVAD = null;
- // Buffer for accumulating VAD-detected speech segments
-  let pendingVADChunks = [];
-  let pendingVADLock = false;  // mutex for pause/stop flushes
- // Minimum total speech duration before sending (in seconds)
- const MIN_CHUNK_DURATION_SECONDS = 90;
- // Configure callbacks for speech start/end
- const sileroVADOptions = {
+// — Silero VAD initialization —
+// Holds the loaded VAD instance
+let sileroVAD = null;
+// Buffer for accumulating VAD-detected speech segments
+let pendingVADChunks = [];
+let pendingVADLock = false;  // mutex for pause/stop flushes
+// Minimum total speech duration before sending (in seconds)
+const MIN_CHUNK_DURATION_SECONDS = 90;
+// Configure callbacks for speech start/end
+const sileroVADOptions = {
   // Force a final speech-end event when pause/stop is called, even mid-speech
   submitUserSpeechOnPause: true,
   // ─── MODEL THRESHOLDS & SILENCE PARAMETERS ───────────────
@@ -40,42 +39,41 @@ const DEBUG = true;
   preSpeechPadFrames: 2,
   // require at least 3 consecutive speech frames to declare onSpeechStart
   minSpeechFrames: 3,
-   onSpeechStart: () => {
-     // Prevent VAD callbacks after stop
-     if (manualStop) return;
-     logInfo("Silero VAD: speech started");
-     recordingActive = true;
-     chunkStartTime = Date.now();
-     
+  onSpeechStart: () => {
+    // Prevent VAD callbacks after stop
+    if (manualStop) return;
+    logInfo("Silero VAD: speech started");
+    recordingActive = true;
+    chunkStartTime = Date.now();
+
     // Always show “Recording…” when speech starts, even on Resume
     updateStatusMessage("Recording…", "green");
-     resetCompletionTimerDisplay();
-    
-   },
-   onSpeechEnd: (audioFloat32) => {
-     // Prevent VAD callbacks after stop
-     if (manualStop) return;
-     logInfo("Silero VAD: speech ended — buffering audio");
-     // Accumulate this segment
-     pendingVADChunks.push(audioFloat32);
-     // Check if we've buffered enough total duration
-     const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-     if (totalSamples >= MIN_CHUNK_DURATION_SECONDS * 16000) {
-       // Concatenate into one Float32Array
-       const combined = new Float32Array(totalSamples);
-       let offset = 0;
-       for (const seg of pendingVADChunks) {
-         combined.set(seg, offset);
-         offset += seg.length;
-       }
-       // Encode and send for transcription
-       const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-       enqueueTranscription(wavBlob, chunkNumber++);
-       // Reset buffer
-       pendingVADChunks = [];
-     }
-   }
- };
+    resetCompletionTimerDisplay();
+  },
+  onSpeechEnd: (audioFloat32) => {
+    // Prevent VAD callbacks after stop
+    if (manualStop) return;
+    logInfo("Silero VAD: speech ended — buffering audio");
+    // Accumulate this segment
+    pendingVADChunks.push(audioFloat32);
+    // Check if we've buffered enough total duration
+    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
+    if (totalSamples >= MIN_CHUNK_DURATION_SECONDS * 16000) {
+      // Concatenate into one Float32Array
+      const combined = new Float32Array(totalSamples);
+      let offset = 0;
+      for (const seg of pendingVADChunks) {
+        combined.set(seg, offset);
+        offset += seg.length;
+      }
+      // Encode and send for transcription
+      const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
+      enqueueTranscription(wavBlob, chunkNumber++);
+      // Reset buffer
+      pendingVADChunks = [];
+    }
+  }
+};
 
 function logDebug(message, ...optionalParams) {
   if (DEBUG) {
@@ -90,8 +88,8 @@ function logError(message, ...optionalParams) {
 }
 
 const MIN_CHUNK_DURATION = 120000; // 120 seconds
- let recordingActive    = false;   // only true after first speech detected
- let mediaStream = null;
+let recordingActive = false;   // only true after first speech detected
+let mediaStream = null;
 let processedAnyAudioFrames = false;
 let audioReader = null;
 
@@ -122,7 +120,7 @@ let audioFrames = []; // Buffer for audio frames
 // --- New Transcription Queue Variables ---
 let transcriptionQueue = [];  // Queue of { chunkNumber, blob }
 let isProcessingQueue = false;
-let enqueuedChunks = 0;  
+let enqueuedChunks = 0;
 
 // --- NEW: Session cancel / abort plumbing ---
 // Each time Start is clicked, we create a fresh session + abort controller.
@@ -168,6 +166,13 @@ function setAbortButtonDisabled(disabled) {
   if (abortButton) abortButton.disabled = disabled;
 }
 
+function setStopPauseDisabled(disabled) {
+  const stopButton = document.getElementById("stopButton");
+  const pauseResumeButton = document.getElementById("pauseResumeButton");
+  if (stopButton) stopButton.disabled = disabled;
+  if (pauseResumeButton) pauseResumeButton.disabled = disabled;
+}
+
 function setRecordingControlsIdle() {
   const startButton = document.getElementById("startButton");
   const stopButton = document.getElementById("stopButton");
@@ -211,7 +216,6 @@ function resetCompletionTimerDisplay() {
   const timerElem = document.getElementById("transcribeTimer");
   if (timerElem) timerElem.innerText = "Completion Timer: 0 sec";
 }
-
 
 // ────────────────────────────────
 // ADD THIS HELPER JUST BELOW updateStatusMessage()
@@ -283,8 +287,6 @@ async function flushPendingVADSegments() {
   }
 }
 
-
-
 function stopMicrophone() {
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
@@ -296,7 +298,7 @@ function stopMicrophone() {
     audioReader = null;
   }
 }
-  
+
 // --- Base64 Helper Functions (kept for legacy) ---
 function arrayBufferToBase64(buffer) {
   let binary = "";
@@ -349,14 +351,14 @@ function estimateWavSeconds(wavBlob) {
 // It returns a 16-bit PCM WAV Blob.
 async function processAudioUsingOfflineContext(pcmFloat32, originalSampleRate, numChannels) {
   const targetSampleRate = 16000;
-  
+
   // Calculate the number of frames
   const numFrames = pcmFloat32.length / numChannels;
-  
+
   // Create an AudioBuffer in a temporary AudioContext
   let tempCtx = new AudioContext();
   let originalBuffer = tempCtx.createBuffer(numChannels, numFrames, originalSampleRate);
-  
+
   if (numChannels === 1) {
     originalBuffer.copyToChannel(pcmFloat32, 0);
   } else {
@@ -386,33 +388,33 @@ async function processAudioUsingOfflineContext(pcmFloat32, originalSampleRate, n
     monoBuffer = originalBuffer;
   }
   tempCtx.close();
-  
+
   // Set up OfflineAudioContext for resampling
   const duration = monoBuffer.duration;
   const offlineLength = Math.max(1, Math.ceil(targetSampleRate * duration));
   const offlineCtx = new OfflineAudioContext(1, offlineLength, targetSampleRate);
-  
+
   const source = offlineCtx.createBufferSource();
   source.buffer = monoBuffer;
-  
-// Modified code snippet to fix the negative time error:
-const gainNode = offlineCtx.createGain();
-const fadeDuration = 0.3;
-gainNode.gain.setValueAtTime(0, 0);
-gainNode.gain.linearRampToValueAtTime(1, fadeDuration);
 
-// Compute fade-out start time, ensuring it's non-negative
-const fadeOutStart = Math.max(0, duration - fadeDuration);
-if (duration < fadeDuration * 2) {
-  console.warn(`[Audio] Short chunk (${duration.toFixed(2)}s) — fade-in/out may be squished`);
-}
+  // Modified code snippet to fix the negative time error:
+  const gainNode = offlineCtx.createGain();
+  const fadeDuration = 0.3;
+  gainNode.gain.setValueAtTime(0, 0);
+  gainNode.gain.linearRampToValueAtTime(1, fadeDuration);
 
-gainNode.gain.setValueAtTime(1, fadeOutStart);
-gainNode.gain.linearRampToValueAtTime(0, duration);
-  
+  // Compute fade-out start time, ensuring it's non-negative
+  const fadeOutStart = Math.max(0, duration - fadeDuration);
+  if (duration < fadeDuration * 2) {
+    console.warn(`[Audio] Short chunk (${duration.toFixed(2)}s) — fade-in/out may be squished`);
+  }
+
+  gainNode.gain.setValueAtTime(1, fadeOutStart);
+  gainNode.gain.linearRampToValueAtTime(0, duration);
+
   source.connect(gainNode).connect(offlineCtx.destination);
   source.start(0);
-  
+
   const renderedBuffer = await offlineCtx.startRendering();
   const processedData = renderedBuffer.getChannelData(0);
   const processedInt16 = floatTo16BitPCM(processedData);
@@ -421,7 +423,7 @@ gainNode.gain.linearRampToValueAtTime(0, duration);
   return wavBlob;
 }
 
- // --- New: Transcribe Chunk Directly --
+// --- New: Transcribe Chunk Directly ---
 
 // --- Transcription Queue Processing ---
 // Adds a processed chunk to the queue and processes chunks sequentially.
@@ -542,7 +544,7 @@ async function processAudioChunkInternal(force = false) {
   }
   // Mark that we have processed at least one frame set.
   processedAnyAudioFrames = true;
-  
+
   logInfo(`Processing ${audioFrames.length} audio frames for chunk ${chunkNumber}.`);
   const framesToProcess = audioFrames;
   audioFrames = []; // Clear the buffer
@@ -579,7 +581,7 @@ async function processAudioChunkInternal(force = false) {
     pcmFloat32.set(arr, offset);
     offset += arr.length;
   }
-  
+
   // Process the raw audio samples using OfflineAudioContext:
   // Convert to mono, resample to 16kHz, and apply 0.3s fade-in/out.
   // No extra silence padding—just resample & fade the raw PCM
@@ -588,10 +590,10 @@ async function processAudioChunkInternal(force = false) {
     sampleRate,
     numChannels
   );
-  
+
   // Instead of uploading to a backend, enqueue this processed chunk for direct transcription.
   enqueueTranscription(wavBlob, chunkNumber);
-  
+
   chunkNumber++;
 }
 
@@ -694,15 +696,15 @@ function scheduleChunk() {
   // bail out immediately if we’ve stopped or paused
   if (!recordingActive || manualStop || recordingPaused) return;
 
-  const elapsed     = Date.now() - chunkStartTime;
-  const silenceFor  = Date.now() - lastSpeechTime;
+  const elapsed = Date.now() - chunkStartTime;
+  const silenceFor = Date.now() - lastSpeechTime;
 
   if (elapsed >= MIN_CHUNK_DURATION && silenceFor >= SILENCE_DURATION) {
     logInfo("Silence detected after min-duration; closing chunk.");
     safeProcessAudioChunk();
-    recordingActive  = false;
-    chunkStartTime   = Date.now();
-    lastSpeechTime   = Date.now();
+    recordingActive = false;
+    chunkStartTime = Date.now();
+    lastSpeechTime = Date.now();
     logInfo("Listening for speech…");
 
     // after closing a chunk we do NOT immediately re-arm the timer;
@@ -723,7 +725,7 @@ function resetRecordingState() {
   Object.values(pollingIntervals).forEach(interval => clearInterval(interval));
   pollingIntervals = {};
   clearTimeout(chunkTimeoutId);
-  
+
   transcriptChunks = {};
   transcriptFrozen = false;
   abortRequested = false;
@@ -736,19 +738,18 @@ function resetRecordingState() {
   recordingPaused = false;
   groupId = Date.now().toString();
   chunkNumber = 1;
-  
-   processedAnyAudioFrames = false;
+
+  processedAnyAudioFrames = false;
   // reset VAD state
-  recordingActive    = false;
+  recordingActive = false;
   // lastSpeechTime removed (legacy)
-  
 }
 
 function initRecording() {
-  const startButton       = document.getElementById("startButton");
-  const stopButton        = document.getElementById("stopButton");
+  const startButton = document.getElementById("startButton");
+  const stopButton = document.getElementById("stopButton");
   const pauseResumeButton = document.getElementById("pauseResumeButton");
-  const abortButton       = document.getElementById("abortButton");
+  const abortButton = document.getElementById("abortButton");
   if (!startButton || !stopButton || !pauseResumeButton) return;
 
   window.__deepgramUIAbort?.abort("re-init");
@@ -778,11 +779,10 @@ function initRecording() {
           // — NEW: log whenever speech is detected
           logInfo("Speech detected… recording");
           recordingActive = true;
-          chunkStartTime  = Date.now();
+          chunkStartTime = Date.now();
 
           // First chunk UX tweaks (timer is centralized in transcribe.html)
           if (chunkNumber === 1) {
-            
             pauseResumeButton.innerText = "Pause Recording";
             updateStatusMessage("Recording…", "green");
             resetCompletionTimerDisplay();
@@ -804,10 +804,10 @@ function initRecording() {
   startButton.addEventListener("click", async () => {
     // Retrieve the API key before starting.
     const apiKey = getAPIKey();
-  if (!apiKey) {
-    alert("Please enter your Deepgram API key first.");
-    return;
-  }
+    if (!apiKey) {
+      alert("Please enter your Deepgram API key first.");
+      return;
+    }
     startButton.disabled = true;
 
     // NEW: Start is a hard reset: abort/clear any pending transcription work.
@@ -816,7 +816,7 @@ function initRecording() {
     resetRecordingState();
     const transcriptionElem = document.getElementById("transcription");
     if (transcriptionElem) transcriptionElem.value = "";
-    
+
     // initialize and start Silero VAD
     updateStatusMessage("Loading voice-activity model...", "orange");
     try {
@@ -826,9 +826,8 @@ function initRecording() {
       await sileroVAD.start();
       updateStatusMessage("Listening for speech…", "green");
       logInfo("Silero VAD started");
-      
-      stopButton.disabled = false;
-      pauseResumeButton.disabled = false;
+
+      setStopPauseDisabled(false);
       pauseResumeButton.innerText = "Pause Recording";
       setAbortButtonDisabled(false);
     } catch (error) {
@@ -839,117 +838,125 @@ function initRecording() {
     }
   }, { signal: uiSignal });
 
-pauseResumeButton.addEventListener("click", async () => {
-  if (recordingPaused) {
-    // RESUME: destroy old VAD and start a fresh one
-    updateStatusMessage("Resuming recording…", "orange");
-    try {
-      // ── destroy previous VAD instance to free WASM and buffers ──
-      if (sileroVAD && typeof sileroVAD.destroy === "function") {
-        await sileroVAD.destroy();
-      }
-      // re-create the VAD (this will re-prompt/open the mic)
-      sileroVAD = await vad.MicVAD.new(sileroVADOptions);
-      await sileroVAD.start();
-      recordingPaused = false;
-      
-      pauseResumeButton.innerText = "Pause Recording";
-      setAbortButtonDisabled(false);
-      updateStatusMessage("Listening for speech…", "green");
-      logInfo("Silero VAD resumed");
-    } catch (err) {
-      updateStatusMessage("Error resuming VAD: " + err, "red");
-      logError("Error resuming Silero VAD:", err);
-    }
-  } else {
-   
-
-    // PAUSE: stop VAD and flush any buffered speech
-    updateStatusMessage("Pausing recording…", "orange");
-    try {
-      await sileroVAD.pause();
-      logInfo("Silero VAD paused");
-    } catch (err) {
-      logError("Error pausing Silero VAD:", err);
-    }
- // **actually stop the mic** that Silero opened:
- if (sileroVAD.stream) {
-   sileroVAD.stream.getTracks().forEach(t => t.stop());
- }
-    // **new**: cut the mic feed so the browser indicator goes off
-    stopMicrophone();
-    await flushPendingVADSegments();
-
-    recordingPaused = true;
-    
-    pauseResumeButton.innerText = "Resume Recording";
+  pauseResumeButton.addEventListener("click", async () => {
+    if (pauseResumeButton.disabled) return;
+    setStopPauseDisabled(true);
     setAbortButtonDisabled(true);
-    updateStatusMessage("Recording paused", "orange");
-    logInfo("Recording paused; buffered speech flushed");
-  }
-});
 
+    if (recordingPaused) {
+      // RESUME: destroy old VAD and start a fresh one
+      updateStatusMessage("Resuming recording…", "orange");
+      try {
+        // ── destroy previous VAD instance to free WASM and buffers ──
+        if (sileroVAD && typeof sileroVAD.destroy === "function") {
+          await sileroVAD.destroy();
+        }
+        // re-create the VAD (this will re-prompt/open the mic)
+        sileroVAD = await vad.MicVAD.new(sileroVADOptions);
+        await sileroVAD.start();
+        recordingPaused = false;
 
-if (abortButton) {
-  abortButton.addEventListener("click", async () => {
-    if (abortButton.disabled) return;
-
-    abortRequested = true;
-    manualStop = true;
-    recordingPaused = false;
-    recordingActive = false;
-    finalChunkProcessed = false;
-    clearTimeout(chunkTimeoutId);
-    freezeCompletionTimer();
-    freezeVisibleTranscript();
-
-    try {
-      if (sileroVAD && typeof sileroVAD.pause === "function") {
-        await sileroVAD.pause();
+        pauseResumeButton.innerText = "Pause Recording";
+        updateStatusMessage("Listening for speech…", "green");
+        logInfo("Silero VAD resumed");
+      } catch (err) {
+        updateStatusMessage("Error resuming VAD: " + err, "red");
+        logError("Error resuming Silero VAD:", err);
+      } finally {
+        setStopPauseDisabled(false);
+        setAbortButtonDisabled(false);
       }
-    } catch (err) {
-      logDebug("Silero VAD pause on abort failed:", err);
-    }
-
-    try {
-      if (sileroVAD?.stream) {
+    } else {
+      // PAUSE: stop VAD and flush any buffered speech
+      updateStatusMessage("Pausing recording…", "orange");
+      try {
+        await sileroVAD.pause();
+        logInfo("Silero VAD paused");
+      } catch (err) {
+        logError("Error pausing Silero VAD:", err);
+      }
+      // **actually stop the mic** that Silero opened:
+      if (sileroVAD.stream) {
         sileroVAD.stream.getTracks().forEach(t => t.stop());
       }
-    } catch (err) {
-      logDebug("Silero VAD stream stop on abort failed:", err);
-    }
+      // **new**: cut the mic feed so the browser indicator goes off
+      stopMicrophone();
+      await flushPendingVADSegments();
 
-    try {
-      if (sileroVAD && !sileroVAD._destroyed) {
-        sileroVAD._destroyed = true;
-        await sileroVAD.destroy?.();
+      recordingPaused = true;
+
+      pauseResumeButton.innerText = "Resume Recording";
+      setStopPauseDisabled(false);
+      setAbortButtonDisabled(true);
+      updateStatusMessage("Recording paused", "orange");
+      logInfo("Recording paused; buffered speech flushed");
+    }
+  });
+
+  if (abortButton) {
+    abortButton.addEventListener("click", async () => {
+      if (abortButton.disabled) return;
+      setAbortButtonDisabled(true);
+      setStopPauseDisabled(true);
+
+      abortRequested = true;
+      manualStop = true;
+      recordingPaused = false;
+      recordingActive = false;
+      finalChunkProcessed = false;
+      clearTimeout(chunkTimeoutId);
+      freezeCompletionTimer();
+      freezeVisibleTranscript();
+
+      try {
+        if (sileroVAD && typeof sileroVAD.pause === "function") {
+          await sileroVAD.pause();
+        }
+      } catch (err) {
+        logDebug("Silero VAD pause on abort failed:", err);
       }
-    } catch (err) {
-      logDebug("sileroVAD destroy on abort failed:", err);
-    } finally {
-      sileroVAD = null;
-    }
 
-    stopMicrophone();
+      try {
+        if (sileroVAD?.stream) {
+          sileroVAD.stream.getTracks().forEach(t => t.stop());
+        }
+      } catch (err) {
+        logDebug("Silero VAD stream stop on abort failed:", err);
+      }
 
-    try { transcriptionSessionAbortController.abort("recording aborted"); } catch (_) {}
-    transcriptionSessionAbortController = new AbortController();
+      try {
+        if (sileroVAD && !sileroVAD._destroyed) {
+          sileroVAD._destroyed = true;
+          await sileroVAD.destroy?.();
+        }
+      } catch (err) {
+        logDebug("sileroVAD destroy on abort failed:", err);
+      } finally {
+        sileroVAD = null;
+      }
 
-    transcriptionQueue = [];
-    isProcessingQueue = false;
-    processingQueueSessionId = null;
-    pendingVADChunks = [];
-    pendingVADLock = false;
-    chunkProcessingLock = false;
-    pendingStop = false;
+      stopMicrophone();
 
-    setRecordingControlsIdle();
-    updateStatusMessage("Recording aborted.", "orange");
-    logInfo("Recording aborted by user; discarded pending Deepgram transcription work.");
-  }, { signal: uiSignal });
-}
+      try { transcriptionSessionAbortController.abort("recording aborted"); } catch (_) {}
+      transcriptionSessionAbortController = new AbortController();
 
-stopButton.addEventListener("click", async () => {
+      transcriptionQueue = [];
+      isProcessingQueue = false;
+      processingQueueSessionId = null;
+      pendingVADChunks = [];
+      pendingVADLock = false;
+      chunkProcessingLock = false;
+      pendingStop = false;
+
+      setRecordingControlsIdle();
+      updateStatusMessage("Recording aborted.", "orange");
+      logInfo("Recording aborted by user; discarded pending Deepgram transcription work.");
+    }, { signal: uiSignal });
+  }
+
+  stopButton.addEventListener("click", async () => {
+    if (stopButton.disabled) return;
+    setStopPauseDisabled(true);
     setAbortButtonDisabled(true);
     // --- FORCE-FLUSH the in-flight VAD segment via the public API ---
     // If MicVAD supports endSegment(), use it to emit the last audio
@@ -960,115 +967,107 @@ stopButton.addEventListener("click", async () => {
         pendingVADChunks.push(audio);
       }
     }
-    
+
     // First pause VAD to emit final onSpeechEnd
-  if (sileroVAD) {
-    try {
-      await sileroVAD.pause();     // pause VAD to emit final onSpeechEnd
-      logInfo("Silero VAD paused on stop");
-    } catch (err) {
-      logError("Error pausing Silero VAD on stop:", err);
-    }
-    // stop the mic Silero opened
-    if (sileroVAD.stream) {
-      sileroVAD.stream.getTracks().forEach(t => t.stop());
-    }
-    // destroy the VAD instance to free WASM/model memory
-    if (sileroVAD && !sileroVAD._destroyed) {
-  sileroVAD._destroyed = true;
-  try {
-    await sileroVAD.destroy?.();
-  } catch (err) {
-    logDebug("sileroVAD destroy error:", err);
-  }
-  sileroVAD = null;
-}
-
-  }
-  // **new**: absolutely kill the media tracks
-  stopMicrophone();
-
-    await flushPendingVADSegments();
-  manualStop = true;
-
-    await Promise.resolve(); // ensure any flush enqueues are visible
-    
-    clearTimeout(chunkTimeoutId);
-    
-    // keep existing stopMicrophone, timers and flush logic intact
-  // NEW: If the recording is paused, finalize immediately.
-  if (recordingPaused) {
-    finalChunkProcessed = true;
-    updateTranscriptionOutput();
-  
-    const startButton = document.getElementById("startButton");
-    if (startButton) startButton.disabled = false;
-    stopButton.disabled = true;
-    const pauseResumeButton = document.getElementById("pauseResumeButton");
-    if (pauseResumeButton) pauseResumeButton.disabled = true;
-    logInfo("Recording paused and stop pressed; transcription complete without extra processing.");
-    return;
-  }
-
-  // Continue with the existing logic if not paused:
-  if (audioFrames.length === 0 && !processedAnyAudioFrames) {
-    // No speech ever detected: check if any real work exists
-    const hasWork =
-      transcriptionQueue.length > 0 || isProcessingQueue || pendingVADChunks.length > 0;
-    if (hasWork) {
-      updateStatusMessage("Finishing transcription...", "blue");
-      startCompletionTimer();
-    } else {
-      // Pure silence → finalize immediately; timer remains 0
-      updateTranscriptionOutput();
-    }
-    // Reset buttons
-    const startButton = document.getElementById("startButton");
-    if (startButton) startButton.disabled = false;
-    stopButton.disabled = true;
-    const pauseResumeButton = document.getElementById("pauseResumeButton");
-    if (pauseResumeButton) pauseResumeButton.disabled = true;
-    setAbortButtonDisabled(true);
-    logInfo("No audio frames captured; instant transcription complete.");
-    return;
-  } else {
-    if (chunkProcessingLock) {
-      pendingStop = true;
-      logDebug("Chunk processing locked at stop; setting pendingStop.");
-    } else {
-      await safeProcessAudioChunk(true);
-      if (!processedAnyAudioFrames) {
-        resetRecordingState(); // also resets completion timer display
-       
-        updateStatusMessage("Recording reset. Ready to start.", "green");
-        const startButton = document.getElementById("startButton");
-        if (startButton) startButton.disabled = false;
-        stopButton.disabled = true;
-        const pauseResumeButton = document.getElementById("pauseResumeButton");
-        if (pauseResumeButton) pauseResumeButton.disabled = true;
-        setAbortButtonDisabled(true);
-        logInfo("No audio frames processed after safeProcessAudioChunk. Full reset performed.");
-        processedAnyAudioFrames = false;
-        return;
-      } else {
-        finalChunkProcessed = true;
-        // There was speech/processing — decide based on remaining work.
-        const hasWork =
-          transcriptionQueue.length > 0 || isProcessingQueue || pendingVADChunks.length > 0;
-        if (hasWork) {
-          updateStatusMessage("Finishing transcription...", "blue");
-          startCompletionTimer();
-        } else {
-          // Nothing left; finalize now (timer freezes via updateTranscriptionOutput)
-          updateTranscriptionOutput();
+    if (sileroVAD) {
+      try {
+        await sileroVAD.pause();     // pause VAD to emit final onSpeechEnd
+        logInfo("Silero VAD paused on stop");
+      } catch (err) {
+        logError("Error pausing Silero VAD on stop:", err);
+      }
+      // stop the mic Silero opened
+      if (sileroVAD.stream) {
+        sileroVAD.stream.getTracks().forEach(t => t.stop());
+      }
+      // destroy the VAD instance to free WASM/model memory
+      if (sileroVAD && !sileroVAD._destroyed) {
+        sileroVAD._destroyed = true;
+        try {
+          await sileroVAD.destroy?.();
+        } catch (err) {
+          logDebug("sileroVAD destroy error:", err);
         }
-        finalizeStop();
-        logInfo("Stop button processed; final chunk handled.");
+        sileroVAD = null;
       }
     }
-  }
-}, { signal: uiSignal });
+    // **new**: absolutely kill the media tracks
+    stopMicrophone();
 
+    await flushPendingVADSegments();
+    manualStop = true;
+
+    await Promise.resolve(); // ensure any flush enqueues are visible
+
+    clearTimeout(chunkTimeoutId);
+
+    // keep existing stopMicrophone, timers and flush logic intact
+    // NEW: If the recording is paused, finalize immediately.
+    if (recordingPaused) {
+      finalChunkProcessed = true;
+      updateTranscriptionOutput();
+
+      const startButton = document.getElementById("startButton");
+      if (startButton) startButton.disabled = false;
+      setStopPauseDisabled(true);
+      logInfo("Recording paused and stop pressed; transcription complete without extra processing.");
+      return;
+    }
+
+    // Continue with the existing logic if not paused:
+    if (audioFrames.length === 0 && !processedAnyAudioFrames) {
+      // No speech ever detected: check if any real work exists
+      const hasWork =
+        transcriptionQueue.length > 0 || isProcessingQueue || pendingVADChunks.length > 0;
+      if (hasWork) {
+        updateStatusMessage("Finishing transcription...", "blue");
+        startCompletionTimer();
+      } else {
+        // Pure silence → finalize immediately; timer remains 0
+        updateTranscriptionOutput();
+      }
+      // Reset buttons
+      const startButton = document.getElementById("startButton");
+      if (startButton) startButton.disabled = false;
+      setStopPauseDisabled(true);
+      setAbortButtonDisabled(true);
+      logInfo("No audio frames captured; instant transcription complete.");
+      return;
+    } else {
+      if (chunkProcessingLock) {
+        pendingStop = true;
+        logDebug("Chunk processing locked at stop; setting pendingStop.");
+      } else {
+        await safeProcessAudioChunk(true);
+        if (!processedAnyAudioFrames) {
+          resetRecordingState(); // also resets completion timer display
+
+          updateStatusMessage("Recording reset. Ready to start.", "green");
+          const startButton = document.getElementById("startButton");
+          if (startButton) startButton.disabled = false;
+          setStopPauseDisabled(true);
+          setAbortButtonDisabled(true);
+          logInfo("No audio frames processed after safeProcessAudioChunk. Full reset performed.");
+          processedAnyAudioFrames = false;
+          return;
+        } else {
+          finalChunkProcessed = true;
+          // There was speech/processing — decide based on remaining work.
+          const hasWork =
+            transcriptionQueue.length > 0 || isProcessingQueue || pendingVADChunks.length > 0;
+          if (hasWork) {
+            updateStatusMessage("Finishing transcription...", "blue");
+            startCompletionTimer();
+          } else {
+            // Nothing left; finalize now (timer freezes via updateTranscriptionOutput)
+            updateTranscriptionOutput();
+          }
+          finalizeStop();
+          logInfo("Stop button processed; final chunk handled.");
+        }
+      }
+    }
+  }, { signal: uiSignal });
 }
 
 export { initRecording };
@@ -1080,4 +1079,3 @@ window.addEventListener("load", () => {
     sileroVAD.pause().catch(() => {});
   }
 });
-

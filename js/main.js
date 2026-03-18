@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Recording Provider Switch (cached import version) ---
   window.__app.switchTranscribeProvider = async function(next) {
     // Clean up old button listeners safely
-    ['startButton','stopButton','pauseResumeButton'].forEach(id => {
+    ['startButton','stopButton','pauseResumeButton','abortButton'].forEach(id => {
       const b = document.getElementById(id);
       if (b) {
         const clone = b.cloneNode(true);

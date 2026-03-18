@@ -1,7 +1,7 @@
 // recording.js
 // Updated recording module without encryption/HMAC mechanisms,
 // processing audio chunks using OfflineAudioContext,
-// and implementing a client‑side transcription queue that sends each processed chunk directly to OpenAI's Whisper API.
+// and implementing a client-side transcription queue that sends each processed chunk directly to OpenAI's Whisper API.
 let transcriptionError = false;
 
 function hashString(str) {
@@ -158,6 +158,13 @@ function setAbortButtonDisabled(disabled) {
   if (abortButton) abortButton.disabled = disabled;
 }
 
+function setStopPauseDisabled(disabled) {
+  const stopButton = document.getElementById("stopButton");
+  const pauseResumeButton = document.getElementById("pauseResumeButton");
+  if (stopButton) stopButton.disabled = disabled;
+  if (pauseResumeButton) pauseResumeButton.disabled = disabled;
+}
+
 function setRecordingControlsIdle() {
   const startButton = document.getElementById("startButton");
   const stopButton = document.getElementById("stopButton");
@@ -278,7 +285,7 @@ async function encryptFileBlob(blob) {
 
 // --- OfflineAudioContext Processing ---
 // This function takes interleaved PCM samples (Float32Array), the original sample rate, and the number of channels,
-// converts the audio to mono (averaging channels if needed), resamples to 16kHz, and applies 0.3s fade‑in/out.
+// converts the audio to mono (averaging channels if needed), resamples to 16kHz, and applies 0.3s fade-in/out.
 // It returns a 16-bit PCM WAV Blob.
 async function processAudioUsingOfflineContext(pcmFloat32, originalSampleRate, numChannels) {
   const targetSampleRate = 16000;
@@ -634,10 +641,10 @@ function scheduleChunk() {
     lastSpeechTime   = Date.now();
     logInfo("Listening for speech…");
 
-    // after closing a chunk we do NOT immediately re‑arm the timer;
+    // after closing a chunk we do NOT immediately re-arm the timer;
     // we’ll wait for next `onSpeechStart` to call scheduleChunk again
   } else {
-    // only re‑schedule while still in the middle of a potential chunk
+    // only re-schedule while still in the middle of a potential chunk
     chunkTimeoutId = setTimeout(scheduleChunk, 500);
   }
 }
@@ -745,8 +752,7 @@ function initRecording() {
       await sileroVAD.start();
       updateStatusMessage("Listening for speech…", "green");
       logInfo("Silero VAD started");      
-      stopButton.disabled = false;
-      pauseResumeButton.disabled = false;
+      setStopPauseDisabled(false);
       pauseResumeButton.innerText = "Pause Recording";
       setAbortButtonDisabled(false);
     } catch (error) {
@@ -758,6 +764,10 @@ function initRecording() {
   });
 
 pauseResumeButton.addEventListener("click", async () => {
+  if (pauseResumeButton.disabled) return;
+  setStopPauseDisabled(true);
+  setAbortButtonDisabled(true);
+
   if (recordingPaused) {
     // RESUME: destroy old VAD and start a fresh one
     updateStatusMessage("Resuming recording…", "orange");
@@ -772,12 +782,14 @@ pauseResumeButton.addEventListener("click", async () => {
       recordingPaused = false;
       
       pauseResumeButton.innerText = "Pause Recording";
-      setAbortButtonDisabled(false);
       updateStatusMessage("Listening for speech…", "green");
       logInfo("Silero VAD resumed");
     } catch (err) {
       updateStatusMessage("Error resuming VAD: " + err, "red");
       logError("Error resuming Silero VAD:", err);
+    } finally {
+      setStopPauseDisabled(false);
+      setAbortButtonDisabled(false);
     }
   } else {
    // — FLUSH any pending VAD segments before pausing — 
@@ -809,6 +821,7 @@ pauseResumeButton.addEventListener("click", async () => {
     recordingPaused = true;
     
     pauseResumeButton.innerText = "Resume Recording";
+    setStopPauseDisabled(false);
     setAbortButtonDisabled(true);
     updateStatusMessage("Recording paused", "orange");
     logInfo("Recording paused; buffered speech flushed");
@@ -820,6 +833,8 @@ pauseResumeButton.addEventListener("click", async () => {
 if (abortButton) {
   abortButton.addEventListener("click", async () => {
     if (abortButton.disabled) return;
+    setAbortButtonDisabled(true);
+    setStopPauseDisabled(true);
 
     abortRequested = true;
     transcriptFrozen = true;
@@ -879,6 +894,8 @@ if (abortButton) {
 }
 
 stopButton.addEventListener("click", async () => {
+    if (stopButton.disabled) return;
+    setStopPauseDisabled(true);
     setAbortButtonDisabled(true);
     abortRequested = false;
     transcriptFrozen = false;

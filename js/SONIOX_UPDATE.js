@@ -1,4 +1,3 @@
-
 // SONIOX_UPDATE.js
 
 let transcriptionError = false;
@@ -206,6 +205,13 @@ function updateStatusMessage(message, color = "#333") {
 function setAbortButtonDisabled(disabled) {
   const abortButton = document.getElementById("abortButton");
   if (abortButton) abortButton.disabled = disabled;
+}
+
+function setStopPauseDisabled(disabled) {
+  const stopButton = document.getElementById("stopButton");
+  const pauseResumeButton = document.getElementById("pauseResumeButton");
+  if (stopButton) stopButton.disabled = disabled;
+  if (pauseResumeButton) pauseResumeButton.disabled = disabled;
 }
 
 function setRecordingControlsIdle() {
@@ -622,7 +628,7 @@ async function cleanupSonioxResources({ transcriptionId, fileId }) {
 
 // --- OfflineAudioContext Processing ---
 // This function takes interleaved PCM samples (Float32Array), the original sample rate, and the number of channels,
-// converts the audio to mono (averaging channels if needed), resamples to 16kHz, and applies 0.3s fade‑in/out.
+// converts the audio to mono (averaging channels if needed), resamples to 16kHz, and applies 0.3s fade-in/out.
 // It returns a 16-bit PCM WAV Blob.
 async function processAudioUsingOfflineContext(pcmFloat32, originalSampleRate, numChannels) {
   const targetSampleRate = 16000;
@@ -974,10 +980,10 @@ function scheduleChunk() {
     lastSpeechTime   = Date.now();
     logInfo("Listening for speech…");
 
-    // after closing a chunk we do NOT immediately re‑arm the timer;
+    // after closing a chunk we do NOT immediately re-arm the timer;
     // we’ll wait for next `onSpeechStart` to call scheduleChunk again
   } else {
-    // only re‑schedule while still in the middle of a potential chunk
+    // only re-schedule while still in the middle of a potential chunk
     chunkTimeoutId = setTimeout(scheduleChunk, 500);
   }
 }
@@ -1099,9 +1105,8 @@ function initRecording() {
       }
       await sileroVAD.start();
       updateStatusMessage("Listening for speech…", "green");
-      logInfo("Silero VAD started");      
-      stopButton.disabled = false;
-      pauseResumeButton.disabled = false;
+      logInfo("Silero VAD started");
+      setStopPauseDisabled(false);
       pauseResumeButton.innerText = "Pause Recording";
       setAbortButtonDisabled(false);
     } catch (error) {
@@ -1113,6 +1118,10 @@ function initRecording() {
   }, { signal: uiSignal });
 
 pauseResumeButton.addEventListener("click", async () => {
+  if (pauseResumeButton.disabled) return;
+  setStopPauseDisabled(true);
+  setAbortButtonDisabled(true);
+
   if (recordingPaused) {
     // RESUME: destroy old VAD and start a fresh one
     updateStatusMessage("Resuming recording…", "orange");
@@ -1125,18 +1134,18 @@ pauseResumeButton.addEventListener("click", async () => {
       sileroVAD = await vad.MicVAD.new(sileroVADOptions);
       await sileroVAD.start();
       recordingPaused = false;
-      
+
       pauseResumeButton.innerText = "Pause Recording";
-      setAbortButtonDisabled(false);
       updateStatusMessage("Listening for speech…", "green");
       logInfo("Silero VAD resumed");
     } catch (err) {
       updateStatusMessage("Error resuming VAD: " + err, "red");
       logError("Error resuming Silero VAD:", err);
+    } finally {
+      setStopPauseDisabled(false);
+      setAbortButtonDisabled(false);
     }
   } else {
-   
-
     // PAUSE: stop VAD and flush any buffered speech
     updateStatusMessage("Pausing recording…", "orange");
     try {
@@ -1145,10 +1154,10 @@ pauseResumeButton.addEventListener("click", async () => {
     } catch (err) {
       logError("Error pausing Silero VAD:", err);
     }
- // **actually stop the mic** that Silero opened:
- if (sileroVAD.stream) {
-   sileroVAD.stream.getTracks().forEach(t => t.stop());
- }
+    // **actually stop the mic** that Silero opened:
+    if (sileroVAD.stream) {
+      sileroVAD.stream.getTracks().forEach(t => t.stop());
+    }
     // **new**: cut the mic feed so the browser indicator goes off
     stopMicrophone();
     // Allow any submitUserSpeechOnPause-driven onSpeechEnd() to land before flushing.
@@ -1156,11 +1165,12 @@ pauseResumeButton.addEventListener("click", async () => {
     flushPendingVADOnce("pause");
 
     recordingPaused = true;
-    
+
     pauseResumeButton.innerText = "Resume Recording";
-    setAbortButtonDisabled(true);
     updateStatusMessage("Recording paused", "orange");
     logInfo("Recording paused; buffered speech flushed");
+    setStopPauseDisabled(false);
+    setAbortButtonDisabled(true);
   }
 }, { signal: uiSignal });
 
@@ -1168,6 +1178,8 @@ pauseResumeButton.addEventListener("click", async () => {
 if (abortButton) {
   abortButton.addEventListener("click", async () => {
     if (abortButton.disabled) return;
+    setAbortButtonDisabled(true);
+    setStopPauseDisabled(true);
 
     abortRequested = true;
     transcriptFrozen = true;
@@ -1226,6 +1238,8 @@ if (abortButton) {
 }
 
 stopButton.addEventListener("click", async () => {
+    if (stopButton.disabled) return;
+    setStopPauseDisabled(true);
     setAbortButtonDisabled(true);
     // --- FORCE-FLUSH the in-flight VAD segment via the public API ---
     // If MicVAD supports endSegment(), use it to emit the last audio

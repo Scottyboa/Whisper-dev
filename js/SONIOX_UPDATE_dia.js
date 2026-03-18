@@ -1,5 +1,3 @@
-
-
 // SONIOX_UPDATE_dia.js
 
 let transcriptionError = false;
@@ -75,7 +73,7 @@ function flushPendingVADOnce(reason, extraAudioFloat32 = null) {
   minSpeechFrames: 3,
    onSpeechStart: () => {
      // Prevent VAD callbacks after stop
-     if (manualStop) return;
+     if (!canShowRecordingStatus()) return;
      logInfo("Silero VAD: speech started");
      recordingActive = true;
      chunkStartTime = Date.now();
@@ -86,7 +84,7 @@ function flushPendingVADOnce(reason, extraAudioFloat32 = null) {
    },
    onSpeechEnd: (audioFloat32) => {
      // Prevent VAD callbacks after stop
-     if (manualStop) return;
+     if (manualStop || transcriptFrozen) return;
      logInfo("Silero VAD: speech ended — buffering audio");
      // Accumulate this segment
      pendingVADChunks.push(audioFloat32);
@@ -135,6 +133,7 @@ let chunkNumber = 1;
 let manualStop = false;
 let transcriptChunks = {};
 let transcriptFrozen = false;
+let stopInProgress = false;
 let abortRequested = false;
 let pollingIntervals = {};  // (removed polling functions, kept for legacy structure)
 
@@ -182,6 +181,8 @@ function beginFreshTranscriptionSession() {
   // Release chunk stop/flush locks if they were left set by an earlier run.
   chunkProcessingLock = false;
   pendingStop = false;
+  manualStop = false;
+  stopInProgress = false;
 
   // Ensure UI writes are allowed again for the new session.
   transcriptFrozen = false;
@@ -193,6 +194,10 @@ function updateStatusMessage(message, color = "#333") {
     statusElem.innerText = message;
     statusElem.style.color = color;
   }
+}
+
+function canShowRecordingStatus() {
+  return !manualStop && !stopInProgress && !transcriptFrozen;
 }
 
 function setAbortButtonDisabled(disabled) {
@@ -643,7 +648,7 @@ async function cleanupSonioxResources({ transcriptionId, fileId }) {
 
 // --- OfflineAudioContext Processing ---
 // This function takes interleaved PCM samples (Float32Array), the original sample rate, and the number of channels,
-// converts the audio to mono (averaging channels if needed), resamples to 16kHz, and applies 0.3s fade‑in/out.
+// converts the audio to mono (averaging channels if needed), resamples to 16kHz, and applies 0.3s fade-in/out.
 // It returns a 16-bit PCM WAV Blob.
 async function processAudioUsingOfflineContext(pcmFloat32, originalSampleRate, numChannels) {
   const targetSampleRate = 16000;
@@ -917,7 +922,7 @@ function finalizeStop() {
   const startButton = document.getElementById("startButton");
   const stopButton = document.getElementById("stopButton");
   const pauseResumeButton = document.getElementById("pauseResumeButton");
-  if (startButton) startButton.disabled = false;
+  if (startButton) startButton.disabled = true;
   if (stopButton) stopButton.disabled = true;
   if (pauseResumeButton) pauseResumeButton.disabled = true;
   logInfo("Recording stopped by user. Finalizing transcription.");
@@ -951,11 +956,12 @@ function updateTranscriptionOutput() {
     freezeCompletionTimer();
     if (!transcriptionError) {
       updateStatusMessage("Transcription finished!", "green");
-      window.__app?.emitTranscriptionFinished?.({ provider: "soniox_dia", reason: "queueDrained" });
+      window.__app?.emitTranscriptionFinished?.({ provider: "soniox", reason: "queueDrained" });
       logInfo("Transcription complete.");
     } else {
       logInfo("Transcription complete with errors; keeping error message visible.");
     }
+    stopInProgress = false;
     transcriptFrozen = true;
   }
 }
@@ -1012,10 +1018,10 @@ function scheduleChunk() {
     lastSpeechTime   = Date.now();
     logInfo("Listening for speech…");
 
-    // after closing a chunk we do NOT immediately re‑arm the timer;
+    // after closing a chunk we do NOT immediately re-arm the timer;
     // we’ll wait for next `onSpeechStart` to call scheduleChunk again
   } else {
-    // only re‑schedule while still in the middle of a potential chunk
+    // only re-schedule while still in the middle of a potential chunk
     chunkTimeoutId = setTimeout(scheduleChunk, 500);
   }
 }
@@ -1091,8 +1097,10 @@ function initRecording() {
           if (chunkNumber === 1) {
             
             pauseResumeButton.innerText = "Pause Recording";
-            updateStatusMessage("Recording…", "green");
-            resetCompletionTimerDisplay();
+            if (canShowRecordingStatus()) {
+              updateStatusMessage("Recording…", "green");
+              resetCompletionTimerDisplay();
+            }
           }
 
           scheduleChunk();
@@ -1272,13 +1280,23 @@ if (abortButton) {
 }
 
 stopButton.addEventListener("click", async () => {
+  if (stopInProgress) {
+    logDebug("Stop already in progress; ignoring duplicate click.");
+    return;
+  }
+  stopInProgress = true;
+  stopButton.disabled = true;
+  pauseResumeButton.disabled = true;
+  updateStatusMessage("Finishing transcription...", "blue");
   setAbortButtonDisabled(true);
-   let forcedAudio = null;
-    if (sileroVAD && typeof sileroVAD.endSegment === "function") {
+  // --- FORCE-FLUSH the in-flight VAD segment via the public API ---
+  // If MicVAD supports endSegment(), use it to emit the last audio
+  let forcedAudio = null;
+  if (sileroVAD && typeof sileroVAD.endSegment === "function") {
     const result = sileroVAD.endSegment();
     forcedAudio = result?.audio || null;
-    }
-    // First pause VAD to emit final onSpeechEnd
+  }
+  // First pause VAD to emit final onSpeechEnd
   if (sileroVAD) {
     try {
       await sileroVAD.pause();     // pause VAD to emit final onSpeechEnd
@@ -1307,6 +1325,7 @@ stopButton.addEventListener("click", async () => {
 
   await Promise.resolve();
   flushPendingVADOnce("stop", forcedAudio);
+  await Promise.resolve(); // ensure any flush enqueues are visible
 
     manualStop = true;
     clearTimeout(chunkTimeoutId);
@@ -1342,6 +1361,7 @@ stopButton.addEventListener("click", async () => {
     }
     const startButton = document.getElementById("startButton");
     if (startButton) startButton.disabled = false;
+    // Keep Start disabled until updateTranscriptionOutput() confirms final completion.
     stopButton.disabled = true;
     const pauseResumeButton = document.getElementById("pauseResumeButton");
     if (pauseResumeButton) pauseResumeButton.disabled = true;
@@ -1359,6 +1379,7 @@ stopButton.addEventListener("click", async () => {
         updateStatusMessage("Recording reset. Ready to start.", "green");
         const startButton = document.getElementById("startButton");
         if (startButton) startButton.disabled = false;
+        stopInProgress = false;
         stopButton.disabled = true;
         const pauseResumeButton = document.getElementById("pauseResumeButton");
         if (pauseResumeButton) pauseResumeButton.disabled = true;

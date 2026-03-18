@@ -175,7 +175,7 @@ function setRecordingControlsIdle() {
   if (startButton) startButton.disabled = false;
   if (stopButton) stopButton.disabled = true;
   if (pauseResumeButton) pauseResumeButton.disabled = true;
-  setAbortButtonDisabled(true);
+  
 }
 
 function formatTime(ms) {

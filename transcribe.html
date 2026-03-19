@@ -428,6 +428,48 @@
   animation: completionFieldCheckFlash 800ms ease-out 1;
 }
 
+.completion-flash-host.note-start-sweep::before {
+  content: "";
+  opacity: 0;
+  box-shadow: none;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(41, 182, 246, 0) 0%,
+      rgba(41, 182, 246, 0.10) 18%,
+      rgba(41, 182, 246, 0.30) 50%,
+      rgba(41, 182, 246, 0.10) 82%,
+      rgba(41, 182, 246, 0) 100%
+    );
+  animation: noteStartSweep 1000ms ease-out 1;
+}
+
+.completion-flash-host.note-start-sweep > #generatedNote {
+  animation: noteStartBorderSweep 1000ms ease-out 1;
+}
+
+@keyframes noteStartSweep {
+  0% {
+    opacity: 1;
+    transform: translateX(-120%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(120%);
+  }
+}
+
+@keyframes noteStartBorderSweep {
+  0% {
+    border-color: rgba(41, 182, 246, 0.95);
+    box-shadow: 0 0 0 6px rgba(41, 182, 246, 0.10);
+  }
+  100% {
+    border-color: #ddd;
+    box-shadow: 0 0 0 0 rgba(41, 182, 246, 0);
+  }
+}
+
 @keyframes completionFieldBorderFlash {
   0% {
     border-color: #5a9;
@@ -5682,6 +5724,19 @@ if (guideClose) {
         host.classList.add("completion-flash");
       };
 
+      window.__app.pulseNoteStartSweep = function pulseNoteStartSweep() {
+  const host = window.__app.ensureCompletionFlashHost?.("generatedNote");
+  if (!host) return;
+
+  host.classList.remove("note-start-sweep");
+  void host.offsetWidth;
+  host.classList.add("note-start-sweep");
+
+  setTimeout(() => {
+    host.classList.remove("note-start-sweep");
+  }, 1000); // match your sweep duration
+};
+
       window.__app.ensureCompletionFlashHost?.("transcription");
       window.__app.ensureCompletionFlashHost?.("generatedNote");
 
@@ -5703,6 +5758,11 @@ if (guideClose) {
         window.__app.__transcriptionPulseBound = true;
         window.addEventListener("transcription:finished", () => {
           window.__app.pulseFinishedTranscription?.();
+
+          const autoGenerateToggle = document.getElementById("autoGenerateToggle");
+          if (autoGenerateToggle?.checked) {
+            window.__app.pulseNoteStartSweep?.();
+          }
         });
       }
 

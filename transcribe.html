@@ -441,11 +441,11 @@
       rgba(41, 182, 246, 0.10) 82%,
       rgba(41, 182, 246, 0) 100%
     );
-  animation: noteStartSweep 1000ms ease-out 1;
+  animation: noteStartSweep 700ms ease-out 1;
 }
 
 .completion-flash-host.note-start-sweep > #generatedNote {
-  animation: noteStartBorderSweep 1000ms ease-out 1;
+  animation: noteStartBorderSweep 700ms ease-out 1;
 }
 
 @keyframes noteStartSweep {
@@ -1877,6 +1877,23 @@
                
               </select>
             </div>
+
+            <div id="noteAutoClearToggleWrap" class="auto-clear-toggle" style="margin-left:auto;" aria-label="Auto clear generated note">
+              <label class="switch" title="Auto clear">
+                <input id="autoClearNoteToggle" type="checkbox" />
+                <span class="slider"></span>
+              </label>
+              <span class="auto-clear-label" id="autoClearNoteToggleLabel">Auto clear</span>
+            </div>
+            <span id="autoClearNoteTooltipContainer" class="help-tip" tabindex="0" aria-label="Auto clear note help">
+              ?
+              <span id="autoClearNoteTooltipText" class="help-tip-content" role="tooltip">
+                <strong>When ON:</strong><br/>
+                The generated note field is cleared when you start a new recording.<br/><br/>
+                <strong>When OFF:</strong><br/>
+                Starting a new recording does not change the generated note field.
+              </span>
+            </span>
           </div>
 
           <!-- GPT-5.1 reasoning level selector (only shown for GPT-5.1 providers) -->
@@ -2908,6 +2925,38 @@
         document.addEventListener("DOMContentLoaded", setupPromptInclusionToggle, { once: true });
       } else {
         setupPromptInclusionToggle();
+      }
+    })();
+  </script>
+  <script>
+    (() => {
+      const setupNoteAutoClearCopy = () => {
+        const labelEl = document.getElementById("autoClearNoteToggleLabel");
+        const tooltipEl = document.getElementById("autoClearNoteTooltipText");
+        const langSelectTranscribe = document.getElementById("lang-select-transcribe");
+        if (!labelEl || !tooltipEl) return;
+
+        const getCurrentLang = () => {
+          const sel = document.getElementById("lang-select-transcribe");
+          return (sel && sel.value) || localStorage.getItem("siteLanguage") || "en";
+        };
+
+        const syncNoteAutoClearCopy = () => {
+          const isNorwegian = getCurrentLang() === "no";
+          labelEl.textContent = "Auto clear";
+          tooltipEl.innerHTML = isNorwegian
+            ? "<strong>Når PÅ:</strong><br/>Notatfeltet tømmes når du starter et nytt opptak.<br/><br/><strong>Når AV:</strong><br/>Å starte et nytt opptak endrer ikke notatfeltet."
+            : "<strong>When ON:</strong><br/>The generated note field is cleared when you start a new recording.<br/><br/><strong>When OFF:</strong><br/>Starting a new recording does not change the generated note field.";
+        };
+
+        langSelectTranscribe?.addEventListener("change", syncNoteAutoClearCopy);
+        syncNoteAutoClearCopy();
+      };
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", setupNoteAutoClearCopy, { once: true });
+      } else {
+        setupNoteAutoClearCopy();
       }
     })();
   </script>
@@ -4800,6 +4849,26 @@ if (guideClose) {
       if (supplementaryInfoEl) resetTextareaToDefault(supplementaryInfoEl);
     }, true);
 
+    // Note Auto-clear toggle (default OFF; persist in localStorage)
+    const AUTO_CLEAR_NOTE_KEY = 'auto_clear_note';
+    const autoClearNoteToggle = document.getElementById('autoClearNoteToggle');
+    const generatedNoteFieldEl = document.getElementById('generatedNote');
+    if (autoClearNoteToggle) {
+      const stored = localStorage.getItem(AUTO_CLEAR_NOTE_KEY);
+      autoClearNoteToggle.checked = stored === '1';
+      autoClearNoteToggle.addEventListener('change', () => {
+        localStorage.setItem(AUTO_CLEAR_NOTE_KEY, autoClearNoteToggle.checked ? '1' : '0');
+      });
+    }
+
+    // When enabled: starting a new recording clears + resets Generated note.
+    document.addEventListener('click', (e) => {
+      const id = e.target && e.target.id;
+      if (id !== 'startButton') return;
+      if (!autoClearNoteToggle || autoClearNoteToggle.checked !== true) return;
+      if (generatedNoteFieldEl) resetTextareaToDefault(generatedNoteFieldEl);
+    }, true);
+
   // Copy button logic for transcription field (matches Generated Note copy behavior)
   const copyTranscriptionButton = document.getElementById('copyTranscriptionButton');
   if (copyTranscriptionButton) {
@@ -5725,17 +5794,17 @@ if (guideClose) {
       };
 
       window.__app.pulseNoteStartSweep = function pulseNoteStartSweep() {
-  const host = window.__app.ensureCompletionFlashHost?.("generatedNote");
-  if (!host) return;
+        const host = window.__app.ensureCompletionFlashHost?.("generatedNote");
+        if (!host) return;
 
-  host.classList.remove("note-start-sweep");
-  void host.offsetWidth;
-  host.classList.add("note-start-sweep");
+        host.classList.remove("note-start-sweep");
+        void host.offsetWidth; // restart animation cleanly
+        host.classList.add("note-start-sweep");
 
-  setTimeout(() => {
-    host.classList.remove("note-start-sweep");
-  }, 1000); // match your sweep duration
-};
+        setTimeout(() => {
+          host.classList.remove("note-start-sweep");
+        }, 700);
+      };
 
       window.__app.ensureCompletionFlashHost?.("transcription");
       window.__app.ensureCompletionFlashHost?.("generatedNote");

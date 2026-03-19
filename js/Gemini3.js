@@ -194,6 +194,7 @@ All headings should be plain text with a colon.
         if (noteTimerElement) {
           noteTimerElement.innerText = "Text generation completed!";
         }
+        window.__app?.emitNoteFinished?.({ provider: "gemini3", model: "gemini-3-pro-preview" });
 
         // ---- Token usage logging (input/output/reasoning/total) ----
         if (!usage) {

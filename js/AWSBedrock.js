@@ -194,6 +194,8 @@ clearInterval(noteTimerInterval);
 if (noteTimerElement) noteTimerElement.innerText = "Text generation completed!";
 
 generatedNoteField.value = noteText || "[No text returned from Bedrock backend]";
+window.__app?.emitNoteFinished?.({ provider: "aws-bedrock", model: modelKey || "backend_default" });
+    
 
     
   } catch (err) {

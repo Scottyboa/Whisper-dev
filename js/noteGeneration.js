@@ -189,6 +189,7 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
     if (noteTimerElement) {
       noteTimerElement.innerText = "Text generation completed!";
     }
+    window.__app?.emitNoteFinished?.({ provider: "openai", model: "chatgpt-4o-latest" });
   } catch (error) {
     clearInterval(noteTimerInterval);
     if (generatedNoteField) {

@@ -371,6 +371,45 @@
   resize: vertical;
   overflow-y: auto;
   overflow-x: hidden;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+/* Subtle one-shot completion cue when final transcript lands */
+#transcription.transcription-finish-pulse {
+  animation: transcriptionFinishPulse 900ms ease-out 1;
+}
+
+#generatedNote.note-finish-pulse {
+  animation: transcriptionFinishPulse 900ms ease-out 1;
+}
+
+@keyframes transcriptionFinishPulse {
+  0% {
+    border-color: #ddd;
+    box-shadow: 0 0 0 0 rgba(90, 170, 153, 0);
+  }
+  18% {
+    border-color: #4b9d8b;
+    box-shadow:
+      0 0 0 3px rgba(90, 170, 153, 0.28),
+      0 0 18px rgba(90, 170, 153, 0.16);
+  }
+  45% {
+    border-color: #5a9;
+    box-shadow:
+      0 0 0 7px rgba(90, 170, 153, 0.20),
+      0 0 26px rgba(90, 170, 153, 0.12);
+  }
+  72% {
+    border-color: #4b9d8b;
+    box-shadow:
+      0 0 0 4px rgba(90, 170, 153, 0.10),
+      0 0 14px rgba(90, 170, 153, 0.06);
+  }
+  100% {
+    border-color: #ddd;
+    box-shadow: 0 0 0 0 rgba(90, 170, 153, 0);
+  }
 }
 #supplementaryInfo {
   min-height: 90px;
@@ -5550,6 +5589,53 @@ if (guideClose) {
       }, 200);
     })();
   </script>
+
+  <script>
+    (() => {
+      window.__app = window.__app || {};
+
+      window.__app.pulseFinishedTranscription = function pulseFinishedTranscription() {
+        const el = document.getElementById("transcription");
+        if (!el) return;
+        if (!(el.value || "").trim()) return;
+
+        el.classList.remove("transcription-finish-pulse");
+        void el.offsetWidth; // restart animation cleanly
+        el.classList.add("transcription-finish-pulse");
+      };
+
+      if (!window.__app.__transcriptionPulseBound) {
+        window.__app.__transcriptionPulseBound = true;
+        window.addEventListener("transcription:finished", () => {
+          window.__app.pulseFinishedTranscription?.();
+        });
+      }
+
+      window.__app.emitNoteFinished = function emitNoteFinished(opts) {
+        try {
+          window.dispatchEvent(new CustomEvent("note:finished", { detail: opts || {} }));
+        } catch (_) {}
+      };
+
+      window.__app.pulseFinishedNote = function pulseFinishedNote() {
+        const el = document.getElementById("generatedNote");
+        if (!el) return;
+        if (!(el.value || "").trim()) return;
+
+        el.classList.remove("note-finish-pulse");
+        void el.offsetWidth; // restart animation cleanly
+        el.classList.add("note-finish-pulse");
+      };
+
+      if (!window.__app.__notePulseBound) {
+        window.__app.__notePulseBound = true;
+        window.addEventListener("note:finished", () => {
+          window.__app.pulseFinishedNote?.();
+        });
+      }
+    })();
+  </script>
+
 </body>
 </html>
 

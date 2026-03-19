@@ -253,6 +253,7 @@ const resp = await fetch("https://api.openai.com/v1/responses", {
     if (noteTimerElement) {
       noteTimerElement.innerText = "Text generation completed!";
     }
+    window.__app?.emitNoteFinished?.({ provider: "openai", model: "gpt-5.2" });
   } catch (error) {
     clearInterval(noteTimerInterval);
     if (generatedNoteField) {

@@ -232,6 +232,7 @@ async function generateNote() {
     }
 
     generatedNoteField.value = noteText;
+    window.__app?.emitNoteFinished?.({ provider: "gemini3-vertex", model: modelId || "gemini-2.5-pro" });
   } catch (err) {
     console.error("Vertex Gemini note error:", err);
     clearInterval(noteTimerInterval);

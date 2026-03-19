@@ -204,6 +204,7 @@ All headings should be plain text with a colon.`.trim();
     if (noteTimerElement) {
       noteTimerElement.innerText = "Text generation completed!";
     }
+    window.__app?.emitNoteFinished?.({ provider: "openai", model: "gpt-5.1" });
   } catch (error) {
     clearInterval(noteTimerInterval);
     if (generatedNoteField) {

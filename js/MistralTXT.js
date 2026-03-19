@@ -171,6 +171,7 @@ All headings should be plain text with a colon.`.trim();
     if (noteTimerElement) {
       noteTimerElement.innerText = "Text generation completed!";
     }
+    window.__app?.emitNoteFinished?.({ provider: "mistral", model: "mistral-large-latest" });
   } catch (error) {
     clearInterval(noteTimerInterval);
     if (generatedNoteField) {

@@ -222,6 +222,7 @@ function finishSuccess(noteTimerInterval, noteTimerElement) {
   if (noteTimerElement) {
     noteTimerElement.innerText = "Text generation completed!";
   }
+  window.__app?.emitNoteFinished?.({ provider: "openai", model: "gpt-5.4" });
 }
 
 function finishError(error, generatedNoteField, noteTimerInterval, noteTimerElement) {

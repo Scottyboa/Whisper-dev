@@ -80,17 +80,47 @@ function formatTime(ms) {
   }
 }
 
+function getNoteCoordinator() {
+  return window.__app || {};
+}
+
+function handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval, modelId) {
+  clearInterval(noteTimerInterval);
+  if (noteTimerElement) {
+    noteTimerElement.innerText = "Text generation aborted.";
+  }
+  if (generatedNoteField && !generatedNoteField.value.trim()) {
+    generatedNoteField.value = "Note generation aborted.";
+  }
+  getNoteCoordinator().emitNoteFinished?.({
+    provider: "gemini3-vertex",
+    model: modelId || "gemini-2.5-pro",
+    aborted: true
+  });
+}
+
 async function generateNote() {
   // Clear previous token/cost display immediately on new run
   try { window.__app?.clearNoteUsageAndCost?.(); } catch (_) {}
 
+  const app = getNoteCoordinator();
+  const controller = app.beginNoteGeneration?.({
+    provider: "gemini3-vertex",
+    model: "gemini-2.5-pro"
+  });
+  if (!controller) {
+    return;
+  }
+
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
   const transcriptionText = transcriptionElem.value.trim();
   if (!transcriptionText) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
@@ -102,11 +132,14 @@ async function generateNote() {
   const supplementaryElem = document.getElementById("supplementaryInfo");
   const supplementaryRaw = supplementaryElem ? supplementaryElem.value.trim() : "";
   const supplementaryWrapped = supplementaryRaw
-    ? `Tilleggsopplysninger(brukes som kontekst):"${supplementaryRaw}"`
+    ? `Tilleggsopplysninger(brukes som kontekst):"${supplementaryRaw}"\n\n`
     : "";
 
   const generatedNoteField = document.getElementById("generatedNote");
-  if (!generatedNoteField) return;
+  if (!generatedNoteField) {
+    app.finishNoteGeneration?.();
+    return;
+  }
 
   // Reset note field and start timer
   generatedNoteField.value = "";
@@ -126,23 +159,10 @@ async function generateNote() {
   const backendUrl = (sessionStorage.getItem("vertex_backend_url") || "").trim();
   const backendSecret = (sessionStorage.getItem("vertex_backend_secret") || "").trim();
 
-  if (!backendUrl) {
+  if (!backendUrl || !backendSecret) {
+    alert("Vertex backend URL/secret is missing. Open the Vertex setup guide and configure both values first.");
     clearInterval(noteTimerInterval);
-    if (noteTimerElement) noteTimerElement.innerText = "";
-    alert(
-      "No Vertex backend URL configured.\n\n" +
-      "Please paste your Cloud Run URL on the start page before using Google Vertex."
-    );
-    return;
-  }
-
-  if (!backendSecret) {
-    clearInterval(noteTimerInterval);
-    if (noteTimerElement) noteTimerElement.innerText = "";
-    alert(
-      "No Vertex backend secret configured.\n\n" +
-      "Please paste your backend secret (X-Proxy-Secret) on the start page before using Google Vertex."
-    );
+    app.finishNoteGeneration?.();
     return;
   }
 
@@ -153,6 +173,7 @@ async function generateNote() {
     (promptText || "") +
     (supplementaryWrapped ? "\n\n" + supplementaryWrapped : "");
 
+  let modelId = "gemini-2.5-pro";
   try {
     const resp = await fetch(backendUrl, {
       method: "POST",
@@ -161,24 +182,23 @@ async function generateNote() {
         "X-Proxy-Secret": backendSecret,
       },
       body: JSON.stringify({
-        transcription: transcriptionText,
-        customPrompt: combinedPrompt,
+        transcription: `${supplementaryWrapped}${transcriptionText}`,
+        customPrompt: promptText,
         provider: "gemini",
         modelVariant: "g25"
       }),
+      signal: controller.signal
     });
 
     if (!resp.ok) {
       const text = await resp.text().catch(() => "");
-      throw new Error(
-        "Vertex backend HTTP " + resp.status + (text ? ": " + text : "")
-      );
+      throw new Error(`Vertex backend error ${resp.status}: ${text}`);
     }
 
     const data = await resp.json().catch(() => ({}));
-    const noteText = data.note || "";
-    const usage = data.usage || null;
-    const modelId = data.modelId || null;
+    const noteText = typeof data?.text === "string" ? data.text : "";
+    const usage = data?.usage || null;
+    modelId = data?.model || "gemini-2.5-pro";
 
     // Report token usage to UI (USD is calculated centrally in transcribe.html)
     if (usage) {
@@ -217,13 +237,10 @@ async function generateNote() {
           `outputBillable=${cost.billableOutputTokens}`,
           `($${cost.totalUsd.toFixed(6)} total)`
         );
-        // Optional deeper breakdown (uncomment if you want it)
-        // console.log("[Vertex cost breakdown]", cost);
       }
     } else {
       console.log("[Vertex usage] (missing in backend response)", data);
     }
-
 
     clearInterval(noteTimerInterval);
     if (noteTimerElement) {
@@ -232,8 +249,13 @@ async function generateNote() {
     }
 
     generatedNoteField.value = noteText;
-    window.__app?.emitNoteFinished?.({ provider: "gemini3-vertex", model: modelId || "gemini-2.5-pro" });
+    app.emitNoteFinished?.({ provider: "gemini3-vertex", model: modelId || "gemini-2.5-pro" });
   } catch (err) {
+    if (err?.name === "AbortError") {
+      handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval, modelId);
+      return;
+    }
+
     console.error("Vertex Gemini note error:", err);
     clearInterval(noteTimerInterval);
     if (noteTimerElement) {
@@ -241,32 +263,15 @@ async function generateNote() {
     }
     generatedNoteField.value =
       "Error generating note via Vertex backend: " + String(err);
+    app.finishNoteGeneration?.();
   }
 
-      // Report to UI (same gray line as OpenAI/Bedrock)
-      try {
-        window.__app?.setNoteUsageAndCost?.({
-          providerKey: "gemini3-vertex",
-          modelId,
-          // send Vertex-style usage so transcribe.html can normalize
-          usage: {
-            promptTokens: usage.promptTokens,
-            outputTokens: usage.outputTokens,
-            totalTokens: usage.totalTokens,
-            raw: usage.raw || null,
-          },
-          // Also send estimatedUsd directly (works even if transcribe has no Vertex pricing yet)
-          estimatedUsd: cost ? cost.totalUsd : null,
-          meta: { vertex: usage.raw || null, tier: cost ? cost.tier : null },
-        });
-      } catch (_) {}
+     
 }
 
 function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");
   if (!generateNoteButton) return;
-
-  
 
   generateNoteButton.addEventListener("click", generateNote);
 }

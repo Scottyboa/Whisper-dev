@@ -1,3 +1,15 @@
+### 26. mars 2026
+
+Det er nå lagt til en **Avbryt**-knapp for notatgenerering.
+
+Hvis et notat er i ferd med å bli generert og du vil stoppe det, kan du nå klikke **Avbryt** for å avbryte den pågående genereringen og starte et nytt notat.
+
+Det er også nå lagt til løpende **ordtelling** og **tokentelling** for transkripsjonsfeltet, feltet for tilleggsopplysninger og promptfeltet.
+
+I tillegg er det lagt til visuelle signaler som gjør det enklere å se når transkribering og notatgenerering har startet eller er fullført.
+
+---
+
 ## 16. mars 2026
 
 ### Ny abort-knapp lagt til under opptak

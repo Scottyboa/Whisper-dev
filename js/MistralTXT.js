@@ -11,7 +11,7 @@ function hashString(str) {
   return hash.toString();
 }
 
-// Helper functions for base64 conversions (kept in case they’re used elsewhere)
+// Helper functions for base64 conversions (kept in case they're used elsewhere)
 function arrayBufferToBase64(buffer) {
   let binary = "";
   const bytes = new Uint8Array(buffer);
@@ -53,15 +53,48 @@ function formatTime(ms) {
   }
 }
 
+function getNoteCoordinator() {
+  return window.__app || {};
+}
+
+function handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval) {
+  clearInterval(noteTimerInterval);
+  if (generatedNoteField && !generatedNoteField.value.trim()) {
+    generatedNoteField.value = "Note generation aborted.";
+  }
+  if (noteTimerElement) {
+    noteTimerElement.innerText = "Text generation aborted.";
+  }
+  getNoteCoordinator().emitNoteFinished?.({
+    provider: "mistral",
+    model: "mistral-large-latest",
+    aborted: true
+  });
+}
+
 // Handles the note generation process using the OpenAI API
 async function generateNote() {
+  // Clear previous token/cost display immediately on new run
+  try { window.__app?.clearNoteUsageAndCost?.(); } catch (_) {}
+
+  const app = getNoteCoordinator();
+  const controller = app.beginNoteGeneration?.({
+    provider: "mistral",
+    model: "mistral-large-latest"
+  });
+  if (!controller) {
+    return;
+  }
+
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
   const transcriptionText = transcriptionElem.value.trim();
   if (!transcriptionText) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
@@ -79,7 +112,10 @@ async function generateNote() {
     : "";
 
   const generatedNoteField = document.getElementById("generatedNote");
-  if (!generatedNoteField) return;
+  if (!generatedNoteField) {
+    app.finishNoteGeneration?.();
+    return;
+  }
   
   // Reset generated note field and start timer
   generatedNoteField.value = "";
@@ -94,11 +130,12 @@ async function generateNote() {
     }
   }, 1000);
   
-    // Phase 3: Always use the OpenAI key for note generation (independent of transcription provider)
+  // Phase 3: Always use the OpenAI key for note generation (independent of transcription provider)
   const apiKey = sessionStorage.getItem("mistral_api_key");
   if (!apiKey) {
     alert("No API key available for note generation.");
     clearInterval(noteTimerInterval);
+    app.finishNoteGeneration?.();
     return;
   }
   
@@ -130,9 +167,12 @@ All headings should be plain text with a colon.`.trim();
         model: "mistral-large-latest",
         messages,
         stream: true
-      })
+      }),
+      signal: controller.signal
     });
+
     await streamMistralChat(resp, {
+      signal: controller.signal,
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;
       },
@@ -162,8 +202,7 @@ All headings should be plain text with a colon.`.trim();
         }
       },
       onError: (err) => {
-        console.error("Streaming error:", err);
-        alert("Error during note generation");
+        throw err;
       }
     });
 
@@ -171,8 +210,13 @@ All headings should be plain text with a colon.`.trim();
     if (noteTimerElement) {
       noteTimerElement.innerText = "Text generation completed!";
     }
-    window.__app?.emitNoteFinished?.({ provider: "mistral", model: "mistral-large-latest" });
+    app.emitNoteFinished?.({ provider: "mistral", model: "mistral-large-latest" });
   } catch (error) {
+    if (error?.name === "AbortError") {
+      handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval);
+      return;
+    }
+
     clearInterval(noteTimerInterval);
     if (generatedNoteField) {
       generatedNoteField.value = "Error generating note: " + error;
@@ -180,10 +224,12 @@ All headings should be plain text with a colon.`.trim();
     if (noteTimerElement) {
       noteTimerElement.innerText = "";
     }
+    app.finishNoteGeneration?.();
   }
 }
 
 async function streamMistralChat(resp, {
+  signal,
   onDelta = () => {},
   onDone = () => {},
   onError = (e) => { console.error(e); },
@@ -198,8 +244,24 @@ async function streamMistralChat(resp, {
   let buffer = "";
   let finalUsage = null;
 
+  const abortReader = () => {
+    try { reader.cancel(); } catch (_) {}
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      abortReader();
+      throw new DOMException("Aborted", "AbortError");
+    }
+    signal.addEventListener("abort", abortReader, { once: true });
+  }
+
   try {
     while (true) {
+      if (signal?.aborted) {
+        throw new DOMException("Aborted", "AbortError");
+      }
+
       const { value, done } = await reader.read();
       if (done) break;
 
@@ -209,6 +271,10 @@ async function streamMistralChat(resp, {
       buffer = frames.pop() ?? "";
 
       for (const frame of frames) {
+        if (signal?.aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
+
         // Only process "data:" lines
         const lines = frame.split("\n");
         for (const line of lines) {
@@ -233,6 +299,10 @@ async function streamMistralChat(resp, {
     onDone({ usage: finalUsage });
   } catch (e) {
     onError(e);
+  } finally {
+    if (signal) {
+      try { signal.removeEventListener("abort", abortReader); } catch (_) {}
+    }
   }
 }
 
@@ -242,9 +312,8 @@ function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");
   if (!generateNoteButton) return;
 
-  
-
   // Attach click handler only
-  generateNoteButton.addEventListener("click", generateNote);}
+  generateNoteButton.addEventListener("click", generateNote);
+}
  
 export { initNoteGeneration };

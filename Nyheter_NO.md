@@ -1,4 +1,4 @@
-### 26. mars 2026
+## 26. mars 2026
 
 Det er nå lagt til en **Avbryt**-knapp for notatgenerering.
 

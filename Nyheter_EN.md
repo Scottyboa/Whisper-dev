@@ -1,4 +1,4 @@
-### 26 March, 2026
+## 26 March, 2026
 
 There has now been added an **Abort** button for note generation.
 

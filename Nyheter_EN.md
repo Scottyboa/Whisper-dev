@@ -1,3 +1,15 @@
+### 26 March, 2026
+
+There has now been added an **Abort** button for note generation.
+
+If a note is being generated and you want to stop it, you can now click **Abort** to cancel the current generation and start a new one.
+
+There have also now been added live **word** and **token counters** for the transcription input field, the supplementary information field, and the prompt field.
+
+In addition, visual cues have been added to make it easier to see when transcription and note generation have started or finished.
+
+---
+
 ## 16 March, 2026
 
 ### New abort button added during recording

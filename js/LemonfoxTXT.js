@@ -11,7 +11,7 @@ function hashString(str) {
   return hash.toString();
 }
 
-// Helper functions for base64 conversions (kept in case they’re used elsewhere)
+// Helper functions for base64 conversions (kept in case they're used elsewhere)
 function arrayBufferToBase64(buffer) {
   let binary = "";
   const bytes = new Uint8Array(buffer);
@@ -53,15 +53,48 @@ function formatTime(ms) {
   }
 }
 
-// Handles the note generation process using the OpenAI API
+function getNoteCoordinator() {
+  return window.__app || {};
+}
+
+function handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval) {
+  clearInterval(noteTimerInterval);
+  if (generatedNoteField && !generatedNoteField.value.trim()) {
+    generatedNoteField.value = "Note generation aborted.";
+  }
+  if (noteTimerElement) {
+    noteTimerElement.innerText = "Text generation aborted.";
+  }
+  getNoteCoordinator().emitNoteFinished?.({
+    provider: "lemonfox",
+    model: "chat-model",
+    aborted: true
+  });
+}
+
+// Handles the note generation process using the Lemonfox API
 async function generateNote() {
+  // Clear previous token/cost display immediately on new run
+  try { window.__app?.clearNoteUsageAndCost?.(); } catch (_) {}
+
+  const app = getNoteCoordinator();
+  const controller = app.beginNoteGeneration?.({
+    provider: "lemonfox",
+    model: "chat-model"
+  });
+  if (!controller) {
+    return;
+  }
+
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
   const transcriptionText = transcriptionElem.value.trim();
   if (!transcriptionText) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
@@ -78,7 +111,10 @@ async function generateNote() {
     : "";
 
   const generatedNoteField = document.getElementById("generatedNote");
-  if (!generatedNoteField) return;
+  if (!generatedNoteField) {
+    app.finishNoteGeneration?.();
+    return;
+  }
   
   // Reset generated note field and start timer
   generatedNoteField.value = "";
@@ -96,8 +132,9 @@ async function generateNote() {
   // Lemonfox TXT: use the Lemonfox key (independent of transcription provider)
   const apiKey = sessionStorage.getItem("lemonfox_api_key");
   if (!apiKey) {
-    alert("No Lemonfox API key available for note generation.");
+    alert("No API key available for note generation.");
     clearInterval(noteTimerInterval);
+    app.finishNoteGeneration?.();
     return;
   }
   
@@ -129,16 +166,18 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
       model: "llama-70b-chat",
       messages,
       stream: true
-    })
+    }),
+    signal: controller.signal
   });
+
     await streamLemonfoxChat(response, {
+      signal: controller.signal,
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;
       },
       onDone: () => {},
       onError: (err) => {
-        console.error("Streaming error:", err);
-        alert("Error during note generation");
+        throw err;
       }
     });
 
@@ -146,7 +185,13 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
     if (noteTimerElement) {
       noteTimerElement.innerText = "Text generation completed!";
     }
+    app.emitNoteFinished?.({ provider: "lemonfox", model: "chat-model" });
   } catch (error) {
+    if (error?.name === "AbortError") {
+      handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval);
+      return;
+    }
+
     clearInterval(noteTimerInterval);
     if (generatedNoteField) {
       generatedNoteField.value = "Error generating note: " + error;
@@ -154,10 +199,12 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
     if (noteTimerElement) {
       noteTimerElement.innerText = "";
     }
+    app.finishNoteGeneration?.();
   }
 }
 
 async function streamLemonfoxChat(resp, {
+  signal,
   onDelta = () => {},
   onDone = () => {},
   onError = (e) => { console.error(e); },
@@ -171,8 +218,24 @@ async function streamLemonfoxChat(resp, {
   const decoder = new TextDecoder();
   let buffer = "";
 
+  const abortReader = () => {
+    try { reader.cancel(); } catch (_) {}
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      abortReader();
+      throw new DOMException("Aborted", "AbortError");
+    }
+    signal.addEventListener("abort", abortReader, { once: true });
+  }
+
   try {
     while (true) {
+      if (signal?.aborted) {
+        throw new DOMException("Aborted", "AbortError");
+      }
+
       const { value, done } = await reader.read();
       if (done) break;
 
@@ -183,6 +246,10 @@ async function streamLemonfoxChat(resp, {
       buffer = frames.pop() ?? "";
 
       for (const frame of frames) {
+        if (signal?.aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
+
         // Each frame is a set of "key: value" lines
         // We only care about "data:" lines
         const lines = frame.split("\n");
@@ -215,18 +282,20 @@ async function streamLemonfoxChat(resp, {
     onDone();
   } catch (e) {
     onError(e);
+  } finally {
+    if (signal) {
+      try { signal.removeEventListener("abort", abortReader); } catch (_) {}
+    }
   }
 }
 
- 
 // Initializes note generation functionality, including prompt slot handling and event listeners.
 function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");
   if (!generateNoteButton) return;
 
-  
-
   // Attach click handler only
-  generateNoteButton.addEventListener("click", generateNote);}
+  generateNoteButton.addEventListener("click", generateNote);
+}
  
 export { initNoteGeneration };

@@ -9,7 +9,7 @@ function hashString(str) {
   return hash.toString();
 }
 
-// Helper functions for base64 conversions (kept in case they’re used elsewhere)
+// Helper functions for base64 conversions (kept in case they're used elsewhere)
 function arrayBufferToBase64(buffer) {
   let binary = "";
   const bytes = new Uint8Array(buffer);
@@ -50,15 +50,48 @@ function formatTime(ms) {
   }
 }
 
+function getNoteCoordinator() {
+  return window.__app || {};
+}
+
+function handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval) {
+  clearInterval(noteTimerInterval);
+  if (generatedNoteField && !generatedNoteField.value.trim()) {
+    generatedNoteField.value = "Note generation aborted.";
+  }
+  if (noteTimerElement) {
+    noteTimerElement.innerText = "Text generation aborted.";
+  }
+  getNoteCoordinator().emitNoteFinished?.({
+    provider: "gemini3",
+    model: "gemini-3-pro-preview",
+    aborted: true
+  });
+}
+
 // Handles the note generation process using the Gemini API with streaming
 async function generateNote() {
+  // Clear previous token/cost display immediately on new run
+  try { window.__app?.clearNoteUsageAndCost?.(); } catch (_) {}
+
+  const app = getNoteCoordinator();
+  const controller = app.beginNoteGeneration?.({
+    provider: "gemini3",
+    model: "gemini-3-pro-preview"
+  });
+  if (!controller) {
+    return;
+  }
+
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
   const transcriptionText = transcriptionElem.value.trim();
   if (!transcriptionText) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
@@ -77,7 +110,10 @@ async function generateNote() {
     : "";
 
   const generatedNoteField = document.getElementById("generatedNote");
-  if (!generatedNoteField) return;
+  if (!generatedNoteField) {
+    app.finishNoteGeneration?.();
+    return;
+  }
 
   // Reset generated note field and start timer
   generatedNoteField.value = "";
@@ -98,6 +134,7 @@ async function generateNote() {
   if (!apiKey) {
     alert("No Gemini API key available for note generation.");
     clearInterval(noteTimerInterval);
+    app.finishNoteGeneration?.();
     return;
   }
 
@@ -150,10 +187,11 @@ All headings should be plain text with a colon.
             thinkingLevel: geminiThinkingLevel
           }
         }
-      })
+      }),
+      signal: controller.signal
     });
 
-    // If v1beta streaming isn’t available, fall back to v1alpha
+    // If v1beta streaming isn't available, fall back to v1alpha
     if (resp.status === 404) {
       console.warn("v1beta streamGenerateContent returned 404, trying v1alpha");
       resp = await fetch(makeUrl("v1alpha"), {
@@ -176,7 +214,8 @@ All headings should be plain text with a colon.
               thinkingLevel: geminiThinkingLevel
             }
           }
-        })
+        }),
+        signal: controller.signal
       });
     }
 
@@ -186,6 +225,7 @@ All headings should be plain text with a colon.
     }
 
     await streamGeminiSSE(resp.body, {
+      signal: controller.signal,
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;
       },
@@ -194,7 +234,7 @@ All headings should be plain text with a colon.
         if (noteTimerElement) {
           noteTimerElement.innerText = "Text generation completed!";
         }
-        window.__app?.emitNoteFinished?.({ provider: "gemini3", model: "gemini-3-pro-preview" });
+        app.emitNoteFinished?.({ provider: "gemini3", model: "gemini-3-pro-preview" });
 
         // ---- Token usage logging (input/output/reasoning/total) ----
         if (!usage) {
@@ -249,7 +289,7 @@ All headings should be plain text with a colon.
               : "")
         );
         // Forward token usage to transcribe.html for USD estimation + UI rendering
-        // (keep Gemini3.js “tokens only”; pricing lives in transcribe.html)
+        // (keep Gemini3.js "tokens only"; pricing lives in transcribe.html)
         try {
           if (window.__app && typeof window.__app.setNoteUsageAndCost === "function") {
             const totalForUi =
@@ -274,35 +314,53 @@ All headings should be plain text with a colon.
           }
         } catch (_) {} },
       onError: (err) => {
-        console.error("Gemini streaming error:", err);
-        clearInterval(noteTimerInterval);
-        if (generatedNoteField) {
-          generatedNoteField.value = "Error during note generation: " + String(err);
-        }
-        if (noteTimerElement) {
-          noteTimerElement.innerText = "";
-        }
+        throw err;
       }
     });
   } catch (error) {
+    if (error?.name === "AbortError") {
+      handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval);
+      return;
+    }
+
     console.error("Gemini streaming error:", error);
     clearInterval(noteTimerInterval);
     if (generatedNoteField) {
       generatedNoteField.value = "Error generating note: " + error;
     }
+    if (noteTimerElement) {
+      noteTimerElement.innerText = "";
+    }
+    app.finishNoteGeneration?.();
   }
 }
 
-async function streamGeminiSSE(body, callbacks) {
-  const { onDelta, onDone, onError } = callbacks;
+async function streamGeminiSSE(body, callbacks = {}) {
+  const { signal, onDelta, onDone, onError } = callbacks;
   const reader = body.getReader();
   const decoder = new TextDecoder("utf-8");
 
   let buffer = "";
   let lastUsage = null;
 
+  const abortReader = () => {
+    try { reader.cancel(); } catch (_) {}
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      abortReader();
+      throw new DOMException("Aborted", "AbortError");
+    }
+    signal.addEventListener("abort", abortReader, { once: true });
+  }
+
   try {
     while (true) {
+      if (signal?.aborted) {
+        throw new DOMException("Aborted", "AbortError");
+      }
+
       const { value, done } = await reader.read();
       if (done) break;
 
@@ -313,6 +371,10 @@ async function streamGeminiSSE(body, callbacks) {
       buffer = lines.pop() || "";
 
       for (const line of lines) {
+        if (signal?.aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
+
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith(":")) {
           // comment / keep-alive
@@ -365,6 +427,10 @@ async function streamGeminiSSE(body, callbacks) {
     if (typeof onDone === "function") onDone(lastUsage);
   } catch (err) {
     if (typeof onError === "function") onError(err);
+  } finally {
+    if (signal) {
+      try { signal.removeEventListener("abort", abortReader); } catch (_) {}
+    }
   }
 }
 
@@ -372,8 +438,6 @@ async function streamGeminiSSE(body, callbacks) {
 function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");
   if (!generateNoteButton) return;
-
- 
 
   // Attach click handler only
   generateNoteButton.addEventListener("click", generateNote);

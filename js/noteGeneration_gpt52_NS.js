@@ -11,7 +11,7 @@ function hashString(str) {
   return hash.toString();
 }
 
-// Helper functions for base64 conversions (kept in case they’re used elsewhere)
+// Helper functions for base64 conversions (kept in case they're used elsewhere)
 function arrayBufferToBase64(buffer) {
   let binary = "";
   const bytes = new Uint8Array(buffer);
@@ -53,6 +53,21 @@ function formatTime(ms) {
   }
 }
 
+function getNoteCoordinator() {
+  return window.__app || {};
+}
+
+function handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval) {
+  clearInterval(noteTimerInterval);
+  if (generatedNoteField && !generatedNoteField.value.trim()) {
+    generatedNoteField.value = "Note generation aborted.";
+  }
+  if (noteTimerElement) {
+    noteTimerElement.innerText = "Text generation aborted.";
+  }
+  getNoteCoordinator().emitNoteFinished?.({ provider: "openai", model: "gpt-5.2", mode: "non-streaming", aborted: true });
+}
+
 // Extract full text from a non-streaming Responses API payload.
 // Works with current `output_text` and falls back to assembling from blocks.
 function extractResponseText(json) {
@@ -87,13 +102,21 @@ async function generateNote() {
   // Clear previous token/cost display immediately on new run
   try { window.__app?.clearNoteUsageAndCost?.(); } catch (_) {}
 
+  const app = getNoteCoordinator();
+  const controller = app.beginNoteGeneration?.({ provider: "openai", model: "gpt-5.2", mode: "non-streaming" });
+  if (!controller) {
+    return;
+  }
+
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
   const transcriptionText = transcriptionElem.value.trim();
   if (!transcriptionText) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
@@ -109,7 +132,10 @@ async function generateNote() {
     : "";
 
   const generatedNoteField = document.getElementById("generatedNote");
-  if (!generatedNoteField) return;
+  if (!generatedNoteField) {
+    app.finishNoteGeneration?.();
+    return;
+  }
 
   // Reset generated note field and start timer
   generatedNoteField.value = "";
@@ -130,6 +156,7 @@ async function generateNote() {
   if (!apiKey) {
     alert("No API key available for note generation.");
     clearInterval(noteTimerInterval);
+    app.finishNoteGeneration?.();
     return;
   }
 
@@ -167,43 +194,43 @@ All headings should be plain text with a colon.`.trim();
     }
 
     // Call the Responses API with GPT-5.2 (non-streaming)
-const resp = await fetch("https://api.openai.com/v1/responses", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${apiKey}`,
-  },
-  body: (() => {
-    // Determine reasoning level from dropdown (default: "low")
-    const sel = document.getElementById("gpt5Reasoning");
-    const level = sel ? sel.value : "low";
+    const resp = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: (() => {
+        // Determine reasoning level from dropdown (default: "low")
+        const sel = document.getElementById("gpt5Reasoning");
+        const level = sel ? sel.value : "low";
 
-    const req = {
-      model: "gpt-5.2",
-      input: [
-        {
-          role: "system",
-          content: [{ type: "input_text", text: finalPromptText }]
-        },
-        {
-          role: "user",
-          content: [{
-           type: "input_text",
-            text: supplementaryWrapped + transcriptionText
-          }]
+        const req = {
+          model: "gpt-5.2",
+          input: [
+            {
+              role: "system",
+              content: [{ type: "input_text", text: finalPromptText }]
+            },
+            {
+              role: "user",
+              content: [{
+               type: "input_text",
+                text: supplementaryWrapped + transcriptionText
+              }]
+            }
+          ],
+          text: { verbosity: "medium" }
+        };
+
+        if (level && level !== "none") {
+          req.reasoning = { effort: level };
         }
-      ],
-      text: { verbosity: "medium" }
-    };
 
-    if (level && level !== "none") {
-      req.reasoning = { effort: level };
-    }
-
-    return JSON.stringify(req);
-  })()
-});
-
+        return JSON.stringify(req);
+      })(),
+      signal: controller.signal
+    });
 
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "");
@@ -253,8 +280,13 @@ const resp = await fetch("https://api.openai.com/v1/responses", {
     if (noteTimerElement) {
       noteTimerElement.innerText = "Text generation completed!";
     }
-    window.__app?.emitNoteFinished?.({ provider: "openai", model: "gpt-5.2" });
+    app.emitNoteFinished?.({ provider: "openai", model: "gpt-5.2", mode: "non-streaming" });
   } catch (error) {
+    if (error?.name === "AbortError") {
+      handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval);
+      return;
+    }
+
     clearInterval(noteTimerInterval);
     if (generatedNoteField) {
       generatedNoteField.value = "Error generating note: " + error;
@@ -262,6 +294,7 @@ const resp = await fetch("https://api.openai.com/v1/responses", {
     if (noteTimerElement) {
       noteTimerElement.innerText = "";
     }
+    app.finishNoteGeneration?.();
   }
 }
 
@@ -349,15 +382,13 @@ function extractResponseText(json) {
   }
 }
 
- 
 // Initializes note generation functionality, including prompt slot handling and event listeners.
 function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");
   if (!generateNoteButton) return;
 
-
-
   // Attach click handler only
-  generateNoteButton.addEventListener("click", generateNote);}
+  generateNoteButton.addEventListener("click", generateNote);
+}
  
 export { initNoteGeneration };

@@ -1473,6 +1473,40 @@
   font-weight: 600 !important;
 }
 
+
+    /* Live word/token counters for transcript, supplementary info, and prompt */
+    .field-counter-wrap {
+      position: relative;
+    }
+    .field-counter-wrap.field-counter-gap {
+      padding-top: 10px;
+    }
+    .field-live-counter {
+      position: absolute;
+      right: 4px;
+      top: -14px;
+      font-size: 12px;
+      opacity: 0.6;
+      color: #333;
+      line-height: 1;
+      white-space: nowrap;
+      pointer-events: none;
+      user-select: none;
+      z-index: 2;
+    }
+    .field-counter-wrap.field-counter-gap .field-live-counter {
+      top: 0;
+    }
+    #transcriptionCounterWrap .field-live-counter,
+    #supplementaryInfoCounterWrap .field-live-counter {
+      top: -4px;
+      right: 2px;
+    }
+    #customPromptCounterWrap .field-live-counter {
+      top: -14px;
+      right: 2px;
+    }
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
@@ -1640,11 +1674,14 @@
             </button>
           </div>
         </div>
-        <textarea
-          id="transcription"
-          placeholder="Transcription result will appear here."
-          style="margin-bottom: 6px;"  
-        ></textarea>        <!-- Supplementary / Redactor toolbar -->
+        <div id="transcriptionCounterWrap" class="field-counter-wrap field-counter-gap">
+          <div id="transcriptionLiveCounter" class="field-live-counter" aria-live="polite">0 words · 0 tokens</div>
+          <textarea
+            id="transcription"
+            placeholder="Transcription result will appear here."
+            style="margin-bottom: 6px;"  
+          ></textarea>
+        </div>        <!-- Supplementary / Redactor toolbar -->
         <div class="supp-toolbar">
           <!-- Left side: Auto clear toggle + tooltip -->
           <div class="supp-row-left">
@@ -1700,9 +1737,12 @@
         <div id="supplementaryRedactorLayout" class="supplementary-redactor-layout">
           <div class="supplementary-pane">
             <!-- Supplementary field (NO label above) -->
-            <textarea
-              id="supplementaryInfo"
-              placeholder="Supplementary information (optional)"></textarea>
+            <div id="supplementaryInfoCounterWrap" class="field-counter-wrap field-counter-gap">
+              <div id="supplementaryInfoLiveCounter" class="field-live-counter" aria-live="polite">0 words · 0 tokens</div>
+              <textarea
+                id="supplementaryInfo"
+                placeholder="Supplementary information (optional)"></textarea>
+            </div>
             <div class="supp-actions" style="display:flex; justify-content:flex-end; align-items:center; gap: 6px; margin-top: 6px;">
               <span class="help-tip help-tip-left" style="margin-left:0; margin-right:2px;" tabindex="0" aria-label="Insert date help">
                 ?
@@ -1955,7 +1995,18 @@
               <option value="high">High</option>
             </select>
           </div>
-          <button id="generateNoteButton">Generate Note</button>
+          <div id="noteActionButtons" style="display:flex; align-items:center; gap:8px; margin-bottom: 6px;">
+          <button id="generateNoteButton" type="button">Generate Note</button>
+          <button
+            id="abortNoteButton"
+            type="button"
+            disabled
+            aria-disabled="true"
+            title="Abort the current note generation and allow a new note to be generated"
+          >
+            Abort Note
+          </button>
+          </div>
           <!-- Note timer + Copy button on the same row -->
           <div style="display:flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px;">
             <div id="noteTimer" class="timer" style="margin-bottom: 0;">
@@ -2121,7 +2172,10 @@
               </button>
             </div>
           </div>
-          <textarea id="customPrompt" placeholder="Enter custom prompt here" rows="1"></textarea>
+          <div id="customPromptCounterWrap" class="field-counter-wrap">
+            <div id="customPromptLiveCounter" class="field-live-counter" aria-live="polite">0 words · 0 tokens</div>
+            <textarea id="customPrompt" placeholder="Enter custom prompt here" rows="1"></textarea>
+          </div>
         </div>
       </div>
     </main>
@@ -5885,7 +5939,15 @@ if (guideClose) {
         window.__app.pulseCompletionField?.("generatedNote");
       };
 
+      const previousEmitNoteFinished = window.__app.emitNoteFinished;
+
       window.__app.emitNoteFinished = function emitNoteFinished(detail) {
+        try {
+          if (typeof previousEmitNoteFinished === "function") {
+            previousEmitNoteFinished(detail);
+          }
+        } catch (_) {}
+
         try {
           window.dispatchEvent(new CustomEvent("note:finished", { detail: detail || {} }));
         } catch (_) {}
@@ -5903,6 +5965,100 @@ if (guideClose) {
         window.addEventListener("note:finished", () => {
           window.__app.pulseFinishedNote?.();
         });
+      }
+    })();
+  </script>
+
+
+  <script>
+    (() => {
+      const COUNT_TARGETS = [
+        { inputId: "transcription", counterId: "transcriptionLiveCounter" },
+        { inputId: "supplementaryInfo", counterId: "supplementaryInfoLiveCounter" },
+        { inputId: "customPrompt", counterId: "customPromptLiveCounter" },
+      ];
+
+      const wordRegex = /\S+/g;
+      const syncMap = new Map();
+
+      function countWords(value) {
+        const matches = (value || "").match(wordRegex);
+        return matches ? matches.length : 0;
+      }
+
+      function estimateTokens(value) {
+        const text = String(value || "");
+        if (!text.trim()) return 0;
+
+        const chars = text.length;
+        const words = countWords(text);
+        const roughByChars = Math.ceil(chars / 4);
+        const roughByWords = Math.ceil(words * 1.33);
+
+        return Math.max(1, Math.max(roughByChars, roughByWords));
+      }
+
+      function renderCounter(input, counter) {
+        if (!input || !counter) return;
+        const value = input.value || "";
+        const words = countWords(value);
+        const tokens = estimateTokens(value);
+        counter.textContent = `${words} words · ${tokens} tokens`;
+      }
+
+      function queueSync(sync) {
+        sync();
+        requestAnimationFrame(sync);
+        setTimeout(sync, 0);
+        setTimeout(sync, 60);
+      }
+
+      function bindLiveCounter({ inputId, counterId }) {
+        const input = document.getElementById(inputId);
+        const counter = document.getElementById(counterId);
+        if (!input || !counter) return;
+        if (input.dataset.liveCounterBound === "1") return;
+
+        const sync = () => renderCounter(input, counter);
+        input.dataset.liveCounterBound = "1";
+        syncMap.set(inputId, sync);
+
+        input.addEventListener("input", sync);
+        input.addEventListener("change", sync);
+        sync();
+      }
+
+      function syncCounterByInputId(inputId) {
+        const sync = syncMap.get(inputId);
+        if (typeof sync === "function") {
+          queueSync(sync);
+          return;
+        }
+        const target = COUNT_TARGETS.find((item) => item.inputId === inputId);
+        if (target) bindLiveCounter(target);
+      }
+
+      function initCounters() {
+        COUNT_TARGETS.forEach(bindLiveCounter);
+
+        if (!window.__app) window.__app = {};
+        window.__app.syncFieldLiveCounter = syncCounterByInputId;
+        window.__app.syncAllFieldLiveCounters = () => {
+          COUNT_TARGETS.forEach(({ inputId }) => syncCounterByInputId(inputId));
+        };
+
+        if (!window.__app.__fieldCounterTranscriptionBound) {
+          window.__app.__fieldCounterTranscriptionBound = true;
+          window.addEventListener("transcription:finished", () => {
+            syncCounterByInputId("transcription");
+          });
+        }
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initCounters, { once: true });
+      } else {
+        initCounters();
       }
     })();
   </script>

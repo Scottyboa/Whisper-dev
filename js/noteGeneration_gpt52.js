@@ -1,5 +1,3 @@
-
-
 // Utility function to hash a string (used for storing prompts keyed by API key)
 function hashString(str) {
   let hash = 0;
@@ -11,7 +9,7 @@ function hashString(str) {
   return hash.toString();
 }
 
-// Helper functions for base64 conversions (kept in case they’re used elsewhere)
+// Helper functions for base64 conversions (kept in case they're used elsewhere)
 function arrayBufferToBase64(buffer) {
   let binary = "";
   const bytes = new Uint8Array(buffer);
@@ -53,18 +51,41 @@ function formatTime(ms) {
   }
 }
 
+function getNoteCoordinator() {
+  return window.__app || {};
+}
+
+function handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval) {
+  clearInterval(noteTimerInterval);
+  if (generatedNoteField && !generatedNoteField.value.trim()) {
+    generatedNoteField.value = "Note generation aborted.";
+  }
+  if (noteTimerElement) {
+    noteTimerElement.innerText = "Text generation aborted.";
+  }
+  getNoteCoordinator().emitNoteFinished?.({ provider: "openai", model: "gpt-5.2", aborted: true });
+}
+
 // Handles the note generation process using the OpenAI API
 async function generateNote() {
   // Clear previous token/cost display immediately on new run
   try { window.__app?.clearNoteUsageAndCost?.(); } catch (_) {}
 
+  const app = getNoteCoordinator();
+  const controller = app.beginNoteGeneration?.({ provider: "openai", model: "gpt-5.2" });
+  if (!controller) {
+    return;
+  }
+
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
   const transcriptionText = transcriptionElem.value.trim();
   if (!transcriptionText) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
@@ -81,7 +102,10 @@ async function generateNote() {
     : "";
 
   const generatedNoteField = document.getElementById("generatedNote");
-  if (!generatedNoteField) return;
+  if (!generatedNoteField) {
+    app.finishNoteGeneration?.();
+    return;
+  }
   
   // Reset generated note field and start timer
   generatedNoteField.value = "";
@@ -96,11 +120,12 @@ async function generateNote() {
     }
   }, 1000);
   
-    // Phase 3: Always use the OpenAI key for note generation (independent of transcription provider)
+  // Phase 3: Always use the OpenAI key for note generation (independent of transcription provider)
   const apiKey = sessionStorage.getItem("openai_api_key");
   if (!apiKey) {
     alert("No API key available for note generation.");
     clearInterval(noteTimerInterval);
+    app.finishNoteGeneration?.();
     return;
   }
   
@@ -152,15 +177,18 @@ All headings should be plain text with a colon.`.trim();
       "Content-Type": "application/json",
       "Authorization": `Bearer ${apiKey}`,
     },
-    body: JSON.stringify(requestBody)
+    body: JSON.stringify(requestBody),
+    signal: controller.signal
   });
 
     await streamOpenAIResponse(resp, {
+      signal: controller.signal,
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;
       },
-      onDone: (finalEvent) => {
-        const usage = finalEvent?.response?.usage;
+      onDone: (payload) => {
+        const usage =
+          payload?.response?.usage ?? payload?.usage ?? null;
         if (usage) {
           console.log(
             "[OpenAI token usage]",
@@ -197,8 +225,7 @@ All headings should be plain text with a colon.`.trim();
         }
       },
       onError: (err) => {
-        console.error("Streaming error:", err);
-        alert("Error during note generation");
+        throw err;
       }
     });
 
@@ -206,8 +233,13 @@ All headings should be plain text with a colon.`.trim();
     if (noteTimerElement) {
       noteTimerElement.innerText = "Text generation completed!";
     }
-    window.__app?.emitNoteFinished?.({ provider: "openai", model: "gpt-5.2" });
+    app.emitNoteFinished?.({ provider: "openai", model: "gpt-5.2" });
   } catch (error) {
+    if (error?.name === "AbortError") {
+      handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval);
+      return;
+    }
+
     clearInterval(noteTimerInterval);
     if (generatedNoteField) {
       generatedNoteField.value = "Error generating note: " + error;
@@ -215,10 +247,12 @@ All headings should be plain text with a colon.`.trim();
     if (noteTimerElement) {
       noteTimerElement.innerText = "";
     }
+    app.finishNoteGeneration?.();
   }
 }
 
 async function streamOpenAIResponse(resp, {
+  signal,
   onDelta = () => {},
   onDone = () => {},
   onError = (e) => { console.error(e); },
@@ -231,9 +265,26 @@ async function streamOpenAIResponse(resp, {
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let lastEventPayload = null;
+
+  const abortReader = () => {
+    try { reader.cancel(); } catch (_) {}
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      abortReader();
+      throw new DOMException("Aborted", "AbortError");
+    }
+    signal.addEventListener("abort", abortReader, { once: true });
+  }
 
   try {
     while (true) {
+      if (signal?.aborted) {
+        throw new DOMException("Aborted", "AbortError");
+      }
+
       const { value, done } = await reader.read();
       if (done) break;
 
@@ -242,6 +293,10 @@ async function streamOpenAIResponse(resp, {
       buffer = parts.pop() ?? "";
 
       for (const part of parts) {
+        if (signal?.aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
+
         const lines = part.split("\n");
         let event = null;
         let dataStr = null;
@@ -250,7 +305,7 @@ async function streamOpenAIResponse(resp, {
           if (line.startsWith("data:"))  dataStr = line.slice(5).trim();
         }
         if (!dataStr) continue;
-        if (dataStr === "[DONE]") { onDone(); return; }
+        if (dataStr === "[DONE]") { onDone(lastEventPayload); return; }
 
         let payload;
         try { payload = JSON.parse(dataStr); } catch { continue; }
@@ -259,6 +314,7 @@ async function streamOpenAIResponse(resp, {
           onDelta(payload.delta);
         }
         if (payload.type === "response.completed") {
+          lastEventPayload = payload;
           onDone(payload);
           return;
         }
@@ -268,21 +324,23 @@ async function streamOpenAIResponse(resp, {
         }
       }
     }
-    onDone();
+    onDone(lastEventPayload);
   } catch (e) {
     onError(e);
+  } finally {
+    if (signal) {
+      try { signal.removeEventListener("abort", abortReader); } catch (_) {}
+    }
   }
 }
 
- 
 // Initializes note generation functionality, including prompt slot handling and event listeners.
 function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");
   if (!generateNoteButton) return;
 
-  
-
   // Attach click handler only
-  generateNoteButton.addEventListener("click", generateNote);}
+  generateNoteButton.addEventListener("click", generateNote);
+}
  
 export { initNoteGeneration };

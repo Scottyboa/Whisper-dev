@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     try { sessionStorage.setItem(stateKey, JSON.stringify(payload)); } catch {}
   }
+
   function restoreState() {
     let raw = null;
     try { raw = sessionStorage.getItem(stateKey); } catch {}
@@ -54,10 +55,91 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Expose small app helpers for provider switching from inline scripts.
+  function syncNoteActionButtons() {
+    const generateNoteButton = document.getElementById('generateNoteButton');
+    const abortNoteButton = document.getElementById('abortNoteButton');
+    const busy = !!window.__app?.noteGenerationInFlight;
+    if (generateNoteButton) {
+      generateNoteButton.disabled = busy;
+      generateNoteButton.title = busy ? 'A note is currently generating.' : '';
+    }
+    if (abortNoteButton) {
+      abortNoteButton.disabled = !busy;
+      abortNoteButton.title = busy ? '' : 'No active note generation to abort.';
+    }
+  }
+
+  function beginNoteGeneration(meta = {}) {
+    const app = (window.__app = window.__app || {});
+
+    if (app.noteGenerationInFlight) {
+      return null;
+    }
+
+    const controller = new AbortController();
+    app.noteGenerationInFlight = true;
+    app.noteGenerationAbortController = controller;
+    app.noteGenerationMeta = meta || {};
+    syncNoteActionButtons();
+    return controller;
+  }
+
+  function finishNoteGeneration() {
+    const app = (window.__app = window.__app || {});
+    app.noteGenerationInFlight = false;
+    app.noteGenerationAbortController = null;
+    app.noteGenerationMeta = null;
+    syncNoteActionButtons();
+  }
+
+  function abortNoteGeneration() {
+    const app = (window.__app = window.__app || {});
+    const controller = app.noteGenerationAbortController;
+    if (controller) {
+      try { controller.abort(); } catch (_) {}
+    }
+  }
+
+  function emitNoteFinished(meta = {}) {
+    try {
+      const detail = meta || {};
+      window.dispatchEvent(new CustomEvent('note-generation-finished', { detail }));
+      window.dispatchEvent(new CustomEvent('note:finished', { detail }));
+    } catch (_) {}
+    finishNoteGeneration();
+  }
+
+  function resetNoteGenerationState() {
+    finishNoteGeneration();
+  }
+
   window.__app = window.__app || {};
   window.__app.saveState = saveState;
   window.__app.restoreState = restoreState;
+  window.__app.noteGenerationInFlight = false;
+  window.__app.noteGenerationAbortController = null;
+  window.__app.noteGenerationMeta = null;
+  window.__app.syncNoteActionButtons = syncNoteActionButtons;
+  window.__app.beginNoteGeneration = beginNoteGeneration;
+  window.__app.finishNoteGeneration = finishNoteGeneration;
+  window.__app.abortNoteGeneration = abortNoteGeneration;
+  window.__app.emitNoteFinished = emitNoteFinished;
+  window.__app.resetNoteGenerationState = resetNoteGenerationState;
+  window.__app.isNoteGenerationBusy = () => !!window.__app?.noteGenerationInFlight;
+
+  const abortNoteButton = document.getElementById('abortNoteButton');
+  if (abortNoteButton) {
+    abortNoteButton.addEventListener('click', () => {
+      abortNoteGeneration();
+    });
+  }
+
+  window.addEventListener('note-generation-finished', () => {
+    finishNoteGeneration();
+  });
+
+  syncNoteActionButtons();
+
   // True while the current recording/transcription session is still "in flight".
   // Used to decide whether provider changes must hard-reload to prevent stale async writes.
   window.__app.isTranscribeBusy = function isTranscribeBusy() {
@@ -78,7 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return false;
   };
-
 
   // --- Auto-generate toggle (session-scoped) ---
   // Persist per-tab session: OFF by default.
@@ -117,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-
   // Canonical "transcription finished" signal.
   // STT providers may set status text; we convert that into an event for auto-generate and other hooks.
   // Emits: window event "transcription:finished" with minimal metadata.
@@ -133,8 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch {}
     }
   };
-
-  
 
   // --- Auto-generate listener (Step 5/6) ---
   window.__app.tryAutoGenerateNote = function tryAutoGenerateNote(eventDetail) {
@@ -161,7 +239,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.__app.__lastAutoGenerate = { fp, at: now };
 
     // Trigger the same path as manual generation
-    genBtn.click();
+    if (genBtn) {
+      if (window.__app?.isNoteGenerationBusy?.()) {
+        return;
+      }
+      genBtn.click();
+    }
   };
 
   window.__app.initAutoGenerateOnFinishListener = function initAutoGenerateOnFinishListener() {
@@ -178,15 +261,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-
-
   // Restore any persisted state (e.g., after a fallback reload).
   restoreState();
 
   // Initialize session-scoped UI toggles.
   window.__app.initAutoGenerateToggle?.();
   window.__app.initAutoGenerateOnFinishListener?.();
-  
 
   // Initialize the recording functionality dynamically by provider.
   (async function initRecordingByProvider() {
@@ -207,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
         provider === 'lemonfox' ? './LemonfoxSTT.js'       :
         provider === 'voxtral'  ? './VoxtralminiSTT.js'    :
         provider === 'openai'   ? './recording.js'         :
-        provider === 'deepgram' ? './deepgram_nova3.js'    : // Deepgram Nova-3
+        provider === 'deepgram' ? './deepgram_nova3.js'    :
                                   './recording.js';
       console.info('[recording:init] provider:', provider, 'module:', path);
       const mod = await import(path);
@@ -226,18 +306,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const choice = (sessionStorage.getItem('note_provider') || 'aws-bedrock').toLowerCase();
     // Map dropdown choice → module path (ALL note modules are in /js)
     const path =
-    choice === 'gpt4'          ? './noteGeneration.js'          :
-    choice === 'lemonfox'      ? './LemonfoxTXT.js'             :
-    choice === 'mistral'       ? './MistralTXT.js'              :
-    choice === 'gpt52'         ? './noteGeneration_gpt52.js'    :
-    choice === 'gpt52-ns'      ? './noteGeneration_gpt52_NS.js' :
-    choice === 'gpt54'         ? './noteGeneration_gpt54.js'    :
-    choice === 'gpt5-ns'       ? './noteGeneration_gpt5_NS.js'  :
-    choice === 'gemini3'       ? './Gemini3.js'                 :   // Gemini via public API
-    choice === 'gemini3-vertex'? './GeminiVertex.js'            :   // Gemini via Vertex AI
-    choice === 'aws-bedrock'   ? './AWSBedrock.js'             :   // AWS Bedrock (Claude via proxy)
-                                  './notegeneration%20gpt-5.js'; // default
-
+      choice === 'gpt4'           ? './noteGeneration.js'          :
+      choice === 'lemonfox'       ? './LemonfoxTXT.js'             :
+      choice === 'mistral'        ? './MistralTXT.js'              :
+      choice === 'gpt52'          ? './noteGeneration_gpt52.js'    :
+      choice === 'gpt52-ns'       ? './noteGeneration_gpt52_NS.js' :
+      choice === 'gpt54'          ? './noteGeneration_gpt54.js'    :
+      choice === 'gpt5-ns'        ? './noteGeneration_gpt5_NS.js'  :
+      choice === 'gemini3'        ? './Gemini3.js'                 :
+      choice === 'gemini3-vertex' ? './GeminiVertex.js'            :
+      choice === 'aws-bedrock'    ? './AWSBedrock.js'              :
+                                    './notegeneration%20gpt-5.js'; // default
 
     try {
       const mod = await import(path);
@@ -259,40 +338,58 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Note Provider Switch (cached import version) ---
   window.__app.cachedModules = window.__app.cachedModules || {};
   window.__app.switchNoteProvider = async function(next) {
-    // Remove old listeners safely before reinitializing
+    // Reset note run state when switching providers.
+    resetNoteGenerationState();
+
+    // Remove old listeners safely before reinitializing the generate button.
+    // Keep abortNoteButton as the same DOM node because its click handler is
+    // owned centrally by main.js and should survive provider switches.
     const btn = document.getElementById('generateNoteButton');
-    if (btn) {
+    if (btn && btn.parentNode) {
       const clone = btn.cloneNode(true);
+      delete clone.dataset.noteStartPulseBound;
+      clone.removeAttribute('data-note-start-pulse-bound');
       btn.parentNode.replaceChild(clone, btn);
+    }
+    const abortBtn = document.getElementById('abortNoteButton');
+    if (abortBtn) {
+      abortBtn.disabled = true;
     }
 
     sessionStorage.setItem('note_provider', (next || 'aws-bedrock').toLowerCase());
 
     const choice = (sessionStorage.getItem('note_provider') || 'aws-bedrock').toLowerCase();
     const path =
-      choice === 'gpt4'          ? './noteGeneration.js'          :
-      choice === 'lemonfox'      ? './LemonfoxTXT.js'             :
-      choice === 'mistral'       ? './MistralTXT.js'              :
-      choice === 'gpt52'         ? './noteGeneration_gpt52.js'    :
-      choice === 'gpt52-ns'      ? './noteGeneration_gpt52_NS.js' :
-      choice === 'gpt54'         ? './noteGeneration_gpt54.js'    :
-      choice === 'gpt5-ns'       ? './noteGeneration_gpt5_NS.js'  :
-      choice === 'gemini3'       ? './Gemini3.js'                 :   // Gemini via public API
-      choice === 'gemini3-vertex'? './GeminiVertex.js'            :   // Gemini via Vertex AI
-      choice === 'aws-bedrock'   ? './AWSBedrock.js'             :   // AWS Bedrock (Claude via proxy)
+      choice === 'gpt4'           ? './noteGeneration.js'          :
+      choice === 'lemonfox'       ? './LemonfoxTXT.js'             :
+      choice === 'mistral'        ? './MistralTXT.js'              :
+      choice === 'gpt52'          ? './noteGeneration_gpt52.js'    :
+      choice === 'gpt52-ns'       ? './noteGeneration_gpt52_NS.js' :
+      choice === 'gpt54'          ? './noteGeneration_gpt54.js'    :
+      choice === 'gpt5-ns'        ? './noteGeneration_gpt5_NS.js'  :
+      choice === 'gemini3'        ? './Gemini3.js'                 :
+      choice === 'gemini3-vertex' ? './GeminiVertex.js'            :
+      choice === 'aws-bedrock'    ? './AWSBedrock.js'              :
                                     './notegeneration%20gpt-5.js';
-
 
     // Load the module only once per session, then reuse from cache
     if (!window.__app.cachedModules[path]) {
       window.__app.cachedModules[path] = await import(path);
     }
 
-    const mod = window.__app.cachedModules[path];
-    if (mod && typeof mod.initNoteGeneration === 'function') {
-      mod.initNoteGeneration();
-    } else {
-      console.warn(`Module ${path} missing initNoteGeneration()`);
+    try {
+      const mod = window.__app.cachedModules[path];
+      if (mod && typeof mod.initNoteGeneration === 'function') {
+        mod.initNoteGeneration();
+        window.__app.bindNoteStartPulse?.();
+        syncNoteActionButtons();
+      } else {
+        throw new Error('initNoteGeneration() missing');
+      }
+    } catch (e) {
+      console.warn('Switch note provider failed, falling back to reload', e);
+      if (typeof window.__app.saveState === 'function') window.__app.saveState();
+      window.location.reload();
     }
   };
 
@@ -320,6 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const v = (sessionStorage.getItem('soniox_speaker_labels') || 'off').toLowerCase();
       return (v === 'on') ? './SONIOX_UPDATE_dia.js' : './SONIOX_UPDATE.js';
     }
+
     const path =
       provider === 'soniox'   ? getSonioxPath()          :
       provider === 'lemonfox' ? './LemonfoxSTT.js'       :

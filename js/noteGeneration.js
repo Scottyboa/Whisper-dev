@@ -11,7 +11,7 @@ function hashString(str) {
   return hash.toString();
 }
 
-// Helper functions for base64 conversions (kept in case they’re used elsewhere)
+// Helper functions for base64 conversions (kept in case they're used elsewhere)
 function arrayBufferToBase64(buffer) {
   let binary = "";
   const bytes = new Uint8Array(buffer);
@@ -52,18 +52,41 @@ function formatTime(ms) {
   }
 }
 
+function getNoteCoordinator() {
+  return window.__app || {};
+}
+
+function handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval) {
+  clearInterval(noteTimerInterval);
+  if (generatedNoteField && !generatedNoteField.value.trim()) {
+    generatedNoteField.value = "Note generation aborted.";
+  }
+  if (noteTimerElement) {
+    noteTimerElement.innerText = "Text generation aborted.";
+  }
+  getNoteCoordinator().emitNoteFinished?.({ provider: "gpt4", model: "gpt-4" , aborted: true });
+}
+
 // Handles the note generation process using the OpenAI API
 async function generateNote() {
   // Clear previous token/cost display immediately on new run
   try { window.__app?.clearNoteUsageAndCost?.(); } catch (_) {}
 
+  const app = getNoteCoordinator();
+  const controller = app.beginNoteGeneration?.({ provider: "gpt4", model: "gpt-4" });
+  if (!controller) {
+    return;
+  }
+
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
   const transcriptionText = transcriptionElem.value.trim();
   if (!transcriptionText) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return;
   }
@@ -74,11 +97,14 @@ async function generateNote() {
   const supplementaryElem = document.getElementById("supplementaryInfo");
   const supplementaryRaw = supplementaryElem ? supplementaryElem.value.trim() : "";
   const supplementaryWrapped = supplementaryRaw
-    ? `Tilleggsopplysninger(kun som kontekst)"${supplementaryRaw}"\n\n`
+    ? `Tilleggsopplysninger(brukes som kontekst):"${supplementaryRaw}"\n\n`
     : "";
 
   const generatedNoteField = document.getElementById("generatedNote");
-  if (!generatedNoteField) return;
+  if (!generatedNoteField) {
+    app.finishNoteGeneration?.();
+    return;
+  }
   
   // Reset generated note field and start timer
   generatedNoteField.value = "";
@@ -93,11 +119,11 @@ async function generateNote() {
     }
   }, 1000);
   
-  // Phase 3: Always use the OpenAI key for note generation (independent of transcription provider)
-  const apiKey = sessionStorage.getItem("openai_api_key");
+  const apiKey = sessionStorage.getItem("user_api_key");
   if (!apiKey) {
     alert("No API key available for note generation.");
     clearInterval(noteTimerInterval);
+    app.finishNoteGeneration?.();
     return;
   }
   
@@ -113,75 +139,37 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
   // Prepare the messages array for the Responses API
   const messages = [
     { role: "system", content: finalPromptText },
-    { role: "user",   content: supplementaryWrapped + transcriptionText }
+    {
+      role: "user",
+      content: `${supplementaryWrapped}${transcriptionText}`
+    }
   ];
-  // Call the Responses API with GPT-5 and streaming
-  const resp = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "chatgpt-4o-latest",
-      input: messages.map(m => ({
-        role: m.role,
-        content: [{ type: "input_text", text: m.content }]
-      })),
-      stream: true,
-      text: {
-        verbosity: "medium"
-      }
-    })
-  });
-    await streamOpenAIResponse(resp, {
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4-turbo",
+        messages: [
+          { role: "system", content: promptText },
+          { role: "user", content: `${supplementaryWrapped}${transcriptionText}` }
+        ],
+        temperature: 0.7,
+        stream: true
+      }),
+      signal: controller.signal
+    });
+
+    await streamLemonfoxChat(resp, {
+      signal: controller.signal,
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;
       },
-      onDone: (finalEvent) => {
-        const usage = finalEvent?.response?.usage;
-        if (usage) {
-          console.log(
-            "[OpenAI token usage]",
-            "input=", usage.input_tokens,
-            "output=", usage.output_tokens,
-            "total=", usage.total_tokens,
-            "reasoning=", usage.output_tokens_details?.reasoning_tokens ?? 0
-          );
-
-          // Step 3: push token usage to UI (cost comes later)
-          try {
-            const providerKey = (sessionStorage.getItem("note_provider") || "openai").trim();
-            const modelId = "chatgpt-4o-latest";
-            if (window.__app?.setNoteUsageAndCost) {
-              if (window.__app.normalizeNoteUsage) {
-                const payload = window.__app.normalizeNoteUsage({
-                  providerKey,
-                  modelId,
-                  usage,
-                  meta: {
-                    reasoningTokens: usage.output_tokens_details?.reasoning_tokens ?? 0,
-                  },
-                });
-                window.__app.setNoteUsageAndCost(payload);
-              } else {
-                window.__app.setNoteUsageAndCost({
-                  providerKey,
-                  modelId,
-                  inputTokens: usage.input_tokens ?? null,
-                  outputTokens: usage.output_tokens ?? null,
-                  totalTokens: usage.total_tokens ?? null,
-                  estimatedUsd: null,
-                  meta: { reasoningTokens: usage.output_tokens_details?.reasoning_tokens ?? 0 },
-                });
-              }
-            }
-          } catch (_) {}
-        }
-      },
+      onDone: () => {},
       onError: (err) => {
-        console.error("Streaming error:", err);
-        alert("Error during note generation");
+        throw err;
       }
     });
 
@@ -189,8 +177,13 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
     if (noteTimerElement) {
       noteTimerElement.innerText = "Text generation completed!";
     }
-    window.__app?.emitNoteFinished?.({ provider: "openai", model: "chatgpt-4o-latest" });
+    app.emitNoteFinished?.({ provider: "gpt4", model: "gpt-4-turbo" });
   } catch (error) {
+    if (error?.name === "AbortError") {
+      handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval);
+      return;
+    }
+
     clearInterval(noteTimerInterval);
     if (generatedNoteField) {
       generatedNoteField.value = "Error generating note: " + error;
@@ -198,10 +191,12 @@ All headings should be plain text with a colon, like 'Bakgrunn:'.`.trim();
     if (noteTimerElement) {
       noteTimerElement.innerText = "";
     }
+    app.finishNoteGeneration?.();
   }
 }
 
-async function streamOpenAIResponse(resp, {
+async function streamLemonfoxChat(resp, {
+  signal,
   onDelta = () => {},
   onDone = () => {},
   onError = (e) => { console.error(e); },
@@ -215,59 +210,80 @@ async function streamOpenAIResponse(resp, {
   const decoder = new TextDecoder();
   let buffer = "";
 
+  const abortReader = () => {
+    try { reader.cancel(); } catch (_) {}
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      abortReader();
+      throw new DOMException("Aborted", "AbortError");
+    }
+    signal.addEventListener("abort", abortReader, { once: true });
+  }
+
   try {
     while (true) {
+      if (signal?.aborted) {
+        throw new DOMException("Aborted", "AbortError");
+      }
+
       const { value, done } = await reader.read();
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split("\n\n");
-      buffer = parts.pop() ?? "";
 
-      for (const part of parts) {
-        const lines = part.split("\n");
-        let event = null;
-        let dataStr = null;
+      // SSE frames are separated by a blank line
+      const frames = buffer.split("\n\n");
+      buffer = frames.pop() ?? "";
+
+      for (const frame of frames) {
+        if (signal?.aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
+
+        // Each frame is a set of "key: value" lines
+        // We only care about "data:" lines
+        const lines = frame.split("\n");
         for (const line of lines) {
-          if (line.startsWith("event:")) event = line.slice(6).trim();
-          if (line.startsWith("data:"))  dataStr = line.slice(5).trim();
-        }
-        if (!dataStr) continue;
-        if (dataStr === "[DONE]") { onDone(); return; }
+          if (!line.startsWith("data:")) continue;
+          const dataStr = line.slice(5).trim();
 
-        let payload;
-        try { payload = JSON.parse(dataStr); } catch { continue; }
+          if (dataStr === "[DONE]") { onDone(); return; }
 
-        if (payload.type === "response.output_text.delta" && typeof payload.delta === "string") {
-          onDelta(payload.delta);
-        }
-        if (payload.type === "response.completed") {
-          onDone(payload);
-          return;
-        }
-        if (payload.type === "response.error") {
-          onError(new Error(payload.error?.message || "Unknown streaming error"));
-          return;
+          try {
+            const payload = JSON.parse(dataStr);
+            // OpenAI-compatible chat streaming:
+            // choices[0].delta.content for incremental tokens
+            const choice = payload?.choices?.[0];
+            const deltaText =
+              choice?.delta?.content ??
+              choice?.message?.content ??
+              "";
+            if (deltaText) onDelta(deltaText);
+          } catch {
+            // ignore keep-alives / non-JSON
+          }
         }
       }
     }
     onDone();
   } catch (e) {
     onError(e);
+  } finally {
+    if (signal) {
+      try { signal.removeEventListener("abort", abortReader); } catch (_) {}
+    }
   }
 }
 
- 
 // Initializes note generation functionality, including prompt slot handling and event listeners.
 function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");
   if (!generateNoteButton) return;
-
-
 
   // Attach click handler only
   generateNoteButton.addEventListener("click", generateNote);
 }
  
 export { initNoteGeneration };
-

@@ -47,6 +47,10 @@ function formatTime(ms) {
   }
 }
 
+function getNoteCoordinator() {
+  return window.__app || {};
+}
+
 function extractResponseText(json) {
   if (!json || typeof json !== "object") return "";
 
@@ -152,16 +156,28 @@ function pushOpenAiUsageToUi(usage, modelId = "gpt-5.4") {
 }
 
 function buildSharedNoteContext() {
+  const app = getNoteCoordinator();
+  const mode = getSelectedMode();
+  const controller = app.beginNoteGeneration?.({
+    provider: "openai",
+    model: "gpt-5.4",
+    mode
+  });
+  if (!controller) return null;
+
+  // Clear previous token/cost display immediately on new run
   try { window.__app?.clearNoteUsageAndCost?.(); } catch (_) {}
 
   const transcriptionElem = document.getElementById("transcription");
   if (!transcriptionElem) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return null;
   }
 
   const transcriptionText = transcriptionElem.value.trim();
   if (!transcriptionText) {
+    app.finishNoteGeneration?.();
     alert("No transcription text available.");
     return null;
   }
@@ -176,7 +192,10 @@ function buildSharedNoteContext() {
     : "";
 
   const generatedNoteField = document.getElementById("generatedNote");
-  if (!generatedNoteField) return null;
+  if (!generatedNoteField) {
+    app.finishNoteGeneration?.();
+    return null;
+  }
 
   generatedNoteField.value = "";
 
@@ -196,6 +215,7 @@ function buildSharedNoteContext() {
   if (!apiKey) {
     alert("No API key available for note generation.");
     clearInterval(noteTimerInterval);
+    app.finishNoteGeneration?.();
     return null;
   }
 
@@ -208,6 +228,9 @@ All headings should be plain text with a colon.`.trim();
   const reasoningLevel = getReasoningLevel();
 
   return {
+    app,
+    controller,
+    mode,
     apiKey,
     messages,
     generatedNoteField,
@@ -217,12 +240,32 @@ All headings should be plain text with a colon.`.trim();
   };
 }
 
-function finishSuccess(noteTimerInterval, noteTimerElement) {
+function finishSuccess(noteTimerInterval, noteTimerElement, meta = {}) {
   clearInterval(noteTimerInterval);
   if (noteTimerElement) {
     noteTimerElement.innerText = "Text generation completed!";
   }
-  window.__app?.emitNoteFinished?.({ provider: "openai", model: "gpt-5.4" });
+  getNoteCoordinator().emitNoteFinished?.({
+    provider: "openai",
+    model: "gpt-5.4",
+    ...meta
+  });
+}
+
+function finishAbort(generatedNoteField, noteTimerInterval, noteTimerElement, meta = {}) {
+  clearInterval(noteTimerInterval);
+  if (generatedNoteField && !generatedNoteField.value.trim()) {
+    generatedNoteField.value = "Note generation aborted.";
+  }
+  if (noteTimerElement) {
+    noteTimerElement.innerText = "Text generation aborted.";
+  }
+  getNoteCoordinator().emitNoteFinished?.({
+    provider: "openai",
+    model: "gpt-5.4",
+    aborted: true,
+    ...meta
+  });
 }
 
 function finishError(error, generatedNoteField, noteTimerInterval, noteTimerElement) {
@@ -233,16 +276,19 @@ function finishError(error, generatedNoteField, noteTimerInterval, noteTimerElem
   if (noteTimerElement) {
     noteTimerElement.innerText = "";
   }
+  getNoteCoordinator().finishNoteGeneration?.();
 }
 
 async function generateNoteStreaming(ctx) {
   const {
+    controller,
     apiKey,
     messages,
     generatedNoteField,
     noteTimerElement,
     noteTimerInterval,
-    reasoningLevel
+    reasoningLevel,
+    mode
   } = ctx;
 
   try {
@@ -258,10 +304,12 @@ async function generateNoteStreaming(ctx) {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
+      signal: controller.signal
     });
 
     await streamOpenAIResponse(resp, {
+      signal: controller.signal,
       onDelta: (textChunk) => {
         generatedNoteField.value += textChunk;
       },
@@ -275,20 +323,26 @@ async function generateNoteStreaming(ctx) {
       }
     });
 
-    finishSuccess(noteTimerInterval, noteTimerElement);
+    finishSuccess(noteTimerInterval, noteTimerElement, { mode });
   } catch (error) {
+    if (error?.name === "AbortError") {
+      finishAbort(generatedNoteField, noteTimerInterval, noteTimerElement, { mode });
+      return;
+    }
     finishError(error, generatedNoteField, noteTimerInterval, noteTimerElement);
   }
 }
 
 async function generateNoteNonStreaming(ctx) {
   const {
+    controller,
     apiKey,
     messages,
     generatedNoteField,
     noteTimerElement,
     noteTimerInterval,
-    reasoningLevel
+    reasoningLevel,
+    mode
   } = ctx;
 
   try {
@@ -304,7 +358,8 @@ async function generateNoteNonStreaming(ctx) {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
+      signal: controller.signal
     });
 
     if (!resp.ok) {
@@ -316,8 +371,12 @@ async function generateNoteNonStreaming(ctx) {
     generatedNoteField.value = extractResponseText(json);
 
     pushOpenAiUsageToUi(json?.usage, "gpt-5.4");
-    finishSuccess(noteTimerInterval, noteTimerElement);
+    finishSuccess(noteTimerInterval, noteTimerElement, { mode });
   } catch (error) {
+    if (error?.name === "AbortError") {
+      finishAbort(generatedNoteField, noteTimerInterval, noteTimerElement, { mode });
+      return;
+    }
     finishError(error, generatedNoteField, noteTimerInterval, noteTimerElement);
   }
 }
@@ -336,6 +395,7 @@ async function generateNote() {
 }
 
 async function streamOpenAIResponse(resp, {
+  signal,
   onDelta = () => {},
   onDone = () => {},
   onError = (e) => { console.error(e); },
@@ -350,8 +410,24 @@ async function streamOpenAIResponse(resp, {
   let buffer = "";
   let lastEventPayload = null;
 
+  const abortReader = () => {
+    try { reader.cancel(); } catch (_) {}
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      abortReader();
+      throw new DOMException("Aborted", "AbortError");
+    }
+    signal.addEventListener("abort", abortReader, { once: true });
+  }
+
   try {
     while (true) {
+      if (signal?.aborted) {
+        throw new DOMException("Aborted", "AbortError");
+      }
+
       const { value, done } = await reader.read();
       if (done) break;
 
@@ -360,6 +436,10 @@ async function streamOpenAIResponse(resp, {
       buffer = parts.pop() ?? "";
 
       for (const part of parts) {
+        if (signal?.aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
+
         const lines = part.split("\n");
         let event = null;
         let dataStr = null;
@@ -409,14 +489,16 @@ async function streamOpenAIResponse(resp, {
     onDone(lastEventPayload);
   } catch (e) {
     onError(e);
+  } finally {
+    if (signal) {
+      try { signal.removeEventListener("abort", abortReader); } catch (_) {}
+    }
   }
 }
 
 function initNoteGeneration() {
   const generateNoteButton = document.getElementById("generateNoteButton");
   if (!generateNoteButton) return;
-
- 
 
   generateNoteButton.addEventListener("click", generateNote);
 }

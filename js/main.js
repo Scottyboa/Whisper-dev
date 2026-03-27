@@ -340,6 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.__app.switchNoteProvider = async function(next) {
     // Reset note run state when switching providers.
     resetNoteGenerationState();
+    delete window.__app.__noteStartPulseBound;
 
     // Remove old listeners safely before reinitializing the generate button.
     // Keep abortNoteButton as the same DOM node because its click handler is

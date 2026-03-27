@@ -5916,11 +5916,12 @@ if (guideClose) {
       };
 
       window.__app.bindNoteStartPulse = function bindNoteStartPulse() {
-        if (window.__app.__noteStartPulseBound) return;
+        
         const btn = document.getElementById("generateNoteButton");
         if (!btn) return;
+        if (btn.dataset.noteStartPulseBound === "1") return;
 
-        window.__app.__noteStartPulseBound = true;
+        btn.dataset.noteStartPulseBound = "1";
         btn.addEventListener("click", () => {
           if (!window.__app.noteStartHasUsableInput?.()) return;
           window.__app.pulseNoteStartSweep?.();

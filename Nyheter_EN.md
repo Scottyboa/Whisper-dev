@@ -1,3 +1,19 @@
+## 30 March, 2026
+
+### New auto-copy function added for finished notes
+
+A new **Auto-copy** function has now been added to the app.
+
+When this function is enabled, finished notes are automatically copied to the clipboard as soon as the note is ready. This means you can press **Ctrl + V** and paste the note immediately, even if the app tab is not currently in focus.
+
+You can therefore continue working in another program, another window, or a different browser tab while the note is being generated.
+
+A **desktop notification** is also shown when the note has finished copying, so you are informed right away without needing to keep the app open in front of you.
+
+This can make the workflow faster and more convenient, especially when you are waiting for a note while doing other tasks in parallel.
+
+---
+
 ## 26 March, 2026
 
 There has now been added an **Abort** button for note generation.

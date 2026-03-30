@@ -2,6 +2,67 @@
 
 ### Ny auto-copy funksjon lagt til for ferdige notater
 
+Det er nå lagt til en ny **Auto-copy**-funksjon i appen.
+
+Når denne funksjonen er aktivert, blir ferdige notater automatisk kopiert til utklippstavlen så snart notatgenereringen er fullført. Dette betyr at du kan trykke **Ctrl + V** og lime inn notatet med en gang, selv om Transcribe Notes-fanen ikke er i fokus.
+
+Du kan derfor fortsette å jobbe i et annet program, en annen nettleserfane eller et annet vindu mens notatet genereres. Når notatet er ferdig og kopiert, kan det også vises et **skrivebordsvarsel / notification**, slik at du får beskjed med en gang om at notatet er klart.
+
+### Slik bruker du auto-copy funksjonen
+
+For å bruke denne funksjonen må du først installere Chrome-utvidelsen som er knyttet til auto-copy.
+
+Utvidelsen kan lastes ned direkte fra **Auto-copy-tooltipen** i appen. Åpne tooltip-ikonet ved siden av Auto-copy-valget og klikk på nedlastingslenken der.
+
+Etter nedlasting:
+1. Pakk ut `.zip`-filen slik at du får en vanlig mappe
+2. Åpne Chrome Extensions ved å gå til <a href="chrome://extensions" target="_blank" rel="noopener">chrome://extensions</a>
+3. Slå på **Developer mode** øverst til høyre
+4. Klikk **Load unpacked**
+5. Velg den utpakkede mappen for utvidelsen
+6. Oppdater / refresh Transcribe Notes-siden
+7. Slå på **Auto-copy** i appen
+
+Det ligger også en README-tekstfil inni den utpakkede mappen med installasjonsinstruksjoner. 
+
+### Varsler i Windows
+
+For å få Chrome-varslet når kopieringen er fullført, må varsler være tillatt både i **Windows** og i **Chrome**. Hvis én av dem blokkerer varsler, kan popup-varslet utebli. 
+
+I Windows går du til:
+
+**Innstillinger → System → Varsler**
+
+Kontroller at:
+- Varsler er slått på
+- Google Chrome har tillatelse til å sende varsler
+
+I Chrome må varsler også være tillatt for det aktuelle nettstedet under:
+
+**Innstillinger → Personvern og sikkerhet → Nettstedsinnstillinger → Varsler** 
+
+Kontroller også at **Ikke forstyrr / Fokusassistent** er slått av, eller at Chrome er tillatt.
+
+### Viktig ved bruk i inkognitovindu
+
+Hvis du bruker appen i et **inkognitovindu**, må du også tillate at utvidelsen kan brukes i inkognito.
+
+Dette gjør du slik:
+1. Åpne <a href="chrome://extensions" target="_blank" rel="noopener">chrome://extensions</a>
+2. Finn den installerte auto-copy-utvidelsen
+3. Klikk på **Details**
+4. Slå på valget som tillater bruk i **Incognito**
+
+Hvis dette ikke er aktivert, vil auto-copy-funksjonen ikke fungere i inkognitovinduer.
+
+Denne nye funksjonen kan gjøre arbeidsflyten raskere og mer fleksibel, spesielt hvis du vil jobbe videre andre steder mens du venter på at et notat skal bli ferdig.
+
+---
+
+## 30. mars 2026
+
+### Ny auto-copy funksjon lagt til for ferdige notater
+
 Det er nå lagt til en ny **Auto-copy**-funksjon for notatgenerering.
 
 Når denne funksjonen er slått på, blir ferdige notater automatisk kopiert til utklippstavlen straks notatet er klart. Dette gjør at du kan trykke **Ctrl + V** med en gang for å lime inn notatet, selv om du ikke har app-fanen i fokus.

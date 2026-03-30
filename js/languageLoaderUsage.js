@@ -38,10 +38,17 @@ export async function initIndexLanguage() {
 
 // Update the index page elements with the translations
 function updateIndexUI(trans) {
-  document.getElementById("page-title").textContent = trans.pageTitle;
-  document.getElementById("header-title").textContent = trans.headerTitle;
-  document.getElementById("header-subtitle").textContent = trans.headerSubtitle;
-  document.getElementById("start-text").textContent = trans.startText;
+  const pageTitleEl = document.getElementById("page-title");
+  if (pageTitleEl) pageTitleEl.textContent = trans.pageTitle;
+
+  const headerTitleEl = document.getElementById("header-title");
+  if (headerTitleEl) headerTitleEl.textContent = trans.headerTitle;
+
+  const headerSubtitleEl = document.getElementById("header-subtitle");
+  if (headerSubtitleEl) headerSubtitleEl.textContent = trans.headerSubtitle;
+
+  const startTextEl = document.getElementById("start-text");
+  if (startTextEl) startTextEl.textContent = trans.startText;
 
   // Provider columns (optional; exists after the 2-column layout change)
   const gdprTitleEl = document.getElementById("gdpr-column-title");
@@ -63,15 +70,24 @@ function updateIndexUI(trans) {
     keysIoHintEl.textContent = trans.keysIoHint;
   }
 
-  document.getElementById("apiKeyInput").placeholder = trans.apiPlaceholder;
-  document.getElementById("enterTranscriptionBtn").textContent = trans.enterButton;
+  const apiKeyInputEl = document.getElementById("apiKeyInput");
+  if (apiKeyInputEl) apiKeyInputEl.placeholder = trans.apiPlaceholder;
+
+  const enterBtnEl = document.getElementById("enterTranscriptionBtn");
+  if (enterBtnEl) enterBtnEl.textContent = trans.enterButton;
+
   const guideBtn = document.getElementById("openGuideButton");
   if (guideBtn) guideBtn.textContent = trans.guideButton;
+
   const securityBtn = document.getElementById("openSecurityButton");
   if (securityBtn) securityBtn.textContent = trans.securityButton;
+
   const aboutBtn = document.getElementById("openAboutButton");
   if (aboutBtn) aboutBtn.textContent = trans.aboutButton;
-  document.getElementById("ad-revenue-message").textContent = trans.adRevenueMessage;
+
+  const adRevenueMessageEl = document.getElementById("ad-revenue-message");
+  if (adRevenueMessageEl) adRevenueMessageEl.textContent = trans.adRevenueMessage;
+
   const offerElem = document.getElementById("offerText");
   if (offerElem && trans.offerText) {
     offerElem.innerHTML = trans.offerText;
@@ -108,7 +124,8 @@ function updateIndexUI(trans) {
   if (aboutContent) {
     aboutContent.innerHTML = trans.aboutModalText;
   }
- const accordionHeaders = document.querySelectorAll('.accordion .accordion-header');
+
+  const accordionHeaders = document.querySelectorAll('.accordion .accordion-header');
   // Support both old (4 tabs) and new (5 tabs) index.html layouts
   if (accordionHeaders.length >= 5) {
     accordionHeaders[0].textContent = trans.modelsModalHeading ?? accordionHeaders[0].textContent;
@@ -122,6 +139,7 @@ function updateIndexUI(trans) {
     accordionHeaders[2].textContent = trans.securityModalHeading ?? accordionHeaders[2].textContent;
     accordionHeaders[3].textContent = trans.aboutModalHeading ?? accordionHeaders[3].textContent;
   }
+
   const activeHeader = document.querySelector('.accordion-header.active');
   if (activeHeader) {
     const contentId = activeHeader.getAttribute('data-content-id');
@@ -149,6 +167,14 @@ export async function initTranscribeLanguage() {
     return;
   }
   updateTranscribeUI(transcribeTranslations);
+  try {
+    window.dispatchEvent(new CustomEvent("transcribe-language-updated", {
+      detail: {
+        lang: currentLang,
+        translations: transcribeTranslations
+      }
+    }));
+  } catch (_) {}
   
   // Listen for language changes using the "change" event
   langSelect.addEventListener("change", async function() {
@@ -162,6 +188,14 @@ export async function initTranscribeLanguage() {
       return;
     }
     updateTranscribeUI(transcribeTranslations);
+    try {
+      window.dispatchEvent(new CustomEvent("transcribe-language-updated", {
+        detail: {
+          lang: currentLang,
+          translations: transcribeTranslations
+        }
+      }));
+    } catch (_) {}
   });
   
   // Also listen for "click" events to force an update even if the same language is re-selected
@@ -174,9 +208,16 @@ export async function initTranscribeLanguage() {
       return;
     }
     updateTranscribeUI(transcribeTranslations);
+    try {
+      window.dispatchEvent(new CustomEvent("transcribe-language-updated", {
+        detail: {
+          lang: this.value,
+          translations: transcribeTranslations
+        }
+      }));
+    } catch (_) {}
   });
 }
-
 
 function setTextIfPresent(id, value) {
   const el = document.getElementById(id);
@@ -339,8 +380,6 @@ function updateTranscribeUI(trans) {
   document.getElementById("btnGuide").textContent = trans.btnGuide;
   const newsBtn = document.getElementById("btnNews");
   if (newsBtn) {
-    // Norwegian requested label is handled in language-no.js.
-    // All other languages default to English wording if not provided.
     newsBtn.textContent = trans.btnNews ?? "Status & Updates";
   }
   document.getElementById("backToHomeButton").textContent = trans.backToHome;
@@ -382,15 +421,12 @@ function updateTranscribeUI(trans) {
     promptSlotLabelEl.textContent = trans.promptSlotLabel;
   }
   document.getElementById("customPrompt").placeholder = trans.customPromptPlaceholder;
-  // Removed this line because the "adUnit" element no longer exists:
-  // document.getElementById("adUnit").textContent = trans.adUnitText;
   document.getElementById("guideHeading").textContent = trans.guideHeading;
   document.getElementById("guideText").innerHTML = trans.guideText;
   updateRedactorUI(trans);
-  // Guard timers against provider modules overwriting localized labels/units
-  // when recording/note-generation starts ticking.
   installTimerI18nGuards(trans);
 }
+
 function installTimerI18nGuards(trans) {
   const templates = {
     recordTimer: trans.recordTimer,
@@ -398,7 +434,6 @@ function installTimerI18nGuards(trans) {
     noteTimer: trans.noteTimer,
   };
 
-  // Reinstall on every language change (disconnect old observers).
   window.__timerI18nState = window.__timerI18nState || {};
   const state = window.__timerI18nState;
   if (Array.isArray(state.observers)) {
@@ -413,8 +448,6 @@ function installTimerI18nGuards(trans) {
     if (!el || typeof template !== "string") return;
 
     const tpl = parseTimerTemplate(template);
-
-    // Normalize immediately (covers the “just clicked start and it flashed English” case)
     normalizeTimerText(el, tpl);
 
     const obs = new MutationObserver(() => normalizeTimerText(el, tpl));
@@ -424,9 +457,6 @@ function installTimerI18nGuards(trans) {
 }
 
 function parseTimerTemplate(template) {
-  // Example templates:
-  // "Completion Timer: 0 sec"
-  // "Fullføringstimer: 0 sek"
   const m = template.match(/^(.*?:\s*)0\s+(\S+)\s*$/);
   return {
     prefix: m ? m[1] : (template.replace(/\d.*$/, "") || ""),
@@ -436,13 +466,10 @@ function parseTimerTemplate(template) {
 }
 
 function parseElapsedSecondsFromTimerText(text) {
-  // Pull the part after the first colon (works with "Timer: 3 sec" style strings)
   const timePart = (text.match(/:\s*(.*)$/)?.[1] || text || "").trim();
   if (!timePart) return null;
 
   const minMatch = timePart.match(/(\d+)\s*min\b/i);
-  // Accept common second units (sec/sek). If a provider uses something else,
-  // we still fall back to "first number".
   const secMatch = timePart.match(/(\d+)\s*(sec|sek)\b/i);
 
   const minutes = minMatch ? parseInt(minMatch[1], 10) : 0;
@@ -467,7 +494,7 @@ function formatSecondsLocalized(totalSec, units) {
 function normalizeTimerText(el, tpl) {
   const current = (el.textContent || "").trim();
   const totalSec = parseElapsedSecondsFromTimerText(current);
-  if (totalSec == null) return; // e.g. "", or "Text generation completed!"
+  if (totalSec == null) return;
 
   const desired = `${tpl.prefix}${formatSecondsLocalized(totalSec, tpl)}`;
   if (current !== desired) el.textContent = desired;

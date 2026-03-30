@@ -23,11 +23,11 @@ After downloading:
 6. Refresh the Transcribe Notes page
 7. Turn on **Auto-copy** in the app
 
-A README text file is included inside the extracted folder and explains the installation steps as well. :contentReference[oaicite:1]{index=1}
+A README text file is included inside the extracted folder and explains the installation steps as well.
 
 ### Notifications in Windows
 
-To receive the Chrome pop-up notification when copying is complete, notifications must be allowed both in **Windows** and in **Chrome**. If either one blocks notifications, the pop-up may not appear. :contentReference[oaicite:2]{index=2}
+To receive the Chrome pop-up notification when copying is complete, notifications must be allowed both in **Windows** and in **Chrome**. If either one blocks notifications, the pop-up may not appear.
 
 In Windows, go to:
 

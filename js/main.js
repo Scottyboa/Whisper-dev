@@ -100,13 +100,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function buildFinishedNoteDetail(meta = {}) {
+    const noteEl = document.getElementById('generatedNote');
+    const text = String(noteEl?.value || '');
+    return {
+      status: meta?.aborted ? 'aborted' : 'success',
+      text,
+      textLength: text.length,
+      autoCopyEnabled: localStorage.getItem('autoCopyFinishedNote') === 'true',
+      emittedAt: Date.now(),
+      ...meta,
+    };
+  }
+
   function emitNoteFinished(meta = {}) {
     try {
-      const detail = meta || {};
+      const detail = buildFinishedNoteDetail(meta);
       window.dispatchEvent(new CustomEvent('note-generation-finished', { detail }));
       window.dispatchEvent(new CustomEvent('note:finished', { detail }));
-    } catch (_) {}
-    finishNoteGeneration();
+      finishNoteGeneration();
+      return detail;
+    } catch (_) {
+      finishNoteGeneration();
+      return buildFinishedNoteDetail(meta);
+    }
   }
 
   function resetNoteGenerationState() {

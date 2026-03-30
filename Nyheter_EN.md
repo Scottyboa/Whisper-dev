@@ -4,13 +4,58 @@
 
 A new **Auto-copy** function has now been added to the app.
 
-When this function is enabled, finished notes are automatically copied to the clipboard as soon as the note is ready. This means you can press **Ctrl + V** and paste the note immediately, even if the app tab is not currently in focus.
+When this function is enabled, finished notes are automatically copied to your clipboard as soon as note generation is complete. This means you can press **Ctrl + V** and paste the note immediately, even if the Transcribe Notes tab is not currently in focus.
 
-You can therefore continue working in another program, another window, or a different browser tab while the note is being generated.
+You can therefore continue working in another program, another browser tab, or a different window while the note is being generated. When the note is finished and copied, a **desktop notification** can also appear so you know right away that the note is ready.
 
-A **desktop notification** is also shown when the note has finished copying, so you are informed right away without needing to keep the app open in front of you.
+### How to use the auto-copy function
 
-This can make the workflow faster and more convenient, especially when you are waiting for a note while doing other tasks in parallel.
+To use this feature, you must first install the Chrome extension connected to the auto-copy function.
+
+The extension can be downloaded directly from the **Auto-copy tooltip** in the app. Open the tooltip icon next to the Auto-copy option and click the download link there.
+
+After downloading:
+1. Extract / unzip the `.zip` file so that you get a normal folder
+2. Open Chrome Extensions by going to <a href="chrome://extensions" target="_blank" rel="noopener">chrome://extensions</a>
+3. Turn on **Developer mode** in the top-right corner
+4. Click **Load unpacked**
+5. Select the extracted extension folder
+6. Refresh the Transcribe Notes page
+7. Turn on **Auto-copy** in the app
+
+A README text file is included inside the extracted folder and explains the installation steps as well. :contentReference[oaicite:1]{index=1}
+
+### Notifications in Windows
+
+To receive the Chrome pop-up notification when copying is complete, notifications must be allowed both in **Windows** and in **Chrome**. If either one blocks notifications, the pop-up may not appear. :contentReference[oaicite:2]{index=2}
+
+In Windows, go to:
+
+**Settings → System → Notifications**
+
+Make sure that:
+- Notifications are turned on
+- Google Chrome is allowed to send notifications
+
+In Chrome, notifications should also be allowed for the relevant site under:
+
+**Settings → Privacy and security → Site settings → Notifications** :contentReference[oaicite:3]{index=3}
+
+Also check that **Do Not Disturb / Focus Assist** is turned off, or that Chrome is allowed through. :contentReference[oaicite:4]{index=4}
+
+### Important for Incognito use
+
+If you use the app from an **Incognito window**, you must also allow the extension to run in Incognito mode.
+
+To do this:
+1. Open <a href="chrome://extensions" target="_blank" rel="noopener">chrome://extensions</a>
+2. Find the installed auto-copy extension
+3. Click **Details**
+4. Turn on the option that allows the extension in **Incognito**
+
+Without this setting enabled, the auto-copy function will not work inside Incognito windows.
+
+This new function can make the workflow faster and more flexible, especially if you want to keep working elsewhere while waiting for a note to finish.
 
 ---
 

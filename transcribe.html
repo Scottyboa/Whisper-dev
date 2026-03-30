@@ -707,6 +707,33 @@
       display: block;
     }
 
+    /* Auto-copy tooltip only: wider and hover-persistent so users can move
+       into the tooltip box and click the download link. */
+    #autoCopyFinishedNoteTooltipContainer {
+      overflow: visible;
+    }
+    #autoCopyFinishedNoteTooltipContainer::after {
+      content: "";
+      position: absolute;
+      top: 16px;
+      right: 0;
+      width: 340px;
+      max-width: min(340px, calc(100vw - 24px));
+      height: 10px;
+      background: transparent;
+    }
+    #autoCopyFinishedNoteTooltipText {
+      top: 20px;
+      width: 340px;
+      max-width: min(340px, calc(100vw - 24px));
+      pointer-events: auto;
+    }
+    #autoCopyFinishedNoteTooltipContainer:hover #autoCopyFinishedNoteTooltipText,
+    #autoCopyFinishedNoteTooltipContainer:focus-within #autoCopyFinishedNoteTooltipText,
+    #autoCopyFinishedNoteTooltipText:hover {
+      display: block;
+    }
+
 
     .supp-toolbar {
       display: flex;
@@ -1892,6 +1919,40 @@
           </span>
         </span>
 
+<script>
+  (() => {
+    const setupAutoGenerateTooltip = () => {
+      const labelEl = document.getElementById("autoGenerateToggleLabel");
+      const tooltipEl = document.getElementById("autoGenerateTooltipText");
+      const langSelectTranscribe = document.getElementById("lang-select-transcribe");
+      if (!labelEl || !tooltipEl) return;
+
+      const getCurrentLang = () => {
+        const sel = document.getElementById("lang-select-transcribe");
+        return (sel && sel.value) || localStorage.getItem("siteLanguage") || "en";
+      };
+
+      const syncAutoGenerateCopy = () => {
+        const isNorwegian = getCurrentLang() === "no";
+        labelEl.textContent = isNorwegian ? "Auto-generer" : "Auto-generate";
+        tooltipEl.innerHTML = isNorwegian
+          ? "<strong>Når PÅ:</strong><br/>Et notat genereres automatisk når transkripsjonen er ferdig.<br/><br/><strong>Når AV:</strong><br/>Du genererer notater manuelt med Generate Note-knappen."
+          : "<strong>When ON:</strong><br/>A note is generated automatically when transcription finishes.<br/><br/><strong>When OFF:</strong><br/>You generate notes manually using the Generate Note button.";
+      };
+
+      langSelectTranscribe?.addEventListener("change", syncAutoGenerateCopy);
+      window.addEventListener("transcribe-language-updated", syncAutoGenerateCopy);
+      syncAutoGenerateCopy();
+    };
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", setupAutoGenerateTooltip, { once: true });
+    } else {
+      setupAutoGenerateTooltip();
+    }
+  })();
+</script>
+
         </div>
         <div id="statusMessage">Welcome! Click "Start Recording" to begin.</div>
       </div>
@@ -2013,20 +2074,38 @@
               <span id="noteTimerValue">Note Generation Timer: 0 sec</span>
               <span id="noteTimerStatus" class="timer-status"></span>
             </div>
-            <button
-              id="copyNoteButton"
-              type="button"
-              aria-label="Copy generated note"
-              style="
-                padding: 4px 10px;
-                font-size: 12px;
-                border-radius: 6px;
-                background-color: #5a9;
-                margin: 0;
-              "
-            >
-              Copy
-            </button>
+            <div style="display:inline-flex; align-items:center; justify-content:flex-end; gap:6px; flex-shrink:0; margin-left:auto; white-space:nowrap;">
+              <button
+                id="copyNoteButton"
+                type="button"
+                aria-label="Copy generated note"
+                style="
+                  padding: 4px 10px;
+                  font-size: 12px;
+                  border-radius: 6px;
+                  background-color: #5a9;
+                  margin: 0;
+                "
+              >
+                Copy
+              </button>
+              <div id="autoCopyNoteToggleWrap" class="auto-clear-toggle" aria-label="Auto copy finished note" style="margin:0;">
+                <label class="switch" title="Auto copy">
+                  <input id="autoCopyFinishedNoteToggle" type="checkbox" />
+                  <span class="slider"></span>
+                </label>
+                <span class="auto-clear-label" id="autoCopyFinishedNoteToggleLabel">Auto-copy</span>
+              </div>
+              <span id="autoCopyFinishedNoteTooltipContainer" class="help-tip help-tip-left" tabindex="0" aria-label="Auto copy help" style="margin-left:0;">
+                ?
+                <span id="autoCopyFinishedNoteTooltipText" class="help-tip-content" role="tooltip">
+                  <strong>When ON:</strong><br/>
+                  When note generation finishes successfully, the note is automatically copied to the clipboard and a desktop notification is shown.<br/><br/>
+                  <strong>When OFF:</strong><br/>
+                  Finished notes are not copied automatically.
+                </span>
+              </span>
+            </div>
           </div>
         <div id="noteTimerStatusBelow" class="timer-status-below"></div>
         <!-- Separate (non-timer) UI line for tokens/cost so it never gets overwritten by #noteTimer.innerText -->
@@ -3010,6 +3089,7 @@
         };
 
         langSelectTranscribe?.addEventListener("change", syncPromptToggleLabel);
+        window.addEventListener("transcribe-language-updated", syncPromptToggleLabel);
         syncPromptToggleLabel();
       }
 
@@ -3042,6 +3122,7 @@
         };
 
         langSelectTranscribe?.addEventListener("change", syncNoteAutoClearCopy);
+        window.addEventListener("transcribe-language-updated", syncNoteAutoClearCopy);
         syncNoteAutoClearCopy();
       };
 
@@ -3049,6 +3130,54 @@
         document.addEventListener("DOMContentLoaded", setupNoteAutoClearCopy, { once: true });
       } else {
         setupNoteAutoClearCopy();
+      }
+    })();
+  </script>
+  <script>
+    (() => {
+      const STORAGE_KEY = "autoCopyFinishedNote";
+
+      const setupAutoCopyToggle = () => {
+        const toggle = document.getElementById("autoCopyFinishedNoteToggle");
+        const labelEl = document.getElementById("autoCopyFinishedNoteToggleLabel");
+        const tooltipEl = document.getElementById("autoCopyFinishedNoteTooltipText");
+        const langSelectTranscribe = document.getElementById("lang-select-transcribe");
+        if (!toggle) return;
+
+        const getCurrentLang = () => {
+          const sel = document.getElementById("lang-select-transcribe");
+          return (sel && sel.value) || localStorage.getItem("siteLanguage") || "en";
+        };
+
+        const syncCopyLabel = () => {
+          const isNorwegian = getCurrentLang() === "no";
+          if (labelEl) labelEl.textContent = "Auto-copy";
+          if (tooltipEl) {
+            tooltipEl.innerHTML = isNorwegian
+              ? 'Kopierer ferdige notater automatisk til utklippstavlen slik at du kan lime dem inn med Ctrl + V, og viser et skrivebordsvarsel når kopieringen er fullført.<br/><br/>For å bruke denne funksjonen, last ned <a href="./div/autocopy.zip" target="_blank" rel="noopener noreferrer" style="color:#2563eb; text-decoration:underline;">Chrome-utvidelsen her</a>.<br/><br/>Pakk ut filen og les README-tekstfilen inni for installasjonsinstruksjoner.<br/><br/>Hvis du ikke ser varselet i Windows, kontroller at varsler er aktivert både i Windows og i Chrome. I Windows går du til Innstillinger → System → Varsler og sjekker at Chrome er slått på. Kontroller også at Ikke forstyrr / Fokusassistent er slått av eller tillater Chrome.'
+              : 'Automatically copies finished notes to your clipboard so you can paste with Ctrl + V, and shows a desktop notification when copying is complete.<br/><br/>To use this feature, download the <a href="./div/autocopy.zip" target="_blank" rel="noopener noreferrer" style="color:#2563eb; text-decoration:underline;">Chrome extension here</a>.<br/><br/>Unzip the file and read the README text file inside for installation instructions.<br/><br/>If you do not see the notification pop-up in Windows, check that notifications are enabled both in Windows and in Chrome. In Windows, go to Settings → System → Notifications and make sure Chrome is turned on. Also check that Do Not Disturb / Focus Assist is turned off or allows Chrome.';
+          }
+        };
+
+        const stored = localStorage.getItem(STORAGE_KEY);
+        toggle.checked = stored === "true";
+
+        const persist = () => {
+          localStorage.setItem(STORAGE_KEY, toggle.checked ? "true" : "false");
+        };
+
+        toggle.addEventListener("change", persist);
+        langSelectTranscribe?.addEventListener("change", syncCopyLabel);
+        window.addEventListener("transcribe-language-updated", syncCopyLabel);
+
+        syncCopyLabel();
+        persist();
+      };
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", setupAutoCopyToggle, { once: true });
+      } else {
+        setupAutoCopyToggle();
       }
     })();
   </script>
@@ -5916,11 +6045,12 @@ if (guideClose) {
       };
 
       window.__app.bindNoteStartPulse = function bindNoteStartPulse() {
-        
+        if (window.__app.__noteStartPulseBound) return;
         const btn = document.getElementById("generateNoteButton");
         if (!btn) return;
         if (btn.dataset.noteStartPulseBound === "1") return;
 
+        window.__app.__noteStartPulseBound = true;
         btn.dataset.noteStartPulseBound = "1";
         btn.addEventListener("click", () => {
           if (!window.__app.noteStartHasUsableInput?.()) return;

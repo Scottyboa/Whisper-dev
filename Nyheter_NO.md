@@ -1,3 +1,19 @@
+## 30. mars 2026
+
+### Ny auto-copy funksjon lagt til for ferdige notater
+
+Det er nå lagt til en ny **Auto-copy**-funksjon for notatgenerering.
+
+Når denne funksjonen er slått på, blir ferdige notater automatisk kopiert til utklippstavlen straks notatet er klart. Dette gjør at du kan trykke **Ctrl + V** med en gang for å lime inn notatet, selv om du ikke har app-fanen i fokus.
+
+Du kan derfor fortsette å jobbe i et annet program, et annet vindu eller en annen nettleserfane mens notatet genereres.
+
+Når notatet er ferdig kopiert, vises det også et **skrivebordsvarsel/notification** slik at du får beskjed med en gang uten å måtte følge med på appen hele tiden.
+
+Dette kan gjøre arbeidsflyten raskere og mer praktisk, spesielt hvis du venter på notatet mens du gjør andre oppgaver parallelt.
+
+---
+
 ## 26. mars 2026
 
 Det er nå lagt til en **Avbryt**-knapp for notatgenerering.

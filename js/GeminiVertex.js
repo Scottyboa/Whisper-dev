@@ -99,6 +99,60 @@ function handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval
   });
 }
 
+function extractVertexNoteText(data) {
+  if (!data || typeof data !== "object") return "";
+
+  // Simple backend/custom proxy shapes first
+  const direct =
+    data.text ??
+    data.noteText ??
+    data.output_text ??
+    data.output ??
+    data.note ??
+    data.result;
+
+  if (typeof direct === "string" && direct.trim()) {
+    return direct;
+  }
+
+  // OpenAI/Responses-style shape
+  if (Array.isArray(data.output)) {
+    try {
+      const text = data.output
+        .flatMap((item) => (Array.isArray(item.content) ? item.content : []))
+        .filter((block) => block && (block.type === "output_text" || block.type === "text"))
+        .map((block) => block.text || "")
+        .join("");
+      if (text.trim()) return text;
+    } catch (_) {}
+  }
+
+  // Generic block-style shape
+  if (Array.isArray(data.content)) {
+    try {
+      const text = data.content
+        .filter((block) => block && (block.type === "output_text" || block.type === "text"))
+        .map((block) => block.text || "")
+        .join("");
+      if (text.trim()) return text;
+    } catch (_) {}
+  }
+
+  // Vertex/Gemini native shape
+  try {
+    const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+    const text = candidates
+      .flatMap((candidate) =>
+        Array.isArray(candidate?.content?.parts) ? candidate.content.parts : []
+      )
+      .map((part) => (typeof part?.text === "string" ? part.text : ""))
+      .join("");
+    if (text.trim()) return text;
+  } catch (_) {}
+
+  return "";
+}
+
 async function generateNote() {
   // Clear previous token/cost display immediately on new run
   try { window.__app?.clearNoteUsageAndCost?.(); } catch (_) {}
@@ -174,6 +228,7 @@ async function generateNote() {
     (supplementaryWrapped ? "\n\n" + supplementaryWrapped : "");
 
   let modelId = "gemini-2.5-pro";
+
   try {
     const resp = await fetch(backendUrl, {
       method: "POST",
@@ -196,60 +251,52 @@ async function generateNote() {
     }
 
     const data = await resp.json().catch(() => ({}));
-    const noteText = typeof data?.text === "string" ? data.text : "";
+    const noteText = extractVertexNoteText(data);
     const usage = data?.usage || null;
     modelId = data?.model || "gemini-2.5-pro";
 
-    // Report token usage to UI (USD is calculated centrally in transcribe.html)
-    if (usage) {
-      try {
-        window.__app?.setNoteUsageAndCost?.({
-          providerKey: "gemini3-vertex",
-          modelId: modelId,
-          // Pass Vertex-style usage object. transcribe.html can normalize or directly use it.
-          usage: {
-            promptTokens: usage.promptTokens,
-            outputTokens: usage.outputTokens,
-            totalTokens: usage.totalTokens,
-            raw: usage.raw || null,
-          },
-        });
-      } catch (_) {}
-    }
+    if (usage && app.updateNoteUsageAndCost) {
+      app.updateNoteUsageAndCost({
+        provider: "gemini3-vertex",
+        model: modelId,
+        usage: {
+          promptTokens: usage.promptTokens,
+          outputTokens: usage.outputTokens,
+          totalTokens: usage.totalTokens,
+          raw: usage.raw || null,
+        },
+      });
 
-    // Log token usage (and optional cost) in the browser console
-    if (usage && (usage.promptTokens != null || usage.outputTokens != null || usage.totalTokens != null)) {
-      console.log(
-        "[Vertex usage]",
-        "input:", usage.promptTokens ?? "?",
-        "output:", usage.outputTokens ?? "?",
-        "total:", usage.totalTokens ?? "?"
-      );
-
-      // USD estimate (browser-side) for Gemini 2.5 Pro on Vertex AI
-      const cost = estimateGemini25ProVertexCostUSD({ modelId, usage });
-      if (cost) {
+      const estimate = estimateGemini25ProVertexCostUSD({ modelId, usage });
+      if (estimate) {
         console.log(
-          "[Vertex cost]",
-          `model=${modelId}`,
-          `tier=${cost.tier}`,
-          `inputBillable=${cost.billableInputTokens}`,
-          `outputBillable=${cost.billableOutputTokens}`,
-          `($${cost.totalUsd.toFixed(6)} total)`
+          `[Vertex cost estimate] model=${modelId} ` +
+          `rates=$${estimate.ratesUsdPerMTokens.input}/MTok in, $${estimate.ratesUsdPerMTokens.output}/MTok out ` +
+          `input=$${estimate.inputUsd.toFixed(6)} output=$${estimate.outputUsd.toFixed(6)} total=$${estimate.totalUsd.toFixed(6)}`
+        );
+      } else {
+        console.log(
+          `[Vertex cost estimate] Skipped (unknown model "${modelId}" or missing token counts).`
         );
       }
-    } else {
-      console.log("[Vertex usage] (missing in backend response)", data);
+    }
+
+    if (!noteText.trim()) {
+      console.warn("[Vertex] Backend returned no extractable note text. Full payload:", data);
+      throw new Error(
+        "Vertex backend returned no extractable note text. " +
+        "The response shape likely changed and GeminiVertex.js needs to read a different field."
+      );
     }
 
     clearInterval(noteTimerInterval);
     if (noteTimerElement) {
-      noteTimerElement.innerText =
-        "Text generation completed!";
+      noteTimerElement.innerText = "Text generation completed!";
     }
 
     generatedNoteField.value = noteText;
     app.emitNoteFinished?.({ provider: "gemini3-vertex", model: modelId || "gemini-2.5-pro" });
+
   } catch (err) {
     if (err?.name === "AbortError") {
       handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval, modelId);
@@ -265,8 +312,6 @@ async function generateNote() {
       "Error generating note via Vertex backend: " + String(err);
     app.finishNoteGeneration?.();
   }
-
-     
 }
 
 function initNoteGeneration() {

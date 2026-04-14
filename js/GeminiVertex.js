@@ -20,12 +20,28 @@
 // Vertex "note" generator (Cloud Run backend)
 // -----------------------------------------------------------
 
+import {
+  beginNoteRun,
+  bindGenerateNoteButton,
+  finishNoteAbort,
+  getSessionStorageValue,
+  pushNormalizedNoteUsage,
+  resolveCommonNoteInputs,
+  startNoteTimer
+} from "./core/note-runner.js";
+
 // Vertex AI pricing for Gemini 2.5 Pro (USD per 1M tokens)
 // Source: Vertex AI Generative AI pricing page.
 const GEMINI_25_PRO_VERTEX_PRICING_USD_PER_M = {
   thresholdInputTokens: 200_000,
   short: { input: 1.25, output: 10.0 }, // <= 200K input tokens
   long: { input: 2.5, output: 15.0 },   // > 200K input tokens
+};
+
+const DEFAULT_MODEL_ID = "gemini-2.5-pro";
+const RUN_META = {
+  provider: "gemini3-vertex",
+  model: DEFAULT_MODEL_ID
 };
 
 function estimateGemini25ProVertexCostUSD({ modelId, usage }) {
@@ -69,165 +85,151 @@ function estimateGemini25ProVertexCostUSD({ modelId, usage }) {
   };
 }
 
-function formatTime(ms) {
-  const totalSec = Math.floor(ms / 1000);
-  if (totalSec < 60) {
-    return totalSec + " sec";
-  } else {
-    const minutes = Math.floor(totalSec / 60);
-    const seconds = totalSec % 60;
-    return minutes + " min" + (seconds > 0 ? " " + seconds + " sec" : "");
-  }
+function getVertexBackendConfig() {
+  return {
+    backendUrl: getSessionStorageValue("vertex_backend_url", "").trim(),
+    backendSecret: getSessionStorageValue("vertex_backend_secret", "").trim()
+  };
 }
 
-function getNoteCoordinator() {
-  return window.__app || {};
-}
+function pushVertexUsageToUi(modelId, usage) {
+  if (!usage) {
+    return;
+  }
 
-function handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval, modelId) {
-  clearInterval(noteTimerInterval);
-  if (noteTimerElement) {
-    noteTimerElement.innerText = "Text generation aborted.";
-  }
-  if (generatedNoteField && !generatedNoteField.value.trim()) {
-    generatedNoteField.value = "Note generation aborted.";
-  }
-  getNoteCoordinator().emitNoteFinished?.({
-    provider: "gemini3-vertex",
-    model: modelId || "gemini-2.5-pro",
-    aborted: true
+  pushNormalizedNoteUsage({
+    providerKey: "gemini3-vertex",
+    modelId,
+    usage: {
+      promptTokens: usage.promptTokens,
+      outputTokens: usage.outputTokens,
+      totalTokens: usage.totalTokens,
+      raw: usage.raw || null,
+    }
   });
 }
 
+function logVertexUsageAndCost({ modelId, usage, rawResponse }) {
+  if (usage && (usage.promptTokens != null || usage.outputTokens != null || usage.totalTokens != null)) {
+    console.log(
+      "[Vertex usage]",
+      "input:", usage.promptTokens ?? "?",
+      "output:", usage.outputTokens ?? "?",
+      "total:", usage.totalTokens ?? "?"
+    );
+
+    const cost = estimateGemini25ProVertexCostUSD({ modelId, usage });
+    if (cost) {
+      console.log(
+        "[Vertex cost]",
+        `model=${modelId}`,
+        `tier=${cost.tier}`,
+        `inputBillable=${cost.billableInputTokens}`,
+        `outputBillable=${cost.billableOutputTokens}`,
+        `($${cost.totalUsd.toFixed(6)} total)`
+      );
+    }
+  } else {
+    console.log("[Vertex usage] (missing in backend response)", rawResponse);
+  }
+}
+
 function extractVertexNoteText(data) {
-  if (!data || typeof data !== "object") return "";
-
-  // Simple backend/custom proxy shapes first
-  const direct =
-    data.text ??
-    data.noteText ??
-    data.output_text ??
-    data.output ??
-    data.note ??
-    data.result;
-
-  if (typeof direct === "string" && direct.trim()) {
-    return direct;
+  if (!data || typeof data !== "object") {
+    return "";
   }
 
-  // OpenAI/Responses-style shape
+  const directText = [
+    data.text,
+    data.noteText,
+    data.output,
+    data.note,
+    data.generatedNote,
+  ].find((value) => typeof value === "string" && value.trim());
+
+  if (directText) {
+    return directText;
+  }
+
+  if (Array.isArray(data.candidates)) {
+    try {
+      const candidateText = data.candidates
+        .flatMap((candidate) =>
+          Array.isArray(candidate?.content?.parts) ? candidate.content.parts : []
+        )
+        .map((part) => (typeof part?.text === "string" ? part.text : ""))
+        .join("")
+        .trim();
+
+      if (candidateText) {
+        return candidateText;
+      }
+    } catch (_) {}
+  }
+
   if (Array.isArray(data.output)) {
     try {
-      const text = data.output
-        .flatMap((item) => (Array.isArray(item.content) ? item.content : []))
+      const outputText = data.output
+        .flatMap((item) => (Array.isArray(item?.content) ? item.content : []))
         .filter((block) => block && (block.type === "output_text" || block.type === "text"))
         .map((block) => block.text || "")
-        .join("");
-      if (text.trim()) return text;
+        .join("")
+        .trim();
+
+      if (outputText) {
+        return outputText;
+      }
     } catch (_) {}
   }
 
-  // Generic block-style shape
   if (Array.isArray(data.content)) {
     try {
-      const text = data.content
+      const contentText = data.content
         .filter((block) => block && (block.type === "output_text" || block.type === "text"))
         .map((block) => block.text || "")
-        .join("");
-      if (text.trim()) return text;
+        .join("")
+        .trim();
+
+      if (contentText) {
+        return contentText;
+      }
     } catch (_) {}
   }
-
-  // Vertex/Gemini native shape
-  try {
-    const candidates = Array.isArray(data.candidates) ? data.candidates : [];
-    const text = candidates
-      .flatMap((candidate) =>
-        Array.isArray(candidate?.content?.parts) ? candidate.content.parts : []
-      )
-      .map((part) => (typeof part?.text === "string" ? part.text : ""))
-      .join("");
-    if (text.trim()) return text;
-  } catch (_) {}
 
   return "";
 }
 
 async function generateNote() {
-  // Clear previous token/cost display immediately on new run
-  try { window.__app?.clearNoteUsageAndCost?.(); } catch (_) {}
-
-  const app = getNoteCoordinator();
-  const controller = app.beginNoteGeneration?.({
-    provider: "gemini3-vertex",
-    model: "gemini-2.5-pro"
-  });
+  const { app, controller } = beginNoteRun(RUN_META);
   if (!controller) {
     return;
   }
 
-  const transcriptionElem = document.getElementById("transcription");
-  if (!transcriptionElem) {
-    app.finishNoteGeneration?.();
-    alert("No transcription text available.");
-    return;
-  }
-  const transcriptionText = transcriptionElem.value.trim();
-  if (!transcriptionText) {
-    app.finishNoteGeneration?.();
-    alert("No transcription text available.");
+  const common = resolveCommonNoteInputs(app);
+  if (!common) {
     return;
   }
 
-  const customPromptTextarea = document.getElementById("customPrompt");
-  const promptText = customPromptTextarea ? customPromptTextarea.value : "";
+  const {
+    transcriptionText,
+    promptText,
+    supplementaryWrapped,
+    generatedNoteField,
+    noteTimerElement
+  } = common;
 
-  // Supplementary info (prepended before transcription, same style as Gemini3)
-  const supplementaryElem = document.getElementById("supplementaryInfo");
-  const supplementaryRaw = supplementaryElem ? supplementaryElem.value.trim() : "";
-  const supplementaryWrapped = supplementaryRaw
-    ? `Tilleggsopplysninger(brukes som kontekst):"${supplementaryRaw}"\n\n`
-    : "";
-
-  const generatedNoteField = document.getElementById("generatedNote");
-  if (!generatedNoteField) {
-    app.finishNoteGeneration?.();
-    return;
-  }
-
-  // Reset note field and start timer
   generatedNoteField.value = "";
-  const noteTimerElement = document.getElementById("noteTimer");
-  const noteStartTime = Date.now();
-  if (noteTimerElement) {
-    noteTimerElement.innerText = "Note Generation Timer: 0 sec";
-  }
-  const noteTimerInterval = setInterval(() => {
-    if (noteTimerElement) {
-      noteTimerElement.innerText =
-        "Note Generation Timer: " + formatTime(Date.now() - noteStartTime);
-    }
-  }, 1000);
+  const noteTimer = startNoteTimer(noteTimerElement);
 
-  // --- Read Vertex config from sessionStorage (NO DEFAULTS) ---
-  const backendUrl = (sessionStorage.getItem("vertex_backend_url") || "").trim();
-  const backendSecret = (sessionStorage.getItem("vertex_backend_secret") || "").trim();
-
+  const { backendUrl, backendSecret } = getVertexBackendConfig();
   if (!backendUrl || !backendSecret) {
     alert("Vertex backend URL/secret is missing. Open the Vertex setup guide and configure both values first.");
-    clearInterval(noteTimerInterval);
+    noteTimer.stop("");
     app.finishNoteGeneration?.();
     return;
   }
 
-  // For now we always target Gemini 2.5 Pro in the backend:
-  //   modelVariant: "g25"
-  // If you later add more options, read sessionStorage.vertex_model or #vertexModel here.
-  const combinedPrompt =
-    (promptText || "") +
-    (supplementaryWrapped ? "\n\n" + supplementaryWrapped : "");
-
-  let modelId = "gemini-2.5-pro";
+  let modelId = DEFAULT_MODEL_ID;
 
   try {
     const resp = await fetch(backendUrl, {
@@ -253,72 +255,40 @@ async function generateNote() {
     const data = await resp.json().catch(() => ({}));
     const noteText = extractVertexNoteText(data);
     const usage = data?.usage || null;
-    modelId = data?.model || "gemini-2.5-pro";
+    modelId = data?.model || DEFAULT_MODEL_ID;
 
-    if (usage && app.updateNoteUsageAndCost) {
-      app.updateNoteUsageAndCost({
-        provider: "gemini3-vertex",
-        model: modelId,
-        usage: {
-          promptTokens: usage.promptTokens,
-          outputTokens: usage.outputTokens,
-          totalTokens: usage.totalTokens,
-          raw: usage.raw || null,
-        },
+    pushVertexUsageToUi(modelId, usage);
+    logVertexUsageAndCost({ modelId, usage, rawResponse: data });
+
+    generatedNoteField.value = noteText || "[No text returned from Vertex backend]";
+    noteTimer.stop("Text generation completed!");
+    app.emitNoteFinished?.({
+      provider: "gemini3-vertex",
+      model: modelId || DEFAULT_MODEL_ID
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      finishNoteAbort({
+        generatedNoteField,
+        noteTimer,
+        runMeta: {
+          provider: "gemini3-vertex",
+          model: modelId || DEFAULT_MODEL_ID
+        }
       });
-
-      const estimate = estimateGemini25ProVertexCostUSD({ modelId, usage });
-      if (estimate) {
-        console.log(
-          `[Vertex cost estimate] model=${modelId} ` +
-          `rates=$${estimate.ratesUsdPerMTokens.input}/MTok in, $${estimate.ratesUsdPerMTokens.output}/MTok out ` +
-          `input=$${estimate.inputUsd.toFixed(6)} output=$${estimate.outputUsd.toFixed(6)} total=$${estimate.totalUsd.toFixed(6)}`
-        );
-      } else {
-        console.log(
-          `[Vertex cost estimate] Skipped (unknown model "${modelId}" or missing token counts).`
-        );
-      }
-    }
-
-    if (!noteText.trim()) {
-      console.warn("[Vertex] Backend returned no extractable note text. Full payload:", data);
-      throw new Error(
-        "Vertex backend returned no extractable note text. " +
-        "The response shape likely changed and GeminiVertex.js needs to read a different field."
-      );
-    }
-
-    clearInterval(noteTimerInterval);
-    if (noteTimerElement) {
-      noteTimerElement.innerText = "Text generation completed!";
-    }
-
-    generatedNoteField.value = noteText;
-    app.emitNoteFinished?.({ provider: "gemini3-vertex", model: modelId || "gemini-2.5-pro" });
-
-  } catch (err) {
-    if (err?.name === "AbortError") {
-      handleNoteAbort(generatedNoteField, noteTimerElement, noteTimerInterval, modelId);
       return;
     }
 
-    console.error("Vertex Gemini note error:", err);
-    clearInterval(noteTimerInterval);
-    if (noteTimerElement) {
-      noteTimerElement.innerText = "";
-    }
+    console.error("Vertex Gemini note error:", error);
+    noteTimer.stop("");
     generatedNoteField.value =
-      "Error generating note via Vertex backend: " + String(err);
+      "Error generating note via Vertex backend: " + String(error);
     app.finishNoteGeneration?.();
   }
 }
 
 function initNoteGeneration() {
-  const generateNoteButton = document.getElementById("generateNoteButton");
-  if (!generateNoteButton) return;
-
-  generateNoteButton.addEventListener("click", generateNote);
+  bindGenerateNoteButton(generateNote);
 }
 
 export { initNoteGeneration };

@@ -1,3 +1,10 @@
+import {
+  createRecordingUiBindingScope,
+  createRecordingUiHelpers,
+  flushPendingVadSegmentsGuarded,
+  installSafeRecordingLoadStop,
+} from './core/recording-runner.js';
+
 // deepgram_nova3.js
 // Updated recording module without encryption/HMAC mechanisms,
 // processing audio chunks using OfflineAudioContext,
@@ -40,8 +47,8 @@ const sileroVADOptions = {
   // require at least 3 consecutive speech frames to declare onSpeechStart
   minSpeechFrames: 3,
   onSpeechStart: () => {
-    // Prevent VAD callbacks after stop
-    if (manualStop) return;
+    // Prevent late VAD callbacks from reviving recording after pause/stop.
+    if (manualStop || recordingPaused) return;
     logInfo("Silero VAD: speech started");
     recordingActive = true;
     chunkStartTime = Date.now();
@@ -51,8 +58,8 @@ const sileroVADOptions = {
     resetCompletionTimerDisplay();
   },
   onSpeechEnd: (audioFloat32) => {
-    // Prevent VAD callbacks after stop
-    if (manualStop) return;
+    // Prevent late VAD callbacks after pause/stop from buffering or enqueueing more audio.
+    if (manualStop || recordingPaused) return;
     logInfo("Silero VAD: speech ended — buffering audio");
     // Accumulate this segment
     pendingVADChunks.push(audioFloat32);
@@ -153,35 +160,19 @@ function beginFreshTranscriptionSession() {
 }
 
 // --- Utility Functions ---
-function updateStatusMessage(message, color = "#333") {
-  const statusElem = document.getElementById("statusMessage");
-  if (statusElem) {
-    statusElem.innerText = message;
-    statusElem.style.color = color;
-  }
-}
-
-function setAbortButtonDisabled(disabled) {
-  const abortButton = document.getElementById("abortButton");
-  if (abortButton) abortButton.disabled = disabled;
-}
-
-function setStopPauseDisabled(disabled) {
-  const stopButton = document.getElementById("stopButton");
-  const pauseResumeButton = document.getElementById("pauseResumeButton");
-  if (stopButton) stopButton.disabled = disabled;
-  if (pauseResumeButton) pauseResumeButton.disabled = disabled;
-}
-
-function setRecordingControlsIdle() {
-  const startButton = document.getElementById("startButton");
-  const stopButton = document.getElementById("stopButton");
-  const pauseResumeButton = document.getElementById("pauseResumeButton");
-  setAbortButtonDisabled(true);
-  if (startButton) startButton.disabled = false;
-  if (stopButton) stopButton.disabled = true;
-  if (pauseResumeButton) pauseResumeButton.disabled = true;
-}
+const {
+  updateStatusMessage,
+  setAbortButtonDisabled,
+  setStopPauseDisabled,
+  setRecordingControlsIdle,
+  stopMicrophone,
+} = createRecordingUiHelpers({
+  logInfo,
+  getMediaStream: () => mediaStream,
+  setMediaStream: (value) => { mediaStream = value; },
+  getAudioReader: () => audioReader,
+  setAudioReader: (value) => { audioReader = value; },
+});
 
 function freezeVisibleTranscript() {
   transcriptFrozen = true;
@@ -266,38 +257,19 @@ function formatTime(ms) {
 }
 
 // De-duplicate: flush any buffered VAD segments into a single WAV chunk and enqueue
-async function flushPendingVADSegments() {
-  if (pendingVADChunks.length === 0 || pendingVADLock) return;
-  pendingVADLock = true;
-  try {
-    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-    if (totalSamples > 0) {
-      const combined = new Float32Array(totalSamples);
-      let offset = 0;
-      for (const seg of pendingVADChunks) {
-        combined.set(seg, offset);
-        offset += seg.length;
-      }
-      const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-      enqueueTranscription(wavBlob, chunkNumber++);
-    }
-    pendingVADChunks = [];
-  } finally {
-    pendingVADLock = false;
-  }
+function flushPendingVADSegments() {
+  chunkNumber = flushPendingVadSegmentsGuarded({
+    segments: pendingVADChunks,
+    sampleRate: 16000,
+    floatTo16BitPCM,
+    encodeWAV,
+    enqueueTranscription,
+    chunkNumber,
+    isLocked: () => pendingVADLock,
+    setLocked: (value) => { pendingVADLock = value; },
+  });
 }
 
-function stopMicrophone() {
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(track => track.stop());
-    mediaStream = null;
-    logInfo("Microphone stopped.");
-  }
-  if (audioReader) {
-    audioReader.cancel();
-    audioReader = null;
-  }
-}
 
 // --- Base64 Helper Functions (kept for legacy) ---
 function arrayBufferToBase64(buffer) {
@@ -451,8 +423,9 @@ async function transcribeChunkDirectly(wavBlob, chunkNum, { signal, sessionId } 
     transcriptionError = true;
     return `[Missing API key for chunk ${chunkNum}]`;
   }
-  // Nova-3 with smart formatting; set your default language here (e.g., "no" for Norwegian)
-  const url = `${DEEPGRAM_LISTEN_URL}?model=nova-3&smart_format=true&language=no`;
+  // Deepgram automatic dominant-language detection.
+  // Do not also send `language=...` here, because detect_language overrides it.
+  const url = `${DEEPGRAM_LISTEN_URL}?model=nova-3-general&smart_format=true&detect_language=true`;
   try {
     const rsp = await fetchWithTimeout(url, {
       method: "POST",
@@ -468,7 +441,30 @@ async function transcribeChunkDirectly(wavBlob, chunkNum, { signal, sessionId } 
       throw new Error(`Deepgram error ${rsp.status}: ${txt}`);
     }
     const data = await rsp.json();
-    const text = data?.results?.channels?.[0]?.alternatives?.[0]?.transcript || "";
+    console.log(
+      "[Deepgram] detected_language:",
+      data?.results?.channels?.[0]?.detected_language,
+      "confidence:",
+      data?.results?.channels?.[0]?.language_confidence
+    );
+    const alternative = data?.results?.channels?.[0]?.alternatives?.[0] || {};
+    let text = typeof alternative?.transcript === "string"
+      ? alternative.transcript.trim()
+      : "";
+
+    // Defensive fallback: reconstruct text from word-level output when transcript is blank.
+    if (!text && Array.isArray(alternative?.words)) {
+      text = alternative.words
+        .map((w) => (w?.punctuated_word || w?.word || "").trim())
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+    }
+
+    if (!text) {
+      logDebug("Deepgram returned empty transcript payload:", data);
+    }
+
     return text;
   } catch (error) {
     // If user started a new session, treat this as a silent cancel.
@@ -752,9 +748,7 @@ function initRecording() {
   const abortButton = document.getElementById("abortButton");
   if (!startButton || !stopButton || !pauseResumeButton) return;
 
-  window.__deepgramUIAbort?.abort("re-init");
-  window.__deepgramUIAbort = new AbortController();
-  const uiSignal = window.__deepgramUIAbort.signal;
+  const uiSignal = createRecordingUiBindingScope("__recordingUIAbort_deepgram");
 
   // --- PULL readLoop INTO SHARED SCOPE ---
   async function readLoop() {
@@ -867,7 +861,16 @@ function initRecording() {
         setAbortButtonDisabled(false);
       }
     } else {
-      // PAUSE: stop VAD and flush any buffered speech
+      // Do NOT set recordingPaused yet. The VAD option
+      // submitUserSpeechOnPause fires one final onSpeechEnd inside
+      // sileroVAD.pause() containing the tail audio from the
+      // currently-ongoing speech. onSpeechEnd guards on recordingPaused,
+      // so setting the flag before pause() would drop that tail segment
+      // and truncate the transcript.
+      recordingActive = false;
+      clearTimeout(chunkTimeoutId);
+
+      // PAUSE: stop VAD (fires final onSpeechEnd with tail audio)
       updateStatusMessage("Pausing recording…", "orange");
       try {
         await sileroVAD.pause();
@@ -875,15 +878,22 @@ function initRecording() {
       } catch (err) {
         logError("Error pausing Silero VAD:", err);
       }
+      // Give the synchronous onSpeechEnd callback a chance to run and
+      // push the tail audio into pendingVADChunks before we set the
+      // guard flag.
+      await Promise.resolve();
+
+      // Now block any further late callbacks from reviving recording.
+      recordingPaused = true;
+
       // **actually stop the mic** that Silero opened:
       if (sileroVAD.stream) {
         sileroVAD.stream.getTracks().forEach(t => t.stop());
       }
-      // **new**: cut the mic feed so the browser indicator goes off
       stopMicrophone();
-      await flushPendingVADSegments();
 
-      recordingPaused = true;
+      // Flush everything including the tail segment captured above.
+      await flushPendingVADSegments();
 
       pauseResumeButton.innerText = "Resume Recording";
       setStopPauseDisabled(false);
@@ -1072,10 +1082,7 @@ function initRecording() {
 
 export { initRecording };
 
-// As soon as the page loads, ensure we never auto-open the mic:
-window.addEventListener("load", () => {
-  stopMicrophone();
-  if (sileroVAD && typeof sileroVAD.pause === "function") {
-    sileroVAD.pause().catch(() => {});
-  }
+installSafeRecordingLoadStop({
+  stopMicrophone,
+  getSileroVAD: () => sileroVAD,
 });

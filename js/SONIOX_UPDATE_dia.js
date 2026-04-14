@@ -1,3 +1,10 @@
+import {
+  createRecordingUiBindingScope,
+  createRecordingUiHelpers,
+  flushPendingVadSegmentsGuarded,
+  installSafeRecordingLoadStop,
+} from './core/recording-runner.js';
+
 // SONIOX_UPDATE_dia.js
 
 let transcriptionError = false;
@@ -27,34 +34,29 @@ function flushPendingVADOnce(reason, extraAudioFloat32 = null) {
   if (token === pendingVADLastFlushToken) return;
   pendingVADLastFlushToken = token;
 
-  if (pendingVADLock) return;
-  if ((!pendingVADChunks || pendingVADChunks.length === 0) && !(extraAudioFloat32 && extraAudioFloat32.length)) return;
+  if (extraAudioFloat32 && extraAudioFloat32.length) {
+    const last = pendingVADChunks[pendingVADChunks.length - 1];
+    const looksSame = last && last.length === extraAudioFloat32.length;
+    if (!looksSame) pendingVADChunks.push(extraAudioFloat32);
+  }
 
-  pendingVADLock = true;
-  try {
-    if (extraAudioFloat32 && extraAudioFloat32.length) {
-      const last = pendingVADChunks[pendingVADChunks.length - 1];
-      const looksSame = last && last.length === extraAudioFloat32.length;
-      if (!looksSame) pendingVADChunks.push(extraAudioFloat32);
-    }
+  const nextChunkNumber = flushPendingVadSegmentsGuarded({
+    segments: pendingVADChunks,
+    sampleRate: 16000,
+    floatTo16BitPCM,
+    encodeWAV,
+    enqueueTranscription,
+    chunkNumber,
+    isLocked: () => pendingVADLock,
+    setLocked: (value) => { pendingVADLock = value; },
+  });
 
-    if (pendingVADChunks.length === 0) return;
-    const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-    const combined     = new Float32Array(totalSamples);
-    let offset         = 0;
-    for (const seg of pendingVADChunks) {
-      combined.set(seg, offset);
-      offset += seg.length;
-    }
-    const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-    enqueueTranscription(wavBlob, chunkNumber++);
-    pendingVADChunks = [];
+  if (nextChunkNumber !== chunkNumber) {
+    chunkNumber = nextChunkNumber;
     logInfo(`[VAD] Flushed pending segments (${reason}).`);
-  } finally {
-    pendingVADLock = false;
   }
 }
- // Minimum total speech duration before sending (in seconds)
+// Minimum total speech duration before sending (in seconds)
  const MIN_CHUNK_DURATION_SECONDS = 7200;
  // Configure callbacks for speech start/end
  const sileroVADOptions = {
@@ -83,8 +85,8 @@ function flushPendingVADOnce(reason, extraAudioFloat32 = null) {
     
    },
    onSpeechEnd: (audioFloat32) => {
-     // Prevent VAD callbacks after stop
-     if (manualStop || transcriptFrozen) return;
+     // Prevent late VAD callbacks after pause/stop from buffering or enqueueing more audio.
+     if (!canShowRecordingStatus()) return;
      logInfo("Silero VAD: speech ended — buffering audio");
      // Accumulate this segment
      pendingVADChunks.push(audioFloat32);
@@ -188,31 +190,21 @@ function beginFreshTranscriptionSession() {
   transcriptFrozen = false;
 }
 // --- Utility Functions ---
-function updateStatusMessage(message, color = "#333") {
-  const statusElem = document.getElementById("statusMessage");
-  if (statusElem) {
-    statusElem.innerText = message;
-    statusElem.style.color = color;
-  }
-}
+const {
+  updateStatusMessage,
+  setAbortButtonDisabled,
+  setRecordingControlsIdle,
+  stopMicrophone,
+} = createRecordingUiHelpers({
+  logInfo,
+  getMediaStream: () => mediaStream,
+  setMediaStream: (value) => { mediaStream = value; },
+  getAudioReader: () => audioReader,
+  setAudioReader: (value) => { audioReader = value; },
+});
 
 function canShowRecordingStatus() {
-  return !manualStop && !stopInProgress && !transcriptFrozen;
-}
-
-function setAbortButtonDisabled(disabled) {
-  const abortButton = document.getElementById("abortButton");
-  if (abortButton) abortButton.disabled = disabled;
-}
-
-function setRecordingControlsIdle() {
-  const startButton = document.getElementById("startButton");
-  const stopButton = document.getElementById("stopButton");
-  const pauseResumeButton = document.getElementById("pauseResumeButton");
-  setAbortButtonDisabled(true);
-  if (startButton) startButton.disabled = false;
-  if (stopButton) stopButton.disabled = true;
-  if (pauseResumeButton) pauseResumeButton.disabled = true;
+  return !manualStop && !stopInProgress && !transcriptFrozen && !recordingPaused;
 }
 
 // ───── Completion timer helpers ───────────────────────────────────────────────
@@ -301,18 +293,6 @@ function formatTime(ms) {
 
 
 
-function stopMicrophone() {
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(track => track.stop());
-    mediaStream = null;
-    logInfo("Microphone stopped.");
-  }
-  if (audioReader) {
-    audioReader.cancel();
-    audioReader = null;
-  }
-}
-  
 // --- Base64 Helper Functions (kept for legacy) ---
 function arrayBufferToBase64(buffer) {
   let binary = "";
@@ -350,7 +330,7 @@ function getAPIKey() {
 
 // Region-aware base: reads sessionStorage on every call
 function getSonioxBase() {
-  const region = (sessionStorage.getItem("soniox_region") || "us").toLowerCase();
+  const region = (sessionStorage.getItem("soniox_region") || "eu").toLowerCase();
   return region === "eu"
     ? "https://api.eu.soniox.com/v1"
     : "https://api.soniox.com/v1";
@@ -1063,10 +1043,44 @@ function initRecording() {
   const pauseResumeButton = document.getElementById("pauseResumeButton");
   const abortButton       = document.getElementById("abortButton");
   if (!startButton || !stopButton || !pauseResumeButton) return;
-  // Make init idempotent: if initRecording() is called again, kill old listeners.
+
+  // Cross-abort: kill the OTHER Soniox module's listeners and
+  // destroy its VAD instance if it's live. Without this, toggling
+  // speaker labels leaves both SONIOX_UPDATE.js and
+  // SONIOX_UPDATE_dia.js loaded with both sets of click listeners
+  // and both Silero VAD pipelines running in parallel — producing
+  // duplicate VAD logs, dual transcription chunks, and incoherent
+  // button states.
+  try { window.__sonioxUIAbort_soniox?.abort("switched-to-dia"); } catch (_) {}
+  try { window.__sonioxTeardownVAD_soniox?.(); } catch (_) {}
+
+  // Make self init idempotent: if initRecording() is called again, kill old listeners.
   window.__sonioxUIAbort_soniox_dia?.abort("re-init");
   window.__sonioxUIAbort_soniox_dia = new AbortController();
   const uiSignal = window.__sonioxUIAbort_soniox_dia.signal;
+
+  // Expose a teardown hook so the non-dia module can stop our VAD
+  // cleanly if the user toggles speaker labels off. This mirrors the
+  // teardown logic in the stopButton/abortButton handlers but runs
+  // on demand rather than on user action.
+  window.__sonioxTeardownVAD_soniox_dia = () => {
+    try {
+      if (sileroVAD && typeof sileroVAD.pause === "function") {
+        sileroVAD.pause().catch(() => {});
+      }
+      if (sileroVAD && sileroVAD.stream) {
+        sileroVAD.stream.getTracks().forEach((t) => {
+          try { t.stop(); } catch (_) {}
+        });
+      }
+      if (sileroVAD && !sileroVAD._destroyed) {
+        sileroVAD._destroyed = true;
+        try { sileroVAD.destroy?.(); } catch (_) {}
+      }
+    } catch (_) {}
+    sileroVAD = null;
+  };
+
 
   // --- PULL readLoop INTO SHARED SCOPE ---
   async function readLoop() {
@@ -1190,8 +1204,14 @@ pauseResumeButton.addEventListener("click", async () => {
       logError("Error resuming Silero VAD:", err);
     }
   } else {
-   
-    // PAUSE: stop VAD and flush any buffered speech
+    // Do NOT set recordingPaused yet — submitUserSpeechOnPause fires
+    // a final onSpeechEnd inside sileroVAD.pause() with the tail audio.
+    // onSpeechEnd guards on recordingPaused, so flipping the flag
+    // before pause() silently drops the tail segment.
+    recordingActive = false;
+    clearTimeout(chunkTimeoutId);
+
+    // PAUSE: stop VAD (fires final onSpeechEnd with tail audio)
     updateStatusMessage("Pausing recording…", "orange");
     try {
       await sileroVAD.pause();
@@ -1199,18 +1219,19 @@ pauseResumeButton.addEventListener("click", async () => {
     } catch (err) {
       logError("Error pausing Silero VAD:", err);
     }
- // **actually stop the mic** that Silero opened:
- if (sileroVAD.stream) {
-   sileroVAD.stream.getTracks().forEach(t => t.stop());
- }
-    // **new**: cut the mic feed so the browser indicator goes off
-    stopMicrophone();
+    // Let the final onSpeechEnd land before we set the guard flag.
     await Promise.resolve();
-    flushPendingVADOnce("pause");
-    
-
     recordingPaused = true;
-    
+
+    // Actually stop the mic that Silero opened:
+    if (sileroVAD.stream) {
+      sileroVAD.stream.getTracks().forEach(t => t.stop());
+    }
+    stopMicrophone();
+
+    // Flush the tail segment captured by the final onSpeechEnd.
+    flushPendingVADOnce("pause");
+
     pauseResumeButton.innerText = "Resume Recording";
     setAbortButtonDisabled(true);
     updateStatusMessage("Recording paused", "orange");
@@ -1410,10 +1431,7 @@ stopButton.addEventListener("click", async () => {
 export { initRecording };
 
 // As soon as the page loads, ensure we never auto-open the mic:
-window.addEventListener("load", () => {
-  stopMicrophone();
-  if (sileroVAD && typeof sileroVAD.pause === "function") {
-    sileroVAD.pause().catch(() => {});
-  }
-  
+installSafeRecordingLoadStop({
+  stopMicrophone,
+  getSileroVAD: () => sileroVAD,
 });

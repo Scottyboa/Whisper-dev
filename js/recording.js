@@ -1,3 +1,10 @@
+import {
+  createRecordingUiBindingScope,
+  createRecordingUiHelpers,
+  flushPendingVadSegments,
+  installSafeRecordingLoadStop,
+} from './core/recording-runner.js';
+
 // recording.js
 // Updated recording module without encryption/HMAC mechanisms,
 // processing audio chunks using OfflineAudioContext,
@@ -39,8 +46,8 @@ const DEBUG = true;
   // require at least 3 consecutive speech frames to declare onSpeechStart
   minSpeechFrames: 3,
    onSpeechStart: () => {
-     // Prevent VAD callbacks after stop
-     if (manualStop) return;
+     // Prevent late VAD callbacks from reviving recording after pause/stop.
+     if (manualStop || recordingPaused) return;
      logInfo("Silero VAD: speech started");
      recordingActive = true;
      chunkStartTime = Date.now();
@@ -49,8 +56,8 @@ const DEBUG = true;
    
    },
    onSpeechEnd: (audioFloat32) => {
-     // Prevent VAD callbacks after stop
-     if (manualStop) return;
+     // Prevent late VAD callbacks after pause/stop from buffering or enqueueing more audio.
+     if (manualStop || recordingPaused) return;
      logInfo("Silero VAD: speech ended — buffering audio");
      // Accumulate this segment
      pendingVADChunks.push(audioFloat32);
@@ -145,35 +152,19 @@ function beginFreshTranscriptionSession() {
   transcriptFrozen = false;
 }
 // --- Utility Functions ---
-function updateStatusMessage(message, color = "#333") {
-  const statusElem = document.getElementById("statusMessage");
-  if (statusElem) {
-    statusElem.innerText = message;
-    statusElem.style.color = color;
-  }
-}
-
-function setAbortButtonDisabled(disabled) {
-  const abortButton = document.getElementById("abortButton");
-  if (abortButton) abortButton.disabled = disabled;
-}
-
-function setStopPauseDisabled(disabled) {
-  const stopButton = document.getElementById("stopButton");
-  const pauseResumeButton = document.getElementById("pauseResumeButton");
-  if (stopButton) stopButton.disabled = disabled;
-  if (pauseResumeButton) pauseResumeButton.disabled = disabled;
-}
-
-function setRecordingControlsIdle() {
-  const startButton = document.getElementById("startButton");
-  const stopButton = document.getElementById("stopButton");
-  const pauseResumeButton = document.getElementById("pauseResumeButton");
-  setAbortButtonDisabled(true);
-  if (startButton) startButton.disabled = false;
-  if (stopButton) stopButton.disabled = true;
-  if (pauseResumeButton) pauseResumeButton.disabled = true;
-}
+const {
+  updateStatusMessage,
+  setAbortButtonDisabled,
+  setStopPauseDisabled,
+  setRecordingControlsIdle,
+  stopMicrophone,
+} = createRecordingUiHelpers({
+  logInfo,
+  getMediaStream: () => mediaStream,
+  setMediaStream: (value) => { mediaStream = value; },
+  getAudioReader: () => audioReader,
+  setAudioReader: (value) => { audioReader = value; },
+});
 
 function formatTime(ms) {
   const totalSec = Math.floor(ms / 1000);
@@ -183,18 +174,6 @@ function formatTime(ms) {
     const minutes = Math.floor(totalSec / 60);
     const seconds = totalSec % 60;
     return minutes + " min" + (seconds > 0 ? " " + seconds + " sec" : "");
-  }
-}
-
-function stopMicrophone() {
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(track => track.stop());
-    mediaStream = null;
-    logInfo("Microphone stopped.");
-  }
-  if (audioReader) {
-    audioReader.cancel();
-    audioReader = null;
   }
 }
   
@@ -688,6 +667,8 @@ function initRecording() {
   const abortButton       = document.getElementById("abortButton");
   if (!startButton || !stopButton || !pauseResumeButton) return;
 
+  const uiSignal = createRecordingUiBindingScope("__recordingUIAbort_openai");
+
   // --- PULL readLoop INTO SHARED SCOPE ---
   async function readLoop() {
     try {
@@ -761,7 +742,7 @@ function initRecording() {
       startButton.disabled = false;
       setAbortButtonDisabled(true);
     }
-  });
+  }, { signal: uiSignal });
 
 pauseResumeButton.addEventListener("click", async () => {
   if (pauseResumeButton.disabled) return;
@@ -792,20 +773,14 @@ pauseResumeButton.addEventListener("click", async () => {
       setAbortButtonDisabled(false);
     }
   } else {
-   // — FLUSH any pending VAD segments before pausing — 
-   if (pendingVADChunks.length > 0) {
-     const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-     const combined     = new Float32Array(totalSamples);
-     let offset         = 0;
-     for (const seg of pendingVADChunks) {
-       combined.set(seg, offset);
-       offset += seg.length;
-     }
-     const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-     enqueueTranscription(wavBlob, chunkNumber++);
-     pendingVADChunks = [];
-   }
-    // PAUSE: stop VAD and flush any buffered speech
+    // Do NOT set recordingPaused yet — submitUserSpeechOnPause fires
+    // a final onSpeechEnd inside sileroVAD.pause() with the tail audio.
+    // onSpeechEnd guards on recordingPaused, so flipping the flag
+    // before pause() silently drops the tail segment.
+    recordingActive = false;
+    clearTimeout(chunkTimeoutId);
+
+    // PAUSE: stop VAD (fires final onSpeechEnd with tail audio)
     updateStatusMessage("Pausing recording…", "orange");
     try {
       await sileroVAD.pause();
@@ -813,20 +788,33 @@ pauseResumeButton.addEventListener("click", async () => {
     } catch (err) {
       logError("Error pausing Silero VAD:", err);
     }
+    // Let the final onSpeechEnd land before we set the guard flag.
+    await Promise.resolve();
+    recordingPaused = true;
+
     // Stop the mic Silero opened + kill any leftover media tracks
     if (sileroVAD.stream) {
       sileroVAD.stream.getTracks().forEach(t => t.stop());
     }
     stopMicrophone();
-    recordingPaused = true;
-    
+
+    // Flush everything including the tail segment captured above.
+    chunkNumber = flushPendingVadSegments({
+      segments: pendingVADChunks,
+      sampleRate: 16000,
+      floatTo16BitPCM,
+      encodeWAV,
+      enqueueTranscription,
+      chunkNumber,
+    });
+
     pauseResumeButton.innerText = "Resume Recording";
     setStopPauseDisabled(false);
     setAbortButtonDisabled(true);
     updateStatusMessage("Recording paused", "orange");
     logInfo("Recording paused; buffered speech flushed");
   }
-});
+}, { signal: uiSignal });
 
 
 
@@ -890,7 +878,7 @@ if (abortButton) {
     setRecordingControlsIdle();
     updateStatusMessage("Recording aborted.", "orange");
     logInfo("Recording aborted by user; discarded pending transcription work.");
-  });
+  }, { signal: uiSignal });
 }
 
 stopButton.addEventListener("click", async () => {
@@ -932,18 +920,14 @@ stopButton.addEventListener("click", async () => {
     stopMicrophone();
 
       // — FLUSH any pending VAD segments before stopping —
-    if (pendingVADChunks.length > 0) {
-      const totalSamples = pendingVADChunks.reduce((sum, seg) => sum + seg.length, 0);
-      const combined = new Float32Array(totalSamples);
-      let offset = 0;
-      for (const seg of pendingVADChunks) {
-        combined.set(seg, offset);
-        offset += seg.length;
-      }
-      const wavBlob = encodeWAV(floatTo16BitPCM(combined), 16000, 1);
-      enqueueTranscription(wavBlob, chunkNumber++);
-      pendingVADChunks = [];
-    }
+    chunkNumber = flushPendingVadSegments({
+      segments: pendingVADChunks,
+      sampleRate: 16000,
+      floatTo16BitPCM,
+      encodeWAV,
+      enqueueTranscription,
+      chunkNumber,
+    });
     // Kick the queue worker (do NOT await; Start should be available immediately)
     processTranscriptionQueue();
    // ─── NOW compute how many chunks we’re actually waiting on ───
@@ -1058,16 +1042,13 @@ stopButton.addEventListener("click", async () => {
       }
     }
   }
-});
+}, { signal: uiSignal });
 
 }
 
 export { initRecording };
 
-// As soon as the page loads, ensure we never auto-open the mic:
-window.addEventListener("load", () => {
-  stopMicrophone();
-  if (sileroVAD && typeof sileroVAD.pause === "function") {
-    sileroVAD.pause().catch(() => {});
-  }
+installSafeRecordingLoadStop({
+  stopMicrophone,
+  getSileroVAD: () => sileroVAD,
 });

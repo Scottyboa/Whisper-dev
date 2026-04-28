@@ -19,6 +19,7 @@ import {
   listVertexModelOptions,
   normalizeTranscribeProvider,
   resolveEffectiveNoteProvider,
+  resolveNoteInitExportName as resolveNoteInitExportNameFromRegistry,
   resolveNoteModulePath as resolveNoteModulePathFromRegistry,
   resolveTranscribeModulePath as resolveTranscribeModulePathFromRegistry,
 } from './core/provider-registry.js';
@@ -617,6 +618,21 @@ document.addEventListener('DOMContentLoaded', () => {
     return !!getApp().autoCopyExtensionAvailable;
   }
 
+  // Extension v1.2.0+ advertises a "focus-tab" capability in its
+  // presence announcement. Older extension versions do not, so this
+  // flag stays false and the mini panel hides the jump-to-tab button.
+  function setAutoCopyExtensionFocusTabSupported(supported) {
+    const app = getApp();
+    const next = !!supported;
+    if (app.autoCopyExtensionFocusTabSupported === next) return;
+    app.autoCopyExtensionFocusTabSupported = next;
+    emitAppStateChanged('auto-copy-extension-focus-tab-availability', { supported: next });
+  }
+
+  function isAutoCopyExtensionFocusTabSupported() {
+    return !!getApp().autoCopyExtensionFocusTabSupported;
+  }
+
   function pingAutoCopyExtension() {
     return new Promise((resolve) => {
       let settled = false;
@@ -627,6 +643,10 @@ document.addEventListener('DOMContentLoaded', () => {
         window.clearTimeout(timeoutId);
         window.removeEventListener('message', onMessage);
         setAutoCopyExtensionAvailable(available);
+        if (!available) {
+          // No extension at all -> definitely no focus-tab support.
+          setAutoCopyExtensionFocusTabSupported(false);
+        }
         resolve(available);
       };
 
@@ -634,6 +654,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.source !== window) return;
         const data = event?.data || {};
         if (data.type !== AUTO_COPY_EXTENSION_SIGNAL) return;
+
+        const caps = Array.isArray(data?.capabilities) ? data.capabilities : [];
+        const supportsFocusTab = caps
+          .map((c) => String(c || '').trim().toLowerCase())
+          .includes('focus-tab');
+        setAutoCopyExtensionFocusTabSupported(supportsFocusTab);
+
         finish(true);
       };
 
@@ -1058,6 +1085,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const app = getApp();
     if (app.__autoCopyExtensionCopyBridgeBound) return;
     app.__autoCopyExtensionCopyBridgeBound = true;
+
+    // Permanent listener for unsolicited presence announcements. The
+    // extension's content script announces itself once on page load
+    // (before any ping). Without this listener, capability info from
+    // that early announcement would be missed and the focus-tab button
+    // wouldn't appear until the next ping cycle. Backward-compatible:
+    // older extension versions don't include `capabilities`, so the
+    // focus-tab flag stays false for them.
+    window.addEventListener('message', (event) => {
+      if (event.source !== window) return;
+      const data = event?.data || {};
+      if (data.type !== AUTO_COPY_EXTENSION_SIGNAL) return;
+
+      setAutoCopyExtensionAvailable(true);
+
+      const caps = Array.isArray(data?.capabilities) ? data.capabilities : [];
+      const supportsFocusTab = caps
+        .map((c) => String(c || '').trim().toLowerCase())
+        .includes('focus-tab');
+      setAutoCopyExtensionFocusTabSupported(supportsFocusTab);
+    });
 
     window.addEventListener('message', (event) => {
       if (event.source !== window) return;
@@ -1673,6 +1721,10 @@ document.addEventListener('DOMContentLoaded', () => {
     return resolveNoteModulePathFromRegistry(choice || getSelectedEffectiveNoteProvider());
   }
 
+  function resolveNoteInitExportName(choice) {
+    return resolveNoteInitExportNameFromRegistry(choice || getSelectedEffectiveNoteProvider());
+  }
+
   async function loadCachedModule(path) {
     const app = getApp();
     if (!app.cachedModules[path]) {
@@ -1696,13 +1748,17 @@ document.addEventListener('DOMContentLoaded', () => {
     '__recordingUIAbort_lemonfox',
     '__recordingUIAbort_voxtral',
     '__recordingUIAbort_deepgram',
-    '__sonioxUIAbort_soniox',
-    '__sonioxUIAbort_soniox_dia',
+    // The merged Soniox module (js/soniox.js) handles all three modes
+    // (async-plain, async-diarized, realtime) and registers a single
+    // window-level UI abort controller.
+    '__sonioxUIAbort',
   ];
 
   const RECORDING_VAD_TEARDOWN_KEYS = [
-    '__sonioxTeardownVAD_soniox',
-    '__sonioxTeardownVAD_soniox_dia',
+    // Single teardown hook for all Soniox modes — closes the WebSocket,
+    // releases the mic, and tears down the Silero VAD if any of those
+    // are live, regardless of which Soniox mode was active.
+    '__sonioxTeardown',
   ];
 
   function teardownRecordingProviderRuntime(reason = 'provider-switch') {
@@ -1740,21 +1796,40 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function initNoteProvider(choice) {
-    const path = resolveNoteModulePath(choice || getSelectedEffectiveNoteProvider());
+    const effectiveChoice = choice || getSelectedEffectiveNoteProvider();
+    const path = resolveNoteModulePath(effectiveChoice);
+    const initExportName = resolveNoteInitExportName(effectiveChoice);
+
     const fallbackProvider = DEFAULTS.openaiModel;
     const fallbackPath = resolveNoteModulePath(fallbackProvider);
+    const fallbackInitExportName = resolveNoteInitExportName(fallbackProvider);
+
+    // Prefer the registry-specified named export (e.g. 'initGpt5Streaming'
+    // on the consolidated noteGeneration_openai.js). Fall back to the
+    // legacy 'initNoteGeneration' export for modules that don't declare
+    // initExportName (Gemini, Lemonfox, Mistral, AWS Bedrock).
+    const callInit = (mod, name) => {
+      if (mod && typeof mod[name] === 'function') {
+        mod[name]();
+        return true;
+      }
+      if (mod && typeof mod.initNoteGeneration === 'function') {
+        mod.initNoteGeneration();
+        return true;
+      }
+      return false;
+    };
 
     try {
       const mod = await loadCachedModule(path);
-      if (mod && typeof mod.initNoteGeneration === 'function') {
-        mod.initNoteGeneration();
+      if (callInit(mod, initExportName)) {
         emitAppStateChanged('note-provider-initialized', {
-          provider: choice || getSelectedEffectiveNoteProvider(),
+          provider: effectiveChoice,
         });
       } else {
-        console.warn(`Module ${path} missing initNoteGeneration(); falling back to GPT-5.1`);
+        console.warn(`Module ${path} missing ${initExportName}() / initNoteGeneration(); falling back to GPT-5.1`);
         const fallback = await loadCachedModule(fallbackPath);
-        fallback.initNoteGeneration?.();
+        callInit(fallback, fallbackInitExportName);
         emitAppStateChanged('note-provider-fallback-initialized', {
           provider: fallbackProvider,
         });
@@ -1762,7 +1837,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {
       console.warn(`Failed to load ${path}; falling back to GPT-5.1`, e);
       const fallback = await loadCachedModule(fallbackPath);
-      fallback.initNoteGeneration?.();
+      callInit(fallback, fallbackInitExportName);
       emitAppStateChanged('note-provider-fallback-initialized', {
         provider: fallbackProvider,
       });
@@ -2207,6 +2282,7 @@ document.addEventListener('DOMContentLoaded', () => {
       autoGenerateEnabled: !!getAutoGenerateEnabled(),
       autoCopyMode: getAutoCopyMode(),
       autoCopyExtensionAvailable: isAutoCopyExtensionAvailable(),
+      autoCopyExtensionFocusTabSupported: isAutoCopyExtensionFocusTabSupported(),
       miniPanelStatusPhase: effectiveMiniPanelStatusPhase,
       miniPanelCopiedState: String(app.miniPanelCopiedState || ''),
       miniPanelCopiedAt: Number(app.miniPanelCopiedAt || 0),
@@ -2669,6 +2745,39 @@ document.addEventListener('DOMContentLoaded', () => {
     return true;
   };
 
+  // Programmatic setter for the Soniox speaker-labels dropdown. Used by
+  // the Mini panel mirror so that the change runs through the exact same
+  // code path as a manual click on the main page: dispatch a 'change'
+  // event on the underlying <select>, which the provider-persistence
+  // bridge already handles (writes session storage and calls
+  // switchTranscribeProvider('soniox') to apply the change live).
+  //
+  // Returns false if the change is suppressed because transcription is
+  // currently busy — same rule as on the main page (the select gets
+  // disabled by initProviderLockWhileRecording while recording).
+  app.setSonioxSpeakerLabels = function setSonioxSpeakerLabels(next) {
+    const normalizedNext = String(next || '').trim().toLowerCase() === 'on' ? 'on' : 'off';
+
+    if (typeof app.isTranscribeBusy === 'function' && app.isTranscribeBusy()) {
+      console.warn('[mini-panel] setSonioxSpeakerLabels ignored while transcription is busy.');
+      return false;
+    }
+
+    const el = document.getElementById('sonioxSpeakerLabels');
+    if (el && el.value !== normalizedNext) {
+      el.value = normalizedNext;
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
+    }
+
+    // Already at target value — no work to do, but persist defensively.
+    writeSession('soniox_speaker_labels', normalizedNext);
+    emitAppStateChanged('soniox-speaker-labels-set-programmatically', {
+      sonioxSpeakerLabels: normalizedNext,
+    });
+    return true;
+  };
+
   app.setOpenAiModel = function setOpenAiModel(next) {
     const normalizedNext = String(next || '').trim().toLowerCase();
     if (!normalizedNext) return false;
@@ -2985,4 +3094,5 @@ document.addEventListener('DOMContentLoaded', () => {
   void initNoteProvider(getSelectedEffectiveNoteProvider());
   void initMiniControllerFeature();
 });
+
 

@@ -1363,6 +1363,30 @@ function ensureHubChannel() {
       callLocalAppAction(actionName, ...args);
       publishLocalHubSnapshot(`command:${actionName}`);
     }
+
+    if (type === 'mini-hub-focus-tab') {
+      const targetTabId = String(data?.targetTabId || '').trim();
+      if (!targetTabId || targetTabId !== getOrCreateLocalTabId()) return;
+
+      // Ask the Auto-Copy extension to bring this tab to the
+      // foreground. The extension's content script listens for this
+      // postMessage on the window and forwards it to its service
+      // worker, which uses chrome.tabs.update + chrome.windows.update.
+      // If the extension isn't installed, this is a no-op.
+      try {
+        window.postMessage(
+          { type: 'AUTO_COPY_EXTENSION_FOCUS_TAB', source: 'mini-panel' },
+          window.location.origin
+        );
+      } catch (_) {}
+
+      // Best-effort fallback for the case where the extension is not
+      // installed: a self window.focus() at least selects this tab
+      // inside Chrome if Chrome is already in the foreground.
+      try {
+        window.focus();
+      } catch (_) {}
+    }
   });
 
   return hubChannel;
@@ -1502,6 +1526,37 @@ function syncMiniSttSummary(state) {
   if (!el) return;
   el.hidden = !text;
   el.textContent = text;
+
+  syncMiniSonioxSpeakerLabels(state);
+}
+
+// Mirror of the main-page Soniox speaker-labels selector. Visible only
+// when the active transcribe provider for the selected hub tab is
+// 'soniox', and disabled while that tab is transcribing — same rule
+// as initProviderLockWhileRecording on the main page.
+function syncMiniSonioxSpeakerLabels(state) {
+  const container = $('miniSonioxSpeakerLabelsContainer');
+  const select = $('miniSonioxSpeakerLabels');
+  if (!container || !select) return;
+
+  const provider = normalizeLower(state?.transcribeProvider, DEFAULTS.transcribeProvider);
+  const isSoniox = provider === 'soniox';
+  container.hidden = !isSoniox;
+
+  if (!isSoniox) return;
+
+  const speakerLabels = normalizeLower(
+    state?.sonioxSpeakerLabels,
+    DEFAULTS.sonioxSpeakerLabels
+  );
+  // Avoid clobbering an in-flight user selection that hasn't dispatched yet.
+  if (select.value !== speakerLabels) {
+    select.value = speakerLabels;
+  }
+
+  // Mirror the main-page rule: disabled while transcription is busy.
+  const busy = !!state?.transcribeBusy;
+  select.disabled = busy;
 }
 
 function syncMiniNoteProviderControls(state, snapshot) {
@@ -2063,6 +2118,8 @@ function updateMiniPanelUi() {
   setDisabled('miniGenerateNoteButton', !state.hasTranscript || !!state.noteBusy);
   setDisabled('miniAbortButton', !state.canAbort);
 
+  refreshFocusTabButtonVisibility();
+
   setText('miniStartButton', tMini('start'));
   setText('miniStopButton', tMini('stop'));
   setText('miniPauseButton', pauseResumeLabel);
@@ -2177,6 +2234,30 @@ function dispatchHubAction(actionName, ...args) {
   });
 
   requestUiRefresh();
+  return true;
+}
+
+// Bring the Chrome tab currently selected in the mini panel to the
+// foreground. Implementation lives in main.js (which then asks the
+// Auto-Copy extension to perform the actual chrome.tabs/windows
+// switch). If the local tab is the selected one, calling
+// window.focus() locally is enough.
+function dispatchFocusSelectedTab() {
+  const targetTabId = ensureSelectedHubTab();
+  if (!targetTabId) return false;
+
+  if (targetTabId === getOrCreateLocalTabId()) {
+    try {
+      window.focus();
+    } catch (_) {}
+    return true;
+  }
+
+  postHubMessage({
+    type: 'mini-hub-focus-tab',
+    targetTabId,
+    at: Date.now(),
+  });
   return true;
 }
 
@@ -2316,6 +2397,7 @@ function bindMiniPanelEvents() {
   const copyNoteButton = $('miniCopyNoteButton');
   const abortButton = $('miniAbortButton');
   const closeButton = $('miniCloseButton');
+  const focusTabButton = $('miniFocusTabButton');
   const promptSelect = $('miniPromptSelect');
   const tabSelect = $('miniTabSelect');
   const tabPickerTrigger = $('miniTabPickerTrigger');
@@ -2329,6 +2411,7 @@ function bindMiniPanelEvents() {
   const miniGeminiModelSelect = $('miniGeminiModelSelect');
   const miniVertexModelSelect = $('miniVertexModelSelect');
   const miniBedrockModelSelect = $('miniBedrockModelSelect');
+  const miniSonioxSpeakerLabelsSelect = $('miniSonioxSpeakerLabels');
 
   if (startButton) {
     startButton.addEventListener('click', () => {
@@ -2460,6 +2543,29 @@ function bindMiniPanelEvents() {
     });
   }
 
+  if (miniSonioxSpeakerLabelsSelect) {
+    miniSonioxSpeakerLabelsSelect.addEventListener('change', () => {
+      const next = String(miniSonioxSpeakerLabelsSelect.value || 'off').trim().toLowerCase() === 'on'
+        ? 'on'
+        : 'off';
+
+      dispatchHubAction('setSonioxSpeakerLabels', next);
+
+      // Optimistic local update so the "Soniox (dia)" / "Soniox" label
+      // and the selector value both reflect the new choice immediately,
+      // before the heartbeat round-trip from the target tab arrives.
+      updateSelectedHubSnapshot((prev) => ({
+        ...prev,
+        state: {
+          ...(prev.state || {}),
+          sonioxSpeakerLabels: next,
+        },
+      }));
+
+      requestUiRefresh();
+    });
+  }
+
   if (usePromptToggle) {
     usePromptToggle.addEventListener('change', () => {
       dispatchHubAction('setUsePromptEnabled', !!usePromptToggle.checked);
@@ -2555,6 +2661,38 @@ function bindMiniPanelEvents() {
       } catch (_) {}
     });
   }
+
+  if (focusTabButton) {
+    focusTabButton.addEventListener('click', () => {
+      dispatchFocusSelectedTab();
+    });
+
+    // Show the button only when the Auto-Copy extension is present
+    // on at least one open tab. The presence flag is maintained by
+    // main.js and re-broadcast with each hub heartbeat under
+    // snapshot.autoCopyExtension.focusTabSupported.
+    refreshFocusTabButtonVisibility();
+  }
+}
+
+function refreshFocusTabButtonVisibility() {
+  const btn = $('miniFocusTabButton');
+  if (!btn) return;
+
+  const supported = isFocusTabSupportedByAnyTab();
+  btn.hidden = !supported;
+
+  const selectedTabId = ensureSelectedHubTab();
+  btn.disabled = !supported || !selectedTabId;
+}
+
+function isFocusTabSupportedByAnyTab() {
+  try {
+    for (const snap of hubTabs.values()) {
+      if (snap?.state?.autoCopyExtensionFocusTabSupported === true) return true;
+    }
+  } catch (_) {}
+  return false;
 }
 
 function installMiniPanelAutoScale(targetWindow) {
@@ -2843,28 +2981,66 @@ function renderMiniPanelDocument(targetWindow) {
       line-height: 1;
     }
 
+    .top-right {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-end;
+      flex: 0 0 auto;
+    }
+
+    .focus-btn {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      width: 28px;
+      height: 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      line-height: 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .focus-btn:hover:not(:disabled) {
+      color: var(--text);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .focus-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
     .status-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(74px, 1fr);
+      grid-template-columns: auto minmax(48px, 1fr) auto;
       align-items: center;
-      gap: 8px;
+      gap: 5px;
       min-height: 24px;
       min-width: 0;
       margin-bottom: 1px;
+      overflow: hidden;
     }
 
     .status-slot {
       min-width: 0;
       display: flex;
       align-items: center;
+      overflow: hidden;
     }
 
     .status-slot--left {
       justify-content: flex-start;
+      max-width: 190px;
     }
 
     .status-slot--center {
-      justify-content: center;
+      justify-content: flex-end;
+      gap: 4px;
     }
 
     .status-slot--right {
@@ -2898,6 +3074,8 @@ function renderMiniPanelDocument(targetWindow) {
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      min-width: 0;
+      max-width: 100%;
       min-height: 22px;
       padding: 0 9px;
       border-radius: 999px;
@@ -2908,6 +3086,8 @@ function renderMiniPanelDocument(targetWindow) {
       background: rgba(255,255,255,0.06);
       color: var(--text);
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .badge[data-tone="idle"] {
@@ -2954,7 +3134,7 @@ function renderMiniPanelDocument(targetWindow) {
       transition: opacity 0.18s ease;
       white-space: nowrap;
       flex: 0 0 auto;
-      min-width: 74px;
+      min-width: max-content;
       text-align: right;
       justify-self: end;
     }
@@ -2983,8 +3163,52 @@ function renderMiniPanelDocument(targetWindow) {
       text-overflow: ellipsis;
       min-width: 0;
       max-width: 100%;
-      flex: 0 1 auto;
+      flex: 0 0 auto;
       text-align: center;
+    }
+
+    .mini-speaker-labels {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 0 1 auto;
+      font-size: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+      min-width: 0;
+      max-width: 118px;
+      overflow: hidden;
+    }
+
+    .mini-speaker-labels-label {
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .mini-speaker-labels-select {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 1px 4px;
+      cursor: pointer;
+      line-height: 1.2;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      padding-right: 4px;
+    }
+
+    .mini-speaker-labels-select:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .mini-speaker-labels-select option {
+      color: var(--text);
+      background: var(--panel-bg, #1a1a1a);
     }
 
     .controls-wrap {
@@ -3397,7 +3621,10 @@ function renderMiniPanelDocument(targetWindow) {
             </div>
           </div>
         </div>
-        <button id="miniCloseButton" class="close-btn" type="button" aria-label="Close mini panel">×</button>
+        <div class="top-right">
+          <button id="miniCloseButton" class="close-btn" type="button" aria-label="Close mini panel">×</button>
+          <button id="miniFocusTabButton" class="focus-btn" type="button" aria-label="Jump to selected tab" title="Jump to selected tab" hidden>↗</button>
+        </div>
       </div>
 
       <div class="status-row">
@@ -3406,6 +3633,13 @@ function renderMiniPanelDocument(targetWindow) {
         </div>
         <div class="status-slot status-slot--center">
           <div id="miniSttSummary" class="stt-summary" hidden>Soniox</div>
+          <div id="miniSonioxSpeakerLabelsContainer" class="mini-speaker-labels" hidden>
+            <span class="mini-speaker-labels-label">Speaker labels:</span>
+            <select id="miniSonioxSpeakerLabels" class="mini-speaker-labels-select" aria-label="Soniox speaker labels">
+              <option value="off">OFF</option>
+              <option value="on">ON</option>
+            </select>
+          </div>
         </div>
         <div class="status-slot status-slot--right">
           <div id="miniCopiedIndicator" class="copied" data-show="0" hidden>Copied!</div>
@@ -3895,4 +4129,5 @@ function bootMiniController() {
 }
 
 bootMiniController();
+
 

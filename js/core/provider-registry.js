@@ -14,7 +14,7 @@ export const DEFAULTS = {
   sonioxSpeakerLabels: 'off',
   noteProvider: 'aws-bedrock',
   openaiModel: 'gpt5',
-  openaiReasoning: 'none',
+  openaiReasoning: 'low',
   noteMode: 'streaming',
   geminiModel: 'gemini-3-pro-preview',
   geminiReasoning: 'high',
@@ -34,8 +34,22 @@ const TRANSCRIBE_PROVIDER_REGISTRY = {
     id: 'soniox',
     label: 'Soniox',
     shortLabel: 'Soniox',
-    modulePath: './SONIOX_UPDATE.js',
-    diarizedModulePath: './SONIOX_UPDATE_dia.js',
+    // Both async-plain and async-diarized live in the merged module; it
+    // detects the speaker-labels setting at initRecording() time.
+    modulePath: './soniox.js',
+    activeApiKeyStorageKey: 'soniox_api_key',
+  },
+  soniox_rt: {
+    id: 'soniox_rt',
+    // Tagline displayed in dropdowns. The "(real-time)" suffix is intentional:
+    // it's how the user can distinguish this entry from the plain "Soniox"
+    // (async/batch) entry — same family, different transport.
+    label: 'Soniox (real-time)',
+    shortLabel: 'Soniox RT',
+    // Same merged module — the realtime branch is selected when the
+    // transcribe_provider session key is 'soniox_rt'.
+    modulePath: './soniox.js',
+    // Reuse the same API key as plain Soniox so the user only enters it once.
     activeApiKeyStorageKey: 'soniox_api_key',
   },
   lemonfox: {
@@ -68,7 +82,8 @@ const NOTE_PROVIDER_REGISTRY = {
     uiProvider: 'openai',
     openaiModel: 'gpt5',
     mode: 'streaming',
-    modulePath: './notegeneration%20gpt-5.js',
+    modulePath: './noteGeneration_openai.js',
+    initExportName: 'initGpt5Streaming',
   },
   'gpt5-ns': {
     id: 'gpt5-ns',
@@ -76,7 +91,8 @@ const NOTE_PROVIDER_REGISTRY = {
     uiProvider: 'openai',
     openaiModel: 'gpt5',
     mode: 'non-streaming',
-    modulePath: './noteGeneration_gpt5_NS.js',
+    modulePath: './noteGeneration_openai.js',
+    initExportName: 'initGpt5NonStreaming',
   },
   gpt52: {
     id: 'gpt52',
@@ -84,7 +100,8 @@ const NOTE_PROVIDER_REGISTRY = {
     uiProvider: 'openai',
     openaiModel: 'gpt52',
     mode: 'streaming',
-    modulePath: './noteGeneration_gpt52.js',
+    modulePath: './noteGeneration_openai.js',
+    initExportName: 'initGpt52Streaming',
   },
   'gpt52-ns': {
     id: 'gpt52-ns',
@@ -92,7 +109,8 @@ const NOTE_PROVIDER_REGISTRY = {
     uiProvider: 'openai',
     openaiModel: 'gpt52',
     mode: 'non-streaming',
-    modulePath: './noteGeneration_gpt52_NS.js',
+    modulePath: './noteGeneration_openai.js',
+    initExportName: 'initGpt52NonStreaming',
   },
   gpt54: {
     id: 'gpt54',
@@ -100,7 +118,26 @@ const NOTE_PROVIDER_REGISTRY = {
     uiProvider: 'openai',
     openaiModel: 'gpt54',
     mode: DEFAULTS.noteMode,
-    modulePath: './noteGeneration_gpt54.js',
+    modulePath: './noteGeneration_openai.js',
+    initExportName: 'initGpt54',
+  },
+  gpt55: {
+    id: 'gpt55',
+    label: 'GPT-5.5',
+    uiProvider: 'openai',
+    openaiModel: 'gpt55',
+    mode: 'streaming',
+    modulePath: './noteGeneration_openai.js',
+    initExportName: 'initGpt55Streaming',
+  },
+  'gpt55-ns': {
+    id: 'gpt55-ns',
+    label: 'GPT-5.5 (non-streaming)',
+    uiProvider: 'openai',
+    openaiModel: 'gpt55',
+    mode: 'non-streaming',
+    modulePath: './noteGeneration_openai.js',
+    initExportName: 'initGpt55NonStreaming',
   },
   lemonfox: {
     id: 'lemonfox',
@@ -147,6 +184,7 @@ const OPENAI_NOTE_MODEL_OPTIONS = [
   { value: 'gpt5', label: 'GPT-5.1' },
   { value: 'gpt52', label: 'GPT-5.2' },
   { value: 'gpt54', label: 'GPT-5.4' },
+  { value: 'gpt55', label: 'GPT-5.5' },
 ];
 
 const NOTE_MODE_OPTIONS = [
@@ -276,11 +314,15 @@ export function getTranscribeProviderConfig(provider, options = {}) {
   const normalized = normalizeTranscribeProvider(provider);
   const config = TRANSCRIBE_PROVIDER_REGISTRY[normalized] || TRANSCRIBE_PROVIDER_REGISTRY[DEFAULTS.transcribeProvider];
 
+  // The plain "soniox" provider serves both the async-plain and
+  // async-diarized modes from the same module file. We still surface the
+  // resolved speakerLabels in the returned config so callers (e.g. the
+  // mini panel label "Soniox" vs "Soniox (dia)") can distinguish them
+  // without doing their own session lookup.
   if (normalized === 'soniox') {
     const speakerLabels = String(options.sonioxSpeakerLabels || DEFAULTS.sonioxSpeakerLabels).toLowerCase();
     return {
       ...config,
-      modulePath: speakerLabels === 'on' ? config.diarizedModulePath : config.modulePath,
       sonioxSpeakerLabels: speakerLabels,
     };
   }
@@ -330,7 +372,7 @@ export function resolveEffectiveNoteProvider({ provider, openaiModel, noteMode }
   const model = String(openaiModel || DEFAULTS.openaiModel).trim().toLowerCase();
   const mode = String(noteMode || DEFAULTS.noteMode).trim().toLowerCase();
 
-  if (model === 'gpt5' || model === 'gpt52') {
+  if (model === 'gpt5' || model === 'gpt52' || model === 'gpt55') {
     return mode === 'non-streaming' ? `${model}-ns` : model;
   }
 
@@ -403,6 +445,16 @@ export function getNoteProviderConfig(effectiveProvider) {
 
 export function resolveNoteModulePath(effectiveProvider) {
   return getNoteProviderConfig(effectiveProvider).modulePath;
+}
+
+// Returns the name of the named export to call on the loaded module
+// (e.g. 'initGpt5Streaming'). Falls back to 'initNoteGeneration' for
+// providers that don't specify an explicit export, so non-OpenAI
+// modules (Gemini, Lemonfox, Mistral, AWS Bedrock) keep their existing
+// loader behaviour.
+export function resolveNoteInitExportName(effectiveProvider) {
+  const config = getNoteProviderConfig(effectiveProvider);
+  return String(config.initExportName || 'initNoteGeneration');
 }
 
 export function getNoteProviderLogLabel({
@@ -484,6 +536,9 @@ export function getDefaultModelIdForEffectiveNoteProvider({
       return 'gpt-5.2';
     case 'gpt54':
       return 'gpt-5.4';
+    case 'gpt55':
+    case 'gpt55-ns':
+      return 'gpt-5.5';
     default:
       return String(openaiModel || '').trim() || null;
   }
@@ -494,7 +549,7 @@ export function getNoteUiVisibility({ provider, openaiModel } = {}) {
   const model = String(openaiModel || DEFAULTS.openaiModel).trim().toLowerCase();
 
   const isOpenAi = uiProvider === 'openai';
-  const isGpt5x = isOpenAi && (model === 'gpt5' || model === 'gpt52' || model === 'gpt54');
+  const isGpt5x = isOpenAi && (model === 'gpt5' || model === 'gpt52' || model === 'gpt54' || model === 'gpt55');
 
   return {
     showOpenAi: isOpenAi,
@@ -506,3 +561,4 @@ export function getNoteUiVisibility({ provider, openaiModel } = {}) {
     showBedrock: uiProvider === 'aws-bedrock',
   };
 }
+

@@ -6,8 +6,10 @@ import {
   isGeminiApiEffectiveNoteProvider,
   isMistralEffectiveNoteProvider,
   isOpenAiEffectiveNoteProvider,
+  isRequestyEffectiveNoteProvider,
   isVertexEffectiveNoteProvider,
   normalizeNoteEffectiveProvider,
+  resolveRequestyEffectiveProvider,
 } from '../core/provider-registry.js';
 
 // Extracted from transcribe.html inline script.
@@ -95,6 +97,25 @@ import {
       return "gpt5";
     }
 
+    // The Requesty note module reports the UI provider ("requesty");
+    // resolve it to the effective provider key using the model id so it
+    // does not fall back to DEFAULTS.noteProvider.
+    if (rawProvider === "requesty") {
+      const rawModel = String(modelId || "").trim().toLowerCase();
+      // Prefer the model id reported in the usage payload; fall back to the
+      // live snapshot / session value. resolveRequestyEffectiveProvider maps
+      // the model to its effective provider (requesty-claude / requesty-sonnet
+      // / requesty-gpt55) directly from the registry, so new models resolve
+      // without touching this branch.
+      const snapshot = getControllerNoteSnapshot();
+      const requestyModel =
+        rawModel ||
+        String(
+          snapshot.requestyModel || readSession("requesty_model", "") || DEFAULTS.requestyModel
+        ).trim().toLowerCase();
+      return resolveRequestyEffectiveProvider(requestyModel);
+    }
+
     return normalizeNoteEffectiveProvider(rawProvider);
   }
 
@@ -151,6 +172,20 @@ import {
     "mistral-large-latest": { input: 0.5, output: 1.5 },
   };
 
+  // Requesty (EU router) — underlying model list prices, USD per 1M tokens.
+  // claude-opus-4-8: bedrock/claude-opus-4-8@eu-* rates
+  // claude-sonnet-5: vertex/claude-sonnet-5@eu rates (EU regional pricing)
+  // gpt-5.5:         azure/gpt-5.5@swedencentral rates
+  const REQUESTY_USD_PER_MTOK = {
+    "claude-opus-4-8": { input: 5.5, output: 27.5 },
+    "claude-sonnet-5": { input: 2.2, output: 11.0 },
+    "gpt-5.5": { input: 5.0, output: 30.0 },
+  };
+
+  // Requesty charges ~5% on top of the underlying model pricing. Applied
+  // ONLY to Requesty requests; token counting itself is unchanged.
+  const REQUESTY_COST_MULTIPLIER = 1.05;
+
   // Gemini API (AI Studio): USD per 1M billable tokens.
   const GEMINI_API_USD_PER_MTOK = {
     "gemini-3-pro-preview": {
@@ -168,11 +203,18 @@ import {
     },
   };
 
-  // Vertex AI: Gemini 2.5 Pro (USD per 1M tokens)
-  const GEMINI_25_PRO_VERTEX_USD_PER_MTOK = {
-    thresholdInputTokens: 200_000,
-    short: { input: 1.25, output: 10.0 },
-    long: { input: 2.5, output: 15.0 },
+  // Vertex AI: USD per 1M tokens, keyed by model id.
+  // Flash/Flash-Lite use flat rates; Pro uses 200K short/long tiers.
+  // NOTE: verify the 3.1 Flash-Lite rate against the live Vertex pricing page
+  // (public sources conflicted: $0.25/$1.50 at launch vs $0.30/$2.50 post-GA).
+  const VERTEX_USD_PER_MTOK = {
+    "gemini-2.5-pro": {
+      thresholdInputTokens: 200_000,
+      short: { input: 1.25, output: 10.0 },
+      long: { input: 2.5, output: 15.0 },
+    },
+    "gemini-3.5-flash": { rates: { input: 1.5, output: 9.0 } },
+    "gemini-3.1-flash-lite": { rates: { input: 0.3, output: 2.5 } },
   };
 
   function estimateUsdFromRates({ rates, inputTokens, outputTokens }) {
@@ -201,6 +243,22 @@ import {
         inputTokens: payload.inputTokens,
         outputTokens: payload.outputTokens,
       });
+    }
+
+    if (isRequestyEffectiveNoteProvider(pk)) {
+      const modelId = String(payload.modelId || "").trim().toLowerCase();
+      const rates = REQUESTY_USD_PER_MTOK[modelId];
+      if (!rates) return null;
+
+      const baseUsd = estimateUsdFromRates({
+        rates,
+        inputTokens: payload.inputTokens,
+        outputTokens: payload.outputTokens,
+      });
+      if (baseUsd == null) return null;
+
+      // Underlying model cost x 1.05 (Requesty markup).
+      return baseUsd * REQUESTY_COST_MULTIPLIER;
     }
 
     if (isMistralEffectiveNoteProvider(pk)) {
@@ -290,9 +348,25 @@ import {
 
       const billableInput = promptTokens + toolUsePrompt;
       const billableOutput = outTokens + thoughts;
+
+      const modelId = String(
+        payload.modelId || readSession("vertex_model", "") || DEFAULTS.vertexModel
+      ).trim().toLowerCase();
+      const pricing = VERTEX_USD_PER_MTOK[modelId];
+      if (!pricing) return null;
+
+      if (pricing.rates) {
+        return estimateUsdFromRates({
+          rates: pricing.rates,
+          inputTokens: billableInput,
+          outputTokens: billableOutput,
+        });
+      }
+
       const tier =
-        promptTokens > GEMINI_25_PRO_VERTEX_USD_PER_MTOK.thresholdInputTokens ? "long" : "short";
-      const rates = GEMINI_25_PRO_VERTEX_USD_PER_MTOK[tier];
+        promptTokens > Number(pricing.thresholdInputTokens || 0) ? "long" : "short";
+      const rates = pricing[tier];
+      if (!rates) return null;
 
       return estimateUsdFromRates({
         rates,
@@ -567,6 +641,7 @@ import {
       "geminiModel",
       "vertexModel",
       "bedrockModel",
+      "requestyModel",
     ].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.addEventListener("change", clear, true);
@@ -579,5 +654,6 @@ import {
     wireAutoClear();
   }
 })();
+
 
 

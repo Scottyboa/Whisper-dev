@@ -173,18 +173,20 @@ import {
   };
 
   // Requesty (EU router) — underlying model list prices, USD per 1M tokens.
-  // claude-opus-4-8: bedrock/claude-opus-4-8@eu-* rates
+  // claude-opus-5: bedrock/claude-opus-5@eu-north-1 rates
   // claude-sonnet-5: vertex/claude-sonnet-5@eu rates (EU regional pricing)
   // gpt-5.5:         azure/gpt-5.5@swedencentral rates
+  // gpt-5-nano:      azure/gpt-5-nano@swedencentral rates
   const REQUESTY_USD_PER_MTOK = {
-    "claude-opus-4-8": { input: 5.5, output: 27.5 },
+    "claude-opus-5": { input: 5.5, output: 27.5 },
     "claude-sonnet-5": { input: 2.2, output: 11.0 },
     "gpt-5.5": { input: 5.0, output: 30.0 },
+    "gpt-5-nano": { input: 0.05, output: 0.4 },
   };
 
-  // Requesty charges ~5% on top of the underlying model pricing. Applied
-  // ONLY to Requesty requests; token counting itself is unchanged.
-  const REQUESTY_COST_MULTIPLIER = 1.05;
+  // Requesty's ~5% premium is a one-time top-up fee applied when funding
+  // credits, NOT a per-request charge, so it is intentionally not applied to
+  // the per-generation cost estimates below (raw underlying rates are used).
 
   // Gemini API (AI Studio): USD per 1M billable tokens.
   const GEMINI_API_USD_PER_MTOK = {
@@ -257,8 +259,12 @@ import {
       });
       if (baseUsd == null) return null;
 
-      // Underlying model cost x 1.05 (Requesty markup).
-      return baseUsd * REQUESTY_COST_MULTIPLIER;
+      // Requesty balance is charged at the underlying model's list price at
+      // request time; the ~5% premium is a one-time top-up fee applied when
+      // credits are funded, not per request. So the per-generation estimate
+      // uses the raw underlying rates (like every other provider) to reflect
+      // the actual balance drawdown for this note.
+      return baseUsd;
     }
 
     if (isMistralEffectiveNoteProvider(pk)) {
@@ -530,15 +536,18 @@ import {
     if (el) el.textContent = "";
   };
 
-  app.setNoteUsageAndCost = function setNoteUsageAndCost(payloadOrArgs) {
+  // Computes the "Billable input … · Billable output … · Est cost …" line for
+  // a usage payload WITHOUT touching the primary #noteUsageCost element.
+  // Shared by setNoteUsageAndCost (primary generator) and the secondary note
+  // generator, so both use identical normalization, pricing, and formatting.
+  app.formatNoteUsageAndCost = function formatNoteUsageAndCost(payloadOrArgs) {
     let payload = payloadOrArgs;
 
     if (payload && typeof payload === "object" && "usage" in payload && !("inputTokens" in payload)) {
       payload = app.normalizeNoteUsage(payload);
     }
 
-    const el = costEl();
-    if (!el || !payload || typeof payload !== "object") return;
+    if (!payload || typeof payload !== "object") return "";
 
     try {
       const usd = estimateUsd(payload);
@@ -618,7 +627,17 @@ import {
       `Billable output: ${fmtTokens(billableOutputTokens)}${noteSuffix}`,
       `Est cost: ${payload.estimatedUsd == null ? "—" : fmtUsd(payload.estimatedUsd)}`,
     ];
-    el.textContent = parts.join("  ·  ");
+    return parts.join("  ·  ");
+  };
+
+  app.setNoteUsageAndCost = function setNoteUsageAndCost(payloadOrArgs) {
+    const el = costEl();
+    if (!el) return;
+
+    const text = app.formatNoteUsageAndCost(payloadOrArgs);
+    if (!text) return;
+
+    el.textContent = text;
   };
 
   function wireAutoClear() {

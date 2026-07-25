@@ -264,4 +264,37 @@ Der Brief soll professionell und formell formuliert sein. Du kannst den Text sti
 
 Diese Beispiele funktionieren gut, aber du kannst sie gern an deinen Dokumentationsstil, deine Fachrichtung oder Konsultationstypen anpassen oder ganz eigene Prompts erstellen.
 `,
+
+  // Sekundärer Notizgenerator
+  secondaryNote: {
+    showButton: "Sekundären Notizgenerator anzeigen",
+    hideButton: "Sekundären Notizgenerator ausblenden",
+    title: "Sekundärer Notizgenerator",
+    sourceLabel: "Quelltext",
+    sourcePlaceholder: "Quelltext hier einfügen oder eingeben...",
+    providerLabel: "Anbieter:",
+    modelLabel: "Modell:",
+    modeLabel: "Modus:",
+    reasoningLabel: "Reasoning-Aufwand:",
+    thinkingLabel: "Denkstufe:",
+    promptLabel: "Prompt:",
+    generateButton: "Notiz generieren",
+    abortButton: "Abbrechen",
+    copyButton: "Kopieren",
+    copiedButton: "Kopiert",
+    pushButton: "Einfügen",
+    clearOnGenerateLabel: "Zusatzinformationen beim Generieren leeren",
+    autoTransferLabel: "Ergebnis automatisch in Zusatzinformationen kopieren",
+    outputPlaceholder: "Die generierte Notiz erscheint hier...",
+    timerLabel: "Notizgenerierungs-Timer",
+    statusGenerating: "Wird generiert…",
+    statusCompleted: "Textgenerierung abgeschlossen!",
+    statusFailed: "Generierung fehlgeschlagen",
+    statusAborted: "Notizgenerierung abgebrochen.",
+    noSourceText: "Kein Quelltext",
+    noPromptSelected: "Kein Prompt ausgewählt",
+    noOutputToPush: "Noch keine Notiz zum Übertragen",
+    transferred: "Ergebnis wurde in die Zusatzinformationen kopiert."
+  },
 };
+

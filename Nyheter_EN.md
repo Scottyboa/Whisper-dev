@@ -1,3 +1,27 @@
+## 25 July, 2026
+
+### New secondary note-generation module
+
+The app now includes a dedicated module for secondary note generation. It can be used to summarize larger amounts of text, such as excerpts from a patient record. The summary can then be transferred to the supplementary information field and used as background when generating the final note.
+
+Processing large amounts of text can require many tokens. It may therefore be useful to use an inexpensive model, such as **GPT-5 Nano**, for the initial summary and then a more powerful model, such as **Claude Opus 5**, for the primary note generation.
+
+### New and updated Requesty models
+
+The Requesty provider, introduced in the 3 July update, has received the following changes:
+
+- **GPT-5 Nano** has been added as a new and highly affordable option.
+- **Claude Opus 4.8** has been replaced by **Claude Opus 5**, running through AWS Bedrock in Stockholm (`eu-north-1`).
+- **GPT-5.5** and **Claude Sonnet 5** remain available.
+
+Claude Opus 5 has the same token price as the previous Opus 4.8 model: **$5.50 per 1 million input tokens** and **$27.50 per 1 million output tokens**.
+
+All Requesty models in the app use EU-based model endpoints and Requesty's EU router. The properties described in the previous update—zero data retention, no use of data for model training, and processing within the EU—continue to apply.
+
+<a href="index.html#requesty-api-key" target="_blank" rel="noopener">**Click here for guidance on how to create a Requesty account, top up credits, and obtain an API key**</a> 
+
+---
+
 ## 3 July, 2026
 
 ### New Gemini models in Google Vertex: Gemini 3.5 Flash and Gemini 3.1 Flash-Lite

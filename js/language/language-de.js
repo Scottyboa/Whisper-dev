@@ -11,123 +11,160 @@ export const indexTranslations = {
   securityButton: "Sicherheit",
   aboutButton: "Über",
   adRevenueMessage: "Da diese Website kostenlos genutzt werden kann und ausschließlich auf Werbeeinnahmen angewiesen ist, stimmen Sie bitte personalisierter Werbung zu, um den Dienst zu unterstützen.",
-  securityModalHeading: "Datenschutz",
-securityModalText: 
-`<strong>Datenschutz und Datenverarbeitung</strong><br><br>
-Diese Web-App ist ein Werkzeug für Sprach-zu-Text und das Erstellen von Notizen. Als Gesundheits­fachkraft / Verantwortliche r für die Verarbeitung liegt es vollständig in deiner Verantwortung sicherzustellen, dass jede Nutzung mit der DSGVO, dem norwegischen Gesundheits­personalgesetz (Helsepersonelloven) und der Norm für Informationssicherheit übereinstimmt.<br><br>
+  // Accordion tab #1 (left): AI models
+  modelsModalHeading: "KI-Modelle",
+  modelsModalText: `
+<div>
+  <p><strong>Modellauswahl in Transcribe Notes</strong></p>
+  <p>Für <strong>Spracherkennung (STT)</strong> und <strong>Notizerstellung</strong> können getrennte Modelle gewählt werden. Ein genaues Transkript verbessert die Grundlage; ein leistungsfähiges Notizmodell kann Inhalt, Prioritäten und den gewählten Prompt besser umsetzen.</p>
 
-Du trägst die alleinige Verantwortung dafür, dass die Nutzung dieser App alle Anforderungen aus:<br>
-- DSGVO (GDPR)<br>
-- Helsepersonelloven<br>
-- Norm für Informationssicherheit<br><br>
+  <hr><br>
+  <p><strong>1) Spracherkennungsmodelle</strong></p>
+  <ul>
+    <li><strong>Soniox</strong> – Batch- oder Echtzeittranskription, optional mit Sprecherkennzeichnung</li>
+    <li><strong>OpenAI</strong> – gpt-4o-transcribe</li>
+    <li><strong>Mistral</strong> – Voxtral Mini Transcribe</li>
+  </ul>
+  <p><strong>Praktische STT-Rangfolge</strong></p>
+  <ol>
+    <li><strong>Soniox</strong> – empfohlen: sehr gute Qualität, Sprecherkennzeichnung und EU-Endpunkt.</li>
+    <li><strong>OpenAI gpt-4o-transcribe</strong> – starke Alternative, aber ohne den ebenso einfachen Weg zu EU-Datenresidenz in der Standardkonfiguration.</li>
+    <li><strong>Mistral Voxtral Mini</strong> – günstige europäische Alternative, wenn der Preis im Vordergrund steht.</li>
+  </ol>
+  <p>Für EU-Datenresidenz mit Soniox müssen der API-Schlüssel zu einem EU-Projekt gehören und in der App der EU-Endpunkt gewählt sein. Sprecherkennzeichnungen helfen dem Notizmodell, Gesprächspartner auseinanderzuhalten.</p>
 
-erfüllt. Das bedeutet unter anderem:<br>
-- Abschluss aller erforderlichen Vereinbarungen (DPA)<br>
-- Durchführung gründlicher Risikoanalysen (DPIA und TIA)<br><br>
+  <hr><br>
+  <p><strong>2) Anbieter und Modelle für die Notizerstellung</strong></p>
+  <p><strong>Requesty — für neue Nutzer empfohlen</strong></p>
+  <p>Requesty bietet über einen API-Schlüssel Modelle mehrerer Entwickler. Die App beschränkt die Auswahl bewusst auf bestimmte Bereitstellungen, die für Verarbeitung in der EU, keine Nutzung zum Modelltraining und geeignete Aufbewahrungseinstellungen vorgesehen sind.</p>
+  <ul>
+    <li>Claude Opus 5</li><li>Claude Sonnet 5</li><li>GPT-5.6 Sol</li><li>GPT-5.6 Terra</li><li>GPT-5.6 Luna</li><li>GPT-5.5</li><li>GPT-5 Nano</li><li>Gemini 3.7 Flash</li><li>Kimi K3</li>
+  </ul>
+  <p><strong>Weitere unterstützte Anbieter</strong></p>
+  <ul>
+    <li><strong>OpenAI</strong> – GPT-5.1, GPT-5.2, GPT-5.4 und GPT-5.5</li>
+    <li><strong>AWS Bedrock</strong> – Claude Haiku 4.5, Claude Sonnet 4.5/4.6 und Claude Opus 4.5/4.6/4.7</li>
+    <li><strong>Mistral</strong> – Mistral Large</li>
+  </ul>
+  <p>AWS Bedrock bleibt für bestehende AWS-Nutzer und selbst verwaltete AWS-Umgebungen verfügbar. Die Einrichtung ist deutlich komplizierter und neue Modelle können später verfügbar sein. Bedrock ist daher <strong>nicht der empfohlene Einstieg für neue Nutzer</strong>.</p>
 
-– Weitere Informationen hierzu findest du weiter unten in diesem Text.<br><br>
+  <p><strong>Praktischer Requesty-Modellleitfaden</strong></p>
+  <ul>
+    <li><strong>Maximale Qualität:</strong> Claude Opus 5 und GPT-5.6 Sol</li>
+    <li><strong>Starke Allround-Modelle:</strong> Claude Sonnet 5, GPT-5.6 Terra und GPT-5.5</li>
+    <li><strong>Schnell und preisorientiert:</strong> GPT-5.6 Luna und Gemini 3.7 Flash</li>
+    <li><strong>Günstigste Zusammenfassung/Vorverarbeitung:</strong> GPT-5 Nano</li>
+    <li><strong>Weitere Alternative:</strong> Kimi K3</li>
+  </ul>
+  <p>Bei langen Dokumenten kann zuerst ein günstiges Modell wie GPT-5 Nano eine kurze Zusammenfassung für Zusatzinformationen erstellen. Das stärkere Hauptmodell erhält dann nicht das vollständige Dokument, wodurch die Kosten deutlich sinken können.</p>
 
-Der Entwickler dieser Web-App übernimmt keinerlei Verantwortung für deine Nutzung oder eine fehlende Compliance.<br><br>
-<hr><br>
+  <hr><br>
+  <p><strong>Preis und Qualität</strong></p>
+  <p>Stärkere Modelle kosten meist mehr pro Token. Neben dem gewählten Modell zeigt die App den ungefähren USD-Preis je eine Million Eingabe-/Ausgabe-Token und nach der Generierung, sofern Nutzungsdaten vorliegen, eine Kostenschätzung.</p>
 
-<strong>1. Wie funktioniert die Web-App?</strong><br>
-- Nimmt Ton über die Aufnahme­funktion des Browsers auf.<br>
-- Verarbeitet die Audiodaten im Arbeitsspeicher (RAM) des Browsers.<br>
-- Lädt die Audiodatei über eine gesicherte HTTPS-Verbindung mit deinem eigenen API-Schlüssel an die OpenAI-Whisper-API zur Transkription hoch.<br>
-- Sendet die Transkription (und ggf. zusätzlichen Text / Prompt) mit deinem eigenen API-Schlüssel an die OpenAI-API, die daraus einen Notiz­entwurf erstellt.<br>
-- Der Browser erhält die Notiz direkt von OpenAI über eine verschlüsselte Verbindung.<br>
-- Dein API-Schlüssel wird nur vorübergehend im SessionStorage des Browsers gespeichert. Schließt du die Web-App oder den Browser, wird der Schlüssel aus dem Speicher gelöscht. Um die App erneut zu nutzen, musst du den API-Schlüssel wieder einfügen. Das bietet eine zusätzliche Schutzschicht für deinen Schlüssel und verhindert unbefugten Zugriff.<br><br>
-<hr><br>
-
-<strong>2. Eigener OpenAI-API-Schlüssel erforderlich</strong><br>
-Sämtliche Kommunikation mit OpenAI erfolgt direkt aus deinem Browser unter Verwendung deines persönlichen API-Schlüssels. Der Entwickler dieser Web-App hat keinen Zugriff auf deinen Schlüssel oder deine Daten.<br><br>
-<hr><br>
-
-<strong>3. Auftragsverarbeitungsvertrag (DPA) mit OpenAI</strong><br>
-Für die Verarbeitung von Personen­daten über die API-Dienste wird empfohlen, einen Auftragsverarbeitungs­vertrag mit OpenAI abzuschließen. Die Standard­vereinbarung von OpenAI findest du hier: <a href="https://ironcladapp.com/public-launch/63ffefa2bed6885f4536d0fe" style="color:blue;" target="_blank">OpenAI-Auftragsverarbeitungs­vertrag (DPA)</a>. Deine Organisations­nummer erhältst du hier: <a href="https://platform.openai.com/settings/organization/general" style="color:blue;" target="_blank">dein OpenAI-Organisations­profil</a>. Mit der unterschriebenen Vereinbarung erkennen du und OpenAI an, dass du als Nutzer die Rolle des Daten­verarbeiters übernimmst – nicht OpenAI.<br><br>
-<hr><br>
-
-<strong>4. DPIA und TIA – erforderliche Risikoanalysen</strong><br><br>
-
-<strong>DPIA (Data Protection Impact Assessment):</strong> Gemäß Artikel 35 DSGVO erforderlich, wenn neue Technologien zur Verarbeitung besonderer Kategorien von Daten eingesetzt werden. Ziel ist es, die Datenschutz­risiken der Verarbeitung zu identifizieren und zu minimieren.<br>
-Untersuche, welche Daten verarbeitet werden, warum, und welche Maßnahmen nötig sind, um die Rechte der Patientinnen und Patienten zu schützen.<br>
-Beispielformular hier verfügbar: <a href="https://transcribe-notes.netlify.app/dpia" style="color:blue;" target="_blank">Vorschlag für DPIA (Beispielformular)</a><br><br>
-
-<strong>TIA (Transfer Impact Assessment):</strong> Nach dem Schrems-II-Urteil und den Artikeln 44–49 DSGVO erforderlich, wenn Personen­daten in ein Land außerhalb des EWR (z. B. die USA) übermittelt werden. Ziel ist es zu dokumentieren, dass das Schutzniveau der Übermittlung „im Wesentlichen gleichwertig“ ist.<br>
-Bewerte die US-Gesetzgebung (FISA 702, CLOUD Act usw.) im Verhältnis zur Art der Daten und deinen ergänzenden technischen und vertraglichen Maßnahmen.<br>
-Ziehe eine Schlussfolgerung, ob die Übermittlung – zusammen mit Standard Contractual Clauses und OpenAIs Zertifizierung nach dem EU-US Data Privacy Framework – weiterhin vertretbar ist.<br>
-Beispielformular hier verfügbar: <a href="https://transcribe-notes.netlify.app/tia.html" style="color:blue;" target="_blank">Vorschlag für Transfer Impact Assessment (TIA)</a><br><br>
-
-Beide Bewertungen sollten durchgeführt, dokumentiert und von dir als Nutzer genehmigt sein, bevor die Web-App eingesetzt wird.<br><br>
-<hr><br>
-
-<strong>5. Zero Data Retention (ZDR) und Datenspeicherung bei OpenAI</strong><br><br>
-
-<strong>OpenAIs Standardrichtlinie</strong><br>
-Nach der OpenAI-Richtlinie zur API-Datennutzung werden Daten, die an die API gesendet werden, nicht zum Training der Modelle verwendet. Die Daten können jedoch vorübergehend (typischerweise bis zu 30 Tage) für Missbrauchs­überwachung und Fehler­behebung gespeichert werden, bevor sie gelöscht werden.<br><br>
-
-<strong>Zero Data Retention (ZDR)</strong><br>
-OpenAI bietet ZDR für einige größere Kunden nach individueller Vereinbarung an, jedoch ist dies für die reguläre API-Nutzung nicht Standard und daher für diese App nicht aktiviert.<br><br>
-
-<strong>Weiteres Vorgehen</strong><br>
-Künftige Versionen der App können eine Unterstützung alternativer KI-Anbieter prüfen, die ZDR standardmäßig anbieten (z. B. bestimmte Dienste auf Microsoft Azure). Etwaige Updates hierzu werden über die Web-App kommuniziert.<br><br>
-<hr><br>
-
-<strong>6. Voraussetzungen für einen potenziellen klinischen Einsatz</strong><br><br>
-Deine eigene Bewertung ist entscheidend: Die rechtmäßige Nutzung dieses Werkzeugs mit Patienten­daten hängt ausschließlich von deiner gründlichen Beurteilung ab. Du musst – auf Basis des DPA mit OpenAI, der DPIA und der TIA – selbst zu dem Schluss kommen, ob die Nutzung vertretbar ist und das Restrisiko für deine Praxis akzeptabel bleibt.<br><br>
-
-<strong>Mindestanforderungen vor der Nutzung mit Patientendaten:</strong><br>
-- Ein gültiger DPA mit OpenAI ist abgeschlossen.<br>
-- Eine unternehmens­spezifische DPIA und TIA sind durchgeführt, genehmigt und kommen zu einem akzeptablen Restrisiko.<br>
-- Inhaltsverantwortung: Du trägst die Verantwortung für alle Inhalte, die du über deinen API-Schlüssel an OpenAI sendest, und musst den generierten Notizentwurf vor einer etwaigen Übernahme in die Patientenakte fachlich prüfen.<br><br>
-<hr><br>
-
-<strong>7. Übersicht über die Datenspeicherung</strong><br><br>
-<table style="border-collapse:collapse;width:100%;">
-  <thead>
-    <tr>
-      <th style="border:1px solid #ccc;padding:4px;">Datentyp</th>
-      <th style="border:1px solid #ccc;padding:4px;">Speicherort</th>
-      <th style="border:1px solid #ccc;padding:4px;">Speicherdauer</th>
-      <th style="border:1px solid #ccc;padding:4px;">Zugriff</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="border:1px solid #ccc;padding:4px;">Dein OpenAI-API-Schlüssel</td>
-      <td style="border:1px solid #ccc;padding:4px;">SessionStorage im Browser</td>
-      <td style="border:1px solid #ccc;padding:4px;">Bis du die Web-App oder den Browser schließt</td>
-      <td style="border:1px solid #ccc;padding:4px;">Nur du und dein Browser</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc;padding:4px;">Audiosegmente während der Aufnahme</td>
-      <td style="border:1px solid #ccc;padding:4px;">Arbeitsspeicher (RAM) des Browsers</td>
-      <td style="border:1px solid #ccc;padding:4px;">Nur während Aufnahme / Verarbeitung. Nach der Verarbeitung nicht bei OpenAI gespeichert</td>
-      <td style="border:1px solid #ccc;padding:4px;">Nur du und dein Browser</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc;padding:4px;">Text / Notizentwurf</td>
-      <td style="border:1px solid #ccc;padding:4px;">OpenAI-API (vorübergehend)</td>
-      <td style="border:1px solid #ccc;padding:4px;">Max. 30 Tage bei OpenAI</td>
-      <td style="border:1px solid #ccc;padding:4px;">Du, OpenAI (vorübergehend)</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc;padding:4px;">Anweisungen / Prompts</td>
-      <td style="border:1px solid #ccc;padding:4px;">Lokal im Browser. Wenn du dich in der Web-App auf demselben Browser, Gerät und mit demselben API-Schlüssel anmeldest, sind deine gespeicherten Prompts erneut verfügbar</td>
-      <td style="border:1px solid #ccc;padding:4px;">Bis du sie löschst</td>
-      <td style="border:1px solid #ccc;padding:4px;">Du und dein Browser</td>
-    </tr>
-  </tbody>
-</table><br><br>
-<hr><br>
-
-<strong>8. Quellcode</strong><br><br>
-- Der Quellcode ist offen einsehbar und läuft lokal in deinem Browser.<br><br>
-<hr><br>
-
-<strong>9. Cookies und Werbung</strong><br><br>
-Wir verwenden Cookies ausschließlich, um relevante Werbung über Google Ads anzuzeigen sowie für Sprachauswahl, Einwilligungen und das Speichern deiner angepassten Prompts. Die Cookies speichern keine Personen­daten, die über das für Funktionalität und Personalisierung notwendige Maß hinausgehen. Die Cookies von Google haben keinen Zugriff auf Daten im Zusammenhang mit Audioaufnahmen und generiertem Text (Patientendaten).
+  <hr><br>
+  <p><strong>Empfohlene Konfiguration für neue klinische Nutzer</strong></p>
+  <p>Empfohlen wird <strong>Soniox mit EU-Projekt, EU-API-Schlüssel und EU-Endpunkt</strong> für STT zusammen mit <strong>Requesty</strong> für die Notizerstellung.</p>
+  <p>Kein Modell macht einen Ablauf automatisch DSGVO-konform. Die Organisation muss DPA, Endpunkt und Aufbewahrung prüfen, DPIA/TIA durchführen und jede Notiz vor der klinischen Verwendung kontrollieren.</p>
+</div>
 `,
+
+  securityModalHeading: "Datenschutz",
+  securityModalText: `
+<strong>Datenschutz und Datenverarbeitung</strong><br><br>
+
+Diese Web-App ist ein Werkzeug für Sprache-zu-Text und die Erstellung von Notizen. Als Gesundheitsfachkraft und Verantwortlicher für die Datenverarbeitung sind Sie dafür verantwortlich, dass die Nutzung den geltenden Vorschriften entspricht, darunter der DSGVO, dem norwegischen Gesundheitspersonalgesetz und der Norm für Informationssicherheit im norwegischen Gesundheits- und Pflegesektor.<br><br>
+Der Entwickler kann nicht beurteilen, ob die Nutzung durch eine einzelne Organisation rechtmäßig ist. Dies ist keine Rechtsberatung. Ziehen Sie bei Bedarf den Datenschutzbeauftragten oder einen Rechtsberater hinzu.<br><br>
+
+<hr><br>
+
+<strong>1. Empfohlene Konfiguration für neue Nutzer</strong><br><br>
+
+<strong>Sprache-zu-Text</strong><br>
+Die empfohlene Lösung ist Soniox mit EU-Projekt, EU-API-Schlüssel und EU-Endpunkt. Soniox gibt an, dass Audio- und Transkriptionsinhalte in der gewählten Region verbleiben, wenn der regionale Schlüssel des Projekts und die korrekte API-Domain verwendet werden. Soniox gibt außerdem an, dass übermittelte Inhalte nicht für das Modelltraining verwendet werden. Konto-, Abrechnungs- und Nutzungsmetadaten können dennoch außerhalb der gewählten Region verarbeitet werden. Bei der Nutzung von Soniox in dieser App werden Audioaufnahmen und erstellte Diktate stets von den Soniox-Servern gelöscht, sobald der Transkriptionsauftrag abgeschlossen ist.<br><br>
+
+<strong>Notizerstellung</strong><br>
+Die empfohlene Lösung für neue Nutzer ist Requesty. Die App sendet Requesty-Aufrufe über das EU-Gateway des Unternehmens und zeigt eine bewusst kuratierte Auswahl benannter Modellbereitstellungen, die für die Datenverarbeitung in der EU vorgesehen sind, ohne Wiederverwendung für das Modelltraining und mit geeigneten Kontrollmöglichkeiten für die Datenspeicherung. Dadurch erhalten Sie mit einem einzigen Requesty-API-Schlüssel Zugriff auf mehrere neuere Modelle.<br><br>
+
+Die Modellauswahl der App aktiviert nicht von sich aus Zero Data Retention im Requesty-Konto. Requesty dokumentiert, dass die Protokollierung von Prompts und Outputs bei Self-Service-Abonnements standardmäßig mit einer Aufbewahrungsdauer von 30 Tagen aktiviert ist. Die Protokollierung kann und sollte für jeden API-Schlüssel deaktiviert werden, und organisationsweites Zero Data Retention kann bei Requesty beantragt werden.<br><br>
+
+<hr><br>
+
+<strong>2. Wie die Web-App Daten verarbeitet</strong><br><br>
+
+- Audio wird aufgenommen und vorübergehend im Speicher des Browsers verarbeitet.<br>
+- Das Audio wird verschlüsselt über HTTPS an den gewählten Sprache-zu-Text-Anbieter gesendet: Soniox, OpenAI oder Mistral/Voxtral.<br>
+- Das Transkript wird im ausgewählten Workspace im Browser angezeigt.<br>
+- Wenn Sie eine Notiz erstellen, werden das Transkript, der ausgewählte Prompt und etwaige Zusatzinformationen an den gewählten Notizanbieter gesendet.<br>
+- Bei der Nutzung von Requesty wird die Anfrage vom Browser an das EU-Gateway von Requesty gesendet, das sie an die speziell ausgewählte Modellbereitstellung weiterleitet (ZDR, kein Modelltraining, Datenverarbeitung ausschließlich innerhalb der EU).<br>
+- Der Notizentwurf wird über eine verschlüsselte Verbindung an den Browser zurückgegeben.<br><br>
+
+Die Web-App selbst besitzt keinen Anwendungsserver, der Audio, Transkripte oder Notizen speichert. Die Kommunikation findet zwischen Ihrem eigenen Browser und den von Ihnen gewählten Diensten statt.<br><br>
+
+<hr><br>
+
+<strong>3. API-Schlüssel und Anmeldedaten</strong><br><br>
+
+Sie verwenden eigene Anbieterschlüssel oder, bei AWS Bedrock, eine eigene Backend-URL und ein eigenes Secret. Der Entwickler der Web-App erhält weder diese Angaben noch die klinischen Inhalte, die darüber gesendet werden.<br><br>
+
+API-Schlüssel, die auf der Startseite eingegeben werden, werden vorübergehend im SessionStorage des Browsers gespeichert und entfernt, wenn der Tab/die Sitzung geschlossen wird oder Sie Clear keys wählen. Wenn Sie eine verschlüsselte Sicherung der Schlüssel exportieren, wird das Passwort lokal im Browser verwendet, um die Datei zu verschlüsseln, bevor sie gespeichert oder hochgeladen wird.<br><br>
+
+Behandeln Sie API-Schlüssel, Sicherungskopien und Passwörter als vertrauliche Informationen. Verwenden Sie individuelle Schlüssel sowie Ausgabenlimits und Zugriffsbeschränkungen des Anbieters, sofern verfügbar, und sperren Sie den Schlüssel sofort, wenn er offengelegt worden sein könnte.<br><br>
+
+<hr><br>
+
+<strong>4. Anbieterspezifische Hinweise</strong><br><br>
+
+<strong>Soniox EU</strong><br>
+Die EU-Datenlokalisierung erfordert ein in der EU-Region erstelltes Soniox-Projekt, den zu diesem Projekt gehörenden API-Schlüssel und die Auswahl des korrekten EU-Endpunkts in der App. Soniox gibt an, dass Inhaltsdaten dann in der EU-Region verbleiben und nicht für das Modelltraining verwendet werden. Prüfen Sie die Speicher-/Löschpraxis und schließen Sie die notwendige Vereinbarung für Ihre Organisation ab.<br><br>
+
+<strong>Requesty</strong><br>
+Die App verwendet das EU-Gateway von Requesty und feste, kuratierte Modellrouten anstelle einer uneingeschränkten Modellauswahl. Requesty gibt an, dass Prompts und Antworten nicht für das Modelltraining verwendet werden. Das EU-Gateway hält die eigene Verarbeitung und Speicherung von Requesty in der EU, während eine vollständige EU-Datenlokalisierung zusätzlich eine in der EU gehostete Modellbereitstellung erfordert. Die App ist darauf ausgelegt, solche Bereitstellungen auszuwählen; der Nutzer muss jedoch weiterhin die aktuellen Modelldetails prüfen und die Prompt-/Output-Protokollierung für den API-Schlüssel deaktivieren oder organisationsweites ZDR erhalten, bevor identifizierbare Patientendaten verwendet werden.<br><br>
+
+<strong>AWS Bedrock</strong><br>
+Bedrock bleibt für Nutzer erhalten, die bereits AWS-Zugriff haben oder ihre eigene AWS-Infrastruktur bevorzugen. Die Lösung erfordert ein separates Backend und eine sorgfältige regionale Konfiguration. Sie ist komplizierter und wird nicht mehr als Ausgangspunkt für neue Nutzer empfohlen, kann aber weiterhin für Organisationen mit einer etablierten und genehmigten AWS-Umgebung geeignet sein.<br><br>
+
+<strong>Mistral</strong><br>
+Mistral stellt in der App Voxtral für Sprache-zu-Text und Mistral Large für die Notizerstellung bereit. Prüfen Sie die aktuelle Betriebsregion, die DPA/AVV, die Speichereinstellung und die Trainingspräferenz. Wenn die Nutzung Zero Data Retention erfordert, muss dies bewilligt, aktiviert und dokumentiert sein, bevor Patientendaten gesendet werden.<br><br>
+
+<strong>OpenAI</strong><br>
+OpenAI bleibt für direkte Sprache-zu-Text-Verarbeitung und Notizerstellung verfügbar. Standard-API-Daten werden grundsätzlich nicht für das Modelltraining verwendet, aber regionale Verarbeitung und Speicherung hängen vom Produkt, Konto und Vertragssetup ab. Gehen Sie nicht davon aus, dass ein gewöhnlicher direkter API-Schlüssel automatisch eine ausschließliche EU-Verarbeitung oder Zero Data Retention bietet. Prüfen Sie die aktuellen Bedingungen und führen Sie die notwendige TIA durch.<br><br>
+
+<hr><br>
+
+<strong>5. Übersicht über lokale und externe Speicherung</strong><br><br>
+
+<strong>API-Schlüssel und Backend-Angaben</strong><br>
+- Gespeichert in: SessionStorage des Browsers.<br>
+- Dauer: bis der Tab/die Sitzung geschlossen oder die Schlüssel gelöscht werden.<br>
+- Zugriff: der Nutzer und die aktuelle Browsersitzung.<br><br>
+
+<strong>Audio während der Aufnahme</strong><br>
+- Gespeichert in: im Speicher des Browsers während Aufnahme und Verarbeitung.<br>
+- Dauer: vorübergehend; die App führt kein dauerhaftes lokales Audioarchiv.<br>
+- Externe Verarbeitung: Der ausgewählte STT-Anbieter erhält das Audio.<br><br>
+
+<strong>Transkripte, Zusatzinformationen und erstellte Notizen</strong><br>
+- Gespeichert in: der Sitzung des aktiven Browser-Tabs und den zugehörigen Workspace-/Verlaufsfunktionen.<br>
+- Dauer: normalerweise bis der Tab/die Sitzung geschlossen oder der Inhalt/Verlauf gelöscht wird.<br>
+- Externe Verarbeitung: Relevanter Text wird beim Start der Erstellung an den gewählten Notizanbieter gesendet.<br><br>
+
+<strong>Prompts und Einstellungen in einem Workspace Set</strong><br>
+- Prompts und ausgewählte Einstellungen können lokal im Browser gespeichert werden.<br>
+- Der Export eines Workspace Set umfasst Konfigurationen wie Reihenfolge, Prompts, ausgewählte Anbieter/Modelle und relevante Schalter, jedoch keine Transkripte, Zusatzinformationen, erstellten Notizen, Verläufe, Audiodaten, API-Schlüssel oder Passwörter.<br>
+- Cloud-Exporte werden im Browser mit dem gewählten Passwort verschlüsselt. Lokale JSON-Exporte sind lesbar und müssen sicher aufbewahrt werden.<br><br>
+
+Die Verarbeitung und Speicherung durch die Anbieter erfolgt zusätzlich zur Browserspeicherung und muss bei jedem verwendeten Dienst geprüft werden.<br><br>
+
+<hr><br>
+
+<strong>6. Quellcode und Verantwortung</strong><br><br>
+
+Der Quellcode der Web-App ist offen zugänglich, und die Hauptanwendung läuft im Browser. Der Entwickler erhält keine klinischen Texte über ein Anwendungsbackend. Grundlegende, nicht klinische Nutzungsstatistiken können dennoch wie auf der Website beschrieben erfasst werden.<br><br>
+
+Der generierte Inhalt ist ein Entwurf. Die Gesundheitsfachkraft ist dafür verantwortlich, die medizinische Richtigkeit zu prüfen, Fehler zu korrigieren und zu entscheiden, was in die Patientenakte aufgenommen wird.
+`,
+
   aboutModalHeading: "Über uns",
   aboutModalText: `Diese Website wurde entwickelt, um Gesundheitsfachkräfte und andere Nutzer mit direktem Zugang zu hochwertiger Spracherkennung und klinischer Notizgenerierung zu versorgen – ohne unnötige Kosten oder Zwischenhändler.<br><br>
 Durch die Verwendung Ihres eigenen OpenAI API-Schlüssels verbinden Sie sich direkt mit der Quelle der Technologie. Das bedeutet, dass Sie nur die tatsächlichen Nutzungskosten zahlen, die von OpenAI festgelegt werden, ohne Aufschläge oder Abonnementgebühren.<br><br>
@@ -137,49 +174,96 @@ Viele bestehende Anbieter offerieren ähnliche Dienste, verlangen jedoch deutlic
 • Sie zahlen nur OpenAI direkt für die tatsächlich genutzte Leistung.<br>
 • Die Website selbst ist völlig kostenlos.<br><br>
 Damit wir diesen kostenlosen Dienst weiterhin anbieten können, würden wir uns sehr freuen, wenn du der Anzeige von Werbung über Google Ads zustimmst. Die Werbeeinnahmen helfen uns, die Kosten für Hosting und Betrieb zu decken, damit der Dienst für alle verfügbar bleiben kann.`,
-  guideModalHeading: "Anleitung",
-guideModalText: `Um diese Webanwendung zu nutzen, müssen Sie zunächst ein OpenAI-API-Profil erstellen, einen API-Schlüssel generieren und sicherstellen, dass Ihr OpenAI-Guthaben ausreichend ist. Kopieren Sie anschließend den API-Schlüssel und fügen Sie ihn in das dafür vorgesehene Feld ein. Sobald Sie die Eingabetaste drücken, speichert die Webanwendung den API-Schlüssel nur temporär für die aktuelle Sitzung – dieser Schlüssel stellt die Verbindung zu den OpenAI-Servern her, damit Sprach-zu-Text-Transkription und Notizenerstellung funktionieren. Bitte beachten Sie, dass Ihnen jede ausgeführte Aufgabe (Sprach-zu-Text und/oder Notizenerstellung) sofort in Rechnung gestellt wird. Weitere Informationen zu den Kosten finden Sie im Abschnitt „Kosteninformationen“ auf der Startseite. Wir empfehlen allen Nutzern, vor der Verwendung der App die Datenschutz- und Informationshinweise auf der Startseite zu lesen.
-<br><br>
-<strong>1. Erstellen Sie Ihr OpenAI-API-Profil</strong><br>
-Um loszulegen, müssen Sie ein Profil auf der OpenAI-API-Plattform anlegen. Dieses Profil dient als Ihr Konto zur Verwaltung von API-Schlüsseln und zur Abrechnung. Rufen Sie dazu <a href="https://platform.openai.com/signup" style="color:blue;">OpenAI API Registrierung</a> auf. Folgen Sie den Anweisungen und legen Sie einen Nutzer an. Nach der Registrierung haben Sie Zugriff auf Ihr Dashboard, wo Sie einen persönlichen API-Schlüssel generieren und Guthaben aufladen können.
-<br><br>
-<strong>2. Generieren Sie einen API-Schlüssel</strong><br>
-Nachdem Sie Ihr Profil erstellt haben, generieren Sie einen API-Schlüssel, indem Sie zu <a href="https://platform.openai.com/account/api-keys" style="color:blue;">API-Schlüsselverwaltung</a> gehen. Klicken Sie auf die Schaltfläche zum Erstellen eines neuen API-Schlüssels. Wichtig: Sie sehen den Schlüssel nur einmal. Kopieren Sie ihn sofort und bewahren Sie ihn sicher auf (z. B. in einer Textdatei). Sollten Sie den Schlüssel verlieren oder den Verdacht haben, dass er kompromittiert wurde, können Sie ihn an derselben Stelle deaktivieren/löschen und gleichzeitig einen neuen erstellen.
-<br><br>
-<strong>3. Laden Sie Guthaben auf Ihr OpenAI-Konto</strong><br>
-Damit die Webanwendung funktioniert, muss Ihr OpenAI-Konto über ausreichend Guthaben verfügen. Besuchen Sie <a href="https://platform.openai.com/account/billing/overview" style="color:blue;">Abrechnungs- und Zahlungsübersicht</a>, um Guthaben aufzuladen. Sie können jederzeit einen beliebigen Betrag transferieren. Solange ausreichend Guthaben verfügbar ist, können Sie alle Funktionen dieser Webanwendung nutzen – jede Aufgabe wird sofort abgerechnet. Eine detaillierte Preisübersicht finden Sie im Abschnitt „Kosteninformationen“.
-<br><br>
-<strong>Sicherheitshinweis zur Sitzung</strong><br>
-Wenn Sie sich einloggen, indem Sie den API-Schlüssel in das Feld auf dieser Startseite eingeben und die Eingabetaste drücken, wird dieser nur temporär in Ihrer Browsersitzung gespeichert. Das bedeutet, dass der Schlüssel nicht mehr verfügbar ist, wenn Sie die Seite verlassen, den Browser schließen oder den Computer ausschalten. Beim nächsten Besuch der Webanwendung müssen Sie den Schlüssel erneut einfügen, um die Sicherheit Ihres Schlüssels zu gewährleisten.`,
+  guideModalHeading: "API-Schlüssel – Einstieg",
+  guideModalText: `
+<strong>API-Schlüssel — erste Schritte</strong><br><br>
+Die einfachste Empfehlung für neue Nutzer:<br>
+1. <strong>Soniox mit EU-Schlüssel</strong> für Spracherkennung.<br>
+2. <strong>Requesty</strong> für Notizerstellung.<br><br>
+
+<strong>STT-Optionen:</strong> Soniox Batch, Soniox Batch mit Sprecherkennzeichnung, Soniox Echtzeit, OpenAI gpt-4o-transcribe und Mistral Voxtral Mini.<br><br>
+<strong>Notizanbieter:</strong> Requesty (Claude Opus 5, Claude Sonnet 5, GPT-5.6 Sol/Terra/Luna, GPT-5.5, GPT-5 Nano, Gemini 3.7 Flash, Kimi K3), OpenAI (GPT-5.1/5.2/5.4/5.5), AWS Bedrock (Claude Haiku/Sonnet/Opus) und Mistral Large.<br><br>
+
+<hr><br>
+<strong>Soniox — empfohlene STT-Einrichtung</strong><br>
+1. Konto bei <a href="https://soniox.com" target="_blank" rel="noopener noreferrer">soniox.com</a> erstellen und Abrechnung/Guthaben einrichten.<br>
+2. Regionalen Zugriff über <a href="mailto:support@soniox.com">support@soniox.com</a> beantragen.<br>
+3. Ein Projekt in der Region <strong>European Union</strong> anlegen/auswählen und dessen regionalen Schlüssel kopieren.<br>
+4. Den Schlüssel in <strong>Soniox API key</strong> einfügen und in der App <strong>EU</strong> wählen. EU-Projektschlüssel und EU-Endpunkt sind beide erforderlich.<br><br>
+Der Link <strong>Guide</strong> neben dem Soniox-Feld öffnet die vollständige Schritt-für-Schritt-Anleitung.<br><br>
+
+<hr><br>
+<strong>Requesty — empfohlene Notiz-Einrichtung</strong><br>
+1. Konto bei <a href="https://requesty.ai" target="_blank" rel="noopener noreferrer">requesty.ai</a> erstellen und Guthaben/Abrechnung konfigurieren.<br>
+2. Unter <strong>API Keys</strong> einen Schlüssel anlegen und möglichst auf genehmigte Modelle/Access Lists beschränken.<br>
+3. Schlüssel sicher kopieren und in <strong>Requesty API key</strong> einfügen.<br>
+4. Prompt-/Antwort-Protokollierung deaktivieren oder organisationsweites ZDR beantragen; DPA und Modellrouten prüfen, bevor identifizierbare Patientendaten genutzt werden.<br><br>
+Der Link <strong>Guide</strong> neben Requesty erklärt Konto, Guthaben, Schlüssel, Modellzugriff, EU-Routing und Datenschutzeinstellungen ausführlich.<br><br>
+
+<hr><br>
+<strong>OpenAI:</strong> Konto unter <a href="https://platform.openai.com" target="_blank" rel="noopener noreferrer">platform.openai.com</a> erstellen, Abrechnung und API-Schlüssel konfigurieren. DPA, Aufbewahrung und Region prüfen; ein Standardschlüssel ist nicht automatisch EU-only oder ZDR.<br><br>
+
+<strong>Mistral:</strong> Konto unter <a href="https://console.mistral.ai" target="_blank" rel="noopener noreferrer">console.mistral.ai</a> erstellen, Abrechnung und Schlüssel einrichten. Er gilt für Voxtral Mini und Mistral Large. EU-Hosting, DPA, Aufbewahrung und ZDR prüfen.<br><br>
+
+<strong>AWS Bedrock — optional für bestehende AWS-Nutzer:</strong> Erfordert AWS-Konto, regionalen Modellzugriff und ein eigenes Backend. Die Einrichtung ist komplizierter und wird neuen Nutzern nicht als Einstieg empfohlen. Nutzen Sie den <a href="#" data-open-guide="bedrock"><strong>Guide</strong></a>-Link neben den AWS-Feldern.<br><br>
+
+<hr><br>
+<strong>Vor Eingabe von Patientendaten</strong><br>
+Ein API-Schlüssel macht einen Dienst nicht automatisch DSGVO-konform. Prüfen Sie DPA, Unterauftragsverarbeiter, Endpunkt, Datenresidenz, Aufbewahrung/ZDR und Trainingseinstellungen; führen Sie DPIA/TIA durch, schützen Sie Zugangsdaten, minimieren Sie Patientendaten und prüfen Sie jede Notiz.
+`,
 
   priceButton: "Preis",
-  priceModalHeading: "Preis",
-priceModalText: `
+  priceModalHeading: "Kosteninformationen",
+  priceModalText: `
 <div>
-  <p><strong>Kostenübersicht</strong></p>
-  <p>Sie zahlen nur für das, was Sie tatsächlich nutzen – direkt an die Quelle, ohne teure Zwischenhändler. Kein Abo. Keine Bindung.</p>
-
-  <p><strong>Preise:</strong></p>
+  <p><strong>Kosteninformationen</strong></p>
+  <p>Die App hat keine Abogebühr und keinen Aufschlag. Sie bezahlen die Anbieter direkt für die tatsächliche API-Nutzung. Preise können sich ändern; Dashboard und Rechnung des Anbieters sind maßgeblich.</p>
+  <p><strong>Preisanzeige in der App</strong></p>
   <ul>
-    <li>Spracherkennung: $0.006 pro Minute</li>
-    <li>Notizerstellung: $5 pro 1 Million Tokens (Input) und $10 pro 1 Million Tokens (Output)</li>
+    <li>Ungefähre USD-Preise je eine Million Eingabe-/Ausgabe-Token stehen neben dem gewählten Notizmodell.</li>
+    <li>Nach der Generierung erscheinen Tokenverbrauch und Kostenschätzung, sofern genügend Nutzungsdaten vorliegen.</li>
+    <li>Reasoning-Token, Caching, Rabatte, Gatewaygebühren, Wechselkurse und Abrechnungsregeln können den Endbetrag beeinflussen.</li>
   </ul>
 
-  <p><strong>Beispiel – 15-minütige Konsultation:</strong></p>
-  <ul>
-    <li>Spracherkennung: 15 × $0.006 = $0.09</li>
-    <li>Notizerstellung: typischerweise zwischen $0.005 und $0.01</li>
-    <li>Gesamt: etwa $0.10 für die gesamte Konsultation</li>
-  </ul>
+  <hr><br>
+  <p><strong>1. Spracherkennung</strong> (ungefähr pro Audiominute)</p>
+  <p><strong>Soniox — empfohlen:</strong> ca. 0,0017 USD/Minute; 15 Minuten ca. 0,026 USD.</p>
+  <p><strong>OpenAI gpt-4o-transcribe:</strong> ca. 0,006 USD/Minute; 15 Minuten ca. 0,09 USD.</p>
+  <p><strong>Mistral Voxtral Mini:</strong> aktuellen offiziellen Mistral-Preis prüfen.</p>
 
-  <p><strong>Monatliche Beispielkosten bei voller Nutzung:</strong></p>
+  <hr><br>
+  <p><strong>2. Notizerstellung</strong> (USD je eine Million Eingabe-/Ausgabe-Token)</p>
   <ul>
-    <li>20 Konsultationen pro Tag × 4 Tage pro Woche × 4 Wochen = 320 Konsultationen</li>
-    <li>Gesamtkosten pro Monat: etwa $30–31</li>
+    <li>Claude Opus 5: ca. 5,50 / 27,50 USD</li><li>Claude Sonnet 5: ca. 2,20 / 11,00 USD</li>
+    <li>GPT-5.6 Sol: ca. 5,50 / 33,00 USD</li><li>GPT-5.6 Terra: ca. 2,20 / 13,20 USD</li>
+    <li>GPT-5.6 Luna: ca. 0,22 / 1,32 USD</li><li>GPT-5.5: ca. 5,00 / 30,00 USD</li>
+    <li>GPT-5 Nano: ca. 0,05 / 0,40 USD</li><li>Gemini 3.7 Flash: ca. 0,66 / 3,30 USD</li><li>Kimi K3: ca. 3,00 / 15,00 USD</li>
   </ul>
+  <p>Diese Werte entsprechen den aktuellen App-Schätzungen und können sich mit Requesty oder der Upstream-Bereitstellung ändern. Prüfen Sie den Modellpreis und Requestys Nutzungsbericht.</p>
+  <p>Weitere unterstützte Notizanbieter: direktes OpenAI (GPT-5.1/5.2/5.4/5.5), AWS Bedrock (Claude Haiku/Sonnet/Opus, vor allem für bestehende AWS-Nutzer) und Mistral Large. Aktuelle Modellpreise werden in der App angezeigt.</p>
 
-  <p><strong>Sie zahlen nur bei Nutzung:</strong><br>
-  Bei Urlaub, Krankheit oder Elternzeit fallen keine Kosten an.</p>
+  <hr><br>
+  <p><strong>3. Was sind Token?</strong></p>
+  <p>Grob gilt: 1 Token entspricht etwa 4 Zeichen beziehungsweise drei Vierteln eines englischen Wortes; 1.000 Token etwa 750 englischen Wörtern. Medizinische Begriffe, deutsche Texte, Formatierung und lange Prompts verändern das Verhältnis. Eingabe umfasst Prompt, Transkript, Zusatzinformationen und weiteren Kontext; Ausgabe umfasst Notiz und abrechenbare Reasoning-/Ausgabe-Token.</p>
+
+  <hr><br>
+  <p><strong>4. Beispiel: 15-minütige Konsultation</strong></p>
+  <p>Bei etwa 2.200 Eingabe- und 450 Ausgabe-Token:</p>
+  <ul>
+    <li>Soniox-Transkription: ca. 0,026 USD</li><li>GPT-5 Nano: ca. 0,0003 USD</li>
+    <li>Gemini 3.7 Flash: ca. 0,003 USD</li><li>Claude Sonnet 5: ca. 0,010 USD</li>
+    <li>Claude Opus 5: ca. 0,025 USD</li><li>GPT-5.6 Sol: ca. 0,027 USD</li>
+  </ul>
+  <p>Die tatsächliche Menge hängt stark von Transkript, Prompt, Zusatzinformationen und Reasoning-Stufe ab.</p>
+
+  <hr><br>
+  <p><strong>5. Kosten langer Dokumente senken</strong></p>
+  <p>Secondary Note Generation kann ein langes Dokument mit einem günstigen Modell wie GPT-5 Nano zusammenfassen. Die Zusammenfassung wird als Zusatzinformation eingefügt, bevor das stärkere Hauptmodell die endgültige Notiz erstellt. Das kann deutlich günstiger sein, als beispielsweise 50 Seiten direkt an ein teures Modell zu senden.</p>
+
+  <hr><br>
+  <p><strong>6. Monatsbeispiel</strong></p>
+  <p>20 Konsultationen täglich, 4 Tage wöchentlich und 4 Wochen ergeben ca. 320 Konsultationen beziehungsweise 80 Audiostunden. Bei 0,0017 USD/Minute kostet Soniox-Transkription etwa 8,16 USD vor Steuern und Preisänderungen. Die Notizerstellung kommt je Modell und Tokenverbrauch hinzu.</p>
+  <p>Ohne API-Nutzung entstehen durch die App keine Nutzungskosten. Mindestbeträge, Guthaben, Steuern oder andere Anbieterkonditionen können trotzdem gelten.</p>
 </div>
 `,
 };

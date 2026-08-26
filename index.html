@@ -306,7 +306,8 @@
 
     /* Compact Import/Export Keys modals */
     #importKeysModalBackdrop,
-    #exportKeysModalBackdrop {
+    #exportKeysModalBackdrop,
+    #cloudRestoreModalBackdrop {
       display: none;
       position: fixed;
       inset: 0;
@@ -317,11 +318,13 @@
       padding: 16px;
     }
     #importKeysModalBackdrop.active,
-    #exportKeysModalBackdrop.active {
+    #exportKeysModalBackdrop.active,
+    #cloudRestoreModalBackdrop.active {
       display: flex;
     }
     #importKeysModal,
-    #exportKeysModal {
+    #exportKeysModal,
+    #cloudRestoreModal {
       width: min(92vw, 460px);
       max-height: calc(100vh - 32px);
       overflow-y: auto;
@@ -333,7 +336,8 @@
       text-align: left;
     }
     #importKeysModal .mini-modal__header,
-    #exportKeysModal .mini-modal__header {
+    #exportKeysModal .mini-modal__header,
+    #cloudRestoreModal .mini-modal__header {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -341,14 +345,16 @@
       margin-bottom: 10px;
     }
     #importKeysModalTitle,
-    #exportKeysModalTitle {
+    #exportKeysModalTitle,
+    #cloudRestoreModalTitle {
       font-family: inherit;
       font-size: 16px;
       font-weight: 700;
       margin: 0;
     }
     #importKeysModalX,
-    #exportKeysModalX {
+    #exportKeysModalX,
+    #cloudRestoreModalX {
       border: none;
       background: transparent;
       cursor: pointer;
@@ -423,6 +429,27 @@
       margin: 10px 0 0;
       font-size: 12px;
       line-height: 1.35;
+    }
+    .cloud-restore-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      margin: 10px 0;
+      padding: 10px 11px;
+      border: 1px solid #d3dfda;
+      border-radius: 10px;
+      background: #fbfdfc;
+      color: #33443d;
+      font-size: 13px;
+      line-height: 1.35;
+      cursor: pointer;
+    }
+    .cloud-restore-option[hidden] {
+      display: none;
+    }
+    .cloud-restore-option input {
+      margin: 2px 0 0;
+      flex: 0 0 auto;
     }
     /* Discreet "ghost" button for Clear keys */
     .keys-io-btn--ghost-green {
@@ -596,6 +623,55 @@
       transition: none;
     }
     .inline-guide-link:hover { opacity: 0.85; }
+
+    /* Soniox / Requesty guide modals. These intentionally match the existing
+       AWS Bedrock guide window while using shared classes for maintainability. */
+    .provider-guide-view {
+      display: none;
+      position: fixed;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      box-sizing: border-box;
+      background: white;
+      border: 2px solid #ccc;
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 3004;
+      text-align: left;
+    }
+    .provider-guide-view.active {
+      display: block;
+    }
+    .provider-guide-close {
+      position: sticky;
+      top: 12px;
+      float: right;
+      font-size: 30px;
+      line-height: 1;
+      border: none;
+      background: transparent;
+      color: #d11;
+      cursor: pointer;
+      padding: 0 6px;
+      margin: 0;
+      z-index: 3005;
+    }
+    .provider-guide-close:hover {
+      opacity: 0.8;
+    }
+    .provider-guide-heading {
+      clear: both;
+    }
+    .provider-guide-text {
+      white-space: pre-wrap;
+      font-family: 'Inter', 'Roboto', sans-serif;
+      font-size: 14px;
+      line-height: 1.4;
+      margin: 0;
+      text-align: left;
+    }
 
     /* Google Vertex Guide Modal (opened from the "Guide" link next to Google Vertex) */
     #vertexGuideView {
@@ -898,6 +974,30 @@
         <p id="importKeysModalStatus" class="mini-modal__status" aria-live="polite"></p>
       </div>
     </div>
+
+    <!-- Optional cloud restore shown only after keys were imported from that provider. -->
+    <div id="cloudRestoreModalBackdrop" aria-hidden="true">
+      <div id="cloudRestoreModal" role="dialog" aria-modal="true" aria-labelledby="cloudRestoreModalTitle">
+        <div class="mini-modal__header">
+          <div id="cloudRestoreModalTitle">Load cloud backups?</div>
+          <button type="button" id="cloudRestoreModalX" aria-label="Continue with local data">×</button>
+        </div>
+        <div id="cloudRestoreModalNotice" class="mini-modal__notice"></div>
+        <label id="cloudRestorePromptsOption" class="cloud-restore-option" hidden>
+          <input id="cloudRestorePrompts" type="checkbox" checked>
+          <span id="cloudRestorePromptsLabel">Prompt list</span>
+        </label>
+        <label id="cloudRestoreWorkspaceOption" class="cloud-restore-option" hidden>
+          <input id="cloudRestoreWorkspace" type="checkbox" checked>
+          <span id="cloudRestoreWorkspaceLabel">Workspace Set</span>
+        </label>
+        <div class="mini-modal__actions">
+          <button type="button" id="cloudRestoreContinue" class="keys-io-btn">Load selected</button>
+          <button type="button" id="cloudRestoreSkip" class="keys-io-btn keys-io-btn--ghost-green">Use local data</button>
+        </div>
+        <p id="cloudRestoreModalStatus" class="mini-modal__status" aria-live="polite"></p>
+      </div>
+    </div>
     <p id="keysIoHint">
       Back up keys as a JSON file, to Microsoft OneDrive, or to Google Drive. Import the backup later to refill the fields and avoid retyping.
     </p>
@@ -911,7 +1011,15 @@
         <p class="column-footnote" id="gdpr-column-footnote">(Full EU data residency/processing + zero data retention)</p>
 
         <!-- New (Phase 1): Optional Soniox API Key -->
-        <p id="soniox-text">Soniox API key:</p>
+        <p id="soniox-text">
+          Soniox API key (
+          <button
+            type="button"
+            id="soniox-guide-link"
+            class="inline-guide-link"
+          >Guide</button>
+          ):
+        </p>
         <input type="text" id="sonioxKeyInput" placeholder="Enter Soniox API Key here" autocomplete="off" class="masked-input">
         <br>
       
@@ -942,39 +1050,21 @@
           >
         </div>
 
-        <!-- New: Vertex Cloud Run configuration (per-user) -->
-        <p id="vertex-text">
-          Google Vertex (
-          <button
-            type="button"
-            id="vertex-guide-link"
-            class="inline-guide-link"
-          >Guide</button>
-          ):
-        </p>
-        <div class="credentials-row">
-          <input
-            type="text"
-            id="vertexBackendUrlInput"
-            placeholder="Vertex backend URL (https://…run.app)"
-            autocomplete="off"
-            class="masked-input"
-          >
-          <input
-            type="text"
-            id="vertexBackendSecretInput"
-            placeholder="Vertex backend secret"
-            autocomplete="off"
-            class="masked-input"
-          >
-        </div>
         <!-- New: Optional Mistral (Voxtral) API Key -->
         <p id="mistral-text">Mistral API key:</p>
         <input type="text" id="mistralKeyInput" placeholder="Enter Mistral API Key here" autocomplete="off" class="masked-input">
         <br>
 
         <!-- Optional Requesty API Key (EU router; used for Claude Opus 5 Stockholm + other EU-hosted models) -->
-        <p id="requesty-text">Requesty API key:</p>
+        <p id="requesty-text">
+          Requesty API key (
+          <button
+            type="button"
+            id="requesty-guide-link"
+            class="inline-guide-link"
+          >Guide</button>
+          ):
+        </p>
         <input type="text" id="requestyKeyInput" placeholder="Enter Requesty API Key here" autocomplete="off" class="masked-input">
         <br>
       </fieldset>
@@ -989,28 +1079,6 @@
         <input type="text" id="apiKeyInput" placeholder="Enter API Key here" autocomplete="off" class="masked-input">
         <br>
 
-        <!-- New: Optional Google Gemini / Vertex Credentials -->
-        <p id="gemini-text">Google Gemini API key:</p>
-        <div class="credentials-row">
-          <input
-            type="text"
-            id="geminiKeyInput"
-            placeholder="Enter Google Gemini API Key here"
-            autocomplete="off"
-            class="masked-input"
-          >
-        </div>
-        <br>
-
-        <!-- New: Optional Lemonfox API Key -->
-        <p id="lemonfox-text">Lemonfox API key:</p>
-        <input type="text" id="lemonfoxKeyInput" placeholder="Enter Lemonfox API Key here" autocomplete="off" class="masked-input">
-        <br>
-      
-        <!-- New: Optional Deepgram API Key -->
-        <p id="deepgram-text">Deepgram API key:</p>
-        <input type="text" id="deepgramKeyInput" placeholder="Enter Deepgram API Key here" autocomplete="off" class="masked-input">
-        <br>
       </fieldset>
     </div>
     
@@ -1061,6 +1129,8 @@
   <!-- Inline Script for API Key Handling and Consent -->
   <script type="module">
     import { PromptManager } from "./js/promptManager.js";
+    import { PromptCloudBackup } from "./js/features/prompt-cloud-backup.js";
+    import { CloudBackupSession } from "./js/features/cloud-backup-session.js";
 
     // Helper function to set a cookie
     function setCookie(name, value, days) {
@@ -1073,80 +1143,23 @@
       document.cookie = name + "=" + (value || "")  + expires + "; path=/";
     }
 
-    // Phase 1: Store all keys on click; keep OpenAI as default user_api_key (no validation).
-    (function wireEnterButtonOnce() {
-      var btn = document.getElementById("enterTranscriptionBtn");
-      if (!btn) return;
-      if (btn._multiKeyWired) return;  // guard against double-binding
-      btn._multiKeyWired = true;
-
-      btn.addEventListener("click", function () {
-        var promptProfileId      = ((document.getElementById("promptProfileInput")      || {}).value || "").trim();
-        var openaiKey            = ((document.getElementById("apiKeyInput")             || {}).value || "").trim();
-        var sonioxKey            = ((document.getElementById("sonioxKeyInput")          || {}).value || "").trim();
-        var lemonKey             = ((document.getElementById("lemonfoxKeyInput")        || {}).value || "").trim();
-        var mistralKey           = ((document.getElementById("mistralKeyInput")         || {}).value || "").trim();
-        var deepgramKey          = ((document.getElementById("deepgramKeyInput")        || {}).value || "").trim();
-        var geminiKey            = ((document.getElementById("geminiKeyInput")           || {}).value || "").trim();
-        var requestyKey          = ((document.getElementById("requestyKeyInput")         || {}).value || "").trim();
-        var vertexBackendUrl     = ((document.getElementById("vertexBackendUrlInput")    || {}).value || "").trim();
-        var vertexBackendSecret  = ((document.getElementById("vertexBackendSecretInput") || {}).value || "").trim();
-        var bedrockBackendUrl   = ((document.getElementById("bedrockBackendUrlInput")   || {}).value || "").trim();
-        var bedrockBackendSecret= ((document.getElementById("bedrockBackendSecretInput")|| {}).value || "").trim();
-
-
-        // Store all keys (even if empty) for later provider selection
-        sessionStorage.setItem("openai_api_key", openaiKey);
-        sessionStorage.setItem("soniox_api_key", sonioxKey);
-        sessionStorage.setItem("lemonfox_api_key", lemonKey);
-        sessionStorage.setItem("mistral_api_key", mistralKey);
-        sessionStorage.setItem("deepgram_api_key", deepgramKey);
-        sessionStorage.setItem("gemini_api_key", geminiKey);
-        sessionStorage.setItem("requesty_api_key", requestyKey);
-        sessionStorage.setItem("vertex_backend_url", vertexBackendUrl);
-        sessionStorage.setItem("vertex_backend_secret", vertexBackendSecret);
-        sessionStorage.setItem("bedrock_backend_url", bedrockBackendUrl);
-        sessionStorage.setItem("bedrock_backend_secret", bedrockBackendSecret);
-        
-        // Back-compat: default active key remains OpenAI for now
-        sessionStorage.setItem("user_api_key", openaiKey);
-
-        // Consent cookie (kept as before, but now only set once here)
-        setCookie("user_consent", "accepted", 365);
-
-
-        // Prompt profile persistence + legacy prompt migration are centralized in PromptManager.
-        // Important: do this AFTER storing sessionStorage.openai_api_key so legacy migration
-        // can read the correct legacy namespace if the user is moving from key-scoped prompts.
-        try {
-          if (typeof PromptManager?.commitPromptProfileInput === "function") {
-            PromptManager.commitPromptProfileInput(promptProfileId);
-          } else if (typeof PromptManager?.setPromptProfileId === "function") {
-            PromptManager.setPromptProfileId(promptProfileId);
-          } else if (promptProfileId) {
-            localStorage.setItem("prompt_profile_id", promptProfileId);
-          } else {
-            localStorage.removeItem("prompt_profile_id");
-          }
-        } catch {}
-        
-        // Proceed to the transcription tool regardless of empties
-        window.location.href = "transcribe.html";
-      });
-    })();
-
   document.addEventListener("DOMContentLoaded", function() {
+    [
+      "lemonfox_api_key",
+      "deepgram_api_key",
+      "gemini_api_key",
+      "vertex_backend_url",
+      "vertex_backend_secret"
+    ].forEach((key) => {
+      try { sessionStorage.removeItem(key); } catch {}
+    });
+
     const enterTranscriptionBtn    = document.getElementById("enterTranscriptionBtn");
     const promptProfileInput       = document.getElementById("promptProfileInput");
     const apiKeyInput              = document.getElementById("apiKeyInput");
     const sonioxKeyInput           = document.getElementById("sonioxKeyInput");
-    const lemonfoxKeyInput         = document.getElementById("lemonfoxKeyInput");
     const mistralKeyInput          = document.getElementById("mistralKeyInput");
-    const deepgramKeyInput         = document.getElementById("deepgramKeyInput");
-    const geminiKeyInput           = document.getElementById("geminiKeyInput");
     const requestyKeyInput         = document.getElementById("requestyKeyInput");
-    const vertexBackendUrlInput    = document.getElementById("vertexBackendUrlInput");
-    const vertexBackendSecretInput = document.getElementById("vertexBackendSecretInput");
     const bedrockBackendUrlInput    = document.getElementById("bedrockBackendUrlInput");
     const bedrockBackendSecretInput = document.getElementById("bedrockBackendSecretInput");
 
@@ -1174,36 +1187,14 @@
       const storedSoniox = sessionStorage.getItem("soniox_api_key") || "";
       if (storedSoniox && !sonioxKeyInput.value) sonioxKeyInput.value = storedSoniox;
     }
-    if (lemonfoxKeyInput) {
-      const storedLemon = sessionStorage.getItem("lemonfox_api_key") || "";
-      if (storedLemon && !lemonfoxKeyInput.value) lemonfoxKeyInput.value = storedLemon;
-    }
     if (mistralKeyInput) {
       const storedMistral = sessionStorage.getItem("mistral_api_key") || "";
       if (storedMistral && !mistralKeyInput.value) mistralKeyInput.value = storedMistral;
-    }
-    if (deepgramKeyInput) {
-      const storedDeepgram = sessionStorage.getItem("deepgram_api_key") || "";
-      if (storedDeepgram && !deepgramKeyInput.value) deepgramKeyInput.value = storedDeepgram;
-    }
-    if (geminiKeyInput) {
-      const storedGemini = sessionStorage.getItem("gemini_api_key") || "";
-      if (storedGemini && !geminiKeyInput.value) geminiKeyInput.value = storedGemini;
     }
     if (requestyKeyInput) {
       const storedRequesty = sessionStorage.getItem("requesty_api_key") || "";
       if (storedRequesty && !requestyKeyInput.value) requestyKeyInput.value = storedRequesty;
     }
-    // Vertex backend URL / secret
-    if (vertexBackendUrlInput) {
-      const storedUrl = sessionStorage.getItem("vertex_backend_url") || "";
-      if (storedUrl && !vertexBackendUrlInput.value) vertexBackendUrlInput.value = storedUrl;
-    }
-    if (vertexBackendSecretInput) {
-      const storedSecret = sessionStorage.getItem("vertex_backend_secret") || "";
-      if (storedSecret && !vertexBackendSecretInput.value) vertexBackendSecretInput.value = storedSecret;
-    }
-
     // Bedrock backend URL / secret
     if (bedrockBackendUrlInput) {
       const storedUrl = sessionStorage.getItem("bedrock_backend_url") || "";
@@ -1235,17 +1226,84 @@
     const GOOGLE_DRIVE_BACKUP_VERSION = 1;
     const GOOGLE_DRIVE_KDF_ITERATIONS = 250000;
     const GOOGLE_IDENTITY_SCRIPT_URL = "https://accounts.google.com/gsi/client";
+    const activeCloudAccessTokens = new Map();
+
+    const CLOUD_RESTORE_TEXT = {
+      en: {
+        title: "Load cloud backups?",
+        both: "You previously saved a prompt list and a Workspace Set to {provider}. Select what you want to load for this session. Anything you do not select will remain unchanged. The app will continue using the version already saved in this browser.",
+        prompts: "You previously saved a prompt list to {provider}. Would you like to load it for this session? If not, the prompts already saved in this browser will be used.",
+        workspace: "You previously saved a Workspace Set to {provider}. Would you like to load it for this session? If not, the Workspace Set already saved in this browser will be used.",
+        promptLabel: "Prompt list", workspaceLabel: "Workspace Set",
+        load: "Load selected", local: "Use local data",
+        checking: "Checking cloud backups…", loading: "Downloading and decrypting selected backups…",
+        legacyPrompt: "The {item} uses an older password. Enter its previous password to import it.",
+        migrate: "Update this older {item} backup to use your current Cloud Backup Password?",
+        failed: "Cloud restore failed: {error}\n\nThe data already stored in this browser has not been changed.",
+      },
+      no: {
+        title: "Laste inn skysikkerhetskopier?",
+        both: "Du har tidligere lagret en promptliste og et Workspace Set i {provider}. Velg hva du vil laste inn for denne økten. Alt du ikke velger, forblir uendret. Appen fortsetter å bruke versjonen som allerede er lagret i denne nettleseren.",
+        prompts: "Du har tidligere lagret en promptliste i {provider}. Vil du laste den inn for denne økten? Hvis ikke brukes promptene som allerede er lagret i nettleseren.",
+        workspace: "Du har tidligere lagret et Workspace Set i {provider}. Vil du laste det inn for denne økten? Hvis ikke brukes Workspace Set-et som allerede er lagret i nettleseren.",
+        promptLabel: "Promptliste", workspaceLabel: "Workspace Set",
+        load: "Last inn valgte", local: "Bruk lokale data",
+        checking: "Sjekker skysikkerhetskopier…", loading: "Laster ned og dekrypterer valgte sikkerhetskopier…",
+        legacyPrompt: "{item} bruker et eldre passord. Skriv inn det tidligere passordet for å importere den.",
+        migrate: "Oppdatere denne eldre sikkerhetskopien av {item} til ditt nåværende Cloud Backup-passord?",
+        failed: "Gjenoppretting fra skyen mislyktes: {error}\n\nDataene som allerede er lagret i nettleseren, er ikke endret.",
+      },
+      sv: {
+        title: "Läsa in molnsäkerhetskopior?",
+        both: "Du har tidigare sparat en promptlista och ett Workspace Set i {provider}. Välj vad du vill läsa in för den här sessionen. Allt du inte väljer förblir oförändrat. Appen fortsätter använda den version som redan finns sparad i den här webbläsaren.",
+        prompts: "Du har tidigare sparat en promptlista i {provider}. Vill du läsa in den för den här sessionen? Annars används promptarna som redan finns i webbläsaren.",
+        workspace: "Du har tidigare sparat ett Workspace Set i {provider}. Vill du läsa in det för den här sessionen? Annars används det Workspace Set som redan finns i webbläsaren.",
+        promptLabel: "Promptlista", workspaceLabel: "Workspace Set", load: "Läs in valda", local: "Använd lokala data",
+        checking: "Kontrollerar molnsäkerhetskopior…", loading: "Laddar ner och dekrypterar valda säkerhetskopior…",
+        legacyPrompt: "{item} använder ett äldre lösenord. Ange det tidigare lösenordet för att importera den.",
+        migrate: "Uppdatera denna äldre säkerhetskopia av {item} till ditt nuvarande Cloud Backup-lösenord?",
+        failed: "Molnåterställningen misslyckades: {error}\n\nData som redan finns i webbläsaren har inte ändrats.",
+      },
+      de: {
+        title: "Cloud-Sicherungen laden?",
+        both: "Sie haben zuvor eine Prompt-Liste und ein Workspace Set in {provider} gespeichert. Wählen Sie aus, was für diese Sitzung geladen werden soll. Alles, was Sie nicht auswählen, bleibt unverändert. Die App verwendet weiterhin die bereits in diesem Browser gespeicherte Version.",
+        prompts: "Sie haben zuvor eine Prompt-Liste in {provider} gespeichert. Möchten Sie sie für diese Sitzung laden? Andernfalls werden die bereits im Browser gespeicherten Prompts verwendet.",
+        workspace: "Sie haben zuvor ein Workspace Set in {provider} gespeichert. Möchten Sie es für diese Sitzung laden? Andernfalls wird das bereits im Browser gespeicherte Workspace Set verwendet.",
+        promptLabel: "Prompt-Liste", workspaceLabel: "Workspace Set", load: "Auswahl laden", local: "Lokale Daten verwenden",
+        checking: "Cloud-Sicherungen werden geprüft…", loading: "Ausgewählte Sicherungen werden heruntergeladen und entschlüsselt…",
+        legacyPrompt: "{item} verwendet ein älteres Passwort. Geben Sie zum Importieren das frühere Passwort ein.",
+        migrate: "Diese ältere Sicherung von {item} auf Ihr aktuelles Cloud-Backup-Passwort aktualisieren?",
+        failed: "Cloud-Wiederherstellung fehlgeschlagen: {error}\n\nDie bereits im Browser gespeicherten Daten wurden nicht verändert.",
+      },
+      fr: {
+        title: "Charger les sauvegardes cloud ?",
+        both: "Vous avez déjà enregistré une liste de prompts et un Workspace Set dans {provider}. Sélectionnez les éléments à charger pour cette session. Tout élément non sélectionné restera inchangé. L’application continuera d’utiliser la version déjà enregistrée dans ce navigateur.",
+        prompts: "Vous avez déjà enregistré une liste de prompts dans {provider}. Voulez-vous la charger pour cette session ? Sinon, les prompts déjà enregistrés dans le navigateur seront utilisés.",
+        workspace: "Vous avez déjà enregistré un Workspace Set dans {provider}. Voulez-vous le charger pour cette session ? Sinon, le Workspace Set déjà enregistré dans le navigateur sera utilisé.",
+        promptLabel: "Liste de prompts", workspaceLabel: "Workspace Set", load: "Charger la sélection", local: "Utiliser les données locales",
+        checking: "Vérification des sauvegardes cloud…", loading: "Téléchargement et déchiffrement des sauvegardes sélectionnées…",
+        legacyPrompt: "{item} utilise un ancien mot de passe. Saisissez l’ancien mot de passe pour l’importer.",
+        migrate: "Mettre à jour cette ancienne sauvegarde de {item} avec votre mot de passe Cloud Backup actuel ?",
+        failed: "Échec de la restauration cloud : {error}\n\nLes données déjà enregistrées dans le navigateur n’ont pas été modifiées.",
+      },
+      it: {
+        title: "Caricare i backup cloud?",
+        both: "Hai già salvato un elenco di prompt e un Workspace Set in {provider}. Seleziona cosa caricare per questa sessione. Tutto ciò che non selezioni rimarrà invariato. L’app continuerà a usare la versione già salvata in questo browser.",
+        prompts: "Hai già salvato un elenco di prompt in {provider}. Vuoi caricarlo per questa sessione? In caso contrario verranno usati i prompt già salvati nel browser.",
+        workspace: "Hai già salvato un Workspace Set in {provider}. Vuoi caricarlo per questa sessione? In caso contrario verrà usato il Workspace Set già salvato nel browser.",
+        promptLabel: "Elenco di prompt", workspaceLabel: "Workspace Set", load: "Carica selezionati", local: "Usa dati locali",
+        checking: "Controllo dei backup cloud…", loading: "Download e decrittazione dei backup selezionati…",
+        legacyPrompt: "{item} usa una password precedente. Inserisci la vecchia password per importarlo.",
+        migrate: "Aggiornare questo vecchio backup di {item} con l’attuale password Cloud Backup?",
+        failed: "Ripristino cloud non riuscito: {error}\n\nI dati già salvati nel browser non sono stati modificati.",
+      },
+    };
 
     const KEY_FIELDS = [
       { id: "apiKeyInput",               storageKey: "openai_api_key" },
       { id: "sonioxKeyInput",            storageKey: "soniox_api_key" },
-      { id: "lemonfoxKeyInput",          storageKey: "lemonfox_api_key" },
       { id: "mistralKeyInput",           storageKey: "mistral_api_key" },
-      { id: "deepgramKeyInput",          storageKey: "deepgram_api_key" },
-      { id: "geminiKeyInput",            storageKey: "gemini_api_key" },
       { id: "requestyKeyInput",          storageKey: "requesty_api_key" },
-      { id: "vertexBackendUrlInput",     storageKey: "vertex_backend_url" },
-      { id: "vertexBackendSecretInput",  storageKey: "vertex_backend_secret" },
       { id: "bedrockBackendUrlInput",    storageKey: "bedrock_backend_url" },
       { id: "bedrockBackendSecretInput", storageKey: "bedrock_backend_secret" }
     ];
@@ -1321,6 +1379,8 @@
         try { sessionStorage.removeItem(storageKey); } catch {}
       });
       try { sessionStorage.removeItem("user_api_key"); } catch {}
+      activeCloudAccessTokens.clear();
+      CloudBackupSession.lockAll();
       setKeysIoStatus("Cleared keys from fields and session.", false);
     }
 
@@ -1958,6 +2018,212 @@
       googleDriveBack: document.getElementById("importGoogleDriveBackBtn")
     };
 
+    const cloudRestoreModal = {
+      backdrop: document.getElementById("cloudRestoreModalBackdrop"),
+      card: document.getElementById("cloudRestoreModal"),
+      title: document.getElementById("cloudRestoreModalTitle"),
+      close: document.getElementById("cloudRestoreModalX"),
+      notice: document.getElementById("cloudRestoreModalNotice"),
+      promptsOption: document.getElementById("cloudRestorePromptsOption"),
+      prompts: document.getElementById("cloudRestorePrompts"),
+      promptsLabel: document.getElementById("cloudRestorePromptsLabel"),
+      workspaceOption: document.getElementById("cloudRestoreWorkspaceOption"),
+      workspace: document.getElementById("cloudRestoreWorkspace"),
+      workspaceLabel: document.getElementById("cloudRestoreWorkspaceLabel"),
+      continue: document.getElementById("cloudRestoreContinue"),
+      skip: document.getElementById("cloudRestoreSkip"),
+      status: document.getElementById("cloudRestoreModalStatus"),
+    };
+
+    function getCloudRestoreText() {
+      let language = "en";
+      try { language = localStorage.getItem("siteLanguage") || "en"; } catch {}
+      return CLOUD_RESTORE_TEXT[language] || CLOUD_RESTORE_TEXT.en;
+    }
+
+    function formatCloudText(template, values = {}) {
+      return String(template || "").replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
+    }
+
+    function cloudProviderName(provider) {
+      return provider === "oneDrive" ? "Microsoft OneDrive" : "Google Drive";
+    }
+
+    function setCloudRestoreStatus(message, isError = false) {
+      if (!cloudRestoreModal.status) return;
+      cloudRestoreModal.status.textContent = String(message || "");
+      cloudRestoreModal.status.style.color = isError ? "#b00020" : "#2e7d32";
+    }
+
+    function closeCloudRestoreModal() {
+      cloudRestoreModal.backdrop?.classList.remove("active");
+      cloudRestoreModal.backdrop?.setAttribute("aria-hidden", "true");
+      setCloudRestoreStatus("");
+    }
+
+    function chooseCloudRestoreItems(availability, provider) {
+      const text = getCloudRestoreText();
+      const providerName = cloudProviderName(provider);
+      if (cloudRestoreModal.title) cloudRestoreModal.title.textContent = text.title;
+      if (cloudRestoreModal.promptsLabel) cloudRestoreModal.promptsLabel.textContent = text.promptLabel;
+      if (cloudRestoreModal.workspaceLabel) cloudRestoreModal.workspaceLabel.textContent = text.workspaceLabel;
+      if (cloudRestoreModal.continue) cloudRestoreModal.continue.textContent = text.load;
+      if (cloudRestoreModal.skip) cloudRestoreModal.skip.textContent = text.local;
+      if (cloudRestoreModal.promptsOption) cloudRestoreModal.promptsOption.hidden = !availability.prompts;
+      if (cloudRestoreModal.workspaceOption) cloudRestoreModal.workspaceOption.hidden = !availability.workspaceSet;
+      if (cloudRestoreModal.prompts) cloudRestoreModal.prompts.checked = Boolean(availability.prompts);
+      if (cloudRestoreModal.workspace) cloudRestoreModal.workspace.checked = Boolean(availability.workspaceSet);
+      if (cloudRestoreModal.notice) {
+        const template = availability.prompts && availability.workspaceSet
+          ? text.both
+          : availability.prompts ? text.prompts : text.workspace;
+        cloudRestoreModal.notice.textContent = formatCloudText(template, { provider: providerName });
+      }
+      setCloudRestoreStatus("");
+      cloudRestoreModal.backdrop?.classList.add("active");
+      cloudRestoreModal.backdrop?.setAttribute("aria-hidden", "false");
+
+      return new Promise((resolve) => {
+        let settled = false;
+        const finish = (selection) => {
+          if (settled) return;
+          settled = true;
+          resolve(selection);
+        };
+        cloudRestoreModal.continue.onclick = () => finish({
+          prompts: Boolean(availability.prompts && cloudRestoreModal.prompts?.checked),
+          workspaceSet: Boolean(availability.workspaceSet && cloudRestoreModal.workspace?.checked),
+        });
+        const useLocal = () => {
+          closeCloudRestoreModal();
+          finish({ prompts: false, workspaceSet: false });
+        };
+        cloudRestoreModal.skip.onclick = useLocal;
+        cloudRestoreModal.close.onclick = useLocal;
+      });
+    }
+
+    async function loadCloudBackupWithLegacyFallback(kind, provider, accessToken, masterPassword) {
+      const text = getCloudRestoreText();
+      const item = kind === "prompts" ? text.promptLabel : text.workspaceLabel;
+      const load = (password) => kind === "prompts"
+        ? PromptCloudBackup.loadPackageWithAccessToken(provider, accessToken, password)
+        : PromptCloudBackup.loadWorkspaceSetWithAccessToken(provider, accessToken, password);
+      const save = (bundle) => kind === "prompts"
+        ? PromptCloudBackup.savePackageWithAccessToken(provider, accessToken, bundle, masterPassword)
+        : PromptCloudBackup.saveWorkspaceSetWithAccessToken(provider, accessToken, bundle, masterPassword);
+
+      try {
+        return await load(masterPassword);
+      } catch (error) {
+        if (!/incorrect password|damaged/i.test(String(error?.message || ""))) throw error;
+        const legacyPassword = window.prompt(formatCloudText(text.legacyPrompt, { item }));
+        if (legacyPassword == null) throw new Error(`${item} restore was cancelled.`);
+        const bundle = await load(String(legacyPassword));
+        if (window.confirm(formatCloudText(text.migrate, { item }))) {
+          await save(bundle);
+        }
+        return bundle;
+      }
+    }
+
+    function commitEnterState() {
+      const promptProfileId = String(promptProfileInput?.value || "").trim();
+      const values = {
+        openai_api_key: String(apiKeyInput?.value || "").trim(),
+        soniox_api_key: String(sonioxKeyInput?.value || "").trim(),
+        mistral_api_key: String(mistralKeyInput?.value || "").trim(),
+        requesty_api_key: String(requestyKeyInput?.value || "").trim(),
+        bedrock_backend_url: String(bedrockBackendUrlInput?.value || "").trim(),
+        bedrock_backend_secret: String(bedrockBackendSecretInput?.value || "").trim(),
+      };
+      Object.entries(values).forEach(([key, value]) => sessionStorage.setItem(key, value));
+      sessionStorage.setItem("user_api_key", values.openai_api_key);
+      setCookie("user_consent", "accepted", 365);
+      try {
+        if (typeof PromptManager?.commitPromptProfileInput === "function") {
+          PromptManager.commitPromptProfileInput(promptProfileId);
+        } else if (typeof PromptManager?.setPromptProfileId === "function") {
+          PromptManager.setPromptProfileId(promptProfileId);
+        } else if (promptProfileId) {
+          localStorage.setItem("prompt_profile_id", promptProfileId);
+        } else {
+          localStorage.removeItem("prompt_profile_id");
+        }
+      } catch {}
+    }
+
+    function enterTranscriptionTool() {
+      window.location.href = "transcribe.html";
+    }
+
+    async function handleEnterTranscription() {
+      if (enterTranscriptionBtn?.disabled) return;
+      commitEnterState();
+      CloudBackupSession.clearPendingRestore();
+
+      const provider = CloudBackupSession.getKeysImportedProvider();
+      const password = CloudBackupSession.getPassword(provider);
+      if (!provider || !password) {
+        enterTranscriptionTool();
+        return;
+      }
+
+      const originalLabel = enterTranscriptionBtn.textContent;
+      enterTranscriptionBtn.disabled = true;
+      enterTranscriptionBtn.textContent = getCloudRestoreText().checking;
+      try {
+        const accessToken = activeCloudAccessTokens.get(provider) ||
+          await PromptCloudBackup.connect(provider, (statusKey) => {
+            const text = getCloudRestoreText();
+            setKeysIoStatus(text[statusKey] || text.checking, false);
+          });
+        activeCloudAccessTokens.set(provider, accessToken);
+        const availability = await PromptCloudBackup.inspectAvailableBackups(provider, accessToken);
+        if (!availability.prompts && !availability.workspaceSet) {
+          enterTranscriptionTool();
+          return;
+        }
+
+        const selection = await chooseCloudRestoreItems(availability, provider);
+        if (!selection.prompts && !selection.workspaceSet) {
+          enterTranscriptionTool();
+          return;
+        }
+
+        setCloudRestoreStatus(getCloudRestoreText().loading, false);
+        cloudRestoreModal.continue.disabled = true;
+        cloudRestoreModal.skip.disabled = true;
+        const promptPackage = selection.prompts
+          ? await loadCloudBackupWithLegacyFallback("prompts", provider, accessToken, password)
+          : null;
+        const workspaceSet = selection.workspaceSet
+          ? await loadCloudBackupWithLegacyFallback("workspaceSet", provider, accessToken, password)
+          : null;
+        CloudBackupSession.stageRestore({ promptPackage, workspaceSet });
+        closeCloudRestoreModal();
+        enterTranscriptionTool();
+      } catch (error) {
+        CloudBackupSession.clearPendingRestore();
+        const message = formatCloudText(getCloudRestoreText().failed, {
+          error: error?.message || "Unknown error",
+        });
+        closeCloudRestoreModal();
+        window.alert(message);
+        enterTranscriptionTool();
+      } finally {
+        if (cloudRestoreModal.continue) cloudRestoreModal.continue.disabled = false;
+        if (cloudRestoreModal.skip) cloudRestoreModal.skip.disabled = false;
+        enterTranscriptionBtn.disabled = false;
+        enterTranscriptionBtn.textContent = originalLabel;
+      }
+    }
+
+    if (enterTranscriptionBtn && !enterTranscriptionBtn._multiKeyWired) {
+      enterTranscriptionBtn._multiKeyWired = true;
+      enterTranscriptionBtn.addEventListener("click", handleEnterTranscription);
+    }
+
     function showExportChoice() {
       if (exportModal.choice) exportModal.choice.style.display = "";
       if (exportModal.oneDrive) exportModal.oneDrive.style.display = "none";
@@ -1988,15 +2254,17 @@
       if (exportModal.choice) exportModal.choice.style.display = "none";
       if (exportModal.oneDrive) exportModal.oneDrive.style.display = "";
       if (exportModal.googleDrive) exportModal.googleDrive.style.display = "none";
-      exportModal.oneDrivePassword?.focus();
+      configureKeyCloudPasswordStep("oneDrive", "export");
     }
 
     function showExportGoogleDrive() {
       if (exportModal.choice) exportModal.choice.style.display = "none";
       if (exportModal.oneDrive) exportModal.oneDrive.style.display = "none";
       if (exportModal.googleDrive) exportModal.googleDrive.style.display = "";
+      configureKeyCloudPasswordStep("googleDrive", "export");
       prepareGoogleDriveButton(exportModal.googleDriveSave).then(() => {
-        exportModal.googleDrivePassword?.focus();
+        if (CloudBackupSession.getPassword("googleDrive")) exportModal.googleDriveSave?.focus();
+        else exportModal.googleDrivePassword?.focus();
       });
     }
 
@@ -2043,16 +2311,58 @@
       if (importModal.choice) importModal.choice.style.display = "none";
       if (importModal.oneDrive) importModal.oneDrive.style.display = "";
       if (importModal.googleDrive) importModal.googleDrive.style.display = "none";
-      importModal.oneDrivePassword?.focus();
+      if (importModal.oneDrive) importModal.oneDrive.dataset.legacyPasswordMode = "false";
+      configureKeyCloudPasswordStep("oneDrive", "import");
     }
 
     function showImportGoogleDrive() {
       if (importModal.choice) importModal.choice.style.display = "none";
       if (importModal.oneDrive) importModal.oneDrive.style.display = "none";
       if (importModal.googleDrive) importModal.googleDrive.style.display = "";
+      if (importModal.googleDrive) importModal.googleDrive.dataset.legacyPasswordMode = "false";
+      configureKeyCloudPasswordStep("googleDrive", "import");
       prepareGoogleDriveButton(importModal.googleDriveFetch).then(() => {
-        importModal.googleDrivePassword?.focus();
+        if (CloudBackupSession.getPassword("googleDrive")) importModal.googleDriveFetch?.focus();
+        else importModal.googleDrivePassword?.focus();
       });
+    }
+
+    function configureKeyCloudPasswordStep(provider, mode) {
+      const isOneDrive = provider === "oneDrive";
+      const pane = mode === "export"
+        ? (isOneDrive ? exportModal.oneDrive : exportModal.googleDrive)
+        : (isOneDrive ? importModal.oneDrive : importModal.googleDrive);
+      const password = mode === "export"
+        ? (isOneDrive ? exportModal.oneDrivePassword : exportModal.googleDrivePassword)
+        : (isOneDrive ? importModal.oneDrivePassword : importModal.googleDrivePassword);
+      const confirmation = mode === "export"
+        ? (isOneDrive ? exportModal.oneDrivePasswordConfirm : exportModal.googleDrivePasswordConfirm)
+        : null;
+      const unlocked = CloudBackupSession.getPassword(provider);
+      const legacyMode = pane?.dataset.legacyPasswordMode === "true";
+      const useUnlocked = Boolean(unlocked) && !legacyMode;
+      const labels = pane ? Array.from(pane.querySelectorAll(".mini-modal__field-label")) : [];
+      labels.forEach((label) => { label.style.display = useUnlocked ? "none" : ""; });
+      if (password) password.style.display = useUnlocked ? "none" : "";
+      if (confirmation) confirmation.style.display = useUnlocked ? "none" : "";
+      const notice = pane?.querySelector(".mini-modal__notice");
+      if (notice) {
+        notice.textContent = legacyMode
+          ? "This older key backup uses a different password. Enter its previous password to import it."
+          : useUnlocked
+            ? `Your unlocked Cloud Backup Password for ${cloudProviderName(provider)} will be used.`
+            : mode === "export"
+              ? "Create a Cloud Backup Password for this provider. It will also be used for prompt lists and Workspace Sets, kept only in this tab session and never uploaded."
+              : "Enter the Cloud Backup Password for this provider. It is kept only in this tab session and never uploaded.";
+      }
+      if (useUnlocked) {
+        const action = mode === "export"
+          ? (isOneDrive ? exportModal.oneDriveSave : exportModal.googleDriveSave)
+          : (isOneDrive ? importModal.oneDriveFetch : importModal.googleDriveFetch);
+        action?.focus();
+      } else {
+        password?.focus();
+      }
     }
 
     exportKeysBtn?.addEventListener("click", openExportModal);
@@ -2079,14 +2389,15 @@
     });
 
     exportModal.oneDriveSave?.addEventListener("click", async () => {
-      const password = exportModal.oneDrivePassword?.value || "";
-      const confirmation = exportModal.oneDrivePasswordConfirm?.value || "";
-      if (password.length < 10) {
+      const unlockedPassword = CloudBackupSession.getPassword("oneDrive");
+      const password = unlockedPassword || exportModal.oneDrivePassword?.value || "";
+      const confirmation = unlockedPassword || exportModal.oneDrivePasswordConfirm?.value || "";
+      if (!unlockedPassword && password.length < 10) {
         setKeysIoStatus("Use an encryption password with at least 10 characters.", true);
         exportModal.oneDrivePassword?.focus();
         return;
       }
-      if (password !== confirmation) {
+      if (!unlockedPassword && password !== confirmation) {
         setKeysIoStatus("The two encryption passwords do not match.", true);
         exportModal.oneDrivePasswordConfirm?.focus();
         return;
@@ -2102,6 +2413,8 @@
         setKeysIoStatus("Encrypting and saving the backup…", false);
         const encrypted = await encryptKeyBundleForOneDrive(buildKeyBundle(), password);
         await uploadEncryptedBackupToOneDrive(accessToken, encrypted);
+        CloudBackupSession.unlock("oneDrive", password);
+        activeCloudAccessTokens.set("oneDrive", accessToken);
         closeExportModal();
         setKeysIoStatus("Encrypted OneDrive backup saved. Any previous backup was replaced.", false);
       } catch (error) {
@@ -2115,14 +2428,15 @@
     });
 
     exportModal.googleDriveSave?.addEventListener("click", async () => {
-      const password = exportModal.googleDrivePassword?.value || "";
-      const confirmation = exportModal.googleDrivePasswordConfirm?.value || "";
-      if (password.length < 10) {
+      const unlockedPassword = CloudBackupSession.getPassword("googleDrive");
+      const password = unlockedPassword || exportModal.googleDrivePassword?.value || "";
+      const confirmation = unlockedPassword || exportModal.googleDrivePasswordConfirm?.value || "";
+      if (!unlockedPassword && password.length < 10) {
         setKeysIoStatus("Use an encryption password with at least 10 characters.", true);
         exportModal.googleDrivePassword?.focus();
         return;
       }
-      if (password !== confirmation) {
+      if (!unlockedPassword && password !== confirmation) {
         setKeysIoStatus("The two encryption passwords do not match.", true);
         exportModal.googleDrivePasswordConfirm?.focus();
         return;
@@ -2138,6 +2452,8 @@
         setKeysIoStatus("Encrypting and saving the backup…", false);
         const encrypted = await encryptKeyBundleForGoogleDrive(buildKeyBundle(), password);
         await uploadEncryptedBackupToGoogleDrive(accessToken, encrypted);
+        CloudBackupSession.unlock("googleDrive", password);
+        activeCloudAccessTokens.set("googleDrive", accessToken);
         closeExportModal();
         setKeysIoStatus("Encrypted Google Drive backup saved. Any previous backup was replaced.", false);
       } catch (error) {
@@ -2177,6 +2493,7 @@
           return;
         }
         applyKeyBundle(JSON.parse(raw));
+        CloudBackupSession.clearKeysImportedProvider();
         closeImportModal();
         setKeysIoStatus("Imported keys. Review the fields, then click Enter.", false);
       } catch {
@@ -2185,7 +2502,10 @@
     });
 
     importModal.oneDriveFetch?.addEventListener("click", async () => {
-      const password = importModal.oneDrivePassword?.value || "";
+      const unlockedPassword = CloudBackupSession.getPassword("oneDrive");
+      const legacyMode = importModal.oneDrive?.dataset.legacyPasswordMode === "true";
+      const usingUnlockedPassword = Boolean(unlockedPassword) && !legacyMode;
+      const password = usingUnlockedPassword ? unlockedPassword : importModal.oneDrivePassword?.value || "";
       if (!password) {
         setKeysIoStatus("Enter the encryption password for your OneDrive backup.", true);
         importModal.oneDrivePassword?.focus();
@@ -2202,9 +2522,23 @@
         const encrypted = await downloadEncryptedBackupFromOneDrive(accessToken);
         const bundle = await decryptKeyBundleFromOneDrive(encrypted, password);
         applyKeyBundle(bundle);
+        if (!unlockedPassword) {
+          CloudBackupSession.unlock("oneDrive", password);
+        } else if (legacyMode && window.confirm("Update this older key backup to use your current Cloud Backup Password?")) {
+          const migrated = await encryptKeyBundleForOneDrive(bundle, unlockedPassword);
+          await uploadEncryptedBackupToOneDrive(accessToken, migrated);
+        }
+        CloudBackupSession.markKeysImportedFrom("oneDrive");
+        activeCloudAccessTokens.set("oneDrive", accessToken);
         closeImportModal();
         setKeysIoStatus("Imported keys from your OneDrive. Review the fields, then click Enter.", false);
       } catch (error) {
+        if (usingUnlockedPassword && /incorrect password|damaged/i.test(String(error?.message || ""))) {
+          if (importModal.oneDrive) importModal.oneDrive.dataset.legacyPasswordMode = "true";
+          configureKeyCloudPasswordStep("oneDrive", "import");
+          setKeysIoStatus("This older key backup uses a different password. Enter its previous password.", true);
+          return;
+        }
         setKeysIoStatus("OneDrive import failed: " + (error?.message || "Unknown error"), true);
       } finally {
         if (importModal.oneDrivePassword) importModal.oneDrivePassword.value = "";
@@ -2214,7 +2548,10 @@
     });
 
     importModal.googleDriveFetch?.addEventListener("click", async () => {
-      const password = importModal.googleDrivePassword?.value || "";
+      const unlockedPassword = CloudBackupSession.getPassword("googleDrive");
+      const legacyMode = importModal.googleDrive?.dataset.legacyPasswordMode === "true";
+      const usingUnlockedPassword = Boolean(unlockedPassword) && !legacyMode;
+      const password = usingUnlockedPassword ? unlockedPassword : importModal.googleDrivePassword?.value || "";
       if (!password) {
         setKeysIoStatus("Enter the encryption password for your Google Drive backup.", true);
         importModal.googleDrivePassword?.focus();
@@ -2231,9 +2568,23 @@
         const encrypted = await downloadEncryptedBackupFromGoogleDrive(accessToken);
         const bundle = await decryptKeyBundleFromGoogleDrive(encrypted, password);
         applyKeyBundle(bundle);
+        if (!unlockedPassword) {
+          CloudBackupSession.unlock("googleDrive", password);
+        } else if (legacyMode && window.confirm("Update this older key backup to use your current Cloud Backup Password?")) {
+          const migrated = await encryptKeyBundleForGoogleDrive(bundle, unlockedPassword);
+          await uploadEncryptedBackupToGoogleDrive(accessToken, migrated);
+        }
+        CloudBackupSession.markKeysImportedFrom("googleDrive");
+        activeCloudAccessTokens.set("googleDrive", accessToken);
         closeImportModal();
         setKeysIoStatus("Imported keys from Google Drive. Review the fields, then click Enter.", false);
       } catch (error) {
+        if (usingUnlockedPassword && /incorrect password|damaged/i.test(String(error?.message || ""))) {
+          if (importModal.googleDrive) importModal.googleDrive.dataset.legacyPasswordMode = "true";
+          configureKeyCloudPasswordStep("googleDrive", "import");
+          setKeysIoStatus("This older key backup uses a different password. Enter its previous password.", true);
+          return;
+        }
         setKeysIoStatus("Google Drive import failed: " + (error?.message || "Unknown error"), true);
       } finally {
         if (importModal.googleDrivePassword) importModal.googleDrivePassword.value = "";
@@ -2251,6 +2602,7 @@
       reader.onload = () => {
         try {
           applyKeyBundle(JSON.parse(String(reader.result || "")));
+          CloudBackupSession.clearKeysImportedProvider();
           setKeysIoStatus("Imported keys. Review the fields, then click Enter.", false);
         } catch {
           setKeysIoStatus("Import failed: invalid JSON file.", true);
@@ -2289,7 +2641,36 @@
   <pre id="bedrockGuideText">Loading…</pre>
 </div>
 
+  <!-- Soniox Guide Modal -->
+  <div
+    id="sonioxGuideView"
+    class="provider-guide-view"
+    role="dialog"
+    aria-modal="true"
+    aria-hidden="true"
+    aria-labelledby="sonioxGuideHeading"
+  >
+    <button id="sonioxGuideClose" class="provider-guide-close" type="button" aria-label="Close">&times;</button>
+    <h3 id="sonioxGuideHeading" class="provider-guide-heading">Soniox setup guide</h3>
+    <pre id="sonioxGuideText" class="provider-guide-text">Loading…</pre>
+  </div>
+
+  <!-- Requesty Guide Modal -->
+  <div
+    id="requestyGuideView"
+    class="provider-guide-view"
+    role="dialog"
+    aria-modal="true"
+    aria-hidden="true"
+    aria-labelledby="requestyGuideHeading"
+  >
+    <button id="requestyGuideClose" class="provider-guide-close" type="button" aria-label="Close">&times;</button>
+    <h3 id="requestyGuideHeading" class="provider-guide-heading">Requesty setup guide</h3>
+    <pre id="requestyGuideText" class="provider-guide-text">Loading…</pre>
+  </div>
+
   <!-- Google Vertex Guide Modal -->
+  <button id="vertex-guide-link" type="button" hidden aria-hidden="true" tabindex="-1">Guide</button>
   <div id="vertexGuideView" aria-hidden="true">
     <button id="vertexGuideClose" type="button" aria-label="Close">&times;</button>
     <h3>Google Vertex setup guide</h3>
@@ -2403,8 +2784,8 @@
 
         // Norwegian only when lang === "no". All other languages default to English.
         const candidates = (lang === "no")
-          ? ["./bedrock-guide.no.txt", "./bedrock-guide.txt"]
-          : ["./bedrock-guide.txt"];
+          ? ["./provider-guides/bedrock-guide.no.txt", "./provider-guides/bedrock-guide.txt"]
+          : ["./provider-guides/bedrock-guide.txt"];
 
         try {
           let loaded = false;
@@ -2422,7 +2803,7 @@
           console.error("Failed to load bedrock guide text:", err);
           bedrockGuideTextEl.textContent =
             "Could not load the guide text.\n\n" +
-            "If you are the site owner: make sure bedrock-guide.txt exists next to index.html (and optionally bedrock-guide.no.txt).";
+            "If you are the site owner: make sure bedrock-guide.txt exists inside the provider-guides folder (and optionally bedrock-guide.no.txt).";
           bedrockGuideLoadedLang = null;
         }
       }
@@ -2462,6 +2843,185 @@
       if (location.hash === "#bedrock-update-stack") {
         openBedrockGuide();
       }
+
+
+      // Soniox and Requesty guides use the same modal pattern as Bedrock and
+      // load the guide matching the selected site language (English fallback).
+      function createProviderGuideController({
+        linkId,
+        viewId,
+        closeId,
+        headingId,
+        textId,
+        filesByLanguage,
+        headingsByLanguage,
+        loadingByLanguage,
+        errorByLanguage,
+        analyticsAction
+      }) {
+        const link = document.getElementById(linkId);
+        const view = document.getElementById(viewId);
+        const closeButton = document.getElementById(closeId);
+        const heading = document.getElementById(headingId);
+        const textElement = document.getElementById(textId);
+        let loadedLanguage = null;
+        let previouslyFocusedElement = null;
+
+        async function loadForCurrentLanguage() {
+          if (!textElement) return;
+
+          const lang = getCurrentLang();
+          if (loadedLanguage === lang) return;
+
+          const englishFile = filesByLanguage.en;
+          const selectedFile = filesByLanguage[lang] || englishFile;
+          if (heading) {
+            heading.textContent = headingsByLanguage[lang] || headingsByLanguage.en;
+          }
+          textElement.textContent = loadingByLanguage[lang] || loadingByLanguage.en;
+
+          const candidates = selectedFile === englishFile
+            ? [englishFile]
+            : [selectedFile, englishFile];
+
+          try {
+            let loaded = false;
+            for (const url of candidates) {
+              const response = await fetch(url, { cache: "no-store" });
+              if (!response.ok) continue;
+              textElement.textContent = await response.text();
+              loaded = true;
+              break;
+            }
+            if (!loaded) throw new Error("No guide file could be loaded.");
+            loadedLanguage = lang;
+          } catch (error) {
+            console.error(`Failed to load ${viewId}:`, error);
+            textElement.textContent = errorByLanguage[lang] || errorByLanguage.en;
+            loadedLanguage = null;
+          }
+        }
+
+        function open() {
+          if (!view) return;
+          previouslyFocusedElement = document.activeElement;
+          view.classList.add("active");
+          view.setAttribute("aria-hidden", "false");
+          view.scrollTop = 0;
+          loadForCurrentLanguage();
+          closeButton?.focus();
+        }
+
+        function close() {
+          if (!view) return;
+          view.classList.remove("active");
+          view.setAttribute("aria-hidden", "true");
+          if (previouslyFocusedElement instanceof HTMLElement) {
+            previouslyFocusedElement.focus();
+          }
+          previouslyFocusedElement = null;
+        }
+
+        function refreshForLanguage() {
+          loadedLanguage = null;
+          if (view?.classList.contains("active")) {
+            loadForCurrentLanguage();
+          }
+        }
+
+        link?.addEventListener("click", (event) => {
+          event.preventDefault();
+          logEvent({ action: analyticsAction });
+          open();
+        });
+        closeButton?.addEventListener("click", close);
+
+        return { view, close, refreshForLanguage };
+      }
+
+      const sonioxGuideController = createProviderGuideController({
+        linkId: "soniox-guide-link",
+        viewId: "sonioxGuideView",
+        closeId: "sonioxGuideClose",
+        headingId: "sonioxGuideHeading",
+        textId: "sonioxGuideText",
+        filesByLanguage: {
+          en: "./provider-guides/soniox-guide.txt",
+          no: "./provider-guides/soniox-guide.no.txt",
+          sv: "./provider-guides/soniox-guide.sv.txt",
+          de: "./provider-guides/soniox-guide.de.txt",
+          fr: "./provider-guides/soniox-guide.fr.txt",
+          it: "./provider-guides/soniox-guide.it.txt"
+        },
+        headingsByLanguage: {
+          en: "Soniox setup guide",
+          no: "Oppsettsguide for Soniox",
+          sv: "Installationsguide för Soniox",
+          de: "Einrichtungsanleitung für Soniox",
+          fr: "Guide de configuration de Soniox",
+          it: "Guida alla configurazione di Soniox"
+        },
+        loadingByLanguage: {
+          en: "Loading…", no: "Laster…", sv: "Läser in…",
+          de: "Wird geladen…", fr: "Chargement…", it: "Caricamento…"
+        },
+        errorByLanguage: {
+          en: "Could not load the guide text. Make sure the guide file exists inside the provider-guides folder.",
+          no: "Kunne ikke laste guideteksten. Kontroller at guidefilen finnes i mappen provider-guides.",
+          sv: "Det gick inte att läsa in guiden. Kontrollera att guidefilen finns i mappen provider-guides.",
+          de: "Der Leitfaden konnte nicht geladen werden. Prüfen Sie, ob die Datei im Ordner provider-guides vorhanden ist.",
+          fr: "Impossible de charger le guide. Vérifiez que le fichier se trouve dans le dossier provider-guides.",
+          it: "Impossibile caricare la guida. Verificare che il file sia presente nella cartella provider-guides."
+        },
+        analyticsAction: "Soniox guide"
+      });
+
+      const requestyGuideController = createProviderGuideController({
+        linkId: "requesty-guide-link",
+        viewId: "requestyGuideView",
+        closeId: "requestyGuideClose",
+        headingId: "requestyGuideHeading",
+        textId: "requestyGuideText",
+        filesByLanguage: {
+          en: "./provider-guides/requesty-guide.txt",
+          no: "./provider-guides/requesty-guide.no.txt",
+          sv: "./provider-guides/requesty-guide.sv.txt",
+          de: "./provider-guides/requesty-guide.de.txt",
+          fr: "./provider-guides/requesty-guide.fr.txt",
+          it: "./provider-guides/requesty-guide.it.txt"
+        },
+        headingsByLanguage: {
+          en: "Requesty setup guide",
+          no: "Oppsettsguide for Requesty",
+          sv: "Installationsguide för Requesty",
+          de: "Einrichtungsanleitung für Requesty",
+          fr: "Guide de configuration de Requesty",
+          it: "Guida alla configurazione di Requesty"
+        },
+        loadingByLanguage: {
+          en: "Loading…", no: "Laster…", sv: "Läser in…",
+          de: "Wird geladen…", fr: "Chargement…", it: "Caricamento…"
+        },
+        errorByLanguage: {
+          en: "Could not load the guide text. Make sure the guide file exists inside the provider-guides folder.",
+          no: "Kunne ikke laste guideteksten. Kontroller at guidefilen finnes i mappen provider-guides.",
+          sv: "Det gick inte att läsa in guiden. Kontrollera att guidefilen finns i mappen provider-guides.",
+          de: "Der Leitfaden konnte nicht geladen werden. Prüfen Sie, ob die Datei im Ordner provider-guides vorhanden ist.",
+          fr: "Impossible de charger le guide. Vérifiez que le fichier se trouve dans le dossier provider-guides.",
+          it: "Impossibile caricare la guida. Verificare che il file sia presente nella cartella provider-guides."
+        },
+        analyticsAction: "Requesty guide"
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
+        if (sonioxGuideController.view?.classList.contains("active")) {
+          sonioxGuideController.close();
+        }
+        if (requestyGuideController.view?.classList.contains("active")) {
+          requestyGuideController.close();
+        }
+      });
 
 
       // Google Vertex "Guide" modal (opened from the link next to Google Vertex)
@@ -2546,6 +3106,8 @@
         requestAnimationFrame(() => {
           bedrockGuideLoadedLang = null;
           vertexGuideLoadedLang = null;
+          sonioxGuideController.refreshForLanguage();
+          requestyGuideController.refreshForLanguage();
 
           if (bedrockGuideView?.classList.contains("active")) {
             loadBedrockGuideForCurrentLanguage();

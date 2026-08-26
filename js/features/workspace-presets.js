@@ -1,22 +1,23 @@
 import { PromptManager } from "../promptManager.js";
 import { PromptCloudBackup } from "./prompt-cloud-backup.js";
+import { CloudBackupSession } from "./cloud-backup-session.js";
 
 const PRESET_SCHEMA = "whisper.workspace-presets";
 const PRESET_VERSION = 1;
 const DEFINITIONS_KEY = "whisper_workspace_presets_v1";
 const ACTIVE_KEY = "whisper_workspace_active_preset_v1";
+const PRIMARY_RUNTIME_KEY = "whisper_workspace_primary_runtime_v1";
 const PANEL_MODE_KEY = "whisper_workspace_mini_panel_mode";
 const DRAFT_KEY = "whisper_workspace_draft_v1";
 const MAX_PRESETS = 12;
 
 const VALUE_IDS = [
   "transcribeProvider", "sonioxSpeakerLabels", "sonioxRegion",
-  "noteProvider", "noteProviderMode", "openaiModel", "geminiModel",
-  "vertexModel", "bedrockModel", "requestyModel", "gpt5Reasoning",
-  "requestyNanoReasoning", "geminiReasoning", "promptSlot",
+  "noteProvider", "noteProviderMode", "openaiModel",
+  "bedrockModel", "requestyModel", "gpt5Reasoning",
+  "requestyNanoReasoning", "promptSlot",
   "autoCopyModeSelect", "secondaryProvider", "secondaryMode",
   "secondaryOpenaiModel", "secondaryOpenaiReasoning",
-  "secondaryGeminiModel", "secondaryGeminiReasoning", "secondaryVertexModel",
   "secondaryBedrockModel", "secondaryRequestyModel", "secondaryNanoReasoning",
   "secondaryPromptSelect",
 ];
@@ -41,7 +42,7 @@ const DELEGATED_APP_ACTIONS = [
   "getAutoGenerateEnabled", "setAutoCopyMode", "getAutoCopyMode",
   "setUsePromptEnabled", "getUsePromptEnabled", "switchNoteProvider",
   "switchTranscribeProvider", "setSonioxSpeakerLabels", "setOpenAiModel",
-  "setGeminiModel", "setVertexModel", "setBedrockModel", "setRequestyModel",
+  "setBedrockModel", "setRequestyModel",
   "setNoteProviderMode", "setSelectedPromptSlot", "selectPromptSlot",
   "getMiniPanelState", "getMiniPanelPromptOptions", "getSelectedPromptSlot",
   "getCurrentPromptSlotTitle",
@@ -50,9 +51,8 @@ const DELEGATED_APP_ACTIONS = [
 const TEXT = {
   en: {
     presets: "Workspace set:", help: "Workspace set help", import: "Import", export: "Export",
-    add: "Add workspace", clone: "Clone workspace", close: "Close workspace", defaultName: "Workspace {n}",
+    add: "Add workspace", move: "Move workspace", clone: "Clone workspace", close: "Close workspace", defaultName: "Workspace {n}",
     cloneName: "{name} (copy)", cloneLoading: "Wait for this workspace to finish loading before cloning it.",
-    busyClone: "Stop or abort the active recording, transcription, or generation before cloning this workspace.",
     namePrompt: "Workspace name", max: "You can have up to 12 workspaces open.",
     atLeastOne: "At least one workspace must remain open.",
     busyClose: "Stop or abort the active recording, transcription, or generation before closing this workspace.",
@@ -68,6 +68,10 @@ const TEXT = {
     password: "Encryption password", repeat: "Repeat password",
     passwordMin: "Use a password with at least 10 characters.", mismatch: "The passwords do not match.",
     passwordRequired: "Enter the backup password.", save: "Save", back: "Back", cancel: "Cancel",
+    unlockedPassword: "Your unlocked Cloud Backup Password for {provider} will be used.",
+    legacyPassword: "This older Workspace Set uses a different password. Enter its previous password to import it.",
+    migrateLegacy: "This Workspace Set used an older password. Update it now to use your current Cloud Backup Password?",
+    cloudRestored: "Selected cloud backups were loaded.",
     addMode: "Add workspaces", replaceMode: "Replace workspace set",
     preview: "{n} workspaces found: {names}",
     replaceWarning: "Replace the current workspace set? Existing workspace text and history will be discarded. Active jobs must already be stopped.",
@@ -81,9 +85,8 @@ const TEXT = {
   },
   no: {
     presets: "Workspace set:", help: "Hjelp om Workspace set", import: "Importer", export: "Eksporter",
-    add: "Legg til Workspace", clone: "Klon Workspace", close: "Lukk Workspace", defaultName: "Workspace {n}",
+    add: "Legg til Workspace", move: "Flytt Workspace", clone: "Klon Workspace", close: "Lukk Workspace", defaultName: "Workspace {n}",
     cloneName: "{name} (kopi)", cloneLoading: "Vent til dette Workspace-et er ferdig lastet før du kloner det.",
-    busyClone: "Stopp eller avbryt aktivt opptak, transkribering eller generering før dette Workspace-et klones.",
     namePrompt: "Navn på Workspace", max: "Du kan ha opptil 12 åpne Workspaces.",
     atLeastOne: "Minst ett Workspace må være åpent.",
     busyClose: "Stopp eller avbryt aktivt opptak, transkribering eller generering før Workspace-et lukkes.",
@@ -99,6 +102,10 @@ const TEXT = {
     password: "Krypteringspassord", repeat: "Gjenta passord",
     passwordMin: "Bruk et passord med minst 10 tegn.", mismatch: "Passordene er ikke like.",
     passwordRequired: "Skriv inn passordet til backupen.", save: "Lagre", back: "Tilbake", cancel: "Avbryt",
+    unlockedPassword: "Det opplåste Cloud Backup-passordet for {provider} vil bli brukt.",
+    legacyPassword: "Dette eldre Workspace set-et bruker et annet passord. Skriv inn det tidligere passordet for å importere det.",
+    migrateLegacy: "Dette Workspace set-et brukte et eldre passord. Vil du oppdatere det nå til ditt nåværende Cloud Backup-passord?",
+    cloudRestored: "Valgte skysikkerhetskopier ble lastet inn.",
     addMode: "Legg til Workspaces", replaceMode: "Erstatt Workspace set",
     preview: "{n} Workspaces funnet: {names}",
     replaceWarning: "Erstatt nåværende Workspace set? Eksisterende Workspace-tekst og historikk forkastes. Aktive jobber må allerede være stoppet.",
@@ -142,6 +149,26 @@ function dispatchChange(win, element) {
 function dispatchInput(win, element) {
   if (!element) return;
   try { element.dispatchEvent(new win.Event("input", { bubbles: true })); } catch {}
+}
+
+function ensureSecondaryNoteModuleReady(win, doc) {
+  const pane = doc?.getElementById("secondaryNotePane");
+  const toggleButton = doc?.getElementById("toggleSecondaryNoteButton");
+  if (!pane || !toggleButton) return true;
+  if (win?.__secondaryNoteModuleReady === true) return true;
+
+  if (typeof win?.__initSecondaryNoteModule === "function") {
+    try {
+      return win.__initSecondaryNoteModule() === true || win.__secondaryNoteModuleReady === true;
+    } catch (error) {
+      console.warn("[workspace-presets] Secondary Note initialization failed.", error);
+      return false;
+    }
+  }
+
+  // Compatibility fallback if this file is briefly mixed with an older cached
+  // secondary-note.js that does not expose an explicit readiness handshake.
+  return doc?.readyState === "complete";
 }
 
 function captureConfig(doc) {
@@ -361,6 +388,10 @@ function initFrameRuntime() {
     getSnapshot: () => getRuntimeSnapshot(window, document),
     getHistorySnapshot: () => window.__noteHistory?.getSnapshot?.() || { entries: [], nextSequence: 1 },
     clearHistory: () => window.__noteHistory?.clearLocal?.() !== false,
+    replaceHistory(snapshot) {
+      const replace = window.__noteHistory?.replaceLocal;
+      return typeof replace === "function" ? replace(snapshot) !== false : false;
+    },
     getGeneralTerms: () => String(document.getElementById("redactorGeneralTerms")?.value || ""),
     setGeneralTerms(value) {
       const el = document.getElementById("redactorGeneralTerms");
@@ -388,7 +419,24 @@ function initFrameRuntime() {
   window.__openMiniPanel = () => window.parent.__openMiniPanel?.();
   window.addEventListener("mini-panel:open-requested", () => window.parent.__openMiniPanel?.());
   sendHeight();
-  notifyParent("ready");
+
+  let secondaryReadyAttempts = 0;
+  const notifyWhenRuntimeReady = () => {
+    if (ensureSecondaryNoteModuleReady(window, document)) {
+      notifyParent("ready");
+      return;
+    }
+
+    secondaryReadyAttempts += 1;
+    if (secondaryReadyAttempts < 200) {
+      window.setTimeout(notifyWhenRuntimeReady, 25);
+      return;
+    }
+
+    console.warn("[workspace-presets] Secondary Note readiness timed out; continuing with the frame runtime.");
+    notifyParent("ready-secondary-timeout");
+  };
+  notifyWhenRuntimeReady();
 }
 
 function injectManagerStyle() {
@@ -399,16 +447,17 @@ function injectManagerStyle() {
     .workspace-preset-help-content{display:none;position:absolute;z-index:9999;left:0;top:36px;width:min(400px,78vw);padding:10px 12px;border:1px solid #b8c6c0;border-radius:8px;background:#fff;box-shadow:0 7px 22px rgba(0,0,0,.16);color:#27332e;text-align:left;line-height:1.35;font-weight:400}
     .workspace-preset-help:hover .workspace-preset-help-content,.workspace-preset-help:focus .workspace-preset-help-content,.workspace-preset-help.is-open .workspace-preset-help-content{display:block}
     .workspace-preset-io{min-height:39px;padding:8px 16px;border:1px solid #cbd5d1;border-radius:8px;background:#fff;color:#3d5148;cursor:pointer}.workspace-preset-io:hover{background:#f1f7f4}
-    .workspace-preset-label{margin-left:17px;color:#68746f;font-weight:600;white-space:nowrap}.workspace-preset-list{display:flex;align-items:center;gap:10px;min-width:0;overflow-x:auto;padding:4px 0;scrollbar-width:thin}
-    .workspace-preset-chip{display:inline-flex;align-items:center;gap:2px;flex:0 0 auto;min-height:49px;padding:0 9px 0 0;border:1px solid #d2dad6;border-radius:999px;background:#fff;color:#34463e;max-width:310px;box-sizing:border-box}.workspace-preset-chip:hover{background:#f2f8f5;color:#34463e}
-    .workspace-preset-chip.is-active{border-color:#69a98d;background:#edf7f2;box-shadow:inset 0 -2px 0 #5a9}.workspace-preset-select{display:inline-flex;align-items:center;gap:10px;align-self:stretch;min-width:0;max-width:246px;padding:9px 7px 9px 17px;border:0;border-radius:999px 5px 5px 999px;background:transparent;color:inherit;cursor:pointer}.workspace-preset-select:hover,.workspace-preset-select:focus-visible{background:rgba(90,169,153,.09);outline:none}.workspace-preset-select[aria-pressed="true"]{font-weight:600}.workspace-preset-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .workspace-preset-label{margin-left:17px;color:#68746f;font-weight:600;white-space:nowrap}.workspace-preset-list{display:flex;align-items:center;gap:10px;min-width:0;overflow-x:auto;padding:4px 6px;scrollbar-width:thin}
+    .workspace-preset-chip{position:relative;display:inline-flex;align-items:center;gap:2px;flex:0 0 auto;min-height:49px;padding:0 9px 0 4px;border:1px solid #d2dad6;border-radius:999px;background:#fff;color:#34463e;max-width:310px;box-sizing:border-box}.workspace-preset-chip:hover{background:#f2f8f5;color:#34463e}
+    .workspace-preset-chip.is-active{border-color:#69a98d;background:#edf7f2;box-shadow:inset 0 -2px 0 #5a9}.workspace-preset-chip.is-workspace-dragging{opacity:.5}.workspace-preset-chip.is-workspace-drop-before::before,.workspace-preset-chip.is-workspace-drop-after::after{content:"";position:absolute;z-index:3;top:5px;bottom:5px;width:3px;border-radius:999px;background:#4f9d7b;box-shadow:0 0 0 2px rgba(79,157,123,.14)}.workspace-preset-chip.is-workspace-drop-before::before{left:-7px}.workspace-preset-chip.is-workspace-drop-after::after{right:-7px}
+    .workspace-preset-drag{align-self:stretch;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:25px;padding:0;border:0;border-radius:999px 5px 5px 999px;background:transparent;color:#8a9691;font-size:17px;line-height:1;cursor:grab}.workspace-preset-drag:hover,.workspace-preset-drag:focus-visible{background:rgba(90,169,153,.12);color:#46705f;outline:none}.workspace-preset-drag:active{cursor:grabbing}.workspace-preset-select{display:inline-flex;align-items:center;gap:10px;align-self:stretch;min-width:0;max-width:246px;padding:9px 7px;border:0;border-radius:5px;background:transparent;color:inherit;cursor:pointer}.workspace-preset-select:hover,.workspace-preset-select:focus-visible{background:rgba(90,169,153,.09);outline:none}.workspace-preset-select[aria-pressed="true"]{font-weight:600}.workspace-preset-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .workspace-preset-dot{width:10.5px;height:10.5px;border-radius:50%;background:#b8c0bd;flex:0 0 auto}.workspace-preset-dot.recording{background:#d7263d;box-shadow:0 0 0 0 rgba(215,38,61,.5);animation:workspacePulse 1.3s infinite}.workspace-preset-dot.generating{background:#7b61c9;animation:workspaceSpin 1.2s linear infinite}.workspace-preset-dot.transcribing{background:#2c7bd9}.workspace-preset-dot.complete{background:#2f9d61}
     .workspace-preset-clone,.workspace-preset-close{position:relative;flex:0 0 auto;border:0;background:transparent;color:#87918d;padding:0;cursor:pointer}.workspace-preset-clone{width:25px;height:29px;border-radius:5px}.workspace-preset-clone::before,.workspace-preset-clone::after{content:"";position:absolute;width:9px;height:9px;border:1.5px solid currentColor;border-radius:2px;box-sizing:border-box}.workspace-preset-clone::before{left:7px;top:7px}.workspace-preset-clone::after{left:10px;top:10px}.workspace-preset-clone:hover,.workspace-preset-clone:focus-visible{background:rgba(90,169,153,.12);color:#46705f;outline:none}.workspace-preset-close{width:24px;height:29px;border-radius:5px;line-height:1;font-size:19px}.workspace-preset-close:hover,.workspace-preset-close:focus-visible{background:rgba(164,0,30,.07);color:#a4001e;outline:none}.workspace-preset-add{width:47px;height:47px;padding:0;border:1px dashed #aebbb5;border-radius:50%;background:#fff;color:#426857;font-size:26px;line-height:1;cursor:pointer;flex:0 0 auto}
     .workspace-preset-frame-host{position:relative;width:100%}.workspace-preset-frame{border:0;background:#f8f8f8}.workspace-preset-frame.is-active{position:relative;display:block;width:100%;min-height:600px;opacity:1;pointer-events:auto}.workspace-preset-frame.is-parked{position:fixed;left:-10000px;top:0;width:2px!important;height:2px!important;opacity:0;pointer-events:none}
     .workspace-preset-toast{position:fixed;z-index:10020;left:50%;bottom:18px;transform:translateX(-50%);padding:8px 13px;border-radius:8px;background:#24352d;color:white;font-size:13px;box-shadow:0 5px 20px rgba(0,0,0,.2)}
     .workspace-backdrop{position:fixed;z-index:10010;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.4)}.workspace-backdrop[hidden]{display:none}.workspace-modal{width:min(480px,94vw);max-height:88vh;overflow:auto;background:#fff;border-radius:12px;padding:16px;box-shadow:0 16px 48px rgba(0,0,0,.3)}.workspace-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.workspace-modal-head h2{font-size:18px;margin:0}.workspace-modal-close{border:0;background:transparent;color:#a4001e;padding:2px 6px;font-size:22px;cursor:pointer}.workspace-modal-notice{padding:9px;border:1px solid #b8d6ca;border-radius:8px;background:#f3faf7;font-size:12px;line-height:1.4}.workspace-modal-option{display:block;width:100%;margin-top:10px!important;padding:9px;border:1px solid #9bc4b2;border-radius:8px;background:#fff;color:#2e5544;text-align:left;cursor:pointer}.workspace-modal-option:hover{background:#f1f8f5;color:#2e5544}.workspace-modal-field{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:8px;border:1px solid #cbd5d1;border-radius:7px}.workspace-modal-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.workspace-modal-actions button{padding:7px 11px;border-radius:7px;font-size:12px}.workspace-modal-status{min-height:18px;font-size:12px}.workspace-import-preview{margin-top:10px;padding:9px;border:1px solid #d8dfdc;border-radius:8px;background:#fafafa;font-size:12px}
     @keyframes workspacePulse{0%{box-shadow:0 0 0 0 rgba(215,38,61,.48)}70%{box-shadow:0 0 0 5px rgba(215,38,61,0)}100%{box-shadow:0 0 0 0 rgba(215,38,61,0)}}@keyframes workspaceSpin{50%{opacity:.35}}
-    @media(max-width:700px){.workspace-preset-label{margin-left:4px}.workspace-preset-io{min-height:35px;font-size:11px;padding:4px 6px}.workspace-preset-bar{min-height:69px;padding:10px 12px;gap:3.5px}.workspace-preset-help{width:34px;height:34px}.workspace-preset-chip{min-height:46px;padding-right:7px}.workspace-preset-select{padding:8px 5px 8px 14px;max-width:210px}.workspace-preset-clone,.workspace-preset-close{height:27px}.workspace-preset-add{width:44px;height:44px;font-size:24px}}
+    @media(max-width:700px){.workspace-preset-label{margin-left:4px}.workspace-preset-io{min-height:35px;font-size:11px;padding:4px 6px}.workspace-preset-bar{min-height:69px;padding:10px 12px;gap:3.5px}.workspace-preset-help{width:34px;height:34px}.workspace-preset-chip{min-height:46px;padding-right:7px}.workspace-preset-drag{width:23px;font-size:16px}.workspace-preset-select{padding:8px 5px;max-width:210px}.workspace-preset-clone,.workspace-preset-close{height:27px}.workspace-preset-add{width:44px;height:44px;font-size:24px}}
   `;
   document.head.appendChild(style);
 }
@@ -422,12 +471,16 @@ function initTopLevelManager() {
   const runtimes = new Map();
   const workspaceUi = new Map();
   let definitions = loadDefinitions();
-  let primaryPresetId = definitions[0].id;
+  let primaryPresetId = readSessionRaw(PRIMARY_RUNTIME_KEY);
+  if (!definitions.some((item) => item.id === primaryPresetId)) primaryPresetId = definitions[0].id;
+  writeSessionRaw(PRIMARY_RUNTIME_KEY, primaryPresetId);
   let activeId = readSessionRaw(ACTIVE_KEY) || primaryPresetId;
   if (!definitions.some((item) => item.id === activeId)) activeId = primaryPresetId;
+  let draggedWorkspaceId = "";
+  let dragDropTarget = null;
   let lastGeneralTerms = String(document.getElementById("redactorGeneralTerms")?.value || "");
   let configTimer = 0;
-  let modalState = { mode: "", provider: "", bundle: null };
+  let modalState = { mode: "", provider: "", bundle: null, legacyPasswordMode: false };
   const originalActions = {};
 
   const toolbar = buildToolbar();
@@ -440,7 +493,7 @@ function initTopLevelManager() {
 
   runtimes.set(primaryPresetId, { id: primaryPresetId, kind: "native", win: window, doc: document, ready: true });
   window.addEventListener("message", handleFrameMessage);
-  definitions.slice(1).forEach(createFrameRuntime);
+  definitions.filter((item) => item.id !== primaryPresetId).forEach(createFrameRuntime);
   bindRuntimeDocument(runtimes.get(primaryPresetId));
   installAppDelegation();
   applyActiveWorkspace({ applySavedConfig: true });
@@ -459,6 +512,16 @@ function initTopLevelManager() {
     if (data.type === "workspace-preset-frame-update") {
       let becameReady = false;
       if (!runtime.ready && runtime.frame.contentWindow?.__workspacePresetBridge) {
+        const secondaryReady = ensureSecondaryNoteModuleReady(
+          runtime.frame.contentWindow,
+          runtime.frame.contentDocument
+        );
+        const secondaryTimedOut = data.reason === "ready-secondary-timeout";
+        if (!secondaryReady && !secondaryTimedOut) return;
+        if (!secondaryReady) {
+          console.warn("[workspace-presets] Frame became ready without a confirmed Secondary Note module.");
+        }
+
         runtime.ready = true;
         becameReady = true;
         runtime.win = runtime.frame.contentWindow;
@@ -470,6 +533,10 @@ function initTopLevelManager() {
         if (runtime.pendingDraft) {
           runtime.win.__workspacePresetBridge.applyDraft(runtime.pendingDraft);
           runtime.pendingDraft = null;
+        }
+        if (runtime.pendingHistory) {
+          runtime.win.__workspacePresetBridge.replaceHistory(runtime.pendingHistory);
+          runtime.pendingHistory = null;
         }
       }
       scheduleConfigSave(runtime.id);
@@ -538,6 +605,7 @@ function initTopLevelManager() {
     },
     panelModeKey: PANEL_MODE_KEY,
   });
+  void applyPendingCloudRestore();
   window.setTimeout(() => notifyHistoryViewChanged("manager-ready"), 0);
 
   function loadDefinitions() {
@@ -559,6 +627,7 @@ function initTopLevelManager() {
       const runtime = runtimes.get(definition.id);
       if (runtime?.ready) definition.config = captureRuntimeConfig(runtime);
     });
+    writeSessionRaw(PRIMARY_RUNTIME_KEY, primaryPresetId);
     try { localStorage.setItem(DEFINITIONS_KEY, JSON.stringify(definitions)); } catch {}
   }
 
@@ -807,7 +876,91 @@ function initTopLevelManager() {
     importButton.addEventListener("click", () => openBackupModal("import"));
     exportButton.addEventListener("click", () => openBackupModal("export"));
     add.addEventListener("click", addPreset);
+    list.addEventListener("dragover", handleWorkspaceListDragOver);
+    list.addEventListener("drop", handleWorkspaceListDrop);
     return { bar, help, helpContent, importButton, exportButton, label, list, add };
+  }
+
+  function clearWorkspaceDropIndicators() {
+    workspaceUi.forEach((ui) => {
+      ui.chip.classList.remove("is-workspace-drop-before", "is-workspace-drop-after");
+    });
+    dragDropTarget = null;
+  }
+
+  function finishWorkspaceDrag() {
+    clearWorkspaceDropIndicators();
+    workspaceUi.forEach((ui) => ui.chip.classList.remove("is-workspace-dragging"));
+    draggedWorkspaceId = "";
+  }
+
+  function showWorkspaceDropTarget(id, placement) {
+    clearWorkspaceDropIndicators();
+    if (!id || id === draggedWorkspaceId) return;
+    const ui = workspaceUi.get(id);
+    if (!ui) return;
+    dragDropTarget = { id, placement: placement === "after" ? "after" : "before" };
+    ui.chip.classList.add(
+      dragDropTarget.placement === "after"
+        ? "is-workspace-drop-after"
+        : "is-workspace-drop-before"
+    );
+  }
+
+  function handleWorkspaceListDragOver(event) {
+    if (!draggedWorkspaceId) return;
+    const candidates = definitions
+      .filter((definition) => definition.id !== draggedWorkspaceId)
+      .map((definition) => ({ definition, chip: workspaceUi.get(definition.id)?.chip }))
+      .filter((item) => item.chip?.isConnected);
+    if (!candidates.length) return;
+
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+
+    const listRect = toolbar.list.getBoundingClientRect();
+    if (event.clientX < listRect.left + 28) toolbar.list.scrollLeft -= 14;
+    else if (event.clientX > listRect.right - 28) toolbar.list.scrollLeft += 14;
+
+    let target = candidates[candidates.length - 1];
+    let placement = "after";
+    for (const candidate of candidates) {
+      const rect = candidate.chip.getBoundingClientRect();
+      if (event.clientX < rect.left + (rect.width / 2)) {
+        target = candidate;
+        placement = "before";
+        break;
+      }
+    }
+    showWorkspaceDropTarget(target.definition.id, placement);
+  }
+
+  function handleWorkspaceListDrop(event) {
+    if (!draggedWorkspaceId || !dragDropTarget) return;
+    event.preventDefault();
+    const movedId = draggedWorkspaceId;
+    const target = { ...dragDropTarget };
+    finishWorkspaceDrag();
+    reorderWorkspace(movedId, target.id, target.placement);
+  }
+
+  function reorderWorkspace(movedId, targetId, placement) {
+    if (!movedId || !targetId || movedId === targetId) return false;
+    const sourceIndex = definitions.findIndex((item) => item.id === movedId);
+    if (sourceIndex < 0) return false;
+
+    const [moved] = definitions.splice(sourceIndex, 1);
+    const targetIndex = definitions.findIndex((item) => item.id === targetId);
+    if (targetIndex < 0) {
+      definitions.splice(sourceIndex, 0, moved);
+      return false;
+    }
+
+    definitions.splice(targetIndex + (placement === "after" ? 1 : 0), 0, moved);
+    persistDefinitions();
+    render();
+    notifyHub();
+    return true;
   }
 
   function render() {
@@ -842,6 +995,8 @@ function initTopLevelManager() {
       ui.select.title = statusTitle(snapshot, copy);
       ui.dot.className = `workspace-preset-dot ${statusClass(snapshot)}`;
       ui.name.textContent = definition.name;
+      ui.dragHandle.setAttribute("aria-label", copy.move);
+      ui.dragHandle.title = copy.move;
       ui.clone.setAttribute("aria-label", copy.clone);
       ui.clone.title = copy.clone;
       ui.close.setAttribute("aria-label", copy.close);
@@ -853,6 +1008,31 @@ function initTopLevelManager() {
     const chip = document.createElement("div");
     chip.className = "workspace-preset-chip";
     chip.dataset.workspaceId = id;
+
+    const dragHandle = document.createElement("button");
+    dragHandle.type = "button";
+    dragHandle.className = "workspace-preset-drag";
+    dragHandle.textContent = "⠿";
+    dragHandle.draggable = true;
+    dragHandle.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    dragHandle.addEventListener("dragstart", (event) => {
+      if (!findDefinition(id)) {
+        event.preventDefault();
+        return;
+      }
+      finishWorkspaceDrag();
+      draggedWorkspaceId = id;
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", id);
+        try { event.dataTransfer.setDragImage(chip, 18, Math.max(10, chip.offsetHeight / 2)); } catch {}
+      }
+      chip.classList.add("is-workspace-dragging");
+    });
+    dragHandle.addEventListener("dragend", finishWorkspaceDrag);
 
     const select = document.createElement("button");
     select.type = "button";
@@ -876,8 +1056,8 @@ function initTopLevelManager() {
     close.textContent = "×";
     close.addEventListener("click", () => closePreset(id));
 
-    chip.append(select, clone, close);
-    return { chip, select, dot, name, clone, close };
+    chip.append(dragHandle, select, clone, close);
+    return { chip, dragHandle, select, dot, name, clone, close };
   }
 
   function syncDefinitionNames() {
@@ -936,11 +1116,11 @@ function initTopLevelManager() {
     const source = findDefinition(id);
     const sourceRuntime = runtimes.get(id);
     if (!source || !sourceRuntime?.ready) { toast(copy.cloneLoading, true); return; }
-    if (runtimeSnapshot(sourceRuntime).busy) { toast(copy.busyClone, true); return; }
     if (definitions.length >= MAX_PRESETS) { toast(copy.max, true); return; }
 
     source.config = captureRuntimeConfig(sourceRuntime);
     const draft = captureRuntimeDraft(sourceRuntime);
+    const history = runtimeHistorySnapshot(sourceRuntime);
     const definition = {
       id: uid(),
       name: safeName(
@@ -952,7 +1132,10 @@ function initTopLevelManager() {
     definitions.push(definition);
     createFrameRuntime(definition);
     const runtime = runtimes.get(definition.id);
-    if (runtime) runtime.pendingDraft = draft;
+    if (runtime) {
+      runtime.pendingDraft = draft;
+      runtime.pendingHistory = history;
+    }
     persistDefinitions();
     switchPreset(definition.id);
   }
@@ -1099,12 +1282,16 @@ function initTopLevelManager() {
     window.dispatchEvent(new CustomEvent("prompt-slots-imported", { detail: { source: "workspace-presets" } }));
   }
 
-  async function importBundle(bundle, mode) {
+  async function importBundle(
+    bundle,
+    mode,
+    { confirmReplace = true, importPrompts = true } = {}
+  ) {
     const validated = validateBundle(bundle);
     if (allBusy()) throw new Error(t().importBusy);
-    importPromptDependencies(validated.prompts);
+    if (importPrompts) importPromptDependencies(validated.prompts);
     if (mode === "replace") {
-      if (!window.confirm(t().replaceWarning)) return false;
+      if (confirmReplace && !window.confirm(t().replaceWarning)) return false;
       [...runtimes.values()].filter((runtime) => runtime.kind === "frame").forEach((runtime) => {
         clearRuntimeHistory(runtime);
         runtime.frame.remove();
@@ -1113,15 +1300,59 @@ function initTopLevelManager() {
       runtimes.clear(); clearRuntimeDraft({ id: primaryPresetId, kind: "native", win: window, doc: document });
       definitions = validated.presets;
       primaryPresetId = definitions[0].id; activeId = primaryPresetId;
+      writeSessionRaw(PRIMARY_RUNTIME_KEY, primaryPresetId);
       runtimes.set(primaryPresetId, { id: primaryPresetId, kind: "native", win: window, doc: document, ready: true, bound: true });
       await applyConfig(window, document, definitions[0].config);
-      definitions.slice(1).forEach(createFrameRuntime);
+      definitions.filter((item) => item.id !== primaryPresetId).forEach(createFrameRuntime);
     } else {
       const available = Math.max(0, MAX_PRESETS - definitions.length);
       validated.presets.slice(0, available).forEach((definition) => { definitions.push(definition); createFrameRuntime(definition); });
     }
     writeSessionRaw(ACTIVE_KEY, activeId); persistDefinitions(); applyActiveWorkspace(); render(); notifyHub();
     return true;
+  }
+
+  function applyPendingGeneralTerms(bundle) {
+    if (!bundle || bundle.schema !== "whisper.redactor-general-terms" ||
+        Number(bundle.version) !== 1 || typeof bundle.generalTerms !== "string") return false;
+    const value = String(bundle.generalTerms || "").replace(/\r\n?/g, "\n").trim();
+    if (!value) return false;
+    lastGeneralTerms = value;
+    try { sessionStorage.setItem("redactor_general_terms_session", value); } catch {}
+    const field = document.getElementById("redactorGeneralTerms");
+    if (field) { field.value = value; dispatchInput(window, field); }
+    runtimes.forEach((runtime) => syncGeneralTermsTo(runtime));
+    return true;
+  }
+
+  async function applyPendingCloudRestore() {
+    const pending = CloudBackupSession.consumePendingRestore();
+    if (!pending.promptPackage && !pending.workspaceSet) return;
+    try {
+      if (pending.promptPackage?.promptBundle) {
+        PromptManager.importPromptsFromBundle(pending.promptPackage.promptBundle, { confirm: false });
+      }
+      if (pending.workspaceSet) {
+        await importBundle(pending.workspaceSet, "replace", {
+          confirmReplace: false,
+          // When both are selected, the complete prompt-list backup is the
+          // source of truth and must not be overwritten by the Workspace Set's
+          // smaller collection of prompt dependencies.
+          importPrompts: !pending.promptPackage?.promptBundle,
+        });
+      }
+      if (pending.promptPackage?.generalTermsBundle) {
+        applyPendingGeneralTerms(pending.promptPackage.generalTermsBundle);
+      }
+      window.dispatchEvent(new CustomEvent("prompt-slots-imported", {
+        detail: { source: "cloud-entry-restore" },
+      }));
+      render();
+      notifyHub();
+      toast(t().cloudRestored);
+    } catch (error) {
+      toast(fmt(t().failed, { error: error?.message || "Unknown error" }), true);
+    }
   }
 
   function allBusy() { return [...runtimes.values()].some((runtime) => runtimeSnapshot(runtime).busy); }
@@ -1139,10 +1370,10 @@ function initTopLevelManager() {
 
   function openBackupModal(mode) {
     if (mode === "import" && allBusy()) { toast(t().importBusy, true); return; }
-    modalState = { mode, provider: "", bundle: null };
+    modalState = { mode, provider: "", bundle: null, legacyPasswordMode: false };
     renderChoiceModal(); modal.backdrop.hidden = false;
   }
-  function closeModal() { modal.backdrop.hidden = true; modal.body.replaceChildren(); modal.status.textContent = ""; modalState = { mode: "", provider: "", bundle: null }; }
+  function closeModal() { modal.backdrop.hidden = true; modal.body.replaceChildren(); modal.status.textContent = ""; modalState = { mode: "", provider: "", bundle: null, legacyPasswordMode: false }; }
   function setModalStatus(message, error = false) { modal.status.textContent = String(message || ""); modal.status.style.color = error ? "#b00020" : "#2e7d32"; }
 
   function renderChoiceModal() {
@@ -1175,39 +1406,72 @@ function initTopLevelManager() {
 
   function renderPasswordStep() {
     const copy = t(); const exporting = modalState.mode === "export"; modal.body.replaceChildren(); setModalStatus("");
-    const notice = document.createElement("div"); notice.className = "workspace-modal-notice"; notice.textContent = exporting ? copy.exportNotice : copy.importNotice;
+    const unlockedPassword = CloudBackupSession.getPassword(modalState.provider);
+    const useUnlockedPassword = Boolean(unlockedPassword) && !modalState.legacyPasswordMode;
+    const providerName = modalState.provider === "oneDrive" ? "Microsoft OneDrive" : "Google Drive";
+    const notice = document.createElement("div"); notice.className = "workspace-modal-notice";
+    notice.textContent = modalState.legacyPasswordMode
+      ? copy.legacyPassword
+      : useUnlockedPassword
+        ? fmt(copy.unlockedPassword, { provider: providerName })
+        : exporting ? copy.exportNotice : copy.importNotice;
     const password = document.createElement("input"); password.type = "password"; password.className = "workspace-modal-field"; password.placeholder = copy.password; password.autocomplete = exporting ? "new-password" : "current-password";
     let repeat = null;
-    if (exporting) {
+    if (exporting && !useUnlockedPassword) {
       repeat = document.createElement("input"); repeat.type = "password"; repeat.className = "workspace-modal-field"; repeat.placeholder = copy.repeat; repeat.autocomplete = "new-password";
     }
     const actions = document.createElement("div"); actions.className = "workspace-modal-actions";
     const run = document.createElement("button"); run.type = "button"; run.textContent = exporting ? copy.save : copy.import;
     const back = document.createElement("button"); back.type = "button"; back.textContent = copy.back; actions.append(run, back);
-    modal.body.append(notice, password);
+    modal.body.append(notice);
+    if (!useUnlockedPassword) modal.body.append(password);
     if (repeat) modal.body.append(repeat);
     modal.body.append(actions); back.addEventListener("click", renderChoiceModal);
     run.addEventListener("click", async () => {
-      const value = password.value; if (exporting && value.length < 10) { setModalStatus(copy.passwordMin, true); return; }
-      if (exporting && value !== repeat.value) { setModalStatus(copy.mismatch, true); return; }
+      const value = useUnlockedPassword ? unlockedPassword : password.value;
+      if (exporting && !useUnlockedPassword && value.length < 10) { setModalStatus(copy.passwordMin, true); return; }
+      if (exporting && !useUnlockedPassword && value !== repeat.value) { setModalStatus(copy.mismatch, true); return; }
       if (!exporting && !value) { setModalStatus(copy.passwordRequired, true); return; }
       run.disabled = true;
       try {
         const progress = (key) => setModalStatus(copy[key] || key);
+        const accessToken = await PromptCloudBackup.connect(modalState.provider, progress);
         if (exporting) {
           const bundle = buildExportBundle();
-          if (modalState.provider === "oneDrive") await PromptCloudBackup.saveWorkspacePresetsToOneDrive(bundle, value, progress);
-          else await PromptCloudBackup.saveWorkspacePresetsToGoogleDrive(bundle, value, progress);
+          progress("encryptingAndSaving");
+          await PromptCloudBackup.saveWorkspaceSetWithAccessToken(
+            modalState.provider, accessToken, bundle, value
+          );
+          CloudBackupSession.unlock(modalState.provider, value);
           const message = modalState.provider === "oneDrive" ? copy.savedOneDrive : copy.savedGoogle; closeModal(); toast(message);
         } else {
-          const bundle = modalState.provider === "oneDrive"
-            ? await PromptCloudBackup.loadWorkspacePresetsFromOneDrive(value, progress)
-            : await PromptCloudBackup.loadWorkspacePresetsFromGoogleDrive(value, progress);
+          progress("downloadingAndDecrypting");
+          const bundle = await PromptCloudBackup.loadWorkspaceSetWithAccessToken(
+            modalState.provider, accessToken, value
+          );
+          if (!unlockedPassword) {
+            CloudBackupSession.unlock(modalState.provider, value);
+          } else if (modalState.legacyPasswordMode && window.confirm(copy.migrateLegacy)) {
+            progress("encryptingAndSaving");
+            await PromptCloudBackup.saveWorkspaceSetWithAccessToken(
+              modalState.provider, accessToken, bundle, unlockedPassword
+            );
+          }
           showImportPreview(bundle);
         }
-      } catch (error) { setModalStatus(fmt(copy.failed, { error: error?.message || "Unknown error" }), true); }
+      } catch (error) {
+        if (!exporting && useUnlockedPassword &&
+            /incorrect password|damaged/i.test(String(error?.message || ""))) {
+          modalState.legacyPasswordMode = true;
+          renderPasswordStep();
+          setModalStatus(copy.legacyPassword, true);
+          return;
+        }
+        setModalStatus(fmt(copy.failed, { error: error?.message || "Unknown error" }), true);
+      }
       finally { password.value = ""; if (repeat) repeat.value = ""; run.disabled = false; }
     });
+    if (useUnlockedPassword) run.focus(); else password.focus();
   }
 
   async function exportJson() {

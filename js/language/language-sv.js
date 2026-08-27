@@ -41,7 +41,7 @@ export const indexTranslations = {
   </ul>
   <p><strong>Andra leverantörer som stöds</strong></p>
   <ul>
-    <li><strong>OpenAI</strong> – GPT-5.1, GPT-5.2, GPT-5.4 och GPT-5.5</li>
+    <li><strong>OpenAI</strong> – GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna och GPT-5 Nano</li>
     <li><strong>AWS Bedrock</strong> – Claude Haiku 4.5, Claude Sonnet 4.5/4.6 och Claude Opus 4.5/4.6/4.7</li>
     <li><strong>Mistral</strong> – Mistral Large</li>
   </ul>
@@ -182,7 +182,7 @@ Den enklaste rekommenderade konfigurationen för nya användare är:<br>
 2. <strong>Requesty</strong> för anteckningsgenerering.<br><br>
 
 <strong>STT-alternativ:</strong> Soniox batch, Soniox batch med talaretiketter, Soniox realtid, OpenAI gpt-4o-transcribe och Mistral Voxtral Mini Transcribe.<br><br>
-<strong>Anteckningsleverantörer:</strong> Requesty (Claude Opus 5, Claude Sonnet 5, GPT-5.6 Sol/Terra/Luna, GPT-5.5, GPT-5 Nano, Gemini 3.7 Flash och Kimi K3), OpenAI (GPT-5.1/5.2/5.4/5.5), AWS Bedrock (Claude Haiku/Sonnet/Opus) och Mistral Large.<br><br>
+<strong>Anteckningsleverantörer:</strong> Requesty (Claude Opus 5, Claude Sonnet 5, GPT-5.6 Sol/Terra/Luna, GPT-5.5, GPT-5 Nano, Gemini 3.7 Flash och Kimi K3), OpenAI (GPT-5.6 Sol/Terra/Luna och GPT-5 Nano), AWS Bedrock (Claude Haiku/Sonnet/Opus) och Mistral Large.<br><br>
 
 <hr><br>
 <strong>Soniox — rekommenderad STT-konfiguration</strong><br>
@@ -249,7 +249,7 @@ En API-nyckel gör inte en tjänst automatiskt GDPR-kompatibel. Kontrollera DPA,
     <li>Kimi K3: cirka 3,00 / 15,00 USD</li>
   </ul>
   <p>Beloppen motsvarar appens nuvarande uppskattningar och kan ändras när Requesty eller uppströmsleverantören ändrar pris. Kontrollera priset bredvid modellen och Requestys användningsrapport.</p>
-  <p>Andra leverantörer som stöds är direkt OpenAI (GPT-5.1/5.2/5.4/5.5), AWS Bedrock (Claude Haiku/Sonnet/Opus, främst för befintliga AWS-användare) och Mistral Large. Aktuella modellpriser visas i appen.</p>
+  <p>Andra leverantörer som stöds är direkt OpenAI (GPT-5.6 Sol/Terra/Luna och GPT-5 Nano), AWS Bedrock (Claude Haiku/Sonnet/Opus, främst för befintliga AWS-användare) och Mistral Large. Aktuella modellpriser visas i appen.</p>
 
   <hr><br>
   <p><strong>3. Vad är token?</strong></p>
@@ -327,7 +327,7 @@ guideText: `Välkommen till <strong>Transcribe Notes</strong>. Appen kan spela i
 <details>
   <summary><strong>Workspaces och Workspace Sets</strong></summary>
   <ul>
-    <li>Ett <strong>Workspace</strong> är en separat arbetsyta i webbläsarfliken. Varje Workspace har egna texter, valda prompts, leverantörer, modeller, inställningar, historik och aktiva processer. Byte mellan Workspaces stoppar inte inspelning eller generering.</li>
+    <li>Ett <strong>Workspace</strong> är en separat arbetsyta i webbläsarfliken. Varje Workspace har egna texter, valda prompts, leverantörer, modeller, inställningar och aktiva processer. Klonade Workspaces delar historik med sin klonfamilj, medan Workspaces som läggs till med + har separat historik. Byte mellan Workspaces stoppar inte inspelning eller generering.</li>
     <li>Namnet följer normalt etiketten för vald promptplats. Använd <strong>+</strong> för att lägga till och <strong>×</strong> för att stänga ett Workspace. Upp till 12 Workspaces kan vara öppna.</li>
     <li>Alla öppna Workspaces bildar ett <strong>Workspace Set</strong>. Import och export kan göras med en lokal JSON-fil, Microsoft OneDrive eller Google Drive.</li>
     <li>Ett Workspace Set sparar antal och ordning, namn, valda promptplatser med prompttext och etiketter, leverantörer, modeller, reasoning-val, relevanta kryssrutor och öppna moduler. Transkriptioner, kompletterande information, anteckningar, historik, ljud, API-nycklar, lösenord och annan patientinformation ingår inte.</li>
@@ -373,8 +373,8 @@ guideText: `Välkommen till <strong>Transcribe Notes</strong>. Appen kan spela i
 <details>
   <summary><strong>Promptplatser, historik, Redactor och OCR</strong></summary>
   <ul>
-    <li>Det finns 20 promptplatser. Prompt profile ID separerar promptuppsättningar på samma enhet. Uppsättningar kan importeras eller exporteras som JSON eller krypterat via OneDrive och Google Drive.</li>
-    <li>Historikkolumnen visar de 30 senaste slutförda primära anteckningsgenereringarna i aktivt Workspace. Klicka på ett objekt för att se transkription, kompletterande information och genererad anteckning. Varje Workspace har egen historik.</li>
+    <li>Det finns 20 promptplatser. De sparas i den här webbläsaren och kan importeras eller exporteras som JSON eller som krypterade säkerhetskopior via OneDrive och Google Drive.</li>
+    <li>Historikkolumnen visar de 30 senaste slutförda primära anteckningsgenereringarna i aktivt Workspace. Klicka på ett objekt för att se transkription, kompletterande information och genererad anteckning. Klonade Workspaces delar historik med sin klonfamilj, medan andra Workspaces har separat historik.</li>
     <li><strong>Redactor</strong> kan ta bort valda allmänna och specifika termer från transkriptionen och kompletterande information. Kontrollera alltid resultatet innan texten skickas vidare.</li>
     <li><strong>OCR</strong> kan hämta text från en inklistrad skärmbild eller bildfil och skicka texten till listan med specifika termer eller råtextfältet.</li>
   </ul>

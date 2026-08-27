@@ -6,7 +6,6 @@ export const indexTranslations = {
   headerSubtitle: "Avansert AI-drevet tale-til-tekst og notatgenerering for helsekonsultasjoner",
   startText: "Du kan nå også velge mellom ulike modeller fra forskjellige leverandører. For instruksjoner om hvordan å bruke denne webappen, les info-modulene nederst på forsiden.",
   apiPlaceholder: "Skriv inn OpenAI API-nøkkel her",
-  promptProfileHint: "Brukes til å lagre dine egendefinerte prompts på denne enheten uavhengig av API-nøkkelen din.",
   keysIoHint: "Eksporter nøklene til en fil og oppbevar den sikkert. Neste gang kan du importere filen for å fylle inn feltene på nytt, noe som sparer tid og gjør at du slipper å skrive dem inn. Nøklene slettes automatisk når du lukker webappen/nettleser-fanen, eller manuelt med Clear keys.",
   gdprColumnTitle: "GDPR-kompatibel:",
   gdprColumnFootnote: "(EU data-residens/databehandling + ingen datalagring + data brukes ikke for modelltrening – forutsatt korrekt oppsett)",
@@ -70,7 +69,7 @@ export const indexTranslations = {
 
   <p><strong>Andre støttede leverandører</strong></p>
   <ul>
-    <li><strong>OpenAI</strong> – GPT-5.1, GPT-5.2, GPT-5.4 og GPT-5.5</li>
+    <li><strong>OpenAI</strong> – GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna og GPT-5 Nano</li>
     <li><strong>AWS Bedrock</strong> – Claude Haiku 4.5, Claude Sonnet 4.5/4.6 og Claude Opus 4.5/4.6/4.7</li>
     <li><strong>Mistral</strong> – Mistral Large</li>
   </ul>
@@ -246,7 +245,7 @@ Dette gir tilgang til transkripsjon av høy kvalitet og et kuratert utvalg nyere
 
 <strong>Leverandører for notatgenerering i appen</strong><br>
 - Requesty: Claude Opus 5, Claude Sonnet 5, GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna, GPT-5.5, GPT-5 Nano, Gemini 3.7 Flash og Kimi K3<br>
-- OpenAI: GPT-5.1, GPT-5.2, GPT-5.4 og GPT-5.5<br>
+- OpenAI: GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna og GPT-5 Nano<br>
 - AWS Bedrock: Claude Haiku 4.5, Claude Sonnet 4.5/4.6 og Claude Opus 4.5/4.6/4.7<br>
 - Mistral: Mistral Large<br><br>
 
@@ -366,7 +365,7 @@ En API-nøkkel alene gjør ikke en tjeneste GDPR-kompatibel. Kontroller leverand
 
   <p><strong>Andre støttede notatleverandører</strong></p>
   <ul>
-    <li><strong>OpenAI:</strong> direkte GPT-5.1-, GPT-5.2-, GPT-5.4- og GPT-5.5-modeller.</li>
+    <li><strong>OpenAI:</strong> direkte GPT-5.6 Sol-, GPT-5.6 Terra-, GPT-5.6 Luna- og GPT-5 Nano-modeller.</li>
     <li><strong>AWS Bedrock:</strong> Claude Haiku-, Sonnet- og Opus-modeller. Beholdes hovedsakelig for eksisterende AWS-brukere.</li>
     <li><strong>Mistral:</strong> Mistral Large.</li>
   </ul>
@@ -482,7 +481,7 @@ guideText: `Velkommen til <strong>Transcribe Notes</strong>. Appen kan ta opp og
 <details>
   <summary><strong>Workspaces og Workspace Sets</strong></summary>
   <ul>
-    <li>Et <strong>Workspace</strong> er et eget arbeidsområde i nettleserfanen. Hvert Workspace har egne tekster, valgte prompts, tilbydere, modeller, innstillinger, historikk og aktive prosesser. Bytte mellom Workspaces stopper ikke opptak eller generering.</li>
+    <li>Et <strong>Workspace</strong> er et eget arbeidsområde i nettleserfanen. Hvert Workspace har egne tekster, valgte prompts, tilbydere, modeller, innstillinger og aktive prosesser. Klonede Workspaces deler historikk med klonefamilien, mens Workspaces som legges til med + har separat historikk. Bytte mellom Workspaces stopper ikke opptak eller generering.</li>
     <li>Navnet følger normalt navnet på den valgte promptplassen. Bruk <strong>+</strong> for å legge til og <strong>×</strong> for å lukke et Workspace. Du kan ha opptil 12 åpne Workspaces.</li>
     <li>Alle åpne Workspaces utgjør et <strong>Workspace Set</strong>. Import og eksport kan gjøres med lokal JSON-fil, Microsoft OneDrive eller Google Drive.</li>
     <li>Et Workspace Set lagrer antall og rekkefølge, navn, valgte promptplasser med prompttekst og navn, tilbydere, modeller, reasoning-valg, relevante avkrysningsbokser og åpne moduler. Det tar ikke med transkripsjoner, supplerende informasjon, notater, historikk, lyd, API-nøkler, passord eller andre pasientopplysninger.</li>
@@ -528,8 +527,8 @@ guideText: `Velkommen til <strong>Transcribe Notes</strong>. Appen kan ta opp og
 <details>
   <summary><strong>Promptplasser, historikk, Redactor og OCR</strong></summary>
   <ul>
-    <li>Du har 20 promptplasser. Prompt profile ID skiller promptsett på samme enhet. Promptsett kan importeres eller eksporteres som JSON eller kryptert via OneDrive og Google Drive.</li>
-    <li>Historikkolonnen viser de 30 siste fullførte primære notatgenereringene i det aktive Workspace-et. Klikk på et element for å se transkripsjon, supplerende informasjon og generert notat. Hvert Workspace har sin egen historikk.</li>
+    <li>Du har 20 promptplasser. De huskes i denne nettleseren og kan importeres eller eksporteres som JSON eller som krypterte kopier via OneDrive og Google Drive.</li>
+    <li>Historikkolonnen viser de 30 siste fullførte primære notatgenereringene i det aktive Workspace-et. Klikk på et element for å se transkripsjon, supplerende informasjon og generert notat. Klonede Workspaces deler historikk med klonefamilien, mens andre Workspaces har separat historikk.</li>
     <li><strong>Redactor</strong> kan fjerne valgte generelle og spesifikke begreper fra transkripsjonen og supplerende informasjon. Kontroller alltid resultatet før teksten sendes videre.</li>
     <li><strong>OCR</strong> kan hente tekst fra et innlimt skjermbilde eller en bildefil og sende teksten til listen over spesifikke begreper eller til råtekstfeltet.</li>
   </ul>

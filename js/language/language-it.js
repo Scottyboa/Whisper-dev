@@ -42,7 +42,7 @@ export const indexTranslations = {
   </ul>
   <p><strong>Altri provider supportati</strong></p>
   <ul>
-    <li><strong>OpenAI</strong> – GPT-5.1, GPT-5.2, GPT-5.4 e GPT-5.5</li>
+    <li><strong>OpenAI</strong> – GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna e GPT-5 Nano</li>
     <li><strong>AWS Bedrock</strong> – Claude Haiku 4.5, Claude Sonnet 4.5/4.6 e Claude Opus 4.5/4.6/4.7</li>
     <li><strong>Mistral</strong> – Mistral Large</li>
   </ul>
@@ -182,7 +182,7 @@ La configurazione più semplice consigliata ai nuovi utenti è:<br>
 2. <strong>Requesty</strong> per la generazione delle note.<br><br>
 
 <strong>Opzioni STT:</strong> Soniox batch, batch con etichette dei parlanti, tempo reale, OpenAI gpt-4o-transcribe e Mistral Voxtral Mini.<br><br>
-<strong>Provider di note:</strong> Requesty (Claude Opus 5, Claude Sonnet 5, GPT-5.6 Sol/Terra/Luna, GPT-5.5, GPT-5 Nano, Gemini 3.7 Flash, Kimi K3), OpenAI (GPT-5.1/5.2/5.4/5.5), AWS Bedrock (Claude Haiku/Sonnet/Opus) e Mistral Large.<br><br>
+<strong>Provider di note:</strong> Requesty (Claude Opus 5, Claude Sonnet 5, GPT-5.6 Sol/Terra/Luna, GPT-5.5, GPT-5 Nano, Gemini 3.7 Flash, Kimi K3), OpenAI (GPT-5.6 Sol/Terra/Luna e GPT-5 Nano), AWS Bedrock (Claude Haiku/Sonnet/Opus) e Mistral Large.<br><br>
 
 <hr><br>
 <strong>Soniox — configurazione STT consigliata</strong><br>
@@ -240,7 +240,7 @@ Una chiave API non rende automaticamente un servizio conforme al GDPR. Verifica 
     <li>GPT-5 Nano: circa 0,05 / 0,40 USD</li><li>Gemini 3.7 Flash: circa 0,66 / 3,30 USD</li><li>Kimi K3: circa 3,00 / 15,00 USD</li>
   </ul>
   <p>I valori rispecchiano le stime attuali dell’app e possono cambiare con Requesty o il deployment upstream. Controlla il prezzo vicino al modello e il rapporto d’uso Requesty.</p>
-  <p>Altri provider: OpenAI diretto (GPT-5.1/5.2/5.4/5.5), AWS Bedrock (Claude Haiku/Sonnet/Opus, soprattutto per utenti AWS esistenti) e Mistral Large. I prezzi attuali sono mostrati nell’app.</p>
+  <p>Altri provider: OpenAI diretto (GPT-5.6 Sol/Terra/Luna e GPT-5 Nano), AWS Bedrock (Claude Haiku/Sonnet/Opus, soprattutto per utenti AWS esistenti) e Mistral Large. I prezzi attuali sono mostrati nell’app.</p>
 
   <hr><br>
   <p><strong>3. Cosa sono i token?</strong></p>
@@ -315,7 +315,7 @@ guideText: `Benvenuto in <strong>Transcribe Notes</strong>. L'app può registrar
 <details>
   <summary><strong>Workspaces e Workspace Sets</strong></summary>
   <ul>
-    <li>Un <strong>Workspace</strong> è un'area di lavoro separata nella scheda del browser. Ogni Workspace ha testi, prompt selezionati, fornitori, modelli, impostazioni, cronologia e processi attivi propri. Cambiare Workspace non interrompe registrazioni o generazioni.</li>
+    <li>Un <strong>Workspace</strong> è un'area di lavoro separata nella scheda del browser. Ogni Workspace ha testi, prompt selezionati, fornitori, modelli, impostazioni e processi attivi propri. I Workspace clonati condividono la cronologia della loro famiglia di cloni; quelli aggiunti con + hanno una cronologia separata. Cambiare Workspace non interrompe registrazioni o generazioni.</li>
     <li>Il nome segue normalmente l'etichetta dello slot prompt selezionato. Usa <strong>+</strong> per aggiungere e <strong>×</strong> per chiudere un Workspace. Possono essere aperti fino a 12 Workspaces.</li>
     <li>Tutti i Workspaces aperti formano un <strong>Workspace Set</strong>. Importazione ed esportazione sono disponibili tramite file JSON locale, Microsoft OneDrive o Google Drive.</li>
     <li>Un Workspace Set salva numero e ordine, nomi, slot prompt selezionati con testo ed etichette, fornitori, modelli, scelte di reasoning, caselle pertinenti e moduli aperti. Non include trascrizioni, informazioni supplementari, note, cronologia, audio, chiavi API, password o altre informazioni sui pazienti.</li>
@@ -361,8 +361,8 @@ guideText: `Benvenuto in <strong>Transcribe Notes</strong>. L'app può registrar
 <details>
   <summary><strong>Slot prompt, cronologia, Redactor e OCR</strong></summary>
   <ul>
-    <li>Sono disponibili 20 slot prompt. Prompt profile ID separa i set di prompt sullo stesso dispositivo. I set possono essere importati o esportati in JSON o crittografati tramite OneDrive e Google Drive.</li>
-    <li>La colonna della cronologia mostra le 30 generazioni primarie completate più recenti del Workspace attivo. Seleziona un elemento per vedere trascrizione, informazioni supplementari e nota generata. Ogni Workspace ha la propria cronologia.</li>
+    <li>Sono disponibili 20 slot prompt. Vengono memorizzati in questo browser e possono essere importati o esportati in formato JSON o come backup crittografati tramite OneDrive e Google Drive.</li>
+    <li>La colonna della cronologia mostra le 30 generazioni primarie completate più recenti del Workspace attivo. Seleziona un elemento per vedere trascrizione, informazioni supplementari e nota generata. I Workspace clonati condividono la cronologia della loro famiglia di cloni; gli altri hanno una cronologia separata.</li>
     <li><strong>Redactor</strong> può rimuovere termini generali e specifici selezionati dalla trascrizione e dalle informazioni supplementari. Controlla sempre il risultato prima dell'invio.</li>
     <li><strong>OCR</strong> può estrarre testo da uno screenshot incollato o da un file immagine e inviarlo all'elenco dei termini specifici o al campo di testo grezzo.</li>
   </ul>

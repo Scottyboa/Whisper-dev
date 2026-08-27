@@ -4,7 +4,6 @@ export const indexTranslations = {
   headerSubtitle: "Advanced AI-Powered Speech-to-Text and Clinical Note Generation for Healthcare Consultations",
   startText: "You can now also choose between different models from various providers. Read the info modules at the bottom of the frontpage, for instructions on how to use the app.",
   apiPlaceholder: "Enter OpenAI API Key here",
-  promptProfileHint: "Used to save your custom prompts on this device independent of your API key.",
   keysIoHint: "Export keys to a file and store it securely. Next time, import the file to refill the fields, which saves time and avoids typing. The keys are deleted automatically when you close the webapp/tab, or manually by clicking Clear keys.",
   gdprColumnTitle: "GDPR compliant:",
   gdprColumnFootnote: "(EU data residency/processing + zero data retention + data not used for model traning - assuming correct configuration)",
@@ -70,7 +69,7 @@ export const indexTranslations = {
 
   <p><strong>Other supported providers</strong></p>
   <ul>
-    <li><strong>OpenAI</strong> – GPT-5.1, GPT-5.2, GPT-5.4 and GPT-5.5</li>
+    <li><strong>OpenAI</strong> – GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna and GPT-5 Nano</li>
     <li><strong>AWS Bedrock</strong> – Claude Haiku 4.5, Claude Sonnet 4.5/4.6 and Claude Opus 4.5/4.6/4.7</li>
     <li><strong>Mistral</strong> – Mistral Large</li>
   </ul>
@@ -247,7 +246,7 @@ This gives access to high-quality transcription and a curated selection of newer
 
 <strong>Note-generation providers in the app</strong><br>
 - Requesty: Claude Opus 5, Claude Sonnet 5, GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna, GPT-5.5, GPT-5 Nano, Gemini 3.7 Flash and Kimi K3<br>
-- OpenAI: GPT-5.1, GPT-5.2, GPT-5.4 and GPT-5.5<br>
+- OpenAI: GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna and GPT-5 Nano<br>
 - AWS Bedrock: Claude Haiku 4.5, Claude Sonnet 4.5/4.6 and Claude Opus 4.5/4.6/4.7<br>
 - Mistral: Mistral Large<br><br>
 
@@ -367,7 +366,7 @@ priceModalText: `
 
   <p><strong>Other supported note providers</strong></p>
   <ul>
-    <li><strong>OpenAI:</strong> direct GPT-5.1, GPT-5.2, GPT-5.4 and GPT-5.5 models.</li>
+    <li><strong>OpenAI:</strong> direct GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna and GPT-5 Nano models.</li>
     <li><strong>AWS Bedrock:</strong> Claude Haiku, Sonnet and Opus models. Retained mainly for existing AWS users.</li>
     <li><strong>Mistral:</strong> Mistral Large.</li>
   </ul>
@@ -483,7 +482,7 @@ guideText: `Welcome to <strong>Transcribe Notes</strong>. The app can record and
 <details>
   <summary><strong>Workspaces and Workspace Sets</strong></summary>
   <ul>
-    <li>A <strong>Workspace</strong> is a separate work area within the browser tab. Each Workspace has its own text, selected prompts, providers, models, settings, history and active processes. Switching Workspaces does not stop recording or generation.</li>
+    <li>A <strong>Workspace</strong> is a separate work area within the browser tab. Each Workspace has its own text, selected prompts, providers, models, settings and active processes. Cloned Workspaces share history with their clone family; Workspaces added with + have separate history. Switching Workspaces does not stop recording or generation.</li>
     <li>The name normally follows the selected prompt-slot label. Use <strong>+</strong> to add and <strong>×</strong> to close a Workspace. Up to 12 Workspaces can be open.</li>
     <li>All open Workspaces form a <strong>Workspace Set</strong>. Import and export are available through a local JSON file, Microsoft OneDrive or Google Drive.</li>
     <li>A Workspace Set stores the number and order of Workspaces, names, selected prompt slots with prompt text and labels, providers, models, reasoning selections, relevant checkboxes and open modules. It does not include transcripts, supplementary information, notes, history, audio, API keys, passwords or other patient information.</li>
@@ -529,8 +528,8 @@ guideText: `Welcome to <strong>Transcribe Notes</strong>. The app can record and
 <details>
   <summary><strong>Prompt slots, history, Redactor and OCR</strong></summary>
   <ul>
-    <li>There are 20 prompt slots. Prompt profile ID separates prompt sets on the same device. Prompt sets can be imported or exported as JSON or as encrypted backups through OneDrive and Google Drive.</li>
-    <li>The history column shows the 30 most recent completed primary note generations in the active Workspace. Select an item to view the transcript, supplementary information and generated note. Each Workspace has its own history.</li>
+    <li>There are 20 prompt slots. They are remembered in this browser and can be imported or exported as JSON or as encrypted backups through OneDrive and Google Drive.</li>
+    <li>The history column shows the 30 most recent completed primary note generations in the active Workspace. Select an item to view the transcript, supplementary information and generated note. Cloned Workspaces share history with their clone family; other Workspaces have separate history.</li>
     <li><strong>Redactor</strong> can remove selected General and Specific terms from the transcript and supplementary information. Always inspect the result before sending the text.</li>
     <li><strong>OCR</strong> can extract text from a pasted screenshot or image file and send it to the Specific terms list or the raw-text field.</li>
   </ul>

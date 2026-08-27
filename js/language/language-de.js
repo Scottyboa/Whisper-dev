@@ -42,7 +42,7 @@ export const indexTranslations = {
   </ul>
   <p><strong>Weitere unterstützte Anbieter</strong></p>
   <ul>
-    <li><strong>OpenAI</strong> – GPT-5.1, GPT-5.2, GPT-5.4 und GPT-5.5</li>
+    <li><strong>OpenAI</strong> – GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna und GPT-5 Nano</li>
     <li><strong>AWS Bedrock</strong> – Claude Haiku 4.5, Claude Sonnet 4.5/4.6 und Claude Opus 4.5/4.6/4.7</li>
     <li><strong>Mistral</strong> – Mistral Large</li>
   </ul>
@@ -182,7 +182,7 @@ Die einfachste Empfehlung für neue Nutzer:<br>
 2. <strong>Requesty</strong> für Notizerstellung.<br><br>
 
 <strong>STT-Optionen:</strong> Soniox Batch, Soniox Batch mit Sprecherkennzeichnung, Soniox Echtzeit, OpenAI gpt-4o-transcribe und Mistral Voxtral Mini.<br><br>
-<strong>Notizanbieter:</strong> Requesty (Claude Opus 5, Claude Sonnet 5, GPT-5.6 Sol/Terra/Luna, GPT-5.5, GPT-5 Nano, Gemini 3.7 Flash, Kimi K3), OpenAI (GPT-5.1/5.2/5.4/5.5), AWS Bedrock (Claude Haiku/Sonnet/Opus) und Mistral Large.<br><br>
+<strong>Notizanbieter:</strong> Requesty (Claude Opus 5, Claude Sonnet 5, GPT-5.6 Sol/Terra/Luna, GPT-5.5, GPT-5 Nano, Gemini 3.7 Flash, Kimi K3), OpenAI (GPT-5.6 Sol/Terra/Luna und GPT-5 Nano), AWS Bedrock (Claude Haiku/Sonnet/Opus) und Mistral Large.<br><br>
 
 <hr><br>
 <strong>Soniox — empfohlene STT-Einrichtung</strong><br>
@@ -240,7 +240,7 @@ Ein API-Schlüssel macht einen Dienst nicht automatisch DSGVO-konform. Prüfen S
     <li>GPT-5 Nano: ca. 0,05 / 0,40 USD</li><li>Gemini 3.7 Flash: ca. 0,66 / 3,30 USD</li><li>Kimi K3: ca. 3,00 / 15,00 USD</li>
   </ul>
   <p>Diese Werte entsprechen den aktuellen App-Schätzungen und können sich mit Requesty oder der Upstream-Bereitstellung ändern. Prüfen Sie den Modellpreis und Requestys Nutzungsbericht.</p>
-  <p>Weitere unterstützte Notizanbieter: direktes OpenAI (GPT-5.1/5.2/5.4/5.5), AWS Bedrock (Claude Haiku/Sonnet/Opus, vor allem für bestehende AWS-Nutzer) und Mistral Large. Aktuelle Modellpreise werden in der App angezeigt.</p>
+  <p>Weitere unterstützte Notizanbieter: direktes OpenAI (GPT-5.6 Sol/Terra/Luna und GPT-5 Nano), AWS Bedrock (Claude Haiku/Sonnet/Opus, vor allem für bestehende AWS-Nutzer) und Mistral Large. Aktuelle Modellpreise werden in der App angezeigt.</p>
 
   <hr><br>
   <p><strong>3. Was sind Token?</strong></p>
@@ -315,7 +315,7 @@ guideText: `Willkommen bei <strong>Transcribe Notes</strong>. Die App kann Gespr
 <details>
   <summary><strong>Workspaces und Workspace Sets</strong></summary>
   <ul>
-    <li>Ein <strong>Workspace</strong> ist ein eigener Arbeitsbereich im Browser-Tab. Jeder Workspace hat eigene Texte, ausgewählte Prompts, Anbieter, Modelle, Einstellungen, einen eigenen Verlauf und aktive Prozesse. Ein Wechsel stoppt weder Aufnahme noch Generierung.</li>
+    <li>Ein <strong>Workspace</strong> ist ein eigener Arbeitsbereich im Browser-Tab. Jeder Workspace hat eigene Texte, ausgewählte Prompts, Anbieter, Modelle, Einstellungen und aktive Prozesse. Geklonte Workspaces teilen den Verlauf mit ihrer Klonfamilie; mit + hinzugefügte Workspaces haben einen separaten Verlauf. Ein Wechsel stoppt weder Aufnahme noch Generierung.</li>
     <li>Der Name folgt normalerweise der Bezeichnung des ausgewählten Prompt-Slots. Mit <strong>+</strong> wird ein Workspace hinzugefügt, mit <strong>×</strong> geschlossen. Bis zu 12 Workspaces können geöffnet sein.</li>
     <li>Alle geöffneten Workspaces bilden ein <strong>Workspace Set</strong>. Import und Export sind über eine lokale JSON-Datei, Microsoft OneDrive oder Google Drive möglich.</li>
     <li>Ein Workspace Set speichert Anzahl und Reihenfolge, Namen, ausgewählte Prompt-Slots samt Prompttext und Bezeichnungen, Anbieter, Modelle, Reasoning-Auswahl, relevante Kontrollkästchen und geöffnete Module. Transkripte, ergänzende Informationen, Notizen, Verlauf, Audio, API-Schlüssel, Passwörter und andere Patientendaten sind nicht enthalten.</li>
@@ -361,8 +361,8 @@ guideText: `Willkommen bei <strong>Transcribe Notes</strong>. Die App kann Gespr
 <details>
   <summary><strong>Prompt-Slots, Verlauf, Redactor und OCR</strong></summary>
   <ul>
-    <li>Es gibt 20 Prompt-Slots. Die Prompt profile ID trennt Prompt-Sätze auf demselben Gerät. Import und Export sind als JSON oder verschlüsselt über OneDrive und Google Drive möglich.</li>
-    <li>Die Verlaufsspalte zeigt die 30 letzten abgeschlossenen primären Notizgenerierungen des aktiven Workspace. Ein Eintrag zeigt Transkript, ergänzende Informationen und generierte Notiz. Jeder Workspace hat einen eigenen Verlauf.</li>
+    <li>Es gibt 20 Prompt-Slots. Sie werden in diesem Browser gespeichert und können als JSON oder als verschlüsselte Sicherung über OneDrive und Google Drive importiert und exportiert werden.</li>
+    <li>Die Verlaufsspalte zeigt die 30 letzten abgeschlossenen primären Notizgenerierungen des aktiven Workspace. Ein Eintrag zeigt Transkript, ergänzende Informationen und generierte Notiz. Geklonte Workspaces teilen den Verlauf mit ihrer Klonfamilie; andere Workspaces haben einen separaten Verlauf.</li>
     <li><strong>Redactor</strong> kann ausgewählte allgemeine und spezifische Begriffe aus Transkript und ergänzenden Informationen entfernen. Ergebnis vor dem Senden immer prüfen.</li>
     <li><strong>OCR</strong> kann Text aus einem eingefügten Screenshot oder einer Bilddatei extrahieren und an die Liste spezifischer Begriffe oder das Rohtextfeld übergeben.</li>
   </ul>

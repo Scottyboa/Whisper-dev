@@ -192,6 +192,15 @@ export const PromptManager = (() => {
     return active;
   }
 
+  function ensurePromptProfileId() {
+    const existing = getPromptProfileId();
+    if (existing) return existing;
+    // Prompt profiles are now an internal compatibility detail. Existing
+    // named profiles keep their namespace, while browsers without one move
+    // their legacy API-key-based prompts into the single default namespace.
+    return setPromptProfileId(DEFAULT_PROFILE_ID);
+  }
+
   function resolveInputElement(inputOrSelector) {
     if (!inputOrSelector) return null;
     if (typeof inputOrSelector === "string") {
@@ -260,15 +269,6 @@ export const PromptManager = (() => {
     return String(normalized);
   }
 
-  function sanitizeForFilename(s) {
-    return (s || "")
-      .toString()
-      .trim()
-      .replace(/\s+/g, "_")
-      .replace(/[^a-zA-Z0-9_\-]+/g, "")
-      .slice(0, 50) || "profile";
-  }
-
   function downloadTextFile(filename, text, mime = "application/json") {
     const blob = new Blob([text], { type: mime });
     const url = URL.createObjectURL(blob);
@@ -308,10 +308,7 @@ export const PromptManager = (() => {
   }
 
   function buildPromptExportBundle() {
-    const profileId = getPromptProfileId();
-    if (!profileId) {
-      throw new Error("Prompt profile ID is not set.");
-    }
+    const profileId = ensurePromptProfileId();
 
     const slots = {};
     for (let i = 1; i <= PROMPT_SLOT_COUNT; i++) {
@@ -341,11 +338,10 @@ export const PromptManager = (() => {
       return false;
     }
 
-    const safe = sanitizeForFilename(payload.profileId);
     const date = new Date().toISOString().slice(0, 10);
 
     const saved = await saveTextFileWithPicker(
-      `prompts-${safe}-${date}.json`,
+      `prompts-${date}.json`,
       JSON.stringify(payload, null, 2),
       "application/json"
     );
@@ -403,21 +399,14 @@ export const PromptManager = (() => {
   }
 
   function importPromptsFromBundle(parsed, options = {}) {
-    const profileId = getPromptProfileId();
-    if (!profileId) {
-      throw new Error("Prompt profile ID is not set.");
-    }
-
     const bundle = validatePromptImportBundle(parsed);
+    const profileId = ensurePromptProfileId();
     const sourceProfileId = bundle.profileId;
 
     if (options.confirm !== false) {
       let message = String(options.confirmMessage || "").trim();
       if (!message) {
-        message = "Replace all 20 prompts and labels in the active profile?";
-        if (sourceProfileId && sourceProfileId !== profileId) {
-          message = `This backup was exported from profile "${sourceProfileId}", but the active profile is "${profileId}".\n\n${message}`;
-        }
+        message = "Replace all 20 prompts and labels saved in this browser?";
       }
       if (!window.confirm(message)) return false;
     }
@@ -444,12 +433,6 @@ export const PromptManager = (() => {
   }
 
   async function importPromptsFromFile(file, options = {}) {
-    const profileId = getPromptProfileId();
-    if (!profileId) {
-      console.warn("Cannot import prompts: prompt profile id not set.");
-      return false;
-    }
-
     if (!file) return false;
 
     let text = "";
@@ -497,14 +480,10 @@ export const PromptManager = (() => {
   function reorderPromptSlots(fromSlot, toSlot) {
     const from = normalizeSlotNumber(fromSlot);
     const to = normalizeSlotNumber(toSlot);
-    const profileId = getPromptProfileId();
+    const profileId = ensurePromptProfileId();
 
     if (!from || !to) {
       console.warn("Cannot reorder prompt slots: invalid slot.", { fromSlot, toSlot });
-      return null;
-    }
-    if (!profileId) {
-      console.warn("Cannot reorder prompt slots: prompt profile id not set.");
       return null;
     }
     if (from === to) return to;
@@ -580,6 +559,7 @@ export const PromptManager = (() => {
     savePrompt,
     getPromptProfileId,
     setPromptProfileId,
+    ensurePromptProfileId,
     hydratePromptProfileInput,
     commitPromptProfileInput,
     getPromptNamespaceHash,

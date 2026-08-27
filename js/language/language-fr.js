@@ -42,7 +42,7 @@ export const indexTranslations = {
   </ul>
   <p><strong>Autres fournisseurs pris en charge</strong></p>
   <ul>
-    <li><strong>OpenAI</strong> – GPT-5.1, GPT-5.2, GPT-5.4 et GPT-5.5</li>
+    <li><strong>OpenAI</strong> – GPT-5.6 Sol, GPT-5.6 Terra, GPT-5.6 Luna et GPT-5 Nano</li>
     <li><strong>AWS Bedrock</strong> – Claude Haiku 4.5, Claude Sonnet 4.5/4.6 et Claude Opus 4.5/4.6/4.7</li>
     <li><strong>Mistral</strong> – Mistral Large</li>
   </ul>
@@ -182,7 +182,7 @@ Configuration recommandée la plus simple :<br>
 2. <strong>Requesty</strong> pour les notes.<br><br>
 
 <strong>Options STT :</strong> Soniox par lots, par lots avec identification des locuteurs, temps réel, OpenAI gpt-4o-transcribe et Mistral Voxtral Mini.<br><br>
-<strong>Fournisseurs de notes :</strong> Requesty (Claude Opus 5, Claude Sonnet 5, GPT-5.6 Sol/Terra/Luna, GPT-5.5, GPT-5 Nano, Gemini 3.7 Flash, Kimi K3), OpenAI (GPT-5.1/5.2/5.4/5.5), AWS Bedrock (Claude Haiku/Sonnet/Opus) et Mistral Large.<br><br>
+<strong>Fournisseurs de notes :</strong> Requesty (Claude Opus 5, Claude Sonnet 5, GPT-5.6 Sol/Terra/Luna, GPT-5.5, GPT-5 Nano, Gemini 3.7 Flash, Kimi K3), OpenAI (GPT-5.6 Sol/Terra/Luna et GPT-5 Nano), AWS Bedrock (Claude Haiku/Sonnet/Opus) et Mistral Large.<br><br>
 
 <hr><br>
 <strong>Soniox — configuration STT recommandée</strong><br>
@@ -240,7 +240,7 @@ Une clé API ne rend pas un service automatiquement conforme au RGPD. Vérifiez 
     <li>GPT-5 Nano : env. 0,05 / 0,40 USD</li><li>Gemini 3.7 Flash : env. 0,66 / 3,30 USD</li><li>Kimi K3 : env. 3,00 / 15,00 USD</li>
   </ul>
   <p>Ces valeurs reflètent les estimations de l’application et peuvent changer avec Requesty ou le déploiement amont. Consultez le prix près du modèle et le rapport d’utilisation Requesty.</p>
-  <p>Autres fournisseurs : OpenAI direct (GPT-5.1/5.2/5.4/5.5), AWS Bedrock (Claude Haiku/Sonnet/Opus, surtout pour utilisateurs AWS existants) et Mistral Large. Les prix actuels apparaissent dans l’application.</p>
+  <p>Autres fournisseurs : OpenAI direct (GPT-5.6 Sol/Terra/Luna et GPT-5 Nano), AWS Bedrock (Claude Haiku/Sonnet/Opus, surtout pour utilisateurs AWS existants) et Mistral Large. Les prix actuels apparaissent dans l’application.</p>
 
   <hr><br>
   <p><strong>3. Que sont les tokens ?</strong></p>
@@ -315,7 +315,7 @@ guideText: `Bienvenue dans <strong>Transcribe Notes</strong>. L'application peut
 <details>
   <summary><strong>Workspaces et Workspace Sets</strong></summary>
   <ul>
-    <li>Un <strong>Workspace</strong> est un espace de travail distinct dans l'onglet du navigateur. Chaque Workspace possède ses propres textes, prompts sélectionnés, fournisseurs, modèles, réglages, historique et processus actifs. Changer de Workspace n'arrête ni l'enregistrement ni la génération.</li>
+    <li>Un <strong>Workspace</strong> est un espace de travail distinct dans l'onglet du navigateur. Chaque Workspace possède ses propres textes, prompts sélectionnés, fournisseurs, modèles, réglages et processus actifs. Les Workspaces clonés partagent l'historique de leur famille de clones ; ceux ajoutés avec + ont un historique distinct. Changer de Workspace n'arrête ni l'enregistrement ni la génération.</li>
     <li>Le nom reprend normalement le libellé de l'emplacement de prompt sélectionné. Utilisez <strong>+</strong> pour ajouter et <strong>×</strong> pour fermer un Workspace. Jusqu'à 12 Workspaces peuvent être ouverts.</li>
     <li>Tous les Workspaces ouverts forment un <strong>Workspace Set</strong>. L'importation et l'exportation sont possibles par fichier JSON local, Microsoft OneDrive ou Google Drive.</li>
     <li>Un Workspace Set enregistre le nombre et l'ordre, les noms, les emplacements de prompt sélectionnés avec leur texte et leur libellé, les fournisseurs, les modèles, les choix de raisonnement, les cases pertinentes et les modules ouverts. Il n'inclut pas les transcriptions, informations complémentaires, notes, historique, fichiers audio, clés API, mots de passe ni autres informations sur les patients.</li>
@@ -361,8 +361,8 @@ guideText: `Bienvenue dans <strong>Transcribe Notes</strong>. L'application peut
 <details>
   <summary><strong>Emplacements de prompts, historique, Redactor et OCR</strong></summary>
   <ul>
-    <li>Vingt emplacements de prompts sont disponibles. Prompt profile ID sépare les jeux de prompts sur un même appareil. Ils peuvent être importés ou exportés en JSON ou sous forme chiffrée via OneDrive et Google Drive.</li>
-    <li>La colonne d'historique affiche les 30 dernières générations principales terminées du Workspace actif. Sélectionnez un élément pour voir la transcription, les informations complémentaires et la note générée. Chaque Workspace a son propre historique.</li>
+    <li>Vingt emplacements de prompts sont disponibles. Ils sont mémorisés dans ce navigateur et peuvent être importés ou exportés au format JSON ou sous forme de sauvegarde chiffrée via OneDrive et Google Drive.</li>
+    <li>La colonne d'historique affiche les 30 dernières générations principales terminées du Workspace actif. Sélectionnez un élément pour voir la transcription, les informations complémentaires et la note générée. Les Workspaces clonés partagent l'historique de leur famille de clones ; les autres ont un historique distinct.</li>
     <li><strong>Redactor</strong> peut supprimer les termes généraux et spécifiques choisis de la transcription et des informations complémentaires. Vérifiez toujours le résultat avant envoi.</li>
     <li><strong>OCR</strong> peut extraire le texte d'une capture d'écran collée ou d'un fichier image et l'envoyer vers la liste des termes spécifiques ou le champ de texte brut.</li>
   </ul>
